@@ -8,6 +8,29 @@ import { fromWorkbench } from "@/three/scene/world";
 /** Human eye height in meters; the camera is a human body (docs/EXPERIENCE_BIBLE.md). */
 export const EYE_HEIGHT = 1.6;
 
+/**
+ * Workbench blockout dimensions, in meters.
+ * Proportions follow a standard full-size workbench; the blockout exists to
+ * establish scale and spatial hierarchy, not detail.
+ * Centered on the world origin in X/Z, standing on the floor (Y = 0).
+ */
+export const WORKBENCH = {
+  /** Height of the work surface above the floor. */
+  surfaceHeight: 0.9,
+  top: {
+    width: 1.8,
+    depth: 0.75,
+    thickness: 0.04,
+  },
+  leg: {
+    /** Square cross-section side length. */
+    size: 0.08,
+    /** Distance from the tabletop edge to the outer face of each leg. */
+    inset: 0.06,
+  },
+  color: "#9a9a9a",
+} as const;
+
 export const STAGE = {
   /** Neutral gray void surrounding the stage. */
   backgroundColor: "#7d7d7d",
@@ -20,8 +43,10 @@ export const STAGE = {
     fov: 50,
     near: 0.1,
     far: 200,
-    /** Standing a few meters back from the workbench origin, at eye height. */
-    position: fromWorkbench([0, EYE_HEIGHT, 6]),
+    /** Standing a few meters back from the workbench, at eye height. */
+    position: fromWorkbench([0, EYE_HEIGHT, 3]),
+    /** A person's gaze rests on the work surface, not the horizon. */
+    lookAt: fromWorkbench([0, WORKBENCH.surfaceHeight, 0]),
   },
   lights: {
     ambient: {
