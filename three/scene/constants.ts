@@ -3,7 +3,9 @@
  * All scene-level values live here so no component carries magic numbers.
  */
 
-/** Human eye height in meters; the camera is a human body (EXPERIENCE_BIBLE.md). */
+import { fromWorkbench } from "@/three/scene/world";
+
+/** Human eye height in meters; the camera is a human body (docs/EXPERIENCE_BIBLE.md). */
 export const EYE_HEIGHT = 1.6;
 
 export const STAGE = {
@@ -18,8 +20,8 @@ export const STAGE = {
     fov: 50,
     near: 0.1,
     far: 200,
-    /** Standing a few meters back from center stage, at eye height. */
-    position: [0, EYE_HEIGHT, 6] as [number, number, number],
+    /** Standing a few meters back from the workbench origin, at eye height. */
+    position: fromWorkbench([0, EYE_HEIGHT, 6]),
   },
   lights: {
     ambient: {

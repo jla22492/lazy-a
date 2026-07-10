@@ -4,8 +4,12 @@ import { useImperativeHandle, type Ref } from "react";
 
 /**
  * The camera moves the way a person does. These four verbs are the entire
- * vocabulary of camera movement (EXPERIENCE_BIBLE.md — "Camera Verbs").
+ * vocabulary of camera movement (docs/EXPERIENCE_BIBLE.md — "Camera Verbs").
  * Their behavior arrives in a later work order; the language exists now.
+ *
+ * All camera positions are defined as offsets from the workbench origin —
+ * see three/scene/world.ts. The verbs will resolve their targets through
+ * that convention, never through arbitrary world coordinates.
  */
 export interface CameraRigHandle {
   sit: () => void;
