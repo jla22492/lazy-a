@@ -117,6 +117,9 @@ export function listScreenshots(): string[] {
 }
 
 function latestCommit(): string {
+  /* CI builds (GitHub Pages) read the commit from the environment. */
+  const envSha = process.env.GITHUB_SHA;
+  if (envSha) return envSha.slice(0, 7);
   try {
     return execSync("git rev-parse --short HEAD", { cwd: ROOT })
       .toString()

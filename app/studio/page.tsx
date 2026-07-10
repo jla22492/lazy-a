@@ -6,8 +6,16 @@ import {
   type LockStatus,
 } from "@/lib/studio";
 
-/** Internal production board — always derived live from the repository. */
-export const dynamic = "force-dynamic";
+/**
+ * Production board — derived from the repository. Live per-request in
+ * development; frozen at build time for the public GitHub Pages export,
+ * which rebuilds on every push, so it is always current per-commit.
+ */
+export const dynamic = "force-static";
+
+/** Progress images live under the Pages basePath in the public build. */
+const IMAGE_PREFIX =
+  process.env.STATIC_EXPORT === "1" ? "/lazy-a/studio/progress" : "/studio/progress";
 
 export const metadata = {
   title: "Lazy A — Studio",
@@ -148,7 +156,7 @@ export default function StudioPage() {
             <figure className="space-y-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/studio/progress/${state.latestScreenshot}`}
+                src={`${IMAGE_PREFIX}/${state.latestScreenshot}`}
                 alt={`Latest progress screenshot (${state.latestScreenshot})`}
                 className="w-full border border-neutral-200"
               />
@@ -199,7 +207,7 @@ export default function StudioPage() {
               <li key={shot} className="space-y-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`/studio/progress/${shot}`}
+                  src={`${IMAGE_PREFIX}/${shot}`}
                   alt={`Progress screenshot ${shot}`}
                   className="w-full border border-neutral-200"
                 />
