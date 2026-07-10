@@ -25,12 +25,21 @@ const LEG_POSITIONS: ReadonlyArray<[number, number, number]> = [
 export function Workbench() {
   return (
     <group position={fromWorkbench([0, 0, 0])}>
-      <mesh position={[0, surfaceHeight - top.thickness / 2, 0]}>
+      <mesh
+        position={[0, surfaceHeight - top.thickness / 2, 0]}
+        castShadow
+        receiveShadow
+      >
         <boxGeometry args={[top.width, top.thickness, top.depth]} />
         <meshStandardMaterial color={color} />
       </mesh>
       {LEG_POSITIONS.map((position) => (
-        <mesh key={position.join(",")} position={position}>
+        <mesh
+          key={position.join(",")}
+          position={position}
+          castShadow
+          receiveShadow
+        >
           <boxGeometry args={[leg.size, LEG_HEIGHT, leg.size]} />
           <meshStandardMaterial color={color} />
         </mesh>

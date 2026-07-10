@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0004 — Validate the Minimum Believable Room (complete)
+WORK ORDER 0005 — Establish Daylight (complete)
 
 ---
 
@@ -34,6 +34,8 @@ WORK ORDER 0004 — Validate the Minimum Believable Room (complete)
 - Root CLAUDE.md restored as a pointer to docs/CLAUDE.md
 - Operating manual updated: persistent context model, Decisions Required rule, changelog scope (experience milestones only), real-world measurement guidance
 - Minimum believable room validated: rear wall + left wall (matte off-white plaster) and warm neutral floor; right wall and ceiling intentionally absent
+- Daylight established: one sun entering from outside the right of frame (soft shadows), one subtle bounce fill; placeholder lighting removed
+- Progress-screenshot convention started: docs/progress/NNNN.png per Work Order, saved via a dev-only API route
 
 ---
 
@@ -66,4 +68,5 @@ Begin placing the first objects of the creative space.
 - The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 - The camera's gaze rests on the work surface, not the horizon.
 - The room is inferred, not presented: rear + left wall only; right wall and ceiling stay absent until direction says otherwise.
+- Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 - No interactions yet.

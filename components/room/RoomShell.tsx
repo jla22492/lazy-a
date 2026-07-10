@@ -21,13 +21,17 @@ const FACING_RIGHT = Math.PI / 2;
 export function RoomShell() {
   return (
     <group position={fromWorkbench([0, 0, 0])}>
-      <mesh position={[REAR_CENTER_X, wall.height / 2, rearWall.z]}>
+      <mesh
+        position={[REAR_CENTER_X, wall.height / 2, rearWall.z]}
+        receiveShadow
+      >
         <planeGeometry args={[REAR_WIDTH, wall.height]} />
         <meshStandardMaterial color={wall.color} />
       </mesh>
       <mesh
         position={[leftWall.x, wall.height / 2, LEFT_CENTER_Z]}
         rotation-y={FACING_RIGHT}
+        receiveShadow
       >
         <planeGeometry args={[LEFT_LENGTH, wall.height]} />
         <meshStandardMaterial color={wall.color} />

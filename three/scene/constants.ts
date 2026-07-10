@@ -76,13 +76,34 @@ export const STAGE = {
     /** A person's gaze rests on the work surface, not the horizon. */
     lookAt: fromWorkbench([0, WORKBENCH.surfaceHeight, 0]),
   },
-  lights: {
-    ambient: {
-      intensity: 0.6,
+} as const;
+
+/**
+ * Daylight — the room's permanent lighting system (first version).
+ * One primary source entering from outside the right edge of frame; the
+ * source itself is never revealed. One subtle bounce fill so shadows never
+ * go dead. Nothing about the light should be noticeable.
+ */
+export const DAYLIGHT = {
+  sun: {
+    /** Slightly warm white; unremarkable midday light. */
+    color: "#fff2e2",
+    intensity: 1.7,
+    /** High and to the right, outside the frame, angled into the room. */
+    position: [4, 5, 2.5] as [number, number, number],
+    shadow: {
+      mapSize: 2048,
+      /** Half-extent of the shadow camera; covers the visible room. */
+      coverage: 6,
+      bias: -0.0005,
+      normalBias: 0.04,
     },
-    directional: {
-      intensity: 1.2,
-      position: [5, 10, 5] as [number, number, number],
-    },
+  },
+  bounce: {
+    /** Barely-cool sky component of the fill. */
+    skyColor: "#e7ebee",
+    /** Light returned from the warm floor and plaster. */
+    groundColor: "#a89e90",
+    intensity: 0.5,
   },
 } as const;

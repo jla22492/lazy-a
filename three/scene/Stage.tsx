@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { CameraRig } from "@/components/camera/CameraRig";
 import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
-import { StageLights } from "@/three/lighting/StageLights";
+import { Daylight } from "@/three/lighting/Daylight";
 import { Floor } from "@/three/scene/Floor";
 import { STAGE } from "@/three/scene/constants";
 
@@ -13,6 +13,10 @@ import { STAGE } from "@/three/scene/constants";
 export function Stage() {
   return (
     <Canvas
+      shadows="soft"
+      /* Keep the frame readable after render so progress screenshots
+         (docs/progress/) can capture the canvas directly. */
+      gl={{ preserveDrawingBuffer: true }}
       camera={{
         fov: STAGE.camera.fov,
         near: STAGE.camera.near,
@@ -24,7 +28,7 @@ export function Stage() {
       }}
     >
       <color attach="background" args={[STAGE.backgroundColor]} />
-      <StageLights />
+      <Daylight />
       <Floor />
       <RoomShell />
       <Workbench />
