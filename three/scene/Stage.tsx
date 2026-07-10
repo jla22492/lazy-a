@@ -1,16 +1,21 @@
 "use client";
 
-import { Canvas } from "@react-three/fiber";
+import { Canvas, type RootState } from "@react-three/fiber";
 
 import { CameraRig } from "@/components/camera/CameraRig";
 import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
 import { Daylight } from "@/three/lighting/Daylight";
+import { activeStudy } from "@/three/scene/cameraStudies";
 import { Floor } from "@/three/scene/Floor";
 import { STAGE } from "@/three/scene/constants";
+import { scheduleProgressShot } from "@/three/scene/progressShot";
 
 /** The film stage: neutral void, base lighting, bare floor, the workbench, a human camera. */
 export function Stage() {
+  /* Camera studies (WORK ORDER 0006): ?study=<id> previews an alternative
+     viewpoint. Without the parameter, this is exactly the baseline. */
+  const study = activeStudy();
   return (
     <Canvas
       shadows="soft"
@@ -18,13 +23,20 @@ export function Stage() {
          (docs/progress/) can capture the canvas directly. */
       gl={{ preserveDrawingBuffer: true }}
       camera={{
-        fov: STAGE.camera.fov,
+        fov: study.fov,
         near: STAGE.camera.near,
         far: STAGE.camera.far,
-        position: STAGE.camera.position,
+        position: [...study.position],
       }}
-      onCreated={({ camera }) => {
-        camera.lookAt(...STAGE.camera.lookAt);
+      onCreated={(state) => {
+        state.camera.lookAt(...study.lookAt);
+        if (process.env.NODE_ENV !== "production") {
+          /* Progress screenshots (docs/progress/) force a synchronous
+             render through this handle when the page is not visible and
+             requestAnimationFrame is paused. Dev only. */
+          (window as Window & { __stage?: RootState }).__stage = state;
+          scheduleProgressShot(state);
+        }
       }}
     >
       <color attach="background" args={[STAGE.backgroundColor]} />

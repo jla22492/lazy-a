@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0005 — Establish Daylight (complete)
+WORK ORDER 0006 — Camera Studies (complete)
 
 ---
 
@@ -35,19 +35,20 @@ WORK ORDER 0005 — Establish Daylight (complete)
 - Operating manual updated: persistent context model, Decisions Required rule, changelog scope (experience milestones only), real-world measurement guidance
 - Minimum believable room validated: rear wall + left wall (matte off-white plaster) and warm neutral floor; right wall and ceiling intentionally absent
 - Daylight established: one sun entering from outside the right of frame (soft shadows), one subtle bounce fill; placeholder lighting removed
-- Progress-screenshot convention started: docs/progress/NNNN.png per Work Order, saved via a dev-only API route
+- Progress-screenshot convention started: docs/progress/NNNN.png per Work Order, saved via a dev-only API route (self-capture with ?shot=<filename>)
+- Five camera studies produced (docs/progress/0006-A…E.png); any study previewable live with ?study=<id>; default composition remains the baseline
 
 ---
 
 ## In Progress
 
-None
+Awaiting the Creative Director's choice of opening composition from camera studies A–E (WORK ORDER 0006).
 
 ---
 
 ## Next Recommended Work Order
 
-Begin placing the first objects of the creative space.
+Lock the opening composition from the camera studies.
 
 ---
 
