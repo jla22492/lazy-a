@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-REVISION WORK ORDER R-0007 — Refine the Opening Composition (complete)
+WORK ORDER 0008 — Establish the Ceiling Plane (complete)
 
 ---
 
@@ -39,6 +39,7 @@ REVISION WORK ORDER R-0007 — Refine the Opening Composition (complete)
 - Five camera studies produced (docs/progress/0006-A…E.png); any study previewable live with ?study=<id>
 - Opening composition refined (docs/progress/0007.png): Study C's subtle three-quarter angle with Study E's longer lens; now the default camera
 - Opening composition revised per Creative Director review (docs/progress/R-0007.png): viewer repositioned slightly left of the workbench; supersedes 0007 as the current candidate
+- Ceiling plane added at wall height over the walls' footprint, completing the enclosure; invisible from the locked opening composition (docs/progress/0008.png is pixel-identical to R-0007.png by design)
 
 ---
 
@@ -58,7 +59,8 @@ Begin placing the first objects of the creative space.
 
 - CameraRig verbs are intentionally empty declarations; their movement behavior is not yet defined.
 - Dev-server hot reload does not re-apply Canvas camera props; reload the page after editing camera constants.
-- The viewer cannot stand farther left than x ≈ −0.55 at the current lens and distance without the frame's upper-right corner rising above the 2.4 m rear wall (no right wall or ceiling exists yet). Viewports much wider than 16:9 have the same exposure.
+- The viewer cannot stand farther left than x ≈ −0.55 at the current lens and distance without the frame's upper-right corner rising above the 2.4 m rear wall; the ceiling now covers that region on wider viewports, but the wall-top seam becomes visible there.
+- The ceiling underside is bounce-lit only (no direct sun, physically correct) and reads very dark if ever seen; acceptable while it stays out of frame, revisit when a lighting or camera-movement order exposes it.
 - GSAP and Leva are installed but unused until animation and debug work begins.
 
 ---
@@ -72,6 +74,6 @@ Begin placing the first objects of the creative space.
 - The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 - The camera's gaze rests on the work surface, not the horizon.
 - The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height.
-- The room is inferred, not presented: rear + left wall only; right wall and ceiling stay absent until direction says otherwise.
+- The room is inferred, not presented: rear wall, left wall, and ceiling; the right wall stays absent until direction says otherwise.
 - Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 - No interactions yet.

@@ -56,6 +56,14 @@ export const ROOM = {
     /** From the rear-wall corner to well behind the camera. */
     spanZ: [-0.45, 6] as const,
   },
+  /**
+   * One quiet plane at wall height covering the walls' footprint. It does
+   * not cast shadows: the daylight source sits symbolically above it, and
+   * its underside is lit by bounce, as real ceilings are.
+   */
+  ceiling: {
+    color: "#eae5da",
+  },
 } as const;
 
 export const STAGE = {
