@@ -19,17 +19,24 @@ export interface CameraStudy {
 /** Every study keeps its gaze on the work surface. */
 const GAZE = fromWorkbench([0, WORKBENCH.surfaceHeight, 0]);
 
+/**
+ * The studies are a historical record from WORK ORDER 0006; their values
+ * are frozen (the default camera has since moved on, WORK ORDER 0007).
+ */
+const STUDY_FOV = 50;
+
 export const CAMERA_STUDIES = {
-  /** Baseline. */
+  /** Baseline as of WORK ORDER 0006. */
   A: {
-    fov: STAGE.camera.fov,
-    position: STAGE.camera.position,
-    lookAt: STAGE.camera.lookAt,
-    question: "Baseline: the existing composition, unchanged, for comparison.",
+    fov: STUDY_FOV,
+    position: fromWorkbench([0, EYE_HEIGHT, 3]),
+    lookAt: GAZE,
+    question:
+      "Baseline: the composition as of WORK ORDER 0006, for comparison.",
   },
   /** Slightly lower eye level; everything else conservative. */
   B: {
-    fov: STAGE.camera.fov,
+    fov: STUDY_FOV,
     position: fromWorkbench([0, 1.4, 3]),
     lookAt: GAZE,
     question:
@@ -37,7 +44,7 @@ export const CAMERA_STUDIES = {
   },
   /** Subtle three-quarter perspective; restrained rotation. */
   C: {
-    fov: STAGE.camera.fov,
+    fov: STUDY_FOV,
     position: fromWorkbench([0.9, EYE_HEIGHT, 2.85]),
     lookAt: GAZE,
     question:
@@ -45,7 +52,7 @@ export const CAMERA_STUDIES = {
   },
   /** One or two natural steps toward the workbench. */
   D: {
-    fov: STAGE.camera.fov,
+    fov: STUDY_FOV,
     position: fromWorkbench([0, EYE_HEIGHT, 2.1]),
     lookAt: GAZE,
     question:
@@ -67,17 +74,24 @@ export const CAMERA_STUDIES = {
 
 export type StudyId = keyof typeof CAMERA_STUDIES;
 
-export const DEFAULT_STUDY: StudyId = "A";
+/** Without ?study=, the visitor sees the opening composition. */
+const OPENING_COMPOSITION: CameraStudy = {
+  fov: STAGE.camera.fov,
+  position: STAGE.camera.position,
+  lookAt: STAGE.camera.lookAt,
+  question:
+    "The opening composition (WORK ORDER 0007): Study C's three-quarter naturalness with Study E's longer lens.",
+};
 
-/** Resolve the study from the URL (?study=B); defaults to the baseline. */
+/** Resolve the study from the URL (?study=B); defaults to the opening composition. */
 export function activeStudy(): CameraStudy {
   if (typeof window === "undefined") {
-    return CAMERA_STUDIES[DEFAULT_STUDY];
+    return OPENING_COMPOSITION;
   }
   const id = new URLSearchParams(window.location.search)
     .get("study")
     ?.toUpperCase();
   return id && id in CAMERA_STUDIES
     ? CAMERA_STUDIES[id as StudyId]
-    : CAMERA_STUDIES[DEFAULT_STUDY];
+    : OPENING_COMPOSITION;
 }

@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0006 — Camera Studies (complete)
+WORK ORDER 0007 — Refine the Opening Composition (complete)
 
 ---
 
@@ -36,19 +36,20 @@ WORK ORDER 0006 — Camera Studies (complete)
 - Minimum believable room validated: rear wall + left wall (matte off-white plaster) and warm neutral floor; right wall and ceiling intentionally absent
 - Daylight established: one sun entering from outside the right of frame (soft shadows), one subtle bounce fill; placeholder lighting removed
 - Progress-screenshot convention started: docs/progress/NNNN.png per Work Order, saved via a dev-only API route (self-capture with ?shot=<filename>)
-- Five camera studies produced (docs/progress/0006-A…E.png); any study previewable live with ?study=<id>; default composition remains the baseline
+- Five camera studies produced (docs/progress/0006-A…E.png); any study previewable live with ?study=<id>
+- Opening composition refined (docs/progress/0007.png): Study C's subtle three-quarter angle with Study E's longer lens; now the default camera
 
 ---
 
 ## In Progress
 
-Awaiting the Creative Director's choice of opening composition from camera studies A–E (WORK ORDER 0006).
+None — the refined opening composition (0007) stands as the primary candidate pending the Creative Director's final approval.
 
 ---
 
 ## Next Recommended Work Order
 
-Lock the opening composition from the camera studies.
+Begin placing the first objects of the creative space.
 
 ---
 
@@ -68,6 +69,7 @@ Lock the opening composition from the camera studies.
 - The world origin (0,0,0) is the exact center of the workbench — permanent.
 - The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 - The camera's gaze rests on the work surface, not the horizon.
+- The opening view is a person who took two quiet steps in and stopped: subtle three-quarter angle, normal lens (fov 35), eye height.
 - The room is inferred, not presented: rear + left wall only; right wall and ceiling stay absent until direction says otherwise.
 - Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 - No interactions yet.
