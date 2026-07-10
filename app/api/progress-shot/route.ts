@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse, type NextRequest } from "next/server";
 
-const FILENAME_PATTERN = /^\d{4}[A-Za-z0-9-]*\.png$/;
+const FILENAME_PATTERN = /^(R-)?\d{4}[A-Za-z0-9-]*\.png$/;
 const PNG_PREFIX = "data:image/png;base64,";
 
 /**

@@ -68,18 +68,21 @@ export const STAGE = {
     color: "#8f867a",
   },
   /**
-   * The opening composition (WORK ORDER 0007): someone who entered, took
-   * two quiet steps in, and stopped. Study C's subtle three-quarter angle
-   * (~17° off the bench axis) with Study E's longer lens, stepped back so
-   * the workbench keeps the same presence in frame.
+   * The opening composition (WORK ORDER 0007, revised R-0007): someone who
+   * entered, took two quiet steps in, and naturally stopped slightly LEFT
+   * of the workbench. Study C's three-quarter naturalness with Study E's
+   * longer lens. The leftward offset is the farthest the viewer can stand
+   * left at this lens and distance without the frame's upper-right corner
+   * rising above the rear wall (the room has no right wall); a mirrored
+   * offset would reveal the void.
    */
   camera: {
     /** Normal lens (~50mm equivalent), not wide. */
     fov: 35,
     near: 0.1,
     far: 200,
-    /** Standing inside the room, right of the bench axis, at eye height. */
-    position: fromWorkbench([1.35, EYE_HEIGHT, 4.2]),
+    /** Left of the bench axis, at eye height; distance matches 0007 (4.47m to the gaze). */
+    position: fromWorkbench([-0.55, EYE_HEIGHT, 4.377]),
     /** A person's gaze rests on the work surface, not the horizon. */
     lookAt: fromWorkbench([0, WORKBENCH.surfaceHeight, 0]),
   },
