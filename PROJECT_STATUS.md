@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0001 — Initialize the Lazy A Engine (complete)
+WORK ORDER 0001.5 — Establish the Implementation Operating Manual (complete)
 
 ---
 
@@ -26,6 +26,7 @@ WORK ORDER 0001 — Initialize the Lazy A Engine (complete)
 - Folder structure established (components/, three/, public/, WORK_ORDERS/)
 - Base scene created: full-viewport canvas, perspective camera, ambient + directional light, neutral floor plane, neutral gray background
 - CameraRig created, exposing sit() / lean() / stand() / turn()
+- CLAUDE.md replaced with the permanent implementation operating manual
 
 ---
 
