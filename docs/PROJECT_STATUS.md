@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0003 — Block Out the Workbench (complete)
+WORK ORDER 0003.5 — Improve the Production Operating Manual (complete)
 
 ---
 
@@ -32,6 +32,7 @@ WORK ORDER 0003 — Block Out the Workbench (complete)
 - Workbench blockout built from primitives (tabletop + four legs), centered on the world origin, standing on the floor
 - Camera reframed: standing eye height, a few meters back, gaze resting on the work surface
 - Root CLAUDE.md restored as a pointer to docs/CLAUDE.md
+- Operating manual updated: persistent context model, Decisions Required rule, changelog scope (experience milestones only), real-world measurement guidance
 
 ---
 

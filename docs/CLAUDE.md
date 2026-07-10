@@ -96,17 +96,13 @@ These are taste principles, not coding rules.
 
 ---
 
-# Read Before Every Work Order
+# Persistent Context
 
-Always read:
+Treat the Experience Bible, Non-Negotiables, Project Status, and Changelog as persistent project context throughout the implementation session.
 
-- EXPERIENCE_BIBLE.md
-- NON_NEGOTIABLES.md
-- PROJECT_STATUS.md
-- CHANGELOG.md
-- The current Work Order
+Consult them whenever a Work Order affects creative direction, architecture, or project state.
 
-Do not rely on memory alone.
+Unless a Work Order explicitly overrides them, they remain in force for the entire session.
 
 ---
 
@@ -234,11 +230,59 @@ Creative Decisions Implemented:
 
 Deferred:
 
-Questions for Creative Director:
+Decisions Required:
 
 Ready for:
 
 Do not omit this report.
+
+---
+
+# Decisions Required
+
+Only include a Decisions Required section when implementation reaches a genuine creative boundary that cannot be resolved from:
+
+- the current Work Order
+- EXPERIENCE_BIBLE.md
+- NON_NEGOTIABLES.md
+- existing architectural decisions
+
+Implementation questions should not appear here.
+
+Only unresolved creative direction.
+
+If there are no decisions required, write:
+
+None.
+
+---
+
+# CHANGELOG
+
+CHANGELOG.md records only meaningful experience milestones.
+
+Examples:
+
+- The room exists.
+- Camera language established.
+- First leak implemented.
+
+Do not record:
+
+- Refactors
+- Dependency upgrades
+- Folder reorganizations
+- Internal engineering improvements
+
+Git history already documents engineering work.
+
+---
+
+# Real-World Measurements
+
+When a Work Order specifies physical objects without dimensions, prefer measured real-world proportions over invented proportions.
+
+Document those measurements in named constants whenever practical.
 
 ---
 
