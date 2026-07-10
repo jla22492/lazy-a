@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0008 — Establish the Ceiling Plane (complete)
+WORK ORDER 0009 — Establish the Notebook (complete)
 
 ---
 
@@ -40,6 +40,7 @@ WORK ORDER 0008 — Establish the Ceiling Plane (complete)
 - Opening composition refined (docs/progress/0007.png): Study C's subtle three-quarter angle with Study E's longer lens; now the default camera
 - Opening composition revised per Creative Director review (docs/progress/R-0007.png): viewer repositioned slightly left of the workbench; supersedes 0007 as the current candidate
 - Ceiling plane added at wall height over the walls' footprint, completing the enclosure; invisible from the locked opening composition (docs/progress/0008.png is pixel-identical to R-0007.png by design)
+- Notebook blockout placed (docs/progress/0009.png): closed A5 primitive, right of the bench's center, casually askew — the first object with narrative weight
 
 ---
 
@@ -51,7 +52,7 @@ None — the revised opening composition (R-0007) stands as the current candidat
 
 ## Next Recommended Work Order
 
-Begin placing the first objects of the creative space.
+Continue placing the objects of the creative space around the notebook.
 
 ---
 
@@ -74,6 +75,7 @@ Begin placing the first objects of the creative space.
 - The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 - The camera's gaze rests on the work surface, not the horizon.
 - The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height.
+- The notebook lives on the workbench, off-center and askew — used daily, never displayed.
 - The room is inferred, not presented: rear wall, left wall, and ceiling; the right wall stays absent until direction says otherwise.
 - Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 - No interactions yet.

@@ -66,6 +66,26 @@ export const ROOM = {
   },
 } as const;
 
+/**
+ * Notebook blockout (WORK ORDER 0009): a closed A5 notebook, measured
+ * real-world proportions. Placement implies someone working at the open
+ * side of the bench set it down and left: right of the bench's center,
+ * within a seated reach of the front edge, casually askew — never aligned
+ * to the bench edges, never centered.
+ */
+export const NOTEBOOK = {
+  /** A5: 14.8cm wide, 21cm tall, ~2cm thick when closed. */
+  width: 0.148,
+  length: 0.21,
+  thickness: 0.02,
+  /** Dark neutral cover; a working object, not a display object. */
+  color: "#414141",
+  /** On the work surface, right of center, slightly toward the user's side. */
+  offset: [0.35, 0, 0.12] as const,
+  /** Casually askew, as if set down without thought. */
+  rotationY: -0.21,
+} as const;
+
 export const STAGE = {
   /** Neutral gray void surrounding the stage. */
   backgroundColor: "#7d7d7d",

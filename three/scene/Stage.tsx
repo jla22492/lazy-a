@@ -3,6 +3,7 @@
 import { Canvas, type RootState } from "@react-three/fiber";
 
 import { CameraRig } from "@/components/camera/CameraRig";
+import { Notebook } from "@/components/room/Notebook";
 import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
 import { Daylight } from "@/three/lighting/Daylight";
@@ -44,6 +45,7 @@ export function Stage() {
       <Floor />
       <RoomShell />
       <Workbench />
+      <Notebook />
       <CameraRig />
     </Canvas>
   );
