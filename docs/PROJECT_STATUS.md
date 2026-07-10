@@ -64,6 +64,7 @@ Continue placing the objects of the creative space around the notebook.
 - The viewer cannot stand farther left than x ≈ −0.55 at the current lens and distance without the frame's upper-right corner rising above the 2.4 m rear wall; the ceiling now covers that region on wider viewports, but the wall-top seam becomes visible there.
 - The ceiling underside is bounce-lit only (no direct sun, physically correct) and reads very dark if ever seen; acceptable while it stays out of frame, revisit when a lighting or camera-movement order exposes it.
 - GSAP and Leva are installed but unused until animation and debug work begins.
+- Dev mode occasionally logs a hydration-mismatch warning (`isolation: isolate` on body) and counts it as "1 issue" in the Next dev badge. It is injected by Next's own dev-tools overlay, is intermittent, and cannot occur in production builds; no app code is involved (we are on the latest Next).
 
 ---
 
