@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0003.5 — Improve the Production Operating Manual (complete)
+WORK ORDER 0004 — Validate the Minimum Believable Room (complete)
 
 ---
 
@@ -33,6 +33,7 @@ WORK ORDER 0003.5 — Improve the Production Operating Manual (complete)
 - Camera reframed: standing eye height, a few meters back, gaze resting on the work surface
 - Root CLAUDE.md restored as a pointer to docs/CLAUDE.md
 - Operating manual updated: persistent context model, Decisions Required rule, changelog scope (experience milestones only), real-world measurement guidance
+- Minimum believable room validated: rear wall + left wall (matte off-white plaster) and warm neutral floor; right wall and ceiling intentionally absent
 
 ---
 
@@ -44,7 +45,7 @@ None
 
 ## Next Recommended Work Order
 
-Build the room around the workbench.
+Begin placing the first objects of the creative space.
 
 ---
 
@@ -64,4 +65,5 @@ Build the room around the workbench.
 - The world origin (0,0,0) is the exact center of the workbench — permanent.
 - The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 - The camera's gaze rests on the work surface, not the horizon.
+- The room is inferred, not presented: rear + left wall only; right wall and ceiling stay absent until direction says otherwise.
 - No interactions yet.

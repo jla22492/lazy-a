@@ -3,6 +3,7 @@
 import { Canvas } from "@react-three/fiber";
 
 import { CameraRig } from "@/components/camera/CameraRig";
+import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
 import { StageLights } from "@/three/lighting/StageLights";
 import { Floor } from "@/three/scene/Floor";
@@ -25,6 +26,7 @@ export function Stage() {
       <color attach="background" args={[STAGE.backgroundColor]} />
       <StageLights />
       <Floor />
+      <RoomShell />
       <Workbench />
       <CameraRig />
     </Canvas>

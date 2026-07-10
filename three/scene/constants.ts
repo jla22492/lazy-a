@@ -31,13 +31,41 @@ export const WORKBENCH = {
   color: "#9a9a9a",
 } as const;
 
+/**
+ * Minimum believable room shell: floor, rear wall, left wall only.
+ * The right wall and ceiling are intentionally absent — the viewer's brain
+ * completes the room. Walls use standard residential ceiling height and
+ * extend past the camera frame so their edges never read.
+ */
+export const ROOM = {
+  wall: {
+    /** Standard ceiling height. */
+    height: 2.4,
+    /** Matte painted plaster, off-white. */
+    color: "#eae5da",
+  },
+  rearWall: {
+    /** Just behind the workbench's back edge, as a real bench sits. */
+    z: -0.45,
+    /** From the left-wall corner to well past the right frame edge. */
+    spanX: [-2.2, 5.8] as const,
+  },
+  leftWall: {
+    /** Comfortable working clearance from the bench's left end. */
+    x: -2.2,
+    /** From the rear-wall corner to well behind the camera. */
+    spanZ: [-0.45, 6] as const,
+  },
+} as const;
+
 export const STAGE = {
   /** Neutral gray void surrounding the stage. */
   backgroundColor: "#7d7d7d",
   floor: {
     /** Large enough that its edges never read from a standing viewpoint. */
     size: 200,
-    color: "#8c8c8c",
+    /** Matte, warm neutral. */
+    color: "#8f867a",
   },
   camera: {
     fov: 50,
