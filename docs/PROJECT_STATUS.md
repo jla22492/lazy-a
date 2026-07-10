@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0009 — Establish the Notebook (complete)
+INFRASTRUCTURE WORK ORDER 0002 — Build the Lazy A Studio (complete)
 
 ---
 
@@ -41,6 +41,7 @@ WORK ORDER 0009 — Establish the Notebook (complete)
 - Opening composition revised per Creative Director review (docs/progress/R-0007.png): viewer repositioned slightly left of the workbench; supersedes 0007 as the current candidate
 - Ceiling plane added at wall height over the walls' footprint, completing the enclosure; invisible from the locked opening composition (docs/progress/0008.png is pixel-identical to R-0007.png by design)
 - Notebook blockout placed (docs/progress/0009.png): closed A5 primitive, right of the bench's center, casually askew — the first object with narrative weight
+- Studio built (/studio + /studio/state.json): internal production board derived live from PROJECT_STATUS.md, BUILD_REPORT.md, docs/progress/, and git; docs/BUILD_REPORT.md becomes the canonical home of each order's Build Report
 
 ---
 
@@ -66,16 +67,15 @@ Continue placing the objects of the creative space around the notebook.
 
 ---
 
-## Creative Decisions Locked
+## Creative Locks
 
-- Camera API uses human verbs only (sit, lean, stand, turn).
-- Camera starts at human eye height.
-- The scene is an empty film stage before any set is built.
-- The world origin (0,0,0) is the exact center of the workbench — permanent.
-- The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
-- The camera's gaze rests on the work surface, not the horizon.
-- The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height.
-- The notebook lives on the workbench, off-center and askew — used daily, never displayed.
-- The room is inferred, not presented: rear wall, left wall, and ceiling; the right wall stays absent until direction says otherwise.
-- Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
-- No interactions yet.
+🔒 Camera API uses human verbs only (sit, lean, stand, turn).
+🔒 Camera starts at human eye height.
+🔒 The world origin (0,0,0) is the exact center of the workbench — permanent.
+🔒 The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
+🔒 The camera's gaze rests on the work surface, not the horizon.
+🟡 The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height. (R-0007 — pending Creative Director final approval)
+🔒 The notebook lives on the workbench, off-center and askew — used daily, never displayed.
+🔒 The room is inferred, not presented: rear wall, left wall, and ceiling; the right wall stays absent until direction says otherwise.
+🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
+🔒 No interactions yet.
