@@ -136,19 +136,6 @@ export const PLANT = {
 } as const;
 
 /**
- * A single sheet that slid off the bench and hasn't been picked up —
- * the room's quietest proof that work happens faster than tidying.
- */
-export const DROPPED_SHEET = {
-  at: { x: -0.52, z: 0.58 },
-  width: 0.21,
-  length: 0.297,
-  thickness: 0.0004,
-  yaw: 0.7,
-  color: "#e5e0d2",
-} as const;
-
-/**
  * A low open bookcase against the left wall — the library that feeds the
  * bench's book stack. Books lean and lie because they are used.
  */

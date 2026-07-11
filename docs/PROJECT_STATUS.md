@@ -14,7 +14,7 @@ Creative Sprint 02 — Reveal the Person (docs/SPRINT_02.md; exactly 10 implemen
 
 ## Current Work Order
 
-WORK ORDER 0053 — Dimensionality & Cohesion (Sprint 02, order 8 of 10)
+WORK ORDER 0054 — The Second Edit (Sprint 02, order 9 of 10)
 
 ---
 
@@ -110,6 +110,8 @@ WORK ORDER 0053 — Dimensionality & Cohesion (Sprint 02, order 8 of 10)
 - The plant became inevitable (docs/progress/0051.png): the sphere-clump blockout is gone — a rubber plant now, built as the decision it answers to ("the one living thing in a room full of manufactured objects"): three stems curve from dry-edged soil toward the window, harder as they rise; ten broad oval leaves, older ones darker and drooping, the newest bright and near-vertical, one gone yellow and not yet fallen — no two leaves agree, and nothing manufactured ever disagrees with itself like this; its wall shadow is the most organic shape in the room
 - Habits II — the person's routines (docs/progress/0052.png): five filled notebooks piled on top of the bookcase, identical to the one on the bench — oldest at the bottom and most faded; they always buy the same notebook, and the pile is the room's quietest biography (the sixth is on the bench, half-finished); tape residue on the wall just above the test prints — the tape-and-prop habit, remembered by the plaster; and the bench's front edge worn at the working position, where a belt buckle and two forearms have rested for years
 - Dimensionality & cohesion (docs/progress/0053.png): the seam cables bow a few centimeters off their lines because nobody has ever laid a cable taut on purpose; the desk stopped being an island — a wastebasket beside its left end where a right hand can toss without looking, with one crumpled miss on the floor (the person shoots from the working position and doesn't always score; paper now has a destination and the desk has an output); and a pencil that fell, rolled, and stopped exactly where the frame happens to cut it — the camera interrupted a room, the room did not arrange itself for the camera
+- Internal review #2 held (after 0053): the notebook stack named the sprint's biggest success ("this person found a system that works — that's personality"); the plant declared finished; the wastebasket approved as cause-not-effect; new lock recorded (age creates disagreement, chaos does not) and the Edit's bar raised: if removing an object would not change the truth the room tells, remove it; Sprint 03 territory named and deferred (the wall's upward migration — hooks, screw holes, vents, paint mismatch; things that exist without being readable)
+- The second edit (docs/progress/0054.png): the dropped sheet removed — the crumpled miss explains the behavior better, and one piece of evidence is stronger than three; the pinned cluster aged rather than messed — one note curls off the wall at its bottom edge (and finally casts a paper's shadow), one photo overlaps its neighbor because moving the older pin was never worth it, and the outlier's failed corner is re-taped with tape newer than the photo — every item less synchronized, none of them random
 
 ---
 
@@ -121,7 +123,7 @@ Creative Sprint 02 — Reveal the Person (work orders 0046–0055).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0054 — The second edit, following internal review #2.
+WORK ORDER 0055 — Final polish, review assets, and the Sprint 02 Review — then a full stop for Jonathan's review.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -188,3 +190,4 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The room is rendered in real time. The impossible is rendered offline — authored moments enter the room as video textures and other authored surfaces, never as real-time effects. (Sprint 02.)
 🔒 Surprise is the reward for believing the room is real. (Sprint 02.)
 🔒 Nothing in the room is self-contained. Every object belongs to a larger system — the mug to a sink, the chair to a body, the cable to a computer, the power to the building, the window to another world. The browser belongs to none of them. (Named at Sprint 02's first internal review, with the ruling that authored light planes are evidence of light, never lighting: every shadow has an unseen source, every patch an architectural explanation.)
+🔒 Age creates disagreement. Chaos does not. Objects don't become more random over time — they become less synchronized. (Named at Sprint 02's second internal review, with the Edit's bar: if removing an object would not change the truth the room tells, remove it.)

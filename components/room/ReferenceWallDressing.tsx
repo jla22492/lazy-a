@@ -38,30 +38,53 @@ function PinnedCluster() {
   const { photoColor, paperColor, thickness, items } = PINNED_CLUSTER;
   return (
     <>
-      {items.map((item, index) => (
-        <mesh
-          key={`${item.x},${item.y}`}
-          /* Later pins sit a paper's width prouder, so overlaps read. */
-          position={[
-            item.x,
-            item.y,
-            WALL_Z + WALL_GAP + thickness * (index + 1),
-          ]}
-          rotation={[0, 0, item.roll]}
-          castShadow
-          receiveShadow
-        >
-          <boxGeometry args={[item.w, item.h, thickness]} />
-          <meshStandardMaterial
-            map={paper(
-              item.kind === "photo"
-                ? { seed: 421 + index, base: photoColor, fiber: 0.12, handled: 0.3 }
-                : { seed: 431 + index, base: paperColor, fiber: 0.45, handled: 0.35 },
+      {items.map((item, index) => {
+        const curl = "curl" in item ? item.curl : 0;
+        return (
+          <group
+            key={`${item.x},${item.y}`}
+            /* Curling items pivot at their top edge, bottom lifting off
+               the wall; flat items just hang. */
+            position={[
+              item.x,
+              item.y + (curl ? item.h / 2 : 0),
+              WALL_Z + WALL_GAP + thickness * (index + 1),
+            ]}
+            rotation={[curl ?? 0, 0, item.roll]}
+          >
+            <mesh
+              position={[0, curl ? -item.h / 2 : 0, 0]}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={[item.w, item.h, thickness]} />
+              <meshStandardMaterial
+                map={paper(
+                  item.kind === "photo"
+                    ? { seed: 421 + index, base: photoColor, fiber: 0.12, handled: 0.3 }
+                    : { seed: 431 + index, base: paperColor, fiber: 0.45, handled: 0.35 },
+                )}
+                roughness={item.kind === "photo" ? 0.5 : 0.85}
+              />
+            </mesh>
+            {"freshTape" in item && item.freshTape && (
+              /* The re-taped corner: tape newer than the photo it holds. */
+              <mesh
+                position={[item.w / 2 - 0.012, item.h / 2 - 0.004, thickness]}
+                rotation={[0, 0, 0.7]}
+              >
+                <boxGeometry args={[0.036, 0.014, 0.0004]} />
+                <meshStandardMaterial
+                  color="#efe9d8"
+                  transparent
+                  opacity={0.82}
+                  roughness={0.4}
+                />
+              </mesh>
             )}
-            roughness={item.kind === "photo" ? 0.5 : 0.85}
-          />
-        </mesh>
-      ))}
+          </group>
+        );
+      })}
     </>
   );
 }

@@ -241,9 +241,10 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     zone: "referenceWall",
     story:
       "photographs and notes pinned one at a time over years, overlapping " +
-      "because no one ever takes the older ones down first; one photo's " +
-      "second pin gave months ago and it hangs slipped — nobody minds; " +
-      "one outlier is pinned alone, far from the conversation",
+      "because moving an older pin is never worth it; one photo hangs " +
+      "slipped where its second pin gave — nobody minds; one note curls " +
+      "off the wall at its bottom edge; the lone outlier's failed corner " +
+      "was re-taped with tape newer than the photo",
     identity: "influences accumulate here; taste is visible history",
     unresolved:
       "each is still influencing; unpinning one is a decision no one has " +
@@ -310,17 +311,6 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     unresolved: "permanent resident: it belongs to the room, not the work",
     arrived: "three years ago, a gift; the room's oldest living resident",
     implies: "the window's light, the watering can somewhere, three years of mornings",
-  },
-  {
-    name: "DroppedSheet",
-    zone: "peripheralRoom",
-    story:
-      "slid off the bench at some point and hasn't been picked up — " +
-      "work happens faster than tidying",
-    identity: "momentum matters more than order",
-    unresolved: "picking it up hasn't been worth interrupting anything yet",
-    arrived: "sometime today; nobody saw it fall",
-    implies: "a moment nobody witnessed — the room has time when no one is looking",
   },
   {
     name: "Bookcase",

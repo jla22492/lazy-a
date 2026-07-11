@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0053 — Dimensionality & Cohesion (Creative Sprint 02, order 8 of 10)
+WORK ORDER 0054 — The Second Edit (Creative Sprint 02, order 9 of 10)
 
 ## Version
 
@@ -10,18 +10,17 @@ v0.1
 
 ## Summary
 
-- Three corrections from the review notes, each about the room belonging to a larger system (docs/progress/0053.png):
-- Cables stopped being straight: the seam runs now bow a few centimeters off their lines (alternating sides, swept as tubes) — because nobody has ever laid a cable taut on purpose. The best-behaving cable in the room is no longer the exception.
-- The desk stopped being an island: a wastebasket stands beside the bench's left end, where a right hand can toss without looking — and one crumpled ball missed, staying where it landed. Paper now has a destination; the desk has an output; rejects imply every draft that didn't survive. The miss is the room's most human disagreement yet.
-- The camera interrupted a room: a pencil fell, rolled, and stopped exactly where the frame happens to cut it, bottom-left. The room did not arrange itself for the camera — this is the first object placed deliberately against the composition rather than for it.
-- Honest self-note for review #2: the left-mid floor now hosts four small stories (bin, miss, dropped sheet, rolled pencil) within a square meter — it reads as one coherent "paper flows here" zone to me, but if it reads as clutter to the Creative Director, the Edit thins it.
-- Manifest: 31 pieces.
-- Verification: type-check and production build pass; 0053.png reviewed at full frame.
+- The bar was raised at review #2: if removing an object would not change the truth the room tells, remove it (docs/progress/0054.png):
+- Removed: the dropped sheet. The crumpled miss explains the same behavior — work outruns tidying — with more humanity, and one piece of evidence is stronger than three. The left floor now reads as a place, not a demonstration.
+- The pinned cluster aged rather than messed (age creates disagreement; chaos does not): one note curls off the wall at its bottom edge and finally casts a paper's real shadow; one photo overlaps its neighbor's corner because moving the older pin was never worth it; the outlier's failed corner is re-taped with tape newer than the photo it holds. Every item is less synchronized than its neighbors; none of them is random.
+- Audited the full manifest against the new bar. Everything else survives it: the tape roll is the cause the wall's residue remembers; the two sticky notes are a routine where one would be an accident; the award turned away is a truth nothing else tells. 30 pieces remain.
+- Deferred per direction: the wall's upward migration (hooks, screw holes, vents, paint mismatch — things that exist without being readable) is Sprint 03 territory and was deliberately not begun.
+- Verification: type-check and production build pass; 0054.png reviewed at full frame and against 0053.
 
 ## Decisions Required
 
-None (the floor-density question goes to internal review #2).
+None.
 
 ## Ready for
 
-Internal review #2, then WORK ORDER 0054 — the second edit.
+WORK ORDER 0055 — Final polish, review assets, and the Sprint 02 Review.

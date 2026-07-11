@@ -8,7 +8,6 @@ import { leather, paper, plaster, wood } from "@/three/materials/procedural";
 import {
   BOOKCASE,
   CHAIR,
-  DROPPED_SHEET,
   LEANING_BOARD,
   PLANT,
   ROLLED_PENCIL,
@@ -253,24 +252,6 @@ function Plant() {
   );
 }
 
-/** The sheet that slid off the bench and hasn't been picked up. */
-function DroppedSheet() {
-  const { at, width, length, thickness, yaw, color } = DROPPED_SHEET;
-  return (
-    <mesh
-      position={[at.x, thickness / 2 + 0.0002, at.z]}
-      rotation={[0, yaw, 0]}
-      receiveShadow
-    >
-      <boxGeometry args={[width, thickness, length]} />
-      <meshStandardMaterial
-        map={paper({ seed: 465, base: color, fiber: 0.3, handled: 0.35 })}
-        roughness={0.9}
-      />
-    </mesh>
-  );
-}
-
 /** The working library that feeds the bench's book stack. */
 function Bookcase() {
   const { at, width, height, depth, panelThickness, shelfHeights, color, books, notebookStack } =
@@ -474,7 +455,6 @@ export function PeripheralRoomDressing() {
     <group position={fromWorkbench([0, 0, 0])}>
       <Chair />
       <Plant />
-      <DroppedSheet />
       <Bookcase />
       <LeaningBoard />
       <Wastebasket />
