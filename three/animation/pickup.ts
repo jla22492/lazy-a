@@ -75,6 +75,31 @@ export const LOOK_DOWN_DURATION = 1.1;
 export const LOOK_DOWN_ARRIVE = 0.8;
 
 /**
+ * Finding the cover (WORK ORDER 0032): the visitor has decided to
+ * engage, and the hands prepare before anything commits — the dominant
+ * thumb finds the cover edge, support redistributes to the other hand,
+ * and the notebook rolls a few degrees so its opening edge offers
+ * itself. One unconscious motion; the cover never separates; the gaze
+ * never moves. Preparation is still reversible — opening is not.
+ */
+export const GRIP_ONSET = 0.15;
+export const GRIP_DURATION = 0.7;
+/** The opening edge lifts toward the thumb (radians of roll). */
+export const GRIP_ROLL = 0.09;
+/** Weight shifts toward the supporting hand; the book settles into it. */
+export const GRIP_ASIDE_SHIFT = -0.025;
+export const GRIP_DIP = 0.008;
+/** The cover plane eases a touch flatter, comfortable to open. */
+export const GRIP_TILT_EASE = 0.04;
+
+/** Progress of the grip adjustment, `t` seconds after acceptance. */
+export function gripProgress(t: number): number {
+  return smootherstep((t - GRIP_ONSET) / GRIP_DURATION);
+}
+
+export const GRIP_TOTAL = GRIP_ONSET + GRIP_DURATION;
+
+/**
  * Once the notebook settles into the hold, the head rises to a
  * comfortable regard: the notebook sits low in vision, the room beyond
  * it — not pressed against the eyes. Radians below horizontal.

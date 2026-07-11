@@ -20,6 +20,12 @@ import {
 import {
   carryPoint,
   gazeGoal,
+  GRIP_ASIDE_SHIFT,
+  GRIP_DIP,
+  GRIP_ROLL,
+  GRIP_TILT_EASE,
+  GRIP_TOTAL,
+  gripProgress,
   HELD_ASIDE,
   HELD_BELOW_EYE,
   HELD_FORWARD,
@@ -49,10 +55,17 @@ const REST_POSITION = fromWorkbench([
   NOTEBOOK.offset[2],
 ]);
 
+/**
+ * The notebook's attention center follows the notebook: on the bench
+ * until it is picked up, then in the hands (WORK ORDER 0032 — the
+ * dormant note from 0031, fixed the moment it became meaningful).
+ */
+const ATTENTION_POSITION: [number, number, number] = [...REST_POSITION];
+
 /** The first meaningful object the room can notice being observed. */
 const ATTENTION_TARGET: AttentionTarget = {
   name: "notebook",
-  position: REST_POSITION,
+  position: ATTENTION_POSITION,
   /** Half-diagonal of the closed notebook. */
   radius: 0.13,
 };
@@ -165,6 +178,9 @@ export function Notebook() {
   const meshRef = useRef<Mesh>(null);
   const pickupStart = useRef<number | null>(null);
   const pickedUp = useRef(false);
+  const pickupDone = useRef(false);
+  const gripStart = useRef<number | null>(null);
+  const gripped = useRef(false);
   const gaze = useRef<[number, number, number] | null>(null);
 
   const personPickup = useMemo<RoomBehavior>(
@@ -191,6 +207,49 @@ export function Notebook() {
             camera.position.z + forward.z,
           ];
         }
+        /* Finding the cover (WORK ORDER 0032): the visitor's second
+           deliberate commitment, made while looking at what they hold.
+           The room answers; only then do the hands prepare. */
+        if (
+          pickupDone.current &&
+          !gripped.current &&
+          gripStart.current === null &&
+          hasIntent("notebook") &&
+          requestInteraction("notebook") === "accepted"
+        ) {
+          gripStart.current = -1;
+        }
+        if (gripStart.current !== null) {
+          if (gripStart.current === -1) gripStart.current = clock.elapsed;
+          const g = gripProgress(clock.elapsed - gripStart.current);
+          const mesh = meshRef.current;
+          if (mesh) {
+            /* Weight to the supporting hand; the opening edge lifts
+               toward the thumb; the cover plane eases flatter. The
+               gaze does not move — hands do not need to be watched. */
+            mesh.position.set(
+              ORIENTED_POSITION[0] +
+                Math.cos(NEUTRAL_DIR.yaw) * GRIP_ASIDE_SHIFT * g,
+              ORIENTED_POSITION[1] - GRIP_DIP * g,
+              ORIENTED_POSITION[2] +
+                Math.sin(NEUTRAL_DIR.yaw) * GRIP_ASIDE_SHIFT * g,
+            );
+            mesh.rotation.set(
+              ORIENT_TILT + GRIP_TILT_EASE * g,
+              ORIENTED_YAW,
+              GRIP_ROLL * g,
+            );
+            ATTENTION_POSITION[0] = mesh.position.x;
+            ATTENTION_POSITION[1] = mesh.position.y;
+            ATTENTION_POSITION[2] = mesh.position.z;
+          }
+          if (clock.elapsed - gripStart.current >= GRIP_TOTAL) {
+            gripStart.current = null;
+            gripped.current = true;
+          }
+          return;
+        }
+
         if (pickupStart.current === null || gaze.current === null) return;
         if (pickupStart.current === -1) pickupStart.current = clock.elapsed;
 
@@ -236,8 +295,16 @@ export function Notebook() {
             clock.delta,
           );
           camera.lookAt(...gaze.current);
+          /* The room's sense of where the notebook is follows the
+             notebook (WORK ORDER 0032). */
+          ATTENTION_POSITION[0] = mesh.position.x;
+          ATTENTION_POSITION[1] = mesh.position.y;
+          ATTENTION_POSITION[2] = mesh.position.z;
         }
-        if (pose.done) pickupStart.current = null;
+        if (pose.done) {
+          pickupStart.current = null;
+          pickupDone.current = true;
+        }
       },
     }),
     [camera],
@@ -245,9 +312,10 @@ export function Notebook() {
   useRoomBehavior(personPickup);
 
   useEffect(() => {
-    /* TEMPORARY commitment gesture: press and hold while ready. */
+    /* TEMPORARY commitment gesture: press and hold while ready — the
+       same gesture offers the pickup and, later, finding the cover. */
     const onPointerDown = () => {
-      if (!pickedUp.current) beginCommit("notebook");
+      if (!gripped.current) beginCommit("notebook");
     };
     const onPointerUp = () => {
       releaseCommit();
@@ -278,6 +346,18 @@ export function Notebook() {
             }, 120);
             autoTimers.push(retry);
           }, startAt + 2500),
+          /* ...and after the introduction has settled, the second
+             decision: engage with what is held (WORK ORDER 0032). */
+          window.setTimeout(() => {
+            const retry = window.setInterval(() => {
+              if (
+                gripped.current ||
+                (pickupDone.current && beginCommit("notebook"))
+              )
+                window.clearInterval(retry);
+            }, 120);
+            autoTimers.push(retry);
+          }, startAt + 14000),
         ];
       }
     }

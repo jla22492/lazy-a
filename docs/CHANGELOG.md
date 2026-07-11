@@ -18,5 +18,6 @@
 - Holding became its own experience: the notebook settles low in the hands, the arms take its weight, and the room stays present around it. The pause between picking something up and deciding what to do with it is now a place the experience is willing to live — a pause as meaning, not latency.
 - The hands finished their understanding: after a quiet beat, one unconscious adjustment turns the notebook square and ready — the body's relationship with the object is complete before the mind's begins. Hands understand before eyes read.
 - The eyes finally looked down: after the hands went quiet, attention descended from the room to the thing already held — and the notebook stopped being an object and became a consideration. Thought has begun; nothing has opened.
+- The thumb found the cover: the visitor's second real decision, and the body's answer — weight to one hand, the opening edge offered up to the other. Everything is ready and nothing is spent; the first irreversible act still belongs entirely to the visitor.
 
 Record experience changes here, not just technical ones.
