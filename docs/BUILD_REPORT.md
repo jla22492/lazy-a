@@ -10,11 +10,12 @@ v0.1
 
 ## Summary
 
-- /studio: internal production board — Current Build, Current Experience (latest progress screenshot), Build Report, Creative Locks, Decisions Required, Project Timeline (newest first).
+- /studio: production board — Current Build, Current Experience (latest progress screenshot), Build Report, Creative Locks, Decisions Required, Project Timeline (newest first).
 - /studio/state.json: machine-readable project state with a schemaVersion field for forward compatibility.
-- Everything is derived live from the repository (PROJECT_STATUS.md, BUILD_REPORT.md, docs/progress/, git); nothing in the Studio is manually edited.
-- This file (docs/BUILD_REPORT.md) is now the canonical home of the latest Build Report; every future Work Order rewrites it. The commit hash is intentionally not recorded here — the Studio reads it live from git.
-- PROJECT_STATUS.md's lock section is now "Creative Locks" with 🔒 / 🟡 / ⚪ states, as the canonical review surface.
+- Everything is derived from the repository (PROJECT_STATUS.md, BUILD_REPORT.md, docs/progress/, git); nothing in the Studio is manually edited.
+- This file (docs/BUILD_REPORT.md) is the canonical home of the latest Build Report; every Work Order rewrites it. The commit hash is intentionally not recorded here — the Studio derives it.
+- PROJECT_STATUS.md's lock section is "Creative Locks" with 🔒 / 🟡 / ⚪ states, as the canonical review surface.
+- The Studio is publicly deployed to GitHub Pages at https://jla22492.github.io/lazy-a/studio/ via a CI static export on every push (dev-only routes stripped; screenshots served statically). It is the Creative Director's canonical review surface under the confirmed hybrid workflow: public Studio for structured state, images posted in the direction chat at creative checkpoints.
 
 ## Decisions Required
 
