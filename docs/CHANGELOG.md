@@ -17,5 +17,6 @@
 - The notebook was picked up: the first real interaction in Lazy A. The visitor observed it, meant it, offered — the room accepted — and a body bent, reached, paused, and lifted it into a comfortable hold. Not "the notebook animated"; the visitor picked it up.
 - Holding became its own experience: the notebook settles low in the hands, the arms take its weight, and the room stays present around it. The pause between picking something up and deciding what to do with it is now a place the experience is willing to live — a pause as meaning, not latency.
 - The hands finished their understanding: after a quiet beat, one unconscious adjustment turns the notebook square and ready — the body's relationship with the object is complete before the mind's begins. Hands understand before eyes read.
+- The eyes finally looked down: after the hands went quiet, attention descended from the room to the thing already held — and the notebook stopped being an object and became a consideration. Thought has begun; nothing has opened.
 
 Record experience changes here, not just technical ones.

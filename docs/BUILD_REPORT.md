@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0029 — Orienting
+WORK ORDER 0030 — The First Look Down
 
 ## Version
 
@@ -10,12 +10,12 @@ v0.1
 
 ## Summary
 
-- The physical relationship with the notebook is complete (docs/progress/0029.mp4): a beat after the arms accept the weight (0.9s of genuine rest — not a queue for the next move), the hands make one unconscious adjustment over 0.9s: the notebook turns from its casual off-square hold to nearly square, tips a little further toward the reader, and the grip shifts subtly centered and up.
-- It reads as habit, not animation: small magnitudes (a few degrees of turn, ~2cm of grip shift), one occurrence, natural completion, then true stillness. Nothing loops; nothing anticipates.
-- The eyes stay on the room throughout — the hands do not need to be watched. Hands understand before eyes read; the mind's relationship with the notebook has not yet begun.
-- The final orientation is a notebook genuinely ready to be opened — and it remains closed. No pages, no reveal, no sound, no interaction, no change to the room.
-- Validation asked and answered: the motion describes as "getting comfortable holding it," not "preparing an animation."
-- New Creative Locks recorded: hands understand before eyes read; held things sit off-axis, presented things sit centered (named at the 0028 review, now preserved for anything a person naturally holds).
+- The mind's relationship with the notebook begins (docs/progress/0030.mp4): after the hands finish their adjustment and stillness genuinely returns — 1.4 seconds of real rest, not a staging pause — the eyes make one natural transition from the room down to the held notebook, over 1.1 seconds through the same pursuit physics that governs every gaze in the project.
+- The fixation lands a hair above the notebook's center, the way eyes land on a cover rather than a geometric middle. The notebook becomes the considered subject of the frame; the bench and room recede to its surround.
+- The body remains unchanged and the hands stay settled — only the head and eyes move. Recognition, not curiosity: the movement is small, unhurried, and inevitable, because the notebook was already there, already held, already ready.
+- Then complete stillness. The notebook remains closed. No pages, no interaction, no sound, no change to the room.
+- Validation asked and answered: the transition describes as "finally looking at it," not "starting the next animation."
+- New Creative Lock recorded: the eyes grant meaning.
 
 ## Decisions Required
 
@@ -23,4 +23,4 @@ None.
 
 ## Ready for
 
-The Creative Director's next order — the body's relationship with the notebook is complete; the mind's has not begun.
+The Creative Director's next order — the visitor is looking at the closed notebook in their hands. Body and mind have both arrived; only the decision remains.

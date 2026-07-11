@@ -63,6 +63,18 @@ export const ORIENT_ASIDE = 0.05;
 export const ORIENT_BELOW_EYE = 0.31;
 
 /**
+ * The first look down (WORK ORDER 0030): after the hands finish, a
+ * quiet moment — then the eyes finally consider what is already being
+ * held. Recognition, not curiosity: one natural transition from the
+ * room to the notebook, then complete stillness. The body does not
+ * move; the hands stay settled; nothing opens.
+ */
+export const LOOK_DOWN_PAUSE = 1.4;
+export const LOOK_DOWN_DURATION = 1.1;
+/** The gaze keeps being pursued briefly after the blend completes. */
+export const LOOK_DOWN_ARRIVE = 0.8;
+
+/**
  * Once the notebook settles into the hold, the head rises to a
  * comfortable regard: the notebook sits low in vision, the room beyond
  * it — not pressed against the eyes. Radians below horizontal.
@@ -91,6 +103,8 @@ export interface PickupPose {
   settleY: number;
   /** 0..1 progress of the orienting adjustment (WORK ORDER 0029). */
   orient: number;
+  /** 0..1 progress of the first look down (WORK ORDER 0030). */
+  lookDown: number;
   done: boolean;
 }
 
@@ -130,6 +144,13 @@ export function pickupPose(
     (ts - WEIGHT_SETTLE_DURATION - ORIENT_PAUSE) / ORIENT_DURATION,
   );
 
+  /** Another quiet moment — then the eyes finally look down. */
+  const afterOrient =
+    ts - WEIGHT_SETTLE_DURATION - ORIENT_PAUSE - ORIENT_DURATION;
+  const lookDown = smootherstep(
+    (afterOrient - LOOK_DOWN_PAUSE) / LOOK_DOWN_DURATION,
+  );
+
   return {
     eye: [
       WORKING_EYE[0] + towardNotebook[0] * REACH_FORWARD * bend,
@@ -139,9 +160,9 @@ export function pickupPose(
     carry,
     settleY,
     orient,
+    lookDown,
     done:
-      t >=
-      PICKUP_TOTAL + WEIGHT_SETTLE_DURATION + ORIENT_PAUSE + ORIENT_DURATION,
+      afterOrient >= LOOK_DOWN_PAUSE + LOOK_DOWN_DURATION + LOOK_DOWN_ARRIVE,
   };
 }
 

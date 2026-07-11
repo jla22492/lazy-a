@@ -114,6 +114,17 @@ const ORIENTED_POSITION: [number, number, number] = [
 
 const ORIENTED_YAW = NEUTRAL_DIR.yaw + ORIENT_YAW_SKEW;
 
+/**
+ * Where the first look down rests (WORK ORDER 0030): on the held
+ * notebook itself — a hair above center, the way eyes land on a cover
+ * rather than its geometric middle.
+ */
+const CONSIDER_POINT: [number, number, number] = [
+  ORIENTED_POSITION[0],
+  ORIENTED_POSITION[1] + 0.02,
+  ORIENTED_POSITION[2],
+];
+
 /** Unit XZ direction from the working eyes toward the notebook at rest. */
 const TOWARD_NOTEBOOK: [number, number] = (() => {
   const dx = REST_POSITION[0] - WORKING_EYE[0];
@@ -208,10 +219,20 @@ export function Notebook() {
           );
           camera.position.set(...pose.eye);
           /* Eyes on the object through the reach and grasp, rising to
-             the settled regard as it arrives in the hold. */
+             the settled regard as it arrives in the hold — then, after
+             the hands have finished, the first deliberate look down. */
+          const regard = gazeGoal(
+            [at[0], at[1], at[2]],
+            HELD_REGARD,
+            pose.carry,
+          );
           pursueGaze(
             gaze.current,
-            gazeGoal([at[0], at[1], at[2]], HELD_REGARD, pose.carry),
+            [
+              regard[0] + (CONSIDER_POINT[0] - regard[0]) * pose.lookDown,
+              regard[1] + (CONSIDER_POINT[1] - regard[1]) * pose.lookDown,
+              regard[2] + (CONSIDER_POINT[2] - regard[2]) * pose.lookDown,
+            ],
             clock.delta,
           );
           camera.lookAt(...gaze.current);
