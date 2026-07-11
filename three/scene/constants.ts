@@ -28,7 +28,18 @@ export const WORKBENCH = {
     /** Distance from the tabletop edge to the outer face of each leg. */
     inset: 0.06,
   },
-  color: "#9a9a9a",
+  /**
+   * Stained wood, worked for years (WORK ORDER 0041). Age drives the wear
+   * the surface carries; the wear locations come from the workspace zone
+   * language in Workbench.tsx.
+   */
+  wood: {
+    seed: 41,
+    base: "#7d6248",
+    legBase: "#6e563f",
+    grain: "#5b4634",
+    age: 0.85,
+  },
 } as const;
 
 /**

@@ -72,6 +72,14 @@ export interface SetPiece {
    * with why they LIVE here instead.
    */
   unresolved: string;
+  /**
+   * The second required question (first production design review): when
+   * did this arrive? Rooms are written in layers of time, not layers of
+   * objects — the answers across the manifest must span years, not hours.
+   * This is also the material system's age input: what arrived years ago
+   * wears; what arrived this morning doesn't.
+   */
+  arrived: string;
 }
 
 /**
@@ -90,6 +98,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "will ever show accumulates here first",
     identity: "Lazy A works with its hands; the work happens in one place",
     unresolved: "permanent resident: the room grew around it",
+    arrived: "years ago — the first thing in the room; everything else arrived around it",
   },
   {
     name: "Notebook",
@@ -100,6 +109,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     identity:
       "thinking at Lazy A happens on paper before it happens on screen",
     unresolved: "today's thinking isn't finished with it",
+    arrived: "months ago as an object; this morning as today's thinking",
   },
   {
     name: "TestPrints",
@@ -109,6 +119,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "this morning, to be glanced at while working — not straightened since",
     identity: "the work is judged by looking at it, again and again",
     unresolved: "still being judged; taking them down would end the question",
+    arrived: "this morning, propped one at a time before the day's work began",
   },
   {
     name: "BookStack",
@@ -116,6 +127,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     story: "pulled from a shelf for one specific page each, never reshelved",
     identity: "influences are working tools, not trophies",
     unresolved: "each is still holding a page someone means to return to",
+    arrived: "pulled over the last few weeks; the bottom one has been there longest",
   },
   {
     name: "PencilJar",
@@ -125,6 +137,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "own angle because it was dropped back in, not arranged",
     identity: "analog tools come first at Lazy A",
     unresolved: "permanent resident: the one thing on the bench that lives here",
+    arrived: "years ago; its residents rotate weekly, the jar never moves",
   },
   {
     name: "TapeRoll",
@@ -132,6 +145,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     story: "used to prop the test prints an hour ago and left where it landed",
     identity: "things here get pinned, propped, and taped — process is physical",
     unresolved: "a temporary solution that is quietly becoming permanent",
+    arrived: "an hour ago, mid-errand",
   },
   {
     name: "Mug",
@@ -139,6 +153,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     story: "half-finished and gone cold; its owner got pulled into the work",
     identity: "sessions here run long enough for coffee to go cold",
     unresolved: "the conversation that interrupted it isn't over",
+    arrived: "two hours ago, full and hot",
   },
   {
     name: "Headphones",
@@ -147,6 +162,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "needs to hear the room",
     identity: "sound is half the film",
     unresolved: "the next listen is minutes away, not hours",
+    arrived: "late yesterday, set down at the end of a listen",
   },
   {
     name: "Pencil",
@@ -156,6 +172,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "halfway through a thought",
     identity: "the notebook is written in, daily — the pencil proves it",
     unresolved: "the thought it was writing stopped halfway",
+    arrived: "twenty minutes ago, mid-sentence",
   },
   {
     name: "LooseSheets",
@@ -165,6 +182,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "under the notebook because the notebook arrived later",
     identity: "planning at Lazy A happens by hand, in layers",
     unresolved: "today's plan is still being reshuffled",
+    arrived: "today, page by page as the plan grew",
   },
   {
     name: "FilmCanisters",
@@ -173,6 +191,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "emptied from a jacket pocket mid-task; one fell over and nobody minded",
     identity: "Lazy A still shoots film — patience is a value",
     unresolved: "waiting to be developed — patience, not neglect",
+    arrived: "last weekend, back from a shoot",
   },
   {
     name: "Camera",
@@ -182,6 +201,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "a tool between uses, never a display piece",
     identity: "the instrument of the trade lives on the bench, not a shelf",
     unresolved: "the next frame check could come at any moment",
+    arrived: "years ago as a tool; an hour ago on this spot",
   },
   {
     name: "HeroPrint",
@@ -194,6 +214,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "the work itself is the identity; its content is a creative decision " +
       "still to be authored",
     unresolved: "still deciding whether it is finished",
+    arrived: "last month — the newest large thing in the room, and still on trial",
   },
   {
     name: "PinnedCluster",
@@ -204,6 +225,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     identity: "influences accumulate here; taste is visible history",
     unresolved:
       "each is still influencing; unpinning one is a decision no one has made",
+    arrived: "one at a time across five years; nothing has ever been taken down",
   },
   {
     name: "PictureLedge",
@@ -213,6 +235,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "framed still, an unframed print overlapping its corner",
     identity: "work is lived with before it is hung; the wall auditions first",
     unresolved: "everything on it is between temporary and permanent",
+    arrived: "years ago; what leans on it changes seasonally",
   },
   {
     name: "Award",
@@ -222,6 +245,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "isn't allowed to look at everyone",
     identity: "recognition happened; it is not performed",
     unresolved: "never put away because putting it away would also be a statement",
+    arrived: "two years ago, placed once and deliberately never adjusted",
   },
   {
     name: "StickyNotes",
@@ -231,6 +255,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "bench, each at its own angle",
     identity: "thinking overflows the desk; the wall catches it",
     unresolved: "each one is a task not yet done",
+    arrived: "this week, one per interruption",
   },
   {
     name: "Chair",
@@ -240,6 +265,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "someone stood up quickly and it never got pushed back in",
     identity: "work here gets interrupted by better ideas",
     unresolved: "its sitter intends to come straight back",
+    arrived: "years ago with the bench; moved a dozen times a day since",
   },
   {
     name: "Plant",
@@ -249,6 +275,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "watered irregularly, thriving anyway",
     identity: "the studio keeps something alive that isn't a project",
     unresolved: "permanent resident: it belongs to the room, not the work",
+    arrived: "three years ago, a gift; the room's oldest living resident",
   },
   {
     name: "DroppedSheet",
@@ -258,6 +285,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "work happens faster than tidying",
     identity: "momentum matters more than order",
     unresolved: "picking it up hasn't been worth interrupting anything yet",
+    arrived: "sometime today; nobody saw it fall",
   },
   {
     name: "Bookcase",
@@ -268,6 +296,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "plaster like cheap studio shelving",
     identity: "reference is a habit, not a display",
     unresolved: "permanent resident: the gaps in it are the unresolved part",
+    arrived: "years ago, second into the room after the bench",
   },
   {
     name: "LeaningBoard",
@@ -278,6 +307,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "made the cut",
     identity: "even finished work waits its turn here",
     unresolved: "hanging it would mean deciding it is done",
+    arrived: "six months ago, and still waiting its turn",
   },
   {
     name: "ShippingTubes",
@@ -288,6 +318,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "frame's edge, never composed for it",
     identity: "work arrives and leaves this room; it has an outside",
     unresolved: "opening them is a task that keeps losing to the current work",
+    arrived: "two weeks ago; the fallen one fell the day it arrived",
   },
   {
     name: "OffstageTripod",
@@ -297,6 +328,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "shadow crosses the floor — the room never explains it",
     identity: "the studio's tools outnumber what any one view can hold",
     unresolved: "between setups, exactly where a tripod waits",
+    arrived: "years ago as gear; last week to that spot by the window",
   },
   {
     name: "PowerRun",
@@ -306,6 +338,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "bench leg and out of mind",
     identity: "the room works for a living; electricity comes from somewhere",
     unresolved: "cable management is nobody's favorite job",
+    arrived: "years ago, the week the bench arrived, and never touched since",
   },
 ];
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { cardboard } from "@/three/materials/procedural";
 import {
   OFFSTAGE_TRIPOD,
   POWER_RUN,
@@ -31,7 +32,7 @@ function ShippingTubes() {
           <cylinderGeometry
             args={[tube.radius, tube.radius, tube.length, 14]}
           />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial map={cardboard(481, color)} roughness={0.92} />
         </mesh>
       ))}
       <mesh
@@ -43,7 +44,10 @@ function ShippingTubes() {
         <cylinderGeometry
           args={[fallen.radius, fallen.radius, fallen.length, 14]}
         />
-        <meshStandardMaterial color={SHIPPING_TUBES.color} />
+        <meshStandardMaterial
+          map={cardboard(482, SHIPPING_TUBES.color)}
+          roughness={0.92}
+        />
       </mesh>
     </>
   );

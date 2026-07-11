@@ -1,5 +1,6 @@
 "use client";
 
+import { paper } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import {
   BOOK_STACK,
@@ -22,7 +23,7 @@ function TestPrints() {
   const { thickness, prints } = TEST_PRINTS;
   return (
     <>
-      {prints.map((print) => (
+      {prints.map((print, index) => (
         <mesh
           key={`${print.x},${print.z}`}
           position={[
@@ -35,7 +36,15 @@ function TestPrints() {
           receiveShadow
         >
           <boxGeometry args={[print.width, print.height, thickness]} />
-          <meshStandardMaterial color={print.color} />
+          <meshStandardMaterial
+            map={paper({
+              seed: 371 + index,
+              base: print.color,
+              fiber: 0.35,
+              handled: 0.25,
+            })}
+            roughness={0.62}
+          />
         </mesh>
       ))}
     </>
@@ -60,7 +69,10 @@ function BookStack() {
             receiveShadow
           >
             <boxGeometry args={[book.width, book.thickness, book.length]} />
-            <meshStandardMaterial color={book.color} />
+            <meshStandardMaterial
+              map={paper({ seed: 373, base: book.color, fiber: 0.55 })}
+              roughness={0.85}
+            />
           </mesh>
         );
       })}
@@ -192,7 +204,15 @@ function LooseSheets() {
           receiveShadow
         >
           <boxGeometry args={[width, thickness, length]} />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial
+            map={paper({
+              seed: 375 + index,
+              base: color,
+              fiber: 0.3,
+              handled: 0.2,
+            })}
+            roughness={0.9}
+          />
         </mesh>
       ))}
     </>

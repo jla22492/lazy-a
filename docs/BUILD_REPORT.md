@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0040 — Dress the Edge of Frame (Creative Sprint 01, order 5 of 10)
+WORK ORDER 0041 — Materials I: Wood & Paper (Creative Sprint 01, order 6 of 10)
 
 ## Version
 
@@ -10,14 +10,14 @@ v0.1
 
 ## Summary
 
-- Zone 4 is dressed at blockout fidelity: the suggestion that the world continues beyond the browser, in three authored pieces (docs/progress/0040.png). Nothing in this zone is composed FOR the frame — pieces are cut by its edges or reach in only by shadow.
-- The shipping tubes: print tubes leaning against the right wall exactly where the frame's right edge cuts them; one fell and rolled a little way out. Work arrives and leaves this room — it has an outside. (First placed fully inside the frame, which made their manifest story — "half-cut by the frame's edge" — a lie; moved until the frame actually cuts them. The story must be true, not aspirational.)
-- The offstage tripod: standing by the window entirely outside the locked composition. One leg slivers into the frame's right edge; mostly it exists as a shadow crossing the floor. The room never explains it — the first piece whose primary presence is its shadow.
-- The power run: a strip by the right wall and a lazy slack cable running toward the bench's right leg and out of mind. The room works for a living; electricity comes from somewhere.
-- Placement was computed against the locked frame's real geometry (the right edge sits ~36 degrees right of the room's -Z axis at the camera; the right wall is visible only to z ~0.6), documented in the dressing constants.
-- SET_MANIFEST now holds 25 pieces across all four storytelling zones. The blockout phase of Dress the Room is complete: every zone tells its story with primitives and flat color.
-- Verification: type-check and production build pass; 0040.png reviewed at full frame and at the right edge in close crop.
-- This closes the sprint's first act; the production design review with the Creative Director happens now, before the materials passes (0041–0042).
+- Opened with the quiet pass you asked for: every one of the 25 manifest pieces now answers "when did this arrive?", and the answers span years — the bench and the power run arrived years ago; the leaning board six months ago; the tape an hour ago; the pencil twenty minutes ago, mid-sentence. Your new lock (rooms are written in layers of time, not layers of objects) is recorded in the Creative Locks, and the time layer is now the material system's age input.
+- A procedural material system exists (three/materials/procedural.ts): deterministic, seeded, cached, and parameterized in production-design language — age, wear, tone, fiber, handling — never rendering language. All textures are authored in code; no photo assets.
+- The workbench is the star (docs/progress/0041.png): stained wood with long grain and plank-tone disagreement, and its history is not painted arbitrarily — wear derives from the workspace zone language. Scuffs and scratches concentrate in the active zone where hands work; ghost mug rings sit where the mug lives and where it used to live; age 0.85 because it arrived years ago. The gray-aluminum prototype look is gone.
+- The wood family: chair (age 0.8), bookcase (0.6), picture ledge (0.5), dark frame (0.2) — same language, different lives.
+- The paper family: test prints, loose sheets, dropped sheet, hero print, pinned photos (glossier, lower roughness) and notes, sticky notes, unframed print, leaning board, book covers — each with fiber, tone drift, and handling matched to how long it has been touched. The shipping tubes became kraft cardboard with a spiral seam.
+- Deliberately untouched: the notebook's cover (its material treatment shapes visitor expectation — an authorship question docs/THE_NOTEBOOK.md holds open), the plant (its fate is an Edit decision), and the ceramic/metal/fabric surfaces (Materials II).
+- One calibration pass: the first render was warm but mute — grain and wear vanished at the camera's 4.5m distance. Strengthened plank variation, grain alpha, and wear marks until history reads at distance while staying below the threshold of display.
+- Verification: type-check and production build pass; 0041.png reviewed at full frame and in close crop on the bench surface.
 
 ## Decisions Required
 
@@ -25,4 +25,4 @@ None.
 
 ## Ready for
 
-Production design review, then WORK ORDER 0041 — Materials I: wood & paper.
+WORK ORDER 0042 — Materials II: plaster, floor, leather, ceramic, metal.

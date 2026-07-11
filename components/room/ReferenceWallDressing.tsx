@@ -1,5 +1,6 @@
 "use client";
 
+import { paper, wood } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import {
   HERO_PRINT,
@@ -24,7 +25,10 @@ function HeroPrint() {
       receiveShadow
     >
       <boxGeometry args={[width, height, thickness]} />
-      <meshStandardMaterial color={color} />
+      <meshStandardMaterial
+        map={paper({ seed: 411, base: color, fiber: 0.3, handled: 0.15 })}
+        roughness={0.6}
+      />
     </mesh>
   );
 }
@@ -49,7 +53,12 @@ function PinnedCluster() {
         >
           <boxGeometry args={[item.w, item.h, thickness]} />
           <meshStandardMaterial
-            color={item.kind === "photo" ? photoColor : paperColor}
+            map={paper(
+              item.kind === "photo"
+                ? { seed: 421 + index, base: photoColor, fiber: 0.12, handled: 0.3 }
+                : { seed: 431 + index, base: paperColor, fiber: 0.45, handled: 0.35 },
+            )}
+            roughness={item.kind === "photo" ? 0.5 : 0.85}
           />
         </mesh>
       ))}
@@ -70,7 +79,10 @@ function PictureLedge() {
         receiveShadow
       >
         <boxGeometry args={[length, thickness, depth]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial
+          map={wood({ seed: 441, base: color, grain: "#5b4a38", age: 0.5 })}
+          roughness={0.75}
+        />
       </mesh>
       {/* Framed still, leaning back to the wall. */}
       <mesh
@@ -88,7 +100,10 @@ function PictureLedge() {
         receiveShadow
       >
         <boxGeometry args={[framed.width, framed.height, framed.depth]} />
-        <meshStandardMaterial color={framed.frameColor} />
+        <meshStandardMaterial
+          map={wood({ seed: 443, base: framed.frameColor, grain: "#332e29", age: 0.2 })}
+          roughness={0.65}
+        />
       </mesh>
       {/* Unframed print leaning over the framed one's corner. */}
       <mesh
@@ -107,7 +122,10 @@ function PictureLedge() {
         <boxGeometry
           args={[unframed.width, unframed.height, unframed.thickness]}
         />
-        <meshStandardMaterial color={unframed.color} />
+        <meshStandardMaterial
+          map={paper({ seed: 445, base: unframed.color, fiber: 0.3, handled: 0.25 })}
+          roughness={0.7}
+        />
       </mesh>
       {/* The award, turned mostly away. */}
       <mesh
@@ -136,7 +154,10 @@ function StickyNotes() {
           receiveShadow
         >
           <boxGeometry args={[size, size, thickness]} />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial
+            map={paper({ seed: 451, base: color, fiber: 0.2 })}
+            roughness={0.9}
+          />
         </mesh>
       ))}
     </>

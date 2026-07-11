@@ -1,5 +1,6 @@
 "use client";
 
+import { paper, wood } from "@/three/materials/procedural";
 import {
   BOOKCASE,
   CHAIR,
@@ -12,6 +13,12 @@ import { fromWorkbench } from "@/three/scene/world";
 /** The chair someone stood up from quickly. */
 function Chair() {
   const { at, yaw, seat, pad, leg, back, woodColor, padColor } = CHAIR;
+  const chairWood = wood({
+    seed: 461,
+    base: woodColor,
+    grain: "#4f4033",
+    age: 0.8,
+  });
   const legHeight = seat.height - seat.thickness;
   const legX = seat.width / 2 - leg.size / 2 - 0.02;
   const legZ = seat.depth / 2 - leg.size / 2 - 0.02;
@@ -25,7 +32,7 @@ function Chair() {
         receiveShadow
       >
         <boxGeometry args={[seat.width, seat.thickness, seat.depth]} />
-        <meshStandardMaterial color={woodColor} />
+        <meshStandardMaterial map={chairWood} roughness={0.7} />
       </mesh>
       {/* Worn leather pad. */}
       <mesh
@@ -56,7 +63,7 @@ function Chair() {
           receiveShadow
         >
           <boxGeometry args={[leg.size, legHeight, leg.size]} />
-          <meshStandardMaterial color={woodColor} />
+          <meshStandardMaterial map={chairWood} roughness={0.7} />
         </mesh>
       ))}
       {/* Backrest uprights, rising from the rear legs. */}
@@ -68,7 +75,7 @@ function Chair() {
           receiveShadow
         >
           <boxGeometry args={[back.upright.width, backHeight, back.upright.depth]} />
-          <meshStandardMaterial color={woodColor} />
+          <meshStandardMaterial map={chairWood} roughness={0.7} />
         </mesh>
       ))}
       {/* Top slat. */}
@@ -84,7 +91,7 @@ function Chair() {
         <boxGeometry
           args={[seat.width - 0.04, back.slat.height, back.slat.thickness]}
         />
-        <meshStandardMaterial color={woodColor} />
+        <meshStandardMaterial map={chairWood} roughness={0.7} />
       </mesh>
     </group>
   );
@@ -125,7 +132,10 @@ function DroppedSheet() {
       receiveShadow
     >
       <boxGeometry args={[width, thickness, length]} />
-      <meshStandardMaterial color={color} />
+      <meshStandardMaterial
+        map={paper({ seed: 465, base: color, fiber: 0.3, handled: 0.35 })}
+        roughness={0.9}
+      />
     </mesh>
   );
 }
@@ -134,6 +144,12 @@ function DroppedSheet() {
 function Bookcase() {
   const { at, width, height, depth, panelThickness, shelfHeights, color, books } =
     BOOKCASE;
+  const caseWood = wood({
+    seed: 463,
+    base: color,
+    grain: "#57493a",
+    age: 0.6,
+  });
   const innerBottom = panelThickness;
   /* Books stand against the wall side; the case opens into the room. */
   const rowsAt: Array<{ y: number; row: readonly { w: number; h: number; lean: number }[] }> = [
@@ -160,7 +176,7 @@ function Bookcase() {
           receiveShadow
         >
           <boxGeometry args={[size[0], size[1], size[2]]} />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial map={caseWood} roughness={0.78} />
         </mesh>
       ))}
       {rowsAt.map(({ y, row }) => {
@@ -225,7 +241,10 @@ function LeaningBoard() {
       receiveShadow
     >
       <boxGeometry args={[width, height, thickness]} />
-      <meshStandardMaterial color={color} />
+      <meshStandardMaterial
+        map={paper({ seed: 467, base: color, fiber: 0.25, handled: 0.3 })}
+        roughness={0.68}
+      />
     </mesh>
   );
 }

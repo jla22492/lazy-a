@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0040 — Dress the Edge of Frame (Sprint 01, order 5 of 10)
+WORK ORDER 0041 — Materials I: Wood & Paper (Sprint 01, order 6 of 10)
 
 ---
 
@@ -88,6 +88,10 @@ WORK ORDER 0040 — Dress the Edge of Frame (Sprint 01, order 5 of 10)
 
 - Edge of frame dressed, blockout pass (docs/progress/0040.png): Zone 4 now suggests the world continues beyond the browser — print tubes leaning against the right wall exactly where the frame cuts them (deliveries get parked there; one fell and rolled a little way out), the tripod standing by the window entirely outside the locked frame (one leg slivers into the right edge; mostly it exists as a shadow crossing the floor — the room never explains it), and a power strip with a lazy slack cable running toward the bench leg and out of mind; nothing in this zone is composed for the frame — pieces are cut by its edges or reach in only by shadow
 
+- First production design review held with the Creative Director (after 0040): blockout approved with no course correction; new Creative Lock named — rooms are written in layers of time, not layers of objects; sculpting notes recorded for The Edit (break visual democracy with gravity, make the pinned wall stranger not busier, the chair should imply rather than announce, the plant needs a relationship or leaves)
+- Manifest deepened per review: every piece now also answers "when did this arrive?" — the 25 answers deliberately span years (the bench and power run arrived years ago; the pencil, twenty minutes ago, mid-sentence) — and this time layer is the material system's age input
+- Materials I — wood & paper (docs/progress/0041.png): a procedural material system (three/materials/procedural.ts — deterministic, seeded, parameterized in production-design language: age, wear, tone, handling) replaced flat color on every wood and paper surface. The workbench is the star: stained wood, long grain, plank-tone disagreement, and wear derived from the workspace zone language — scuffs concentrated in the active zone, ghost mug rings where the mug lives (and used to live), scratches along the grain; age 0.85 because it arrived years ago. The chair, bookcase, and picture ledge join the same wood family at their own ages; every print, sheet, note, photo, and book cover carries paper fiber, tone drift, and handling; the shipping tubes became kraft cardboard with a spiral seam. The notebook's cover was deliberately left untouched — its material treatment shapes visitor expectation, which docs/THE_NOTEBOOK.md holds as an unanswered authorship question
+
 ---
 
 ## In Progress
@@ -98,7 +102,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0041 — Materials I: wood & paper (texture is emotion), following the sprint's first production design review with the Creative Director.
+WORK ORDER 0042 — Materials II: plaster, floor, leather, ceramic, metal.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -157,3 +161,4 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 Texture is emotion. Every material decision answers "what does this surface feel like," never merely "what color is it."
 🔒 Surprise is built in order: perceptual, then behavioral, then narrative — never skipping ahead.
 🔒 The notebook interaction pipeline (0027–0034) is completed research into interaction language: preserved and valid, never the roadmap. The workbench, not the notebook, is the center of the experience.
+🔒 Rooms are written in layers of time, not layers of objects. Every object answers "when did this arrive?" — and the answers span years, not hours. (Named at the sprint's first production design review.)
