@@ -13,42 +13,61 @@ import { Floor } from "@/three/scene/Floor";
 import { STAGE } from "@/three/scene/constants";
 import { scheduleProgressShot } from "@/three/scene/progressShot";
 
+/** Progress captures always render at exactly 16:9 (1280x720). */
+const CAPTURE_SIZE = { width: 1280, height: 720 } as const;
+
+/** True when this page load exists to take a progress screenshot (dev only). */
+function isCaptureRun(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).has("shot")
+  );
+}
+
 /** The film stage: neutral void, base lighting, bare floor, the workbench, a human camera. */
 export function Stage() {
   /* Camera studies (WORK ORDER 0006): ?study=<id> previews an alternative
      viewpoint. Without the parameter, this is exactly the baseline. */
   const study = activeStudy();
   return (
-    <Canvas
-      shadows="soft"
-      /* Keep the frame readable after render so progress screenshots
+    /* Capture runs pin the canvas to 1280x720 so progress screenshots are
+       true 16:9 regardless of the capturing browser's window shape. */
+    <div
+      suppressHydrationWarning
+      style={isCaptureRun() ? CAPTURE_SIZE : { width: "100%", height: "100%" }}
+    >
+      <Canvas
+        shadows="soft"
+        /* Keep the frame readable after render so progress screenshots
          (docs/progress/) can capture the canvas directly. */
-      gl={{ preserveDrawingBuffer: true }}
-      camera={{
-        fov: study.fov,
-        near: STAGE.camera.near,
-        far: STAGE.camera.far,
-        position: [...study.position],
-      }}
-      onCreated={(state) => {
-        state.camera.lookAt(...study.lookAt);
-        if (process.env.NODE_ENV !== "production") {
-          /* Progress screenshots (docs/progress/) force a synchronous
+        gl={{ preserveDrawingBuffer: true }}
+        camera={{
+          fov: study.fov,
+          near: STAGE.camera.near,
+          far: STAGE.camera.far,
+          position: [...study.position],
+        }}
+        onCreated={(state) => {
+          state.camera.lookAt(...study.lookAt);
+          if (process.env.NODE_ENV !== "production") {
+            /* Progress screenshots (docs/progress/) force a synchronous
              render through this handle when the page is not visible and
              requestAnimationFrame is paused. Dev only. */
-          (window as Window & { __stage?: RootState }).__stage = state;
-          scheduleProgressShot(state);
-        }
-      }}
-    >
-      <color attach="background" args={[STAGE.backgroundColor]} />
-      <Daylight />
-      <Floor />
-      <RoomShell />
-      <Workbench />
-      <Notebook />
-      <WorkspaceZones />
-      <CameraRig />
-    </Canvas>
+            (window as Window & { __stage?: RootState }).__stage = state;
+            scheduleProgressShot(state);
+          }
+        }}
+      >
+        <color attach="background" args={[STAGE.backgroundColor]} />
+        <Daylight />
+        <Floor />
+        <RoomShell />
+        <Workbench />
+        <Notebook />
+        <WorkspaceZones />
+        <CameraRig />
+      </Canvas>
+    </div>
   );
 }

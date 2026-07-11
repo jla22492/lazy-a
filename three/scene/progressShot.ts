@@ -4,13 +4,15 @@ import type { RootState } from "@react-three/fiber";
 const WARMUP_FRAMES = 10;
 
 const CAPTURE_WIDTH = 1280;
-const CAPTURE_HEIGHT = 720;
 
 /**
  * Progress-screenshot self-capture (development only).
  * Opening the page with ?shot=<NNNN.png> waits for the scene's first frames,
- * then posts a 1280x720 PNG of the canvas to /api/progress-shot, which writes
- * docs/progress/<NNNN.png>. Inert without the parameter and in production.
+ * then posts a PNG of the canvas to /api/progress-shot, which writes
+ * docs/progress/<NNNN.png>. The capture preserves the canvas's native
+ * aspect ratio (scaled to 1280 wide) so frames are never distorted — the
+ * 16:9 review convention is achieved by capturing from a 16:9 viewport.
+ * Inert without the parameter and in production.
  */
 export function scheduleProgressShot(state: RootState): void {
   if (process.env.NODE_ENV === "production") return;
@@ -25,12 +27,13 @@ export function scheduleProgressShot(state: RootState): void {
       requestAnimationFrame(tick);
       return;
     }
+    const source = state.gl.domElement;
     const target = document.createElement("canvas");
     target.width = CAPTURE_WIDTH;
-    target.height = CAPTURE_HEIGHT;
+    target.height = Math.round((CAPTURE_WIDTH * source.height) / source.width);
     target
       .getContext("2d")
-      ?.drawImage(state.gl.domElement, 0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+      ?.drawImage(source, 0, 0, target.width, target.height);
     void fetch("/api/progress-shot", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

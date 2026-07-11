@@ -66,18 +66,21 @@ export const ROOM = {
     spanZ: [-0.45, 6] as const,
   },
   /**
-   * Window opening in the right wall — the implied source of the daylight.
-   * Frosted: it admits light but shows no exterior view. Standard sill and
-   * head heights.
+   * Window opening in the right wall — the architectural source of the
+   * daylight (WORK ORDER 0013). Frosted: it admits light but shows no
+   * exterior view. Standard sill and head heights; positioned so a quiet
+   * sliver enters the locked frame's right edge and the light reads as
+   * explained. The pane uses an unlit material so it stays daylight-bright
+   * on the backlit wall — the glass is the light.
    */
   window: {
     sill: 0.9,
     head: 2.0,
-    spanZ: [0.45, 1.35] as const,
-    /** The pane sits slightly behind the inner face, implying wall depth. */
-    recess: 0.03,
-    /** Frosted glass: bright, diffuse, viewless. */
-    paneColor: "#f4f2ec",
+    spanZ: [0.25, 1.15] as const,
+    /** Wall thickness: the reveal depth of the opening. */
+    reveal: 0.1,
+    /** Frosted daylight glass; quiet warm white. */
+    paneColor: "#f2ede0",
   },
   /** Simple painted baseboard grounding every wall-floor junction. */
   baseboard: {

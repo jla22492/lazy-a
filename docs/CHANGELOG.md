@@ -10,5 +10,6 @@
 - The notebook appeared: a closed notebook rests off-center on the workbench, slightly askew — the first sign that someone was recently here.
 - The hero print was explored on the workbench and intentionally reversed in creative review (0011 → R-0011): a leaned print became the compositional subject. The experiment yielded a foundational principle — the workbench tells what is happening today; the room tells who the person is. The print never became part of the lasting experience; its future home is the room's architecture.
 - The room completed its permanent shell: a right wall with a frosted window on the side the light has always come from, and baseboards grounding every wall — the room now feels like it existed before anyone arrived.
+- The daylight found its window: a quiet frosted opening now glows at the edge of the frame, and the light that has always filled the room finally makes sense.
 
 Record experience changes here, not just technical ones.

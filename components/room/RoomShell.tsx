@@ -138,17 +138,67 @@ export function RoomShell() {
           </mesh>
         ),
       )}
+      {/* Frosted pane at the reveal's outer plane. Unlit material: the
+          wall is backlit, so a lit material would render the glass dark —
+          the pane must read as the daylight itself. */}
       <mesh
         position={[
-          rightWall.x + win.recess,
+          rightWall.x + win.reveal,
           (win.sill + win.head) / 2,
           WINDOW_CENTER_Z,
         ]}
         rotation-y={FACING_LEFT}
       >
         <planeGeometry args={[WINDOW_WIDTH, win.head - win.sill]} />
-        <meshStandardMaterial color={win.paneColor} />
+        <meshBasicMaterial color={win.paneColor} />
       </mesh>
+      {/* Window reveal: sill, head, and jamb returns spanning the wall's
+          thickness — the minimum trim for believable construction. */}
+      {(
+        [
+          {
+            key: "sill",
+            args: [win.reveal, 0.01, WINDOW_WIDTH],
+            position: [
+              rightWall.x + win.reveal / 2,
+              win.sill - 0.005,
+              WINDOW_CENTER_Z,
+            ],
+          },
+          {
+            key: "head",
+            args: [win.reveal, 0.01, WINDOW_WIDTH],
+            position: [
+              rightWall.x + win.reveal / 2,
+              win.head + 0.005,
+              WINDOW_CENTER_Z,
+            ],
+          },
+          {
+            key: "jamb-rear",
+            args: [win.reveal, win.head - win.sill, 0.01],
+            position: [
+              rightWall.x + win.reveal / 2,
+              (win.sill + win.head) / 2,
+              win.spanZ[0] - 0.005,
+            ],
+          },
+          {
+            key: "jamb-front",
+            args: [win.reveal, win.head - win.sill, 0.01],
+            position: [
+              rightWall.x + win.reveal / 2,
+              (win.sill + win.head) / 2,
+              win.spanZ[1] + 0.005,
+            ],
+          },
+        ] as const
+      ).map(({ key, args, position }) => (
+        <mesh key={key} position={[...position]} receiveShadow>
+          <boxGeometry args={[...args]} />
+          <meshStandardMaterial color={wall.color} />
+        </mesh>
+      ))}
       {BASEBOARDS.map(({ key, position, rotationY, length }) => (
         <mesh
           key={key}
