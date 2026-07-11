@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0011 — Establish the Hero Print
+REVISION WORK ORDER R-0011 — Remove the Hero Print
 
 ## Version
 
@@ -10,12 +10,11 @@ v0.1
 
 ## Summary
 
-- Hero print blockout: an 18x24 inch (46x61 cm) neutral rectangle, mounted-board thickness, no artwork, frame, texture, or typography.
-- Placement is the first consumer of the workbench language: it stands in the REFERENCE zone on the bench's rear band and leans against the rear wall — the lean angle is fully derived from geometry (bottom on the surface, top on the wall), not hand-tuned.
-- Left of the bench's center so it balances the notebook (right, active zone) without competing; slightly askew, as leaned things are.
-- The placement passes the order's validation: with the artwork removed, the spot still reads as where a working person props something personally meaningful — inside their daily field of view, not displayed for visitors.
-- Camera, lighting, notebook, workbench, and room untouched. Creative Locks unchanged (Opening Composition locked; Notebook Placement in review).
-- CHANGELOG updated: the room begins to reveal its owner's identity.
+- Hero print blockout removed (component, constants, scene mount); the room is restored exactly — docs/progress/R-0011.png is byte-identical to 0010.png.
+- Notebook, camera, lighting, room geometry, and the workbench language all untouched.
+- Creative review findings documented: a leaning print on the bench reads as a compositional subject and feels staged. The experiment's conclusion — the workbench tells what is happening today; the room tells who the person is — is recorded as a Creative Lock, and the hero print's future home is the wall architecture, which does not exist yet.
+- The 0011 experiment remains part of the visual history (0011.png retained in the timeline).
+- Note: CHANGELOG.md was not updated per this order, but it still contains the 0011 line "The hero print appeared…" from the previous order. Say the word if you would rather that line be struck or annotated.
 
 ## Decisions Required
 
@@ -23,4 +22,4 @@ None.
 
 ## Ready For
 
-Creative review of docs/progress/0011.png, then WORK ORDER 0012.
+WORK ORDER 0012.

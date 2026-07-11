@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0011 — Establish the Hero Print (complete)
+REVISION WORK ORDER R-0011 — Remove the Hero Print (complete)
 
 ---
 
@@ -44,7 +44,7 @@ WORK ORDER 0011 — Establish the Hero Print (complete)
 - Studio built (/studio + /studio/state.json): internal production board derived live from PROJECT_STATUS.md, BUILD_REPORT.md, docs/progress/, and git; docs/BUILD_REPORT.md becomes the canonical home of each order's Build Report
 - Studio published to GitHub Pages (https://jla22492.github.io/lazy-a/studio/), rebuilt by CI on every push — the Creative Director's canonical review surface per the confirmed hybrid workflow (public Studio for state, in-chat images for visual review)
 - Workbench language established (three/scene/workspace.ts): four named zones — reference (rear band), resting (front-left), active (front-center), temporary (front-right) — assuming a right-handed worker at the open side; future bench objects are placed by naming a zone; dev-only overlay via ?zones=1; notebook placement confirmed by the language (active zone, dominant-hand edge) and unmoved
-- Hero print blockout placed (docs/progress/0011.png): an 18x24in neutral rectangle leaning against the rear wall from the bench's reference zone, left of center — kept nearby, not displayed; first consumer of the workbench language
+- Hero print experiment run and reversed (docs/progress/0011.png → R-0011.png): a leaning print on the bench became the compositional subject, violating "nothing should feel staged"; removed per Creative Director review. Conclusion: the hero print belongs to the room (permanent), not the workbench (today's work) — its future home is the wall architecture, not yet built
 
 ---
 
@@ -56,7 +56,7 @@ None.
 
 ## Next Recommended Work Order
 
-Place the next objects of the creative space using the workbench language.
+Establish the wall architecture that will eventually hold the hero print.
 
 ---
 
@@ -82,4 +82,5 @@ Place the next objects of the creative space using the workbench language.
 🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
 🔒 The room is inferred, not presented: rear wall, left wall, and ceiling; the right wall stays absent until direction says otherwise.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
+🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
 🔒 No interactions yet.
