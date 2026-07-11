@@ -32,6 +32,8 @@ import {
   OPEN_SETTLE_DIP,
   OPEN_TOTAL,
   openProgress,
+  SEE_TOTAL,
+  seeProgress,
   HELD_BELOW_EYE,
   HELD_FORWARD,
   HELD_REGARD_PITCH,
@@ -153,6 +155,17 @@ const GRIPPED_POSITION: [number, number, number] = [
 ];
 
 /**
+ * Where the eyes arrive after the cover comes to rest (WORK ORDER
+ * 0034): the center of the first visible page — the open notebook's
+ * body, settled into the palm.
+ */
+const PAGE_GAZE: [number, number, number] = [
+  GRIPPED_POSITION[0],
+  GRIPPED_POSITION[1] - OPEN_SETTLE_DIP + 0.012,
+  GRIPPED_POSITION[2],
+];
+
+/**
  * Where the first look down rests (WORK ORDER 0030): on the held
  * notebook itself — a hair above center, the way eyes land on a cover
  * rather than its geometric middle.
@@ -209,6 +222,7 @@ export function Notebook() {
   const gripped = useRef(false);
   const openStart = useRef<number | null>(null);
   const opened = useRef(false);
+  const seeStart = useRef<number | null>(null);
   const gaze = useRef<[number, number, number] | null>(null);
 
   const personPickup = useMemo<RoomBehavior>(
@@ -262,7 +276,30 @@ export function Notebook() {
           if (clock.elapsed - openStart.current >= OPEN_TOTAL) {
             openStart.current = null;
             opened.current = true;
+            /* The physical act is over; vision arrives on its own. */
+            seeStart.current = -1;
           }
+          return;
+        }
+
+        /* Seeing (WORK ORDER 0034): after the cover rests, the eyes
+           settle onto the first visible page — perception following
+           the act, not a decision and not yet comprehension. */
+        if (seeStart.current !== null && gaze.current !== null) {
+          if (seeStart.current === -1) seeStart.current = clock.elapsed;
+          const t = clock.elapsed - seeStart.current;
+          const s = seeProgress(t);
+          pursueGaze(
+            gaze.current,
+            [
+              CONSIDER_POINT[0] + (PAGE_GAZE[0] - CONSIDER_POINT[0]) * s,
+              CONSIDER_POINT[1] + (PAGE_GAZE[1] - CONSIDER_POINT[1]) * s,
+              CONSIDER_POINT[2] + (PAGE_GAZE[2] - CONSIDER_POINT[2]) * s,
+            ],
+            clock.delta,
+          );
+          camera.lookAt(...gaze.current);
+          if (t >= SEE_TOTAL) seeStart.current = null;
           return;
         }
 

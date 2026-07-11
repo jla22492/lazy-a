@@ -124,6 +124,25 @@ export function openProgress(t: number): number {
 export const OPEN_TOTAL = OPEN_ONSET + OPEN_DURATION;
 
 /**
+ * Seeing (WORK ORDER 0034): after the cover comes to rest, the eyes
+ * arrive on the first visible page — a beat, then one small natural
+ * settling of vision. Not a decision and not comprehension: perception
+ * following the physical act, the way eyes simply land where the
+ * hands have finished working.
+ */
+export const SEE_PAUSE = 0.5;
+export const SEE_DURATION = 0.9;
+/** The gaze keeps being pursued briefly after the blend completes. */
+export const SEE_ARRIVE = 0.7;
+
+/** Progress of the visual settling, `t` seconds after the open rest. */
+export function seeProgress(t: number): number {
+  return smootherstep((t - SEE_PAUSE) / SEE_DURATION);
+}
+
+export const SEE_TOTAL = SEE_PAUSE + SEE_DURATION + SEE_ARRIVE;
+
+/**
  * Once the notebook settles into the hold, the head rises to a
  * comfortable regard: the notebook sits low in vision, the room beyond
  * it — not pressed against the eyes. Radians below horizontal.

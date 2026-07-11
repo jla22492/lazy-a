@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0033 — Opening
+WORK ORDER 0034 — Seeing
 
 ## Version
 
@@ -10,13 +10,12 @@ v0.1
 
 ## Summary
 
-- The notebook opens for the first time (docs/progress/0033.mp4): on the visitor's third deliberate commitment — the first irreversible one — the cover rotates around its real hinge from the prepared grip to its natural open rest just past vertical, in one 1.15-second motion with no hesitation, no flourish, no anticipation. Exactly what a person does after already deciding.
-- The notebook gained real construction to make the hinge real: a page block with the back cover, a 3mm front cover pivoting at the spine edge (the edge under the supporting hand, where the 0032 grip put the weight), and a first page of quiet paper that exists physically without becoming the subject. The closed notebook's silhouette is unchanged from every prior order.
-- The supporting hand behaves naturally: as the cover's weight leaves the block, part of the grip roll releases and the book settles four millimetres into the palm. The gaze does not move — the visitor watches themselves cross the threshold.
-- The opening stops before the contents become the subject: at the open rest, the first page could be seen — and that is all. Nothing readable, no page turns, no sound, no change to the room. Reading has not begun.
-- The trigger is the same protected pattern: readiness matures by observing the held notebook, intent is held, the offer is made, the room accepts. Nothing happened because time passed.
-- Validation asked and answered: the motion describes as "opening the notebook," not "starting to read it."
-- New Creative Lock recorded: opening changes the relationship.
+- Vision arrives before meaning (docs/progress/0034.mp4): a beat after the cover comes to rest — half a second of genuine completion, not anticipation — the eyes make one small natural settling from where the opening action left them onto the center of the first visible page. The movement runs through the same pursuit physics as every gaze in the project, over 0.9 seconds.
+- This is perception, not a decision: it chains from the physical act the way the first look down chained from the hands finishing — eyes simply land where the hands have finished working. No commitment, no offer; nothing was asked of the room because nothing was requested of it.
+- The body remains unchanged, the notebook remains unchanged, and the page remains visually quiet — present, unreadable, emotionally neutral. No text, no page motion, no sound, no change to the room.
+- Then complete stillness. The visitor is looking at an open page and has not read it. Understanding, when it comes, is a separate event — as you framed it: we can separate vision from comprehension exactly as we separated body from mind.
+- Validation asked and answered: the movement describes as "letting my eyes settle on the page," not "starting to read."
+- New Creative Lock recorded: seeing precedes understanding.
 
 ## Decisions Required
 
@@ -24,4 +23,4 @@ None.
 
 ## Ready for
 
-The Creative Director's next order. The physical event is complete; the cognitive one — reading — awaits its own moment, as you directed.
+The Creative Director's next order. The visitor sees the page; nothing on it has meaning yet. Whatever the notebook has to say, the room is ready for it to be said deliberately.
