@@ -125,28 +125,39 @@ function DeskLamp() {
 function CableRuns() {
   const { thickness, color, lampRuns, stripRuns } = CABLE;
   const runs = [...lampRuns, ...stripRuns];
-  return (
-    <>
-      {runs.map((run) => {
+  /* Real cable is never straight (0053): each run bows a few centimeters
+     off its line, because nobody has ever laid a cable taut on purpose. */
+  const curves = useMemo(
+    () =>
+      runs.map((run, index) => {
+        const midX = (run.from.x + run.to.x) / 2;
+        const midZ = (run.from.z + run.to.z) / 2;
         const dx = run.to.x - run.from.x;
         const dz = run.to.z - run.from.z;
-        const length = Math.hypot(dx, dz);
-        return (
-          <mesh
-            key={`${run.from.x},${run.from.z}`}
-            position={[
-              (run.from.x + run.to.x) / 2,
-              thickness / 2,
-              (run.from.z + run.to.z) / 2,
-            ]}
-            rotation={[0, Math.atan2(dx, dz), 0]}
-            receiveShadow
-          >
-            <boxGeometry args={[thickness, thickness, length]} />
-            <meshStandardMaterial color={color} />
-          </mesh>
-        );
-      })}
+        const length = Math.hypot(dx, dz) || 1;
+        /* Perpendicular slack, alternating side per run. */
+        const bow = 0.028 * (index % 2 === 0 ? 1 : -1);
+        return new CatmullRomCurve3([
+          new Vector3(run.from.x, thickness / 2, run.from.z),
+          new Vector3(
+            midX + (-dz / length) * bow,
+            thickness / 2,
+            midZ + (dx / length) * bow,
+          ),
+          new Vector3(run.to.x, thickness / 2, run.to.z),
+        ]);
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+  return (
+    <>
+      {curves.map((curve, index) => (
+        <mesh key={index} receiveShadow castShadow>
+          <tubeGeometry args={[curve, 16, thickness / 2, 6, false]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+      ))}
       {/* Wall stubs: the last vertical inches up to each outlet. */}
       <mesh position={[-1.02, 0.13, REAR_Z + 0.008]} receiveShadow>
         <boxGeometry args={[thickness, 0.26, thickness]} />

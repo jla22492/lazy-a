@@ -362,6 +362,31 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     implies: "finished work, and a wall somewhere that hasn't been chosen yet",
   },
   {
+    name: "Wastebasket",
+    zone: "peripheralRoom",
+    story:
+      "beside the bench's left end, where a right hand can toss without " +
+      "looking; one crumpled ball missed and stayed where it landed — " +
+      "the person shoots from the working position and doesn't always score",
+    identity: "work here produces rejects, and rejects have a destination",
+    unresolved: "the miss will get picked up on the next trip past it, maybe",
+    arrived: "years ago; emptied on Fridays, usually",
+    implies: "a building with bins, a Friday routine, and every draft " +
+      "that didn't survive",
+  },
+  {
+    name: "RolledPencil",
+    zone: "peripheralRoom",
+    story:
+      "it fell, rolled, and stopped where the frame happens to cut it — " +
+      "the camera interrupted a room; the room did not arrange itself " +
+      "for the camera",
+    identity: "the room does not perform; it is caught mid-life",
+    unresolved: "nobody knows it's there yet",
+    arrived: "sometime today; nobody heard it fall",
+    implies: "the floor beyond the frame, where things keep rolling",
+  },
+  {
     name: "ShippingTubes",
     zone: "edgeOfFrame",
     story:

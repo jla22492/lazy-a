@@ -11,6 +11,8 @@ import {
   DROPPED_SHEET,
   LEANING_BOARD,
   PLANT,
+  ROLLED_PENCIL,
+  WASTEBASKET,
 } from "@/three/scene/dressing/peripheralRoom";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -413,6 +415,60 @@ function LeaningBoard() {
  * a dropped sheet, the working library, and finished work leaning at
  * floor level. Primitive geometry and flat color only.
  */
+/** Somewhere for paper to go — and the shot that missed. */
+function Wastebasket() {
+  const { at, radius, height, thickness, color, crumple } = WASTEBASKET;
+  return (
+    <>
+      <group position={[at.x, 0, at.z]}>
+        {/* Open cylinder plus a bottom: a bin, not a column. */}
+        <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+          <cylinderGeometry
+            args={[radius, radius * 0.88, height, 18, 1, true]}
+          />
+          <meshStandardMaterial color={color} roughness={0.6} side={2} />
+        </mesh>
+        <mesh position={[0, thickness / 2, 0]} receiveShadow>
+          <cylinderGeometry
+            args={[radius * 0.88, radius * 0.88, thickness, 18]}
+          />
+          <meshStandardMaterial color={color} roughness={0.6} />
+        </mesh>
+      </group>
+      {/* The miss: a crumpled ball where it landed. */}
+      <mesh
+        position={[crumple.at.x, crumple.radius * 0.8, crumple.at.z]}
+        scale={[1, 0.8, 1]}
+        castShadow
+        receiveShadow
+      >
+        <icosahedronGeometry args={[crumple.radius, 0]} />
+        <meshStandardMaterial
+          map={paper({ seed: 531, base: crumple.color, fiber: 0.4, handled: 0.6 })}
+          roughness={0.95}
+          flatShading
+        />
+      </mesh>
+    </>
+  );
+}
+
+/** The pencil that rolled until the frame happened to cut it. */
+function RolledPencil() {
+  const { at, length, radius, yaw, color } = ROLLED_PENCIL;
+  return (
+    <mesh
+      position={[at.x, radius, at.z]}
+      rotation={[Math.PI / 2, 0, yaw]}
+      castShadow
+      receiveShadow
+    >
+      <cylinderGeometry args={[radius, radius, length, 6]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+  );
+}
+
 export function PeripheralRoomDressing() {
   return (
     <group position={fromWorkbench([0, 0, 0])}>
@@ -421,6 +477,8 @@ export function PeripheralRoomDressing() {
       <DroppedSheet />
       <Bookcase />
       <LeaningBoard />
+      <Wastebasket />
+      <RolledPencil />
     </group>
   );
 }

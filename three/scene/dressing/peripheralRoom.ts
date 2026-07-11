@@ -219,3 +219,33 @@ export const LEANING_BOARD = {
   yaw: 0.04,
   color: "#ada79a",
 } as const;
+
+/**
+ * The wastebasket (WORK ORDER 0053) — every functioning desk has
+ * somewhere for paper to go; the desk stops being an island the moment
+ * its output has a destination. One crumpled ball missed and stayed
+ * where it landed: the person shoots from the chair and doesn't always
+ * score.
+ */
+export const WASTEBASKET = {
+  at: { x: -1.06, z: 0.52 },
+  radius: 0.105,
+  height: 0.27,
+  thickness: 0.006,
+  color: "#4a4c48",
+  /** The miss, a hand's span away. */
+  crumple: { at: { x: -0.82, z: 0.72 }, radius: 0.028, color: "#ddd8c8" },
+} as const;
+
+/**
+ * The rolled pencil (WORK ORDER 0053) — it fell, rolled, and stopped
+ * where the frame happens to cut it. The camera interrupted a room;
+ * the room did not arrange itself for the camera.
+ */
+export const ROLLED_PENCIL = {
+  at: { x: -0.95, z: 1.12 },
+  length: 0.175,
+  radius: 0.0037,
+  yaw: 1.35,
+  color: "#7d3f36",
+} as const;
