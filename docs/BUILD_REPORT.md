@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0019 — Establish the Visitor Position
+WORK ORDER 0020 — The First Step
 
 ## Version
 
@@ -10,12 +10,12 @@ v0.1
 
 ## Summary
 
-- The workspace language now includes STANDING_POSITIONS (three/scene/workspace.ts): where a human body naturally occupies this room. Implementation concepts only — nothing visitor-facing.
-- Three positions, from real ergonomics: ARRIVAL — just inside the room, two steps from the doorway; this is exactly the locked opening composition's camera footprint, so the visitor's story and the camera system share one origin. WORKING — at the bench, centered on the active zone, hips a hand's width (~25cm) from the front edge, standard standing-work clearance. CONSIDERING — a step back, ~1.7m viewing distance from the rear wall's reference band.
-- Each position carries a facing and a purpose; eyes sit at the established EYE_HEIGHT. The CameraRig's contract is updated: every future movement originates from a standing position — the camera never travels; a person moves.
-- Your settling-not-breathing note is recorded as a Creative Lock; the current daylight sway stands unchanged as Version 1 of environmental presence.
-- Validation: camera movements originating from these positions trace real human paths (enter → arrive → step to the bench → step back to consider), so they will read as physically natural.
-- Visitor experience unchanged; 0019.png visually identical to 0018.
+- The first human action exists: the visitor walks from ARRIVAL to WORKING using the standing positions from 0019. One trigger, one step, nothing else responds.
+- The movement is a body, not a camera: casual indoor pace (1.15 m/s across the 3.8m path, ~3.3 seconds), a smootherstep velocity profile (zero velocity and acceleration at both ends — bodies, not motors), a faint 1.75Hz step-rhythm in the eyes that is silent at both ends and fullest mid-stride, and a gaze that stays on the room until late in the walk, then eases down onto the work surface as the body settles. The settled frame holds the notebook at hand with the bench's rear edge and the wall keeping the room present — tuned through three iterations (straight-down felt like staring; too-shallow read as empty planes).
+- Implemented as the Presence system's second behavior ("person-step", kind: camera), time-anchored to the room clock. The CameraRig verb vocabulary was not extended — walking is not one of the four locked verbs, so the transition lives as an internal behavior pending your direction on whether "step" enters the vocabulary.
+- TEMPORARY trigger, per the order: click/tap anywhere or Space. A dev-only ?autostep parameter exists for headless capture. No permanent interaction model was built.
+- New Creative Lock recorded: the camera never travels; a person moves.
+- Motion review: docs/progress/0020.mp4 — 12.5 seconds: arrival stillness, trigger at ~3s, the walk, and the settled working position.
 
 ## Decisions Required
 
@@ -23,4 +23,4 @@ None.
 
 ## Ready For
 
-WORK ORDER 0020.
+Creative review of docs/progress/0020.mp4, then WORK ORDER 0021.

@@ -53,7 +53,10 @@ export function scheduleProgressShot(state: RootState): void {
       requestAnimationFrame(tick);
       return;
     }
-    if (shotName) captureStill(state, shotName);
+    const shotDelay = Number(params.get("shotdelay")) || 0;
+    if (shotName) {
+      window.setTimeout(() => captureStill(state, shotName), shotDelay * 1000);
+    }
     if (recordName) captureClip(state, recordName, seconds);
   };
   requestAnimationFrame(tick);

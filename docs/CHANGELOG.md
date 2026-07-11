@@ -12,5 +12,6 @@
 - The room completed its permanent shell: a right wall with a frosted window on the side the light has always come from, and baseboards grounding every wall — the room now feels like it existed before anyone arrived.
 - The daylight found its window: a quiet frosted opening now glows at the edge of the frame, and the light that has always filled the room finally makes sense.
 - The room took its first breath: the daylight now sways below the threshold of noticing, and the room stopped being a frozen render — it exists in time.
+- The visitor took the first step: one quiet walk from the doorway pause to the workbench — the first human action in Lazy A, and the moment the camera proved it is a person.
 
 Record experience changes here, not just technical ones.

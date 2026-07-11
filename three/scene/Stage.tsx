@@ -6,6 +6,7 @@ import { Canvas, type RootState } from "@react-three/fiber";
 import { AgXToneMapping } from "three";
 
 import { CameraRig } from "@/components/camera/CameraRig";
+import { FirstStep } from "@/components/camera/FirstStep";
 import { Notebook } from "@/components/room/Notebook";
 import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
@@ -78,6 +79,7 @@ export function Stage() {
         <Notebook />
         <WorkspaceZones />
         <CameraRig />
+        <FirstStep />
       </Canvas>
     </div>
   );
