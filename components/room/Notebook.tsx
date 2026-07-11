@@ -13,6 +13,11 @@ const REST_POSITION = fromWorkbench([
  * Primitive blockout of the notebook — the first object with narrative
  * weight. It establishes position, scale, and orientation only; detail
  * arrives in later work orders (WORK ORDER 0009).
+ *
+ * In the workbench language (three/scene/workspace.ts) it rests inside
+ * the ACTIVE zone at its dominant-hand edge — where the most recently
+ * used object naturally sits. The language confirms the placement
+ * (WORK ORDER 0010); it does not move.
  */
 export function Notebook() {
   return (

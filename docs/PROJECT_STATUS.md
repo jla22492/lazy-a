@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-INFRASTRUCTURE WORK ORDER 0002 — Build the Lazy A Studio (complete)
+WORK ORDER 0010 — Establish the Workbench Language (complete)
 
 ---
 
@@ -43,18 +43,19 @@ INFRASTRUCTURE WORK ORDER 0002 — Build the Lazy A Studio (complete)
 - Notebook blockout placed (docs/progress/0009.png): closed A5 primitive, right of the bench's center, casually askew — the first object with narrative weight
 - Studio built (/studio + /studio/state.json): internal production board derived live from PROJECT_STATUS.md, BUILD_REPORT.md, docs/progress/, and git; docs/BUILD_REPORT.md becomes the canonical home of each order's Build Report
 - Studio published to GitHub Pages (https://jla22492.github.io/lazy-a/studio/), rebuilt by CI on every push — the Creative Director's canonical review surface per the confirmed hybrid workflow (public Studio for state, in-chat images for visual review)
+- Workbench language established (three/scene/workspace.ts): four named zones — reference (rear band), resting (front-left), active (front-center), temporary (front-right) — assuming a right-handed worker at the open side; future bench objects are placed by naming a zone; dev-only overlay via ?zones=1; notebook placement confirmed by the language (active zone, dominant-hand edge) and unmoved
 
 ---
 
 ## In Progress
 
-None — the revised opening composition (R-0007) stands as the current candidate pending the Creative Director's final approval.
+None.
 
 ---
 
 ## Next Recommended Work Order
 
-Continue placing the objects of the creative space around the notebook.
+Place the next objects of the creative space using the workbench language.
 
 ---
 
@@ -76,8 +77,8 @@ Continue placing the objects of the creative space around the notebook.
 🔒 The world origin (0,0,0) is the exact center of the workbench — permanent.
 🔒 The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 🔒 The camera's gaze rests on the work surface, not the horizon.
-🟡 The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height. (R-0007 — pending Creative Director final approval)
-🔒 The notebook lives on the workbench, off-center and askew — used daily, never displayed.
+🔒 The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height. (R-0007 — approved by the Creative Director)
+🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
 🔒 The room is inferred, not presented: rear wall, left wall, and ceiling; the right wall stays absent until direction says otherwise.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 No interactions yet.

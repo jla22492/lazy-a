@@ -6,6 +6,7 @@ import { CameraRig } from "@/components/camera/CameraRig";
 import { Notebook } from "@/components/room/Notebook";
 import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
+import { WorkspaceZones } from "@/components/room/WorkspaceZones";
 import { Daylight } from "@/three/lighting/Daylight";
 import { activeStudy } from "@/three/scene/cameraStudies";
 import { Floor } from "@/three/scene/Floor";
@@ -46,6 +47,7 @@ export function Stage() {
       <RoomShell />
       <Workbench />
       <Notebook />
+      <WorkspaceZones />
       <CameraRig />
     </Canvas>
   );
