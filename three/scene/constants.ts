@@ -86,6 +86,29 @@ export const NOTEBOOK = {
   rotationY: -0.21,
 } as const;
 
+/**
+ * Hero print blockout (WORK ORDER 0011): the first expression of identity.
+ * An 18x24 inch print (46 x 61 cm), leaning against the rear wall and
+ * standing on the workbench's REFERENCE zone — kept nearby because it
+ * matters, not displayed. Left of the bench's center so it never competes
+ * with the notebook; slightly askew, as leaned things are.
+ */
+export const HERO_PRINT = {
+  /** 18 x 24 inch print, portrait. */
+  width: 0.46,
+  height: 0.61,
+  /** Mounted on board; reads as an object, not a wall. */
+  thickness: 0.004,
+  /** Paper neutral, a step cooler and darker than the plaster. */
+  color: "#d9d4c8",
+  /** Left of center along the reference band. */
+  offsetX: -0.45,
+  /** Where its bottom edge stands on the bench, inside the reference zone. */
+  bottomZ: -0.3,
+  /** Leaned things never sit perfectly square. */
+  yaw: 0.03,
+} as const;
+
 export const STAGE = {
   /** Neutral gray void surrounding the stage. */
   backgroundColor: "#7d7d7d",

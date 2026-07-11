@@ -8,5 +8,6 @@
 - The room exists: a rear wall, a left wall, and a warm floor are enough for the space to be believed; the rest of the room is inferred, not shown.
 - Daylight arrived: light enters from somewhere outside the frame and the room begins to feel inhabited; the source is never revealed.
 - The notebook appeared: a closed notebook rests off-center on the workbench, slightly askew — the first sign that someone was recently here.
+- The hero print appeared: something the room's owner keeps leaning against the wall within their working view — the room begins to reveal what kind of person works here.
 
 Record experience changes here, not just technical ones.

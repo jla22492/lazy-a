@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0010 — Establish the Workbench Language (complete)
+WORK ORDER 0011 — Establish the Hero Print (complete)
 
 ---
 
@@ -44,6 +44,7 @@ WORK ORDER 0010 — Establish the Workbench Language (complete)
 - Studio built (/studio + /studio/state.json): internal production board derived live from PROJECT_STATUS.md, BUILD_REPORT.md, docs/progress/, and git; docs/BUILD_REPORT.md becomes the canonical home of each order's Build Report
 - Studio published to GitHub Pages (https://jla22492.github.io/lazy-a/studio/), rebuilt by CI on every push — the Creative Director's canonical review surface per the confirmed hybrid workflow (public Studio for state, in-chat images for visual review)
 - Workbench language established (three/scene/workspace.ts): four named zones — reference (rear band), resting (front-left), active (front-center), temporary (front-right) — assuming a right-handed worker at the open side; future bench objects are placed by naming a zone; dev-only overlay via ?zones=1; notebook placement confirmed by the language (active zone, dominant-hand edge) and unmoved
+- Hero print blockout placed (docs/progress/0011.png): an 18x24in neutral rectangle leaning against the rear wall from the bench's reference zone, left of center — kept nearby, not displayed; first consumer of the workbench language
 
 ---
 
