@@ -24,6 +24,8 @@ export function Daylight() {
         shadow-camera-bottom={-sun.shadow.coverage}
         shadow-bias={sun.shadow.bias}
         shadow-normalBias={sun.shadow.normalBias}
+        shadow-radius={sun.shadow.radius}
+        shadow-blurSamples={sun.shadow.blurSamples}
       />
       <hemisphereLight
         color={bounce.skyColor}

@@ -8,13 +8,13 @@ v0.1
 
 ## Current Sprint
 
-Sprint 001
+Sprint 001 — Presence Phase (Architecture Phase completed at WORK ORDER 0014)
 
 ---
 
 ## Current Work Order
 
-WORK ORDER 0014 — Establish the Entrance (complete)
+WORK ORDER 0015 — Establish Stillness (complete)
 
 ---
 
@@ -49,6 +49,8 @@ WORK ORDER 0014 — Establish the Entrance (complete)
 - Window established as the daylight's architectural source (docs/progress/0013.png): unlit frosted pane (the glass is the light — a lit material renders dark on the backlit wall), 10cm reveal with sill/head/jamb returns
 - Window presence reduced per creative review (docs/progress/R-0013.png): the opening slid 30cm forward along the wall so only a ~9cm glass sliver enters the locked frame's corner — daylight explained, window subconscious; opening composition reaffirmed as locked against the corrected true-proportion frame
 - Entrance established (docs/progress/0014.png + 0014-entrance-view.png): doorway opening in the left wall behind the camera (0.9m x 2.05m, 10cm reveal, baseboard breaking at the frame) — where the visitor who "stopped slightly left of the workbench" came in; entirely outside the locked frame (0014.png is byte-identical to R-0013.png)
+- ARCHITECTURE PHASE COMPLETE (declared by the Creative Director at 0014 review); PRESENCE PHASE begins
+- Stillness established (docs/progress/0015.png): AgX tone mapping (calmer, more photographic response than ACES) and a soft PCF shadow penumbra (VSM rejected — its receivers-also-cast rule made walls throw uncontrollable shadows); nothing moved, nothing added — the room simply settles
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---

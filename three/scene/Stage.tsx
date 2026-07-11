@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Canvas, type RootState } from "@react-three/fiber";
+import { AgXToneMapping } from "three";
 
 import { CameraRig } from "@/components/camera/CameraRig";
 import { Notebook } from "@/components/room/Notebook";
@@ -43,10 +44,13 @@ export function Stage() {
        true 16:9 regardless of the capturing browser's window shape. */
     <div style={captureMode ? CAPTURE_SIZE : { width: "100%", height: "100%" }}>
       <Canvas
-        shadows="soft"
-        /* Keep the frame readable after render so progress screenshots
-         (docs/progress/) can capture the canvas directly. */
-        gl={{ preserveDrawingBuffer: true }}
+        /* PCF with a blur radius: a soft penumbra without VSM's
+           receivers-also-cast side effects (WORK ORDER 0015). */
+        shadows="percentage"
+        /* AgX tone mapping: calmer highlight rolloff than ACES — the frame
+           reads photographic rather than rendered. preserveDrawingBuffer
+           keeps the frame readable for progress screenshots. */
+        gl={{ preserveDrawingBuffer: true, toneMapping: AgXToneMapping }}
         camera={{
           fov: study.fov,
           near: STAGE.camera.near,

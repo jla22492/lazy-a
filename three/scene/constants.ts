@@ -185,6 +185,13 @@ export const DAYLIGHT = {
       coverage: 6,
       bias: -0.0005,
       normalBias: 0.04,
+      /**
+       * Stillness (WORK ORDER 0015): a soft penumbra. PCF with a blur
+       * radius — VSM was rejected because its receivers-also-cast rule
+       * made the walls throw uncontrollable shadows.
+       */
+      radius: 4,
+      blurSamples: 12,
     },
   },
   bounce: {

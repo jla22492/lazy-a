@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0014 — Establish the Entrance
+WORK ORDER 0015 — Establish Stillness
 
 ## Version
 
@@ -10,11 +10,13 @@ v0.1
 
 ## Summary
 
-- Doorway opening in the left wall behind the camera (spanZ 4.7–5.6m, standard 0.9m x 2.05m interior opening, same 10cm reveal construction as the window, no door or hardware). The baseboard correctly breaks at the opening.
-- Placement follows the story already locked into the composition: the visitor who entered and stopped slightly left of the workbench came through this doorway. The room's arrival narrative and its architecture now agree.
-- The doorway sits entirely outside the locked frame: docs/progress/0014.png is byte-identical to R-0013.png. A supplementary construction view is saved as docs/progress/0014-entrance-view.png.
-- Validation passed: if the camera turned around tomorrow, the room makes architectural sense — walls, window, entrance, and baseboards form a coherent permanent shell.
-- CHANGELOG not updated: no visitor-perceivable change.
+- Two foundational rendering changes, chosen for being felt rather than pointable:
+- Tone mapping switched from ACES to AgX — a calmer, more photographic highlight and color response; the frame loses its last trace of CG contrast without any change to the lighting itself.
+- The sun shadow gained a soft penumbra (PCF with blur radius 4). VSM was tried first and rejected: in VSM mode every shadow receiver also casts, which made the walls throw uncontrollable wrong-direction shadows across the floor. Documented for future lighting work.
+- Nothing moved, nothing was added, no animation, no post-processing: material colors, composition, architecture, and props are untouched.
+- Validation: the razor-cut shadow edge and plasticky contrast were the two clearest "this is a simulation" tells in the frame; with both gone, the room reads as quietly existing rather than rendered.
+- Architecture Phase recorded as complete in PROJECT_STATUS; the project is now in the Presence Phase.
+- CHANGELOG not updated: the change is deliberately below the threshold of pointability.
 
 ## Decisions Required
 
@@ -22,4 +24,4 @@ None.
 
 ## Ready For
 
-WORK ORDER 0015.
+Creative review of docs/progress/0015.png, then WORK ORDER 0016.
