@@ -171,6 +171,31 @@ export function RoomShell() {
   /* One quiet plaster for every painted surface (WORK ORDER 0042): broad
      tonal clouds at the threshold of noticing — the walls never perform. */
   const wallPlaster = plaster({ seed: 427, base: wall.color, age: 0.35 });
+  /* The rear wall alone carries the ghosts of habit (WORK ORDER 0050):
+     lighter patches where prints used to hang — one beside the hero print
+     (whose off-center position quietly answers to its predecessor's spot),
+     one behind the pinned cluster — and the pin holes that outlived their
+     pins. UVs derive from the wall's true span (x -2.2..2.2, y 0..2.4). */
+  const rearPlaster = plaster({
+    seed: 427,
+    base: wall.color,
+    age: 0.35,
+    ghosts: [
+      /* The hero print's predecessor: smaller, hung left of today's spot. */
+      { u: 0.495, v: 0.65, w: 0.082, h: 0.208 },
+      /* One that came down inside the cluster's territory. */
+      { u: 0.323, v: 0.633, w: 0.034, h: 0.083 },
+    ],
+    pinHoles: [
+      { u: 0.285, v: 0.7 },
+      { u: 0.31, v: 0.64 },
+      { u: 0.352, v: 0.72 },
+      { u: 0.338, v: 0.61 },
+      { u: 0.296, v: 0.585 },
+      { u: 0.455, v: 0.755 },
+      { u: 0.538, v: 0.755 },
+    ],
+  });
   return (
     <group position={fromWorkbench([0, 0, 0])}>
       <mesh
@@ -178,7 +203,7 @@ export function RoomShell() {
         receiveShadow
       >
         <planeGeometry args={[REAR_WIDTH, wall.height]} />
-        <meshStandardMaterial map={wallPlaster} roughness={0.94} />
+        <meshStandardMaterial map={rearPlaster} roughness={0.94} />
       </mesh>
       {LEFT_PANELS.filter(({ rect }) => rect[2] > 0 && rect[3] > 0).map(
         ({ key, rect: [centerZ, centerY, width, height] }) => (

@@ -73,6 +73,11 @@ export interface WoodParams {
   wearSpots?: ReadonlyArray<{ u: number; v: number; r: number }>;
   /** Ghosts of old mugs: faint rings at these UV spots. */
   rings?: ReadonlyArray<{ u: number; v: number; r: number }>;
+  /**
+   * Halos (WORK ORDER 0050): the darker, un-sunned disc under an object
+   * that never moves — the shadow of a habit. UV space.
+   */
+  halos?: ReadonlyArray<{ u: number; v: number; r: number }>;
 }
 
 /**
@@ -172,6 +177,19 @@ export function woodTexture(params: WoodParams): CanvasTexture {
       context.arc(cx, cy, radius, start, start + Math.PI * (1.2 + random() * 0.7));
       context.stroke();
     }
+    /* Halos: the un-sunned disc under something that never moves. */
+    for (const halo of params.halos ?? []) {
+      const cx = halo.u * size;
+      const cy = halo.v * size;
+      const radius = halo.r * size;
+      const gradient = context.createRadialGradient(cx, cy, radius * 0.55, cx, cy, radius);
+      gradient.addColorStop(0, `rgba(40, 30, 20, ${0.12 * age})`);
+      gradient.addColorStop(0.8, `rgba(40, 30, 20, ${0.05 * age})`);
+      gradient.addColorStop(1, "rgba(40, 30, 20, 0)");
+      context.fillStyle = gradient;
+      context.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+    }
+
     /* General patina: sparse darker flecks. */
     const flecks = Math.floor(500 * age);
     for (let index = 0; index < flecks; index++) {
@@ -294,6 +312,14 @@ export interface PlasterParams {
   /** 0..1 — blemishes and tonal history; keep low, the walls stay quiet. */
   age: number;
   size?: number;
+  /**
+   * Ghosts (WORK ORDER 0050): lighter rectangles where prints used to
+   * hang — the wall around them aged, and when they came down the old
+   * paint showed. Corners keep a fleck of adhesive residue. UV space.
+   */
+  ghosts?: ReadonlyArray<{ u: number; v: number; w: number; h: number }>;
+  /** Old pin holes that outlived their pins. UV space. */
+  pinHoles?: ReadonlyArray<{ u: number; v: number }>;
 }
 
 /**
@@ -345,6 +371,34 @@ export function plasterTexture(params: PlasterParams): CanvasTexture {
       const w = 8 + random() * 30;
       context.fillRect(x, y, w, 1.5 + random() * 2);
     }
+  }
+
+  /* Ghosts of prints that used to hang here (canvas y runs opposite V). */
+  for (const ghost of params.ghosts ?? []) {
+    const gw = ghost.w * size;
+    const gh = ghost.h * size;
+    const gx = ghost.u * size - gw / 2;
+    const gy = (1 - ghost.v) * size - gh / 2;
+    /* The old paint, slightly brighter, edges soft from repainting dust. */
+    for (let pass = 0; pass < 3; pass++) {
+      const grow = pass * 2.5;
+      context.fillStyle = `rgba(255, 252, 244, ${0.024 - pass * 0.006})`;
+      context.fillRect(gx - grow, gy - grow, gw + grow * 2, gh + grow * 2);
+    }
+    /* Adhesive residue at two of the four corners. */
+    context.fillStyle = "rgba(120, 104, 76, 0.16)";
+    context.fillRect(gx - 1, gy - 1, 5, 4);
+    context.fillRect(gx + gw - 4, gy + gh - 3, 5, 4);
+  }
+
+  /* Pin holes that outlived their pins. */
+  for (const hole of params.pinHoles ?? []) {
+    const x = hole.u * size;
+    const y = (1 - hole.v) * size;
+    context.fillStyle = "rgba(45, 38, 30, 0.5)";
+    context.fillRect(x, y, 2, 2);
+    context.fillStyle = "rgba(255, 252, 244, 0.1)";
+    context.fillRect(x, y + 2, 2, 1);
   }
 
   return toTexture(context);

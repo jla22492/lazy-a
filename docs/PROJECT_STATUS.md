@@ -14,7 +14,7 @@ Creative Sprint 02 — Reveal the Person (docs/SPRINT_02.md; exactly 10 implemen
 
 ## Current Work Order
 
-WORK ORDER 0049 — The Larger World: Off-Screen Light & Shadow (Sprint 02, order 4 of 10)
+WORK ORDER 0050 — Habits I: Ghosts on the Walls (Sprint 02, order 5 of 10)
 
 ---
 
@@ -105,6 +105,7 @@ WORK ORDER 0049 — The Larger World: Off-Screen Light & Shadow (Sprint 02, orde
 - Power I — the room is on the grid (docs/progress/0047.png): two duplex outlets low on the walls (one half-hidden by the bookcase, the way outlets always are; one out of frame below the window — the strip's cable exits the frame toward it), cables that hug the floor-wall seams instead of cutting across open floor (the 0040 diagonal run is gone; what remains visible is one short slack leaving the strip before it disappears behind the bench's right leg — the visible end of an invisible supply), and the desk lamp: dark green enamel, two joints, off because the daylight is doing its job, its head still aimed at the active zone from last night's session, its cord dropping off the bench's rear edge into the gap nobody looks at
 - Power II — the person's devices (docs/progress/0048.png): the phone charger — its block plugged into the strip, its pale cable rising from behind the bench and lying across the temporary zone in a lazy S threaded between the tape roll and the canisters, connector face-up — and no phone: it left with its owner minutes ago, the room's strongest evidence that someone just stood up
 - The larger world — off-screen light and shadow (docs/progress/0049.png): three authored approximations of light the renderer cannot transport itself, each derived from real geometry, all below the threshold of noticing — the window's daylight patch on the floor (its four corners are the window opening's sill and head edges projected along the sun's true direction; a diagonal warmth right of the chair that is felt more than seen), corner occlusion where the walls meet (four thin fades, ~14cm reach — the corners stop reading as the clean edges of a set), and one soft vertical band on the frosted pane's visible sliver: something stands outside the window, unexplained — the world continues past the glass
+- Habits I — ghosts on the walls (docs/progress/0050.png): time painted into the surfaces themselves, no new geometry — the rear wall alone carries two ghosts (lighter patches of old paint where prints used to hang, adhesive residue still at two corners: one is the hero print's predecessor, and today's hero hangs off-center partly because the old spot was taken; one came down inside the cluster's territory), seven pin holes that outlived their pins, and on the bench the pencil jar's halo — the un-sunned disc under the one object that never moves
 
 ---
 
@@ -116,7 +117,7 @@ Creative Sprint 02 — Reveal the Person (work orders 0046–0055).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0050 — Habits I: ghosts on the walls, then the sprint's first internal review.
+WORK ORDER 0051 — The plant becomes inevitable, following internal review #1.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

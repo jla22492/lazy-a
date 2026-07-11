@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0049 — The Larger World: Off-Screen Light & Shadow (Creative Sprint 02, order 4 of 10)
+WORK ORDER 0050 — Habits I: Ghosts on the Walls (Creative Sprint 02, order 5 of 10)
 
 ## Version
 
@@ -10,17 +10,18 @@ v0.1
 
 ## Summary
 
-- Three additions, all evidence of the world beyond the frame, all below the threshold of noticing (docs/progress/0049.png; verified against 0048 by amplified image diff, because at honest levels the eye alone can't audit them):
-- The window's daylight patch: a soft warm quad on the floor whose four corners are the window opening's sill and head edges projected along the sun's real direction — computed, not composed. It lands as a diagonal warmth on the floor right of the chair, felt more than seen. The renderer cannot transport light through the opening itself (the walls deliberately do not cast), so the patch is authored; its geometry is not.
-- Corner occlusion: four thin fades (~14cm reach) where the walls meet — the ambient occlusion real corners gather and our direct-plus-hemisphere lighting cannot compute. The rear corners stop reading as the clean edges of a set.
-- Pane presence: the frosted pane's visible sliver now carries one soft vertical darker band — something stands outside the window, unexplained. The room never says what. (First authored at the wrong end of the pane's UV — the visible sliver is the first ~8% — and moved where it can actually be seen.)
-- Honesty note for the next review: these are the room's first authored light planes. Each approximates real light transport rather than decorating, and each is parameterized against the true room geometry — but they are a stage convention, and I want the Creative Director's eyes on whether they stay on the right side of "chase truth."
-- Verification: type-check and production build pass; amplified diff confirms all three effects exist exactly where computed; full-frame review confirms none of them announce themselves.
+- Layers of time, painted into surfaces — no new geometry (docs/progress/0050.png):
+- Two ghosts on the rear wall: lighter rectangles of old paint where prints used to hang, edges softened by repainting dust, adhesive residue still clinging at two corners. The larger one is the hero print's predecessor — and today's hero print hangs off-center partly because the old spot was already taken. The wall now explains the composition. The smaller ghost came down inside the pinned cluster's territory and the cluster grew over its absence.
+- Seven pin holes that outlived their pins, scattered where the cluster used to reach and by the old hero's corners — each a two-pixel decision made years ago.
+- The pencil jar's halo on the bench: the darker, un-sunned disc under the one object that never moves. The manifest has always said the jar is the bench's permanent resident; now the wood says it too.
+- All three are parameters of the existing material system (plaster gained ghosts and pinHoles; wood gained halos), UV-derived from the true wall span and the jar's real bench position. Habits are geometry-free: they live in what the surfaces remember.
+- Verification: type-check and production build pass; 0050.png reviewed at full frame and in close crop on the wall.
+- This closes the sprint's first act; internal review #1 with the Creative Director happens now, including the 0049 honesty note about authored light planes.
 
 ## Decisions Required
 
-None (the honesty note above is flagged for internal review #1, not a blocking decision).
+None (0049's authored-light honesty note goes to internal review #1).
 
 ## Ready for
 
-WORK ORDER 0050 — Habits I: ghosts on the walls, then internal review #1.
+Internal review #1, then WORK ORDER 0051 — the plant becomes inevitable.

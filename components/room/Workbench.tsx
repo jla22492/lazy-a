@@ -44,6 +44,11 @@ export function Workbench() {
       { u: 0.21, v: 0.66, r: 0.023 },
       { u: 0.15, v: 0.78, r: 0.024 },
     ],
+    halos: [
+      /* The pencil jar never moves (WORK ORDER 0050): the un-sunned disc
+         of a permanent resident. UV from its bench-local (0.42, -0.2). */
+      { u: 0.733, v: 0.233, r: 0.032 },
+    ],
   });
   const legTexture = wood({
     seed: benchWood.seed + 1,
