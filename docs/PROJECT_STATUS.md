@@ -8,13 +8,13 @@ v0.1
 
 ## Current Sprint
 
-Sprint 001 — Presence Phase (Architecture Phase completed at WORK ORDER 0014)
+Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase closed at 0015 with the realization that stillness exists in time, not in frames)
 
 ---
 
 ## Current Work Order
 
-WORK ORDER 0015 — Establish Stillness (complete)
+WORK ORDER 0016 — Establish the Room Clock (complete)
 
 ---
 
@@ -51,6 +51,7 @@ WORK ORDER 0015 — Establish Stillness (complete)
 - Entrance established (docs/progress/0014.png + 0014-entrance-view.png): doorway opening in the left wall behind the camera (0.9m x 2.05m, 10cm reveal, baseboard breaking at the frame) — where the visitor who "stopped slightly left of the workbench" came in; entirely outside the locked frame (0014.png is byte-identical to R-0013.png)
 - ARCHITECTURE PHASE COMPLETE (declared by the Creative Director at 0014 review); PRESENCE PHASE begins
 - Stillness established (docs/progress/0015.png): AgX tone mapping (calmer, more photographic response than ACES) and a soft PCF shadow penumbra (VSM rejected — its receivers-also-cast rule made walls throw uncontrollable shadows); nothing moved, nothing added — the room simply settles
+- Room clock established (three/animation/roomClock.ts + RoomClockDriver + useRoomClock): the room's single heartbeat — elapsed/delta plus a 5s breath phase (calm resting-human tempo) and a 90s ambient drift phase; advanced once per frame before all other callbacks; all future behaviors derive from it (0016.png byte-identical to 0015.png)
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---
@@ -89,6 +90,8 @@ Place the hero print where the completed architecture says it belongs (Layer 2 �
 🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
 🔒 The room is a complete permanent shell: rear wall, left wall with the entrance doorway behind the camera, right wall with a frosted window (the implied light source, never a view), ceiling, baseboards. Identity enters in layers: architecture → permanent identity → active workspace → impossible moments.
 🔒 The room's history is told by light before it is told by objects.
+🔒 Architecture Phase — locked. The permanent shell does not change without a Revision Work Order.
+🔒 The room has one heartbeat: every time-based behavior derives from the room clock, never from isolated timers.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
 🔒 No interactions yet.

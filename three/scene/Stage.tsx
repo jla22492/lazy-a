@@ -10,6 +10,7 @@ import { Notebook } from "@/components/room/Notebook";
 import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
 import { WorkspaceZones } from "@/components/room/WorkspaceZones";
+import { RoomClockDriver } from "@/three/animation/RoomClockDriver";
 import { Daylight } from "@/three/lighting/Daylight";
 import { activeStudy } from "@/three/scene/cameraStudies";
 import { Floor } from "@/three/scene/Floor";
@@ -69,6 +70,7 @@ export function Stage() {
         }}
       >
         <color attach="background" args={[STAGE.backgroundColor]} />
+        <RoomClockDriver />
         <Daylight />
         <Floor />
         <RoomShell />
