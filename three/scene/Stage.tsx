@@ -12,6 +12,7 @@ import { FirstLook } from "@/components/camera/FirstLook";
 import { FirstStep } from "@/components/camera/FirstStep";
 import { Notebook } from "@/components/room/Notebook";
 import { RoomShell } from "@/components/room/RoomShell";
+import { PeripheralRoomDressing } from "@/components/room/PeripheralRoomDressing";
 import { ReferenceWallDressing } from "@/components/room/ReferenceWallDressing";
 import { Workbench } from "@/components/room/Workbench";
 import { WorkbenchDressing } from "@/components/room/WorkbenchDressing";
@@ -83,6 +84,7 @@ export function Stage() {
         <Workbench />
         <WorkbenchDressing />
         <ReferenceWallDressing />
+        <PeripheralRoomDressing />
         <Notebook />
         <WorkspaceZones />
         <CameraRig />

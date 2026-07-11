@@ -1,0 +1,249 @@
+"use client";
+
+import {
+  BOOKCASE,
+  CHAIR,
+  DROPPED_SHEET,
+  LEANING_BOARD,
+  PLANT,
+} from "@/three/scene/dressing/peripheralRoom";
+import { fromWorkbench } from "@/three/scene/world";
+
+/** The chair someone stood up from quickly. */
+function Chair() {
+  const { at, yaw, seat, pad, leg, back, woodColor, padColor } = CHAIR;
+  const legHeight = seat.height - seat.thickness;
+  const legX = seat.width / 2 - leg.size / 2 - 0.02;
+  const legZ = seat.depth / 2 - leg.size / 2 - 0.02;
+  const backHeight = back.height - seat.height;
+  return (
+    <group position={[at.x, 0, at.z]} rotation={[0, yaw, 0]}>
+      {/* Seat. */}
+      <mesh
+        position={[0, seat.height - seat.thickness / 2, 0]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[seat.width, seat.thickness, seat.depth]} />
+        <meshStandardMaterial color={woodColor} />
+      </mesh>
+      {/* Worn leather pad. */}
+      <mesh
+        position={[0, seat.height + pad.thickness / 2, 0]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry
+          args={[
+            seat.width - pad.inset * 2,
+            pad.thickness,
+            seat.depth - pad.inset * 2,
+          ]}
+        />
+        <meshStandardMaterial color={padColor} />
+      </mesh>
+      {/* Legs. */}
+      {[
+        [legX, legZ],
+        [legX, -legZ],
+        [-legX, legZ],
+        [-legX, -legZ],
+      ].map(([x, z]) => (
+        <mesh
+          key={`${x},${z}`}
+          position={[x, legHeight / 2, z]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[leg.size, legHeight, leg.size]} />
+          <meshStandardMaterial color={woodColor} />
+        </mesh>
+      ))}
+      {/* Backrest uprights, rising from the rear legs. */}
+      {[legX, -legX].map((x) => (
+        <mesh
+          key={x}
+          position={[x, seat.height + backHeight / 2, -legZ]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[back.upright.width, backHeight, back.upright.depth]} />
+          <meshStandardMaterial color={woodColor} />
+        </mesh>
+      ))}
+      {/* Top slat. */}
+      <mesh
+        position={[
+          0,
+          back.height - back.slat.fromTop - back.slat.height / 2,
+          -legZ,
+        ]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry
+          args={[seat.width - 0.04, back.slat.height, back.slat.thickness]}
+        />
+        <meshStandardMaterial color={woodColor} />
+      </mesh>
+    </group>
+  );
+}
+
+/** The one living thing in the room. */
+function Plant() {
+  const { at, pot, foliage } = PLANT;
+  return (
+    <group position={[at.x, 0, at.z]}>
+      <mesh position={[0, pot.height / 2, 0]} castShadow receiveShadow>
+        <cylinderGeometry
+          args={[pot.radius, pot.radius * 0.82, pot.height, 20]}
+        />
+        <meshStandardMaterial color={pot.color} />
+      </mesh>
+      {foliage.clumps.map((clump) => (
+        <mesh
+          key={`${clump.x},${clump.y}`}
+          position={[clump.x, clump.y, clump.z]}
+          castShadow
+        >
+          <sphereGeometry args={[clump.r, 12, 10]} />
+          <meshStandardMaterial color={foliage.color} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** The sheet that slid off the bench and hasn't been picked up. */
+function DroppedSheet() {
+  const { at, width, length, thickness, yaw, color } = DROPPED_SHEET;
+  return (
+    <mesh
+      position={[at.x, thickness / 2 + 0.0002, at.z]}
+      rotation={[0, yaw, 0]}
+      receiveShadow
+    >
+      <boxGeometry args={[width, thickness, length]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+  );
+}
+
+/** The working library that feeds the bench's book stack. */
+function Bookcase() {
+  const { at, width, height, depth, panelThickness, shelfHeights, color, books } =
+    BOOKCASE;
+  const innerBottom = panelThickness;
+  /* Books stand against the wall side; the case opens into the room. */
+  const rowsAt: Array<{ y: number; row: readonly { w: number; h: number; lean: number }[] }> = [
+    { y: innerBottom, row: books.lower },
+    { y: shelfHeights[0] + panelThickness / 2, row: books.upper },
+  ];
+  return (
+    /* Authored in wall-local axes (depth along X); rotated so the books
+       face into the room from the rear wall. */
+    <group position={[at.x, 0, at.z]} rotation={[0, Math.PI / 2, 0]}>
+      {/* Carcass: two sides, top, bottom, one shelf. Back stays open — the
+          wall shows through, as cheap studio shelving does. */}
+      {[
+        { key: "bottom", pos: [0, panelThickness / 2, 0], size: [depth, panelThickness, width] },
+        { key: "top", pos: [0, height - panelThickness / 2, 0], size: [depth, panelThickness, width] },
+        { key: "shelf", pos: [0, shelfHeights[0], 0], size: [depth, panelThickness, width - panelThickness * 2] },
+        { key: "left", pos: [0, height / 2, width / 2 - panelThickness / 2], size: [depth, height, panelThickness] },
+        { key: "right", pos: [0, height / 2, -(width / 2 - panelThickness / 2)], size: [depth, height, panelThickness] },
+      ].map(({ key, pos, size }) => (
+        <mesh
+          key={key}
+          position={[pos[0], pos[1], pos[2]]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[size[0], size[1], size[2]]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+      ))}
+      {rowsAt.map(({ y, row }) => {
+        let along = -width / 2 + panelThickness + 0.03;
+        return row.map((book, index) => {
+          const bookColor = books.colors[index % books.colors.length];
+          const z = along + book.w / 2;
+          along += book.w + (book.lean !== 0 ? 0.02 : 0.004);
+          return (
+            <mesh
+              key={`${y}-${index}`}
+              position={[0, y + book.h / 2, z]}
+              rotation={[book.lean, 0, 0]}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={[0.19, book.h, book.w]} />
+              <meshStandardMaterial color={bookColor} />
+            </mesh>
+          );
+        });
+      })}
+      {/* Flat stack at the upper shelf's right end. */}
+      {Array.from({ length: books.flatStack.count }, (_, index) => (
+        <mesh
+          key={`flat-${index}`}
+          position={[
+            0,
+            shelfHeights[0] +
+              panelThickness / 2 +
+              books.flatStack.each * (index + 0.5),
+            width / 2 - panelThickness - books.flatStack.w / 2 - 0.02,
+          ]}
+          rotation={[0, index * 0.06 - 0.06, 0]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry
+            args={[books.flatStack.d, books.flatStack.each, books.flatStack.w]}
+          />
+          <meshStandardMaterial
+            color={books.colors[(index + 3) % books.colors.length]}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Finished work that never made it up — leaning at floor level. */
+function LeaningBoard() {
+  const { at, width, height, thickness, lean, yaw, color } = LEANING_BOARD;
+  return (
+    <mesh
+      position={[
+        at.x,
+        (height / 2) * Math.cos(lean),
+        at.z - (height / 2) * Math.sin(lean),
+      ]}
+      rotation={[-lean, yaw, 0]}
+      castShadow
+      receiveShadow
+    >
+      <boxGeometry args={[width, height, thickness]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
+  );
+}
+
+/**
+ * The peripheral room's set dressing (WORK ORDER 0039) — Zone 3, blockout
+ * pass. How Lazy A lives: the interrupted chair, the one living thing,
+ * a dropped sheet, the working library, and finished work leaning at
+ * floor level. Primitive geometry and flat color only.
+ */
+export function PeripheralRoomDressing() {
+  return (
+    <group position={fromWorkbench([0, 0, 0])}>
+      <Chair />
+      <Plant />
+      <DroppedSheet />
+      <Bookcase />
+      <LeaningBoard />
+    </group>
+  );
+}

@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0038 — Dress the Reference Wall (Sprint 01, order 3 of 10)
+WORK ORDER 0039 — Dress the Peripheral Room (Sprint 01, order 4 of 10)
 
 ---
 
@@ -84,6 +84,8 @@ WORK ORDER 0038 — Dress the Reference Wall (Sprint 01, order 3 of 10)
 - 0037 amended per Creative Director review: the manifest gained a required question — "why hasn't this been put away?" (rooms feel lived in because things are temporarily unresolved, not because they're messy) — answered for every piece; and the pencil moved from beside the notebook to resting across its cover, because someone stopped writing halfway through a thought (the relationship tells the story, not the prop)
 - Reference wall dressed, blockout pass (docs/progress/0038.png): Zone 2 now tells who Lazy A is — the hero print's future home (large, unframed, a hair off level, off-center right where it can be judged from the bench; its content deliberately unauthored), a cluster of photographs and notes pinned one at a time over years (overlapping because no one takes the older ones down first), a picture ledge where things lean while they matter (a framed still, an unframed print overlapping its corner, and a small award turned mostly away — recognition happened, it is not performed), and three sticky notes low on the wall where a hand actually reaches it; nothing centered, nothing level
 
+- Peripheral room dressed, blockout pass (docs/progress/0039.png): Zone 3 now tells how Lazy A lives — the chair pulled back from the bench and turned seventeen degrees away (someone stood up quickly; it never got pushed back in), the working library against the rear wall below the picture ledge (leaning spines, a flat pile where returns get dropped, back open to the plaster, standing off the wall by the baseboard's depth as real furniture must), a mounted print leaning against the bookcase's front at floor level (finished work waiting its turn), the one living plant squeezed into the corner beside the library, and a single sheet on the floor that slid off the bench and hasn't been picked up; the bookcase was first authored on the left wall and moved to the rear wall when the locked frame proved the left wall lives entirely outside the composition
+
 ---
 
 ## In Progress
@@ -94,7 +96,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0039 — Dress the Peripheral Room (how Lazy A lives: chair, plant, shelf, floor).
+WORK ORDER 0040 — Dress the Edge of Frame (the world continues beyond the browser), then the sprint's first production design review with the Creative Director.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

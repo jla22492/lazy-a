@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0038 — Dress the Reference Wall (Creative Sprint 01, order 3 of 10)
+WORK ORDER 0039 — Dress the Peripheral Room (Creative Sprint 01, order 4 of 10)
 
 ## Version
 
@@ -10,14 +10,14 @@ v0.1
 
 ## Summary
 
-- Zone 2 is dressed at blockout fidelity. The rear wall now tells who Lazy A is, in four authored pieces (docs/progress/0038.png):
-- The hero print: large (50x70cm), unframed, hung a hair off level, off-center right — placed where someone at the bench can judge it, not where a decorator would center it. Its surface is a deliberate quiet mid-tone: the image itself is a creative decision still to be authored (this is the object the Creative Reset names as the identity anchor and the future home of the first perceptual surprise — the surprise itself is correctly NOT in this sprint).
-- The pinned cluster: six photographs and notes pinned one at a time over years, upper-left, overlapping because no one ever takes the older ones down first; later pins sit a paper's width prouder so the layering reads.
-- The picture ledge: the wall's only furniture, far left — a framed still leaning back, an unframed print overlapping its corner, and a small award at the end turned mostly away (recognition happened; it is not performed).
-- Sticky notes: three, low on the wall right of the hero print, over the bench's temporary zone — at the eye-line of a hand that actually reached the wall. First placed floating mid-wall in the propped prints' airspace; moved because the placement contradicted their story.
-- 0037 amendment folded in per the Creative Director's 0036 review: the SetPiece contract gained the required question "why hasn't this been put away?" (answered for all 17 manifest entries), and the pencil now rests across the notebook's cover because someone stopped writing halfway through a thought — the relationship tells the story, not the prop.
-- Known issue recorded: the archived pickup gesture would leave the pencil floating if triggered; flagged for direction rather than silently changed.
-- Verification: type-check and production build pass; 0038.png reviewed against the four questions — the wall now gives the eye a path (ledge → cluster → hero → notes → bench) while nothing moves.
+- Zone 3 is dressed at blockout fidelity: how Lazy A lives, in five authored pieces (docs/progress/0039.png):
+- The chair: a plain side chair with a worn pad, pulled back from the bench's open side and turned seventeen degrees away — someone stood up quickly and it never got pushed back in. It gives the frame its first foreground depth.
+- The bookcase: the working library that feeds the bench's book stack — leaning spines, one flat pile where returns get dropped, back open to the plaster like cheap studio shelving. First authored against the left wall; a frame-geometry check proved the left wall lives entirely outside the locked composition, so the library moved to the rear wall below the picture ledge, where it can be seen living. It stands off the wall by the baseboard's depth, as real furniture must.
+- The leaning board: a mounted print leaning against the bookcase's front at floor level — finished work that never made it up. The relationship (board-against-library) tells the story.
+- The plant: the one living thing in the room, squeezed into the corner beside the bookcase, blockout foliage as rounded masses. First render read oversized and over-saturated; slimmed and greyed to sit in the room's palette.
+- The dropped sheet: a single A4 on the floor under the bench's front edge — work happens faster than tidying.
+- All five carry manifest entries with story, identity, and the unresolved question. SET_MANIFEST now holds 22 pieces across three zones.
+- Verification: type-check and production build pass; 0039.png reviewed — the room now has floor-level life and a foreground, and the left half of the frame layers plant → library → leaning board → bench without any piece asking for attention.
 
 ## Decisions Required
 
@@ -25,4 +25,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0039 — Dress the Peripheral Room.
+WORK ORDER 0040 — Dress the Edge of Frame, then the sprint's first production design review.

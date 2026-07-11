@@ -232,6 +232,53 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     identity: "thinking overflows the desk; the wall catches it",
     unresolved: "each one is a task not yet done",
   },
+  {
+    name: "Chair",
+    zone: "peripheralRoom",
+    story:
+      "pulled back from the bench and turned seventeen degrees away — " +
+      "someone stood up quickly and it never got pushed back in",
+    identity: "work here gets interrupted by better ideas",
+    unresolved: "its sitter intends to come straight back",
+  },
+  {
+    name: "Plant",
+    zone: "peripheralRoom",
+    story:
+      "the one living thing in the room, in the corner the light reaches — " +
+      "watered irregularly, thriving anyway",
+    identity: "the studio keeps something alive that isn't a project",
+    unresolved: "permanent resident: it belongs to the room, not the work",
+  },
+  {
+    name: "DroppedSheet",
+    zone: "peripheralRoom",
+    story:
+      "slid off the bench at some point and hasn't been picked up — " +
+      "work happens faster than tidying",
+    identity: "momentum matters more than order",
+    unresolved: "picking it up hasn't been worth interrupting anything yet",
+  },
+  {
+    name: "Bookcase",
+    zone: "peripheralRoom",
+    story:
+      "the working library that feeds the bench's book stack: leaning " +
+      "spines and a flat pile where returns get dropped, back open to the " +
+      "plaster like cheap studio shelving",
+    identity: "reference is a habit, not a display",
+    unresolved: "permanent resident: the gaps in it are the unresolved part",
+  },
+  {
+    name: "LeaningBoard",
+    zone: "peripheralRoom",
+    story:
+      "a mounted print leaning against the bookcase at floor level — " +
+      "finished work that never made it up, or a candidate that never " +
+      "made the cut",
+    identity: "even finished work waits its turn here",
+    unresolved: "hanging it would mean deciding it is done",
+  },
 ];
 
 /** The manifest for one zone, for dressing components and reviews. */
