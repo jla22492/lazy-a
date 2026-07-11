@@ -47,6 +47,22 @@ const WEIGHT_SETTLE_HZ = 1.3;
 const WEIGHT_SETTLE_DAMPING = 3.2;
 
 /**
+ * Orienting (WORK ORDER 0029): after the hold settles there is a human
+ * beat, then one small unconscious adjustment — the notebook turns
+ * nearly square, tips a little further toward the reader, and the grip
+ * shifts subtly centered. Habit, not animation: it happens once,
+ * completes naturally, and stillness returns. The eyes stay on the
+ * room — hands understand before eyes read.
+ */
+export const ORIENT_PAUSE = 0.9;
+export const ORIENT_DURATION = 0.9;
+/** The adjustment's targets, relative to the hold. */
+export const ORIENT_YAW_SKEW = 0.03;
+export const ORIENT_TILT = -0.98;
+export const ORIENT_ASIDE = 0.05;
+export const ORIENT_BELOW_EYE = 0.31;
+
+/**
  * Once the notebook settles into the hold, the head rises to a
  * comfortable regard: the notebook sits low in vision, the room beyond
  * it — not pressed against the eyes. Radians below horizontal.
@@ -73,6 +89,8 @@ export interface PickupPose {
   carry: number;
   /** Vertical weight-settle offset once the hold is reached. */
   settleY: number;
+  /** 0..1 progress of the orienting adjustment (WORK ORDER 0029). */
+  orient: number;
   done: boolean;
 }
 
@@ -107,6 +125,11 @@ export function pickupPose(
         Math.sin(2 * Math.PI * WEIGHT_SETTLE_HZ * ts)
       : 0;
 
+  /** A beat after the settle, the hands make their one adjustment. */
+  const orient = smootherstep(
+    (ts - WEIGHT_SETTLE_DURATION - ORIENT_PAUSE) / ORIENT_DURATION,
+  );
+
   return {
     eye: [
       WORKING_EYE[0] + towardNotebook[0] * REACH_FORWARD * bend,
@@ -115,7 +138,10 @@ export function pickupPose(
     ],
     carry,
     settleY,
-    done: t >= PICKUP_TOTAL + WEIGHT_SETTLE_DURATION,
+    orient,
+    done:
+      t >=
+      PICKUP_TOTAL + WEIGHT_SETTLE_DURATION + ORIENT_PAUSE + ORIENT_DURATION,
   };
 }
 

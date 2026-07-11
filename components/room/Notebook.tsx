@@ -26,6 +26,10 @@ import {
   HELD_REGARD_PITCH,
   HELD_TILT,
   HELD_YAW_SKEW,
+  ORIENT_ASIDE,
+  ORIENT_BELOW_EYE,
+  ORIENT_TILT,
+  ORIENT_YAW_SKEW,
   pickupPose,
   pursueGaze,
 } from "@/three/animation/pickup";
@@ -92,6 +96,23 @@ const HELD_POSITION: [number, number, number] = [
 
 /** The hold's casual final orientation: a few degrees off square. */
 const HELD_YAW = NEUTRAL_DIR.yaw + HELD_YAW_SKEW;
+
+/**
+ * Where the one unconscious adjustment leaves the notebook (WORK ORDER
+ * 0029): nearly square, tipped a little further toward the reader, the
+ * grip shifted subtly centered — genuinely ready to be opened, unopened.
+ */
+const ORIENTED_POSITION: [number, number, number] = [
+  WORKING_EYE[0] +
+    Math.sin(NEUTRAL_DIR.yaw) * HELD_FORWARD +
+    Math.cos(NEUTRAL_DIR.yaw) * ORIENT_ASIDE,
+  WORKING_EYE[1] - ORIENT_BELOW_EYE,
+  WORKING_EYE[2] -
+    Math.cos(NEUTRAL_DIR.yaw) * HELD_FORWARD +
+    Math.sin(NEUTRAL_DIR.yaw) * ORIENT_ASIDE,
+];
+
+const ORIENTED_YAW = NEUTRAL_DIR.yaw + ORIENT_YAW_SKEW;
 
 /** Unit XZ direction from the working eyes toward the notebook at rest. */
 const TOWARD_NOTEBOOK: [number, number] = (() => {
@@ -167,12 +188,22 @@ export function Notebook() {
         const mesh = meshRef.current;
         if (mesh) {
           const at = carryPoint(REST_POSITION, HELD_POSITION, pose.carry);
-          mesh.position.set(at[0], at[1] + pose.settleY, at[2]);
+          /* One unconscious adjustment after the settle: hold → oriented. */
+          mesh.position.set(
+            at[0] + (ORIENTED_POSITION[0] - HELD_POSITION[0]) * pose.orient,
+            at[1] +
+              pose.settleY +
+              (ORIENTED_POSITION[1] - HELD_POSITION[1]) * pose.orient,
+            at[2] + (ORIENTED_POSITION[2] - HELD_POSITION[2]) * pose.orient,
+          );
           /* The notebook tilts toward the reader as it rises, turning
-             to the hold's casual off-square angle. */
+             to the hold's casual off-square angle — then, in the
+             adjustment, nearly square and a touch further tipped. */
           mesh.rotation.set(
-            HELD_TILT * pose.carry,
-            NOTEBOOK.rotationY + (HELD_YAW - NOTEBOOK.rotationY) * pose.carry,
+            HELD_TILT * pose.carry + (ORIENT_TILT - HELD_TILT) * pose.orient,
+            NOTEBOOK.rotationY +
+              (HELD_YAW - NOTEBOOK.rotationY) * pose.carry +
+              (ORIENTED_YAW - HELD_YAW) * pose.orient,
             0,
           );
           camera.position.set(...pose.eye);
