@@ -9,9 +9,13 @@
  * The clock is a mutable singleton advanced exactly once per rendered
  * frame by <RoomClockDriver /> inside the Canvas. Consumers read it inside
  * their own frame callbacks via getRoomClock()/useRoomClock() — no React
- * re-renders are involved. Because it advances with the frame loop, the
- * room's time pauses when the page is not being watched: the room only
- * lives while someone is looking.
+ * re-renders are involved.
+ *
+ * Philosophy (WORK ORDER 0017): this clock represents ROOM TIME. The room
+ * exists whether or not it is being observed; the visitor arrives in the
+ * middle of its life. Version 1 happens to advance with the render loop —
+ * that is an implementation detail, not a design law, and no future
+ * behavior should assume the room pauses when unobserved.
  */
 
 export interface RoomClock {

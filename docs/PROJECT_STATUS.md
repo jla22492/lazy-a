@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0016 — Establish the Room Clock (complete)
+WORK ORDER 0017 — Establish Presence Without Motion (complete)
 
 ---
 
@@ -52,6 +52,8 @@ WORK ORDER 0016 — Establish the Room Clock (complete)
 - ARCHITECTURE PHASE COMPLETE (declared by the Creative Director at 0014 review); PRESENCE PHASE begins
 - Stillness established (docs/progress/0015.png): AgX tone mapping (calmer, more photographic response than ACES) and a soft PCF shadow penumbra (VSM rejected — its receivers-also-cast rule made walls throw uncontrollable shadows); nothing moved, nothing added — the room simply settles
 - Room clock established (three/animation/roomClock.ts + RoomClockDriver + useRoomClock): the room's single heartbeat — elapsed/delta plus a 5s breath phase (calm resting-human tempo) and a 90s ambient drift phase; advanced once per frame before all other callbacks; all future behaviors derive from it (0016.png byte-identical to 0015.png)
+- Presence system established (three/animation/presence.ts + useRoomBehavior): the room's behavioral registry — future behaviors (ambient / camera / environment / impossible) register with the room and are ticked in deterministic order by the same driver that advances the clock; registration is decoupled from enablement; nothing is registered yet (0017.png byte-identical to 0016.png)
+- Room clock philosophy clarified per Creative Director: the clock represents room time; advancing with the render loop is a Version 1 implementation detail, not a design law
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---
@@ -92,6 +94,7 @@ Place the hero print where the completed architecture says it belongs (Layer 2 �
 🔒 The room's history is told by light before it is told by objects.
 🔒 Architecture Phase — locked. The permanent shell does not change without a Revision Work Order.
 🔒 The room has one heartbeat: every time-based behavior derives from the room clock, never from isolated timers.
+🔒 The room exists whether or not it is being observed; the visitor arrives in the middle of its life. Implementation may approximate this, but the experience must never imply otherwise.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
 🔒 No interactions yet.
