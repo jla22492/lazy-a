@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0042 — Materials II: Plaster, Floor, Leather, Ceramic, Metal (Creative Sprint 01, order 7 of 10)
+WORK ORDER 0043 — Lighting Refinement (Creative Sprint 01, order 8 of 10)
 
 ## Version
 
@@ -10,14 +10,11 @@ v0.1
 
 ## Summary
 
-- The room's remaining surfaces joined the material system (docs/progress/0042.png):
-- Plaster: every wall, reveal return, and the ceiling now carry painted plaster — broad tonal clouds (the wall was painted by a person), the faintest grain, a few scuffs low near the floor. Everything sits at the threshold of noticing, because the daylight is unremarkable by design and the walls must never perform.
-- Floor: warm troweled concrete — fine aggregate speckle, broad low-contrast stains, two hairline cracks. It tiles at ~5m; contrast stays low enough that the repeat never reads.
-- Leather: the chair's pad has pebble grain, tone drift, and a worn sheen where a body has sat it smooth — age 0.8, like the chair it lives on.
-- Ceramic: the mug and pencil jar glaze (near-flat with faint drift and speckle, low roughness); the plant's pot became clay.
-- Metal and plastic read honestly without textures: the camera and tripod carry metalness, the film canisters and headphones read as plastic, the baseboards as painted trim with a slight sheen. Restraint — a material response, not a texture, is all these need at this distance.
-- Verification: type-check and production build pass; 0042.png reviewed. The capture's file size nearly tripled since 0040 — the frame now carries actual surface information everywhere.
-- All materials remain procedural, deterministic, and parameterized in production-design language. No photo assets; every surface is art-directable by parameter.
+- Truth, not beauty. Two changes, both in service of the materials, neither visible as "lighting" (docs/progress/0043.png):
+- Shadow fidelity: the set dressing added pencil-scale casters, and 2048 shadow texels stretched across a 12m span rendered their shadows chunky or absent — the pencil jar, tape roll, film canisters, and camera floated. The shadow map doubled to 4096 across a tighter 10m span (~2.4mm per texel); an A/B crop against 0042 confirms every small object now casts a fine contact shadow and visibly sits ON the bench. Objects grounding is the light revealing material truth.
+- Bounce rebalance: the fill's ground return warmed a step and dropped from 0.5 to 0.44 — the floor is concrete and the bench is wood now, and the light bouncing off them should say so. The sun models the new surfaces slightly more; nothing announces itself.
+- The sun's color, position, intensity, and the daylight-breath behavior are untouched. The daylight remains unremarkable by design.
+- Verification: type-check and production build pass; 0043.png captured and A/B-compared against 0042.png in the small-object shadow region.
 
 ## Decisions Required
 
@@ -25,4 +22,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0043 — Lighting refinement around the new materials.
+WORK ORDER 0044 — The Edit.

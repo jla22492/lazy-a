@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0042 — Materials II: Plaster, Floor, Leather, Ceramic, Metal (Sprint 01, order 7 of 10)
+WORK ORDER 0043 — Lighting Refinement (Sprint 01, order 8 of 10)
 
 ---
 
@@ -94,6 +94,9 @@ WORK ORDER 0042 — Materials II: Plaster, Floor, Leather, Ceramic, Metal (Sprin
 
 - Materials II — plaster, floor, leather, ceramic, metal (docs/progress/0042.png): the room's remaining surfaces joined the material system — painted plaster on every wall, reveal, and the ceiling (broad tonal clouds and the faintest trowel unevenness, all at the threshold of noticing — the walls never perform); warm troweled concrete underfoot (fine aggregate, broad low-contrast stains, two hairline cracks; tiling never reads); worn leather on the chair pad (pebble grain smoothed and lightened where a body rests); glazed ceramic for the mug and pencil jar; clay for the plant's pot; and honest material response — not textures — for the camera, canisters, headphones, tripod, and baseboards (roughness and metalness tuned so metal reads as metal and painted trim carries a slight sheen)
 
+- Second production design review held (after 0042): materials approved — the walls' quiet tonal variation called the biggest surprise, the workbench now reads "work surface" not "table"; new Creative Lock named (nothing exists to decorate; everything survived previous decisions) and the room's guiding word coined: CONTINUED; The Edit's backlog grew (chair must become evidence, plant commits to drinking the window's light, one or two quiet disagreements, hero print stays blank)
+- Lighting refined around the materials (docs/progress/0043.png): truth, not beauty — the set dressing added pencil-scale casters that 2048 shadow texels across a 12m span rendered chunky or missing, so the shadow map doubled to 4096 across a tighter 10m span (~2.4mm per texel: the pencil jar, tape roll, canisters, and camera now cast fine contact shadows and visibly sit ON the bench instead of floating); the bounce fill warmed a step and dropped slightly (the floor is concrete and the bench wood now — the return light should say so) so the sun models the new surfaces instead of the fill flattening them; the light itself is unchanged and unnoticeable, by instruction
+
 ---
 
 ## In Progress
@@ -104,7 +107,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0043 — Lighting refinement around the new materials.
+WORK ORDER 0044 — The Edit (ruthless subtraction; the full review backlog).
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -164,3 +167,4 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 Surprise is built in order: perceptual, then behavioral, then narrative — never skipping ahead.
 🔒 The notebook interaction pipeline (0027–0034) is completed research into interaction language: preserved and valid, never the roadmap. The workbench, not the notebook, is the center of the experience.
 🔒 Rooms are written in layers of time, not layers of objects. Every object answers "when did this arrive?" — and the answers span years, not hours. (Named at the sprint's first production design review.)
+🔒 Nothing exists to decorate. Everything exists because it survived previous decisions. (Named at the second production design review, with the room's guiding word: the room feels CONTINUED — arrived at in the middle of an ongoing creative life — never lived-in, messy, or curated.)

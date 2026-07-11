@@ -191,9 +191,16 @@ export const DAYLIGHT = {
     /** High and to the right, outside the frame, angled into the room. */
     position: [4, 5, 2.5] as [number, number, number],
     shadow: {
-      mapSize: 2048,
-      /** Half-extent of the shadow camera; covers the visible room. */
-      coverage: 6,
+      /**
+       * Truthful shadows for a furnished room (WORK ORDER 0043): the set
+       * dressing added pencil-scale casters, and 2048 texels across a 12m
+       * shadow span rendered their shadows chunky. Doubled resolution and
+       * a tighter span put ~2.4mm per texel on the floor — small objects
+       * ground believably and the light itself stays unchanged.
+       */
+      mapSize: 4096,
+      /** Half-extent of the shadow camera; covers the furnished room. */
+      coverage: 5,
       bias: -0.0005,
       normalBias: 0.04,
       /**
@@ -208,9 +215,14 @@ export const DAYLIGHT = {
   bounce: {
     /** Barely-cool sky component of the fill. */
     skyColor: "#e7ebee",
-    /** Light returned from the warm floor and plaster. */
-    groundColor: "#a89e90",
-    intensity: 0.5,
+    /**
+     * Light returned from the warm floor and plaster — since the floor
+     * became concrete and the bench wood (WORK ORDER 0043), the return
+     * warms a step and drops slightly, so the sun models the new
+     * materials instead of the fill flattening them.
+     */
+    groundColor: "#a89882",
+    intensity: 0.44,
   },
   /**
    * The first breath (WORK ORDER 0018): daylight sways imperceptibly, the
