@@ -100,6 +100,30 @@ export function gripProgress(t: number): number {
 export const GRIP_TOTAL = GRIP_ONSET + GRIP_DURATION;
 
 /**
+ * Opening (WORK ORDER 0033): the first irreversible act. The cover
+ * rotates around its real hinge — the spine edge under the supporting
+ * hand — from the prepared grip, without hesitation or flourish,
+ * stopping at its natural open rest just past vertical: open enough
+ * that the first page could be seen, before anything becomes the
+ * subject. The supporting hand answers the shifting weight: the grip
+ * roll partly releases and the book settles a few millimetres.
+ */
+export const OPEN_ONSET = 0.12;
+export const OPEN_DURATION = 1.15;
+/** The cover's open resting angle (radians past closed). */
+export const OPEN_ANGLE = 2.0;
+/** How much of the grip roll the hand releases as the cover leaves. */
+export const OPEN_COUNTER_ROLL = 0.35;
+export const OPEN_SETTLE_DIP = 0.004;
+
+/** Progress of the opening, `t` seconds after acceptance. */
+export function openProgress(t: number): number {
+  return smootherstep((t - OPEN_ONSET) / OPEN_DURATION);
+}
+
+export const OPEN_TOTAL = OPEN_ONSET + OPEN_DURATION;
+
+/**
  * Once the notebook settles into the hold, the head rises to a
  * comfortable regard: the notebook sits low in vision, the room beyond
  * it — not pressed against the eyes. Radians below horizontal.

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { useThree } from "@react-three/fiber";
-import { Vector3, type Mesh } from "three";
+import { Vector3, type Group } from "three";
 
 import {
   requestInteraction,
@@ -27,6 +27,11 @@ import {
   GRIP_TOTAL,
   gripProgress,
   HELD_ASIDE,
+  OPEN_ANGLE,
+  OPEN_COUNTER_ROLL,
+  OPEN_SETTLE_DIP,
+  OPEN_TOTAL,
+  openProgress,
   HELD_BELOW_EYE,
   HELD_FORWARD,
   HELD_REGARD_PITCH,
@@ -128,6 +133,26 @@ const ORIENTED_POSITION: [number, number, number] = [
 const ORIENTED_YAW = NEUTRAL_DIR.yaw + ORIENT_YAW_SKEW;
 
 /**
+ * The notebook's construction (WORK ORDER 0033): a page block with the
+ * back cover, a hinged front cover pivoting at the spine (the edge
+ * under the supporting hand), and a first page that exists physically
+ * without becoming the subject — quiet paper, nothing on it.
+ */
+const COVER_THICKNESS = 0.003;
+const BODY_THICKNESS = NOTEBOOK.thickness - COVER_THICKNESS;
+/** The hinge line: spine edge, at the cover's resting mid-plane. */
+const HINGE_Y = BODY_THICKNESS - NOTEBOOK.thickness / 2 + COVER_THICKNESS / 2;
+/** Quiet paper — present, unmeaning. */
+const PAGE_COLOR = "#6b665e";
+
+/** Where the grip adjustment leaves the notebook (WORK ORDER 0032). */
+const GRIPPED_POSITION: [number, number, number] = [
+  ORIENTED_POSITION[0] + Math.cos(NEUTRAL_DIR.yaw) * GRIP_ASIDE_SHIFT,
+  ORIENTED_POSITION[1] - GRIP_DIP,
+  ORIENTED_POSITION[2] + Math.sin(NEUTRAL_DIR.yaw) * GRIP_ASIDE_SHIFT,
+];
+
+/**
  * Where the first look down rests (WORK ORDER 0030): on the held
  * notebook itself — a hair above center, the way eyes land on a cover
  * rather than its geometric middle.
@@ -175,12 +200,15 @@ export function Notebook() {
   useAcceptancePolicy(ACCEPTANCE_POLICY);
 
   const camera = useThree((state) => state.camera);
-  const meshRef = useRef<Mesh>(null);
+  const meshRef = useRef<Group>(null);
+  const coverRef = useRef<Group>(null);
   const pickupStart = useRef<number | null>(null);
   const pickedUp = useRef(false);
   const pickupDone = useRef(false);
   const gripStart = useRef<number | null>(null);
   const gripped = useRef(false);
+  const openStart = useRef<number | null>(null);
+  const opened = useRef(false);
   const gaze = useRef<[number, number, number] | null>(null);
 
   const personPickup = useMemo<RoomBehavior>(
@@ -207,6 +235,37 @@ export function Notebook() {
             camera.position.z + forward.z,
           ];
         }
+        /* Opening (WORK ORDER 0033): the visitor's third deliberate
+           commitment — the first irreversible one. The cover rotates
+           around its real hinge; the supporting hand answers. */
+        if (
+          gripped.current &&
+          !opened.current &&
+          openStart.current === null &&
+          hasIntent("notebook") &&
+          requestInteraction("notebook") === "accepted"
+        ) {
+          openStart.current = -1;
+        }
+        if (openStart.current !== null) {
+          if (openStart.current === -1) openStart.current = clock.elapsed;
+          const p = openProgress(clock.elapsed - openStart.current);
+          const mesh = meshRef.current;
+          const cover = coverRef.current;
+          if (mesh && cover) {
+            cover.rotation.z = OPEN_ANGLE * p;
+            /* The hand releases part of the grip roll and the book
+               settles as the cover's weight leaves the block. */
+            mesh.rotation.z = GRIP_ROLL * (1 - OPEN_COUNTER_ROLL * p);
+            mesh.position.y = GRIPPED_POSITION[1] - OPEN_SETTLE_DIP * p;
+          }
+          if (clock.elapsed - openStart.current >= OPEN_TOTAL) {
+            openStart.current = null;
+            opened.current = true;
+          }
+          return;
+        }
+
         /* Finding the cover (WORK ORDER 0032): the visitor's second
            deliberate commitment, made while looking at what they hold.
            The room answers; only then do the hands prepare. */
@@ -315,7 +374,7 @@ export function Notebook() {
     /* TEMPORARY commitment gesture: press and hold while ready — the
        same gesture offers the pickup and, later, finding the cover. */
     const onPointerDown = () => {
-      if (!gripped.current) beginCommit("notebook");
+      if (!opened.current) beginCommit("notebook");
     };
     const onPointerUp = () => {
       releaseCommit();
@@ -358,6 +417,17 @@ export function Notebook() {
             }, 120);
             autoTimers.push(retry);
           }, startAt + 14000),
+          /* ...then the third: the cover opens (WORK ORDER 0033). */
+          window.setTimeout(() => {
+            const retry = window.setInterval(() => {
+              if (
+                opened.current ||
+                (gripped.current && beginCommit("notebook"))
+              )
+                window.clearInterval(retry);
+            }, 120);
+            autoTimers.push(retry);
+          }, startAt + 20000),
         ];
       }
     }
@@ -370,17 +440,35 @@ export function Notebook() {
   }, []);
 
   return (
-    <mesh
+    <group
       ref={meshRef}
       position={REST_POSITION}
       rotation-y={NOTEBOOK.rotationY}
-      castShadow
-      receiveShadow
     >
-      <boxGeometry
-        args={[NOTEBOOK.width, NOTEBOOK.thickness, NOTEBOOK.length]}
-      />
-      <meshStandardMaterial color={NOTEBOOK.color} />
-    </mesh>
+      {/* Page block and back cover. */}
+      <mesh position={[0, -COVER_THICKNESS / 2, 0]} castShadow receiveShadow>
+        <boxGeometry args={[NOTEBOOK.width, BODY_THICKNESS, NOTEBOOK.length]} />
+        <meshStandardMaterial color={NOTEBOOK.color} />
+      </mesh>
+      {/* The first page: physically there, never the subject. */}
+      <mesh
+        position={[0, HINGE_Y - COVER_THICKNESS / 2 + 0.0002, 0]}
+        rotation-x={-Math.PI / 2}
+      >
+        <planeGeometry
+          args={[NOTEBOOK.width - 0.012, NOTEBOOK.length - 0.012]}
+        />
+        <meshStandardMaterial color={PAGE_COLOR} />
+      </mesh>
+      {/* The front cover, hinged at the spine. */}
+      <group ref={coverRef} position={[-NOTEBOOK.width / 2, HINGE_Y, 0]}>
+        <mesh position={[NOTEBOOK.width / 2, 0, 0]} castShadow receiveShadow>
+          <boxGeometry
+            args={[NOTEBOOK.width, COVER_THICKNESS, NOTEBOOK.length]}
+          />
+          <meshStandardMaterial color={NOTEBOOK.color} />
+        </mesh>
+      </group>
+    </group>
   );
 }

@@ -19,5 +19,6 @@
 - The hands finished their understanding: after a quiet beat, one unconscious adjustment turns the notebook square and ready — the body's relationship with the object is complete before the mind's begins. Hands understand before eyes read.
 - The eyes finally looked down: after the hands went quiet, attention descended from the room to the thing already held — and the notebook stopped being an object and became a consideration. Thought has begun; nothing has opened.
 - The thumb found the cover: the visitor's second real decision, and the body's answer — weight to one hand, the opening edge offered up to the other. Everything is ready and nothing is spent; the first irreversible act still belongs entirely to the visitor.
+- The notebook opened: the first irreversible act in Lazy A, chosen by the visitor and performed by the body — the cover swung on its real hinge and came to rest, and the relationship changed. Not because the notebook changed; because the visitor did. Nothing has been read.
 
 Record experience changes here, not just technical ones.

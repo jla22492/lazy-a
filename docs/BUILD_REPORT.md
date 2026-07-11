@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0032 — Finding the Cover
+WORK ORDER 0033 — Opening
 
 ## Version
 
@@ -10,13 +10,13 @@ v0.1
 
 ## Summary
 
-- The hands prepare to open the notebook without opening it (docs/progress/0032.mp4): weight redistributes toward the supporting hand, the book settles a few millimetres into the palm, and the opening edge rolls up a few degrees toward the dominant thumb — one unconscious 0.7-second motion, then true stillness. The cover never separates; the gaze never moves (hands do not need to be watched).
-- The visitor's decision runs through the full grammar, honoring "the experience waits for the visitor": nothing here happens on a timer. The preparation begins only when the visitor makes a second deliberate commitment while looking at what they hold — readiness matures again, intent is held, the offer is made, and the room accepts before a single millimetre moves.
-- The 0031 dormant note was fixed at exactly the moment it became meaningful, per your instruction: the notebook's attention center now travels with the notebook — from the bench, through the carry, into the hands. Observation of the held notebook is what re-arms readiness for this order's decision.
-- The TEMPORARY commitment gesture (press-and-hold) is unchanged and now serves both decisions in sequence: the pickup, then finding the cover. Stray input still dies in the pipeline: a twitch never prepares the grip, and an early commitment's intent expires before the hold completes.
-- Nothing else changed: no cover separation, no pages, no gaze change, no prompts, no idle motion.
-- Validation asked and answered: the motion describes as "getting ready to open it," not "starting to open it."
-- New Creative Lock recorded: the body prepares before it commits.
+- The notebook opens for the first time (docs/progress/0033.mp4): on the visitor's third deliberate commitment — the first irreversible one — the cover rotates around its real hinge from the prepared grip to its natural open rest just past vertical, in one 1.15-second motion with no hesitation, no flourish, no anticipation. Exactly what a person does after already deciding.
+- The notebook gained real construction to make the hinge real: a page block with the back cover, a 3mm front cover pivoting at the spine edge (the edge under the supporting hand, where the 0032 grip put the weight), and a first page of quiet paper that exists physically without becoming the subject. The closed notebook's silhouette is unchanged from every prior order.
+- The supporting hand behaves naturally: as the cover's weight leaves the block, part of the grip roll releases and the book settles four millimetres into the palm. The gaze does not move — the visitor watches themselves cross the threshold.
+- The opening stops before the contents become the subject: at the open rest, the first page could be seen — and that is all. Nothing readable, no page turns, no sound, no change to the room. Reading has not begun.
+- The trigger is the same protected pattern: readiness matures by observing the held notebook, intent is held, the offer is made, the room accepts. Nothing happened because time passed.
+- Validation asked and answered: the motion describes as "opening the notebook," not "starting to read it."
+- New Creative Lock recorded: opening changes the relationship.
 
 ## Decisions Required
 
@@ -24,4 +24,4 @@ None.
 
 ## Ready for
 
-The Creative Director's next order — the thumb is on the cover. The first irreversible act, whenever you decide the story is ready for it.
+The Creative Director's next order. The physical event is complete; the cognitive one — reading — awaits its own moment, as you directed.
