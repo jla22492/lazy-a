@@ -1,6 +1,6 @@
 "use client";
 
-import { paper } from "@/three/materials/procedural";
+import { ceramic, paper } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import {
   BOOK_STACK,
@@ -87,7 +87,10 @@ function PencilJar() {
     <group position={[at.x, SURFACE, at.z]}>
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[radius, radius * 0.92, height, 20]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial
+          map={ceramic(435, color)}
+          roughness={0.42}
+        />
       </mesh>
       {sticks.map((stick) => (
         <mesh
@@ -138,11 +141,11 @@ function Mug() {
     <group position={[at.x, SURFACE, at.z]} rotation={[0, handleYaw, 0]}>
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[radius, radius * 0.94, height, 20]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial map={ceramic(437, color)} roughness={0.35} />
       </mesh>
       <mesh position={[radius + 0.012, height * 0.55, 0]} castShadow>
         <torusGeometry args={[0.02, 0.006, 8, 16]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial map={ceramic(437, color)} roughness={0.35} />
       </mesh>
     </group>
   );
@@ -161,12 +164,12 @@ function Headphones() {
         castShadow
       >
         <torusGeometry args={[bandRadius, bandTube, 8, 24, Math.PI]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} roughness={0.6} />
       </mesh>
       {[-bandRadius, bandRadius].map((x) => (
         <mesh key={x} position={[x, cupHeight / 2, 0.01]} castShadow>
           <cylinderGeometry args={[cupRadius, cupRadius, cupHeight, 18]} />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial color={color} roughness={0.6} />
         </mesh>
       ))}
     </group>
@@ -230,7 +233,7 @@ function FilmCanisters() {
         receiveShadow
       >
         <cylinderGeometry args={[radius, radius, height, 16]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} roughness={0.55} />
       </mesh>
       <mesh
         position={[fallen.x, SURFACE + radius, fallen.z]}
@@ -239,7 +242,7 @@ function FilmCanisters() {
         receiveShadow
       >
         <cylinderGeometry args={[radius, radius, height, 16]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} roughness={0.55} />
       </mesh>
     </>
   );
@@ -252,7 +255,7 @@ function Camera() {
     <group position={[at.x, SURFACE, at.z]} rotation={[0, yaw, 0]}>
       <mesh position={[0, body.height / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[body.width, body.height, body.depth]} />
-        <meshStandardMaterial color={bodyColor} />
+        <meshStandardMaterial color={bodyColor} roughness={0.45} metalness={0.3} />
       </mesh>
       <mesh
         position={[0, body.height / 2, body.depth / 2 + lens.length / 2]}
@@ -260,14 +263,14 @@ function Camera() {
         castShadow
       >
         <cylinderGeometry args={[lens.radius, lens.radius, lens.length, 20]} />
-        <meshStandardMaterial color={lensColor} />
+        <meshStandardMaterial color={lensColor} roughness={0.35} metalness={0.4} />
       </mesh>
       <mesh
         position={[0, body.height + prism.height / 2, 0]}
         castShadow
       >
         <boxGeometry args={[prism.width, prism.height, prism.depth]} />
-        <meshStandardMaterial color={bodyColor} />
+        <meshStandardMaterial color={bodyColor} roughness={0.45} metalness={0.3} />
       </mesh>
     </group>
   );

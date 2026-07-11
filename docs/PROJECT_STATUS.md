@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0041 — Materials I: Wood & Paper (Sprint 01, order 6 of 10)
+WORK ORDER 0042 — Materials II: Plaster, Floor, Leather, Ceramic, Metal (Sprint 01, order 7 of 10)
 
 ---
 
@@ -92,6 +92,8 @@ WORK ORDER 0041 — Materials I: Wood & Paper (Sprint 01, order 6 of 10)
 - Manifest deepened per review: every piece now also answers "when did this arrive?" — the 25 answers deliberately span years (the bench and power run arrived years ago; the pencil, twenty minutes ago, mid-sentence) — and this time layer is the material system's age input
 - Materials I — wood & paper (docs/progress/0041.png): a procedural material system (three/materials/procedural.ts — deterministic, seeded, parameterized in production-design language: age, wear, tone, handling) replaced flat color on every wood and paper surface. The workbench is the star: stained wood, long grain, plank-tone disagreement, and wear derived from the workspace zone language — scuffs concentrated in the active zone, ghost mug rings where the mug lives (and used to live), scratches along the grain; age 0.85 because it arrived years ago. The chair, bookcase, and picture ledge join the same wood family at their own ages; every print, sheet, note, photo, and book cover carries paper fiber, tone drift, and handling; the shipping tubes became kraft cardboard with a spiral seam. The notebook's cover was deliberately left untouched — its material treatment shapes visitor expectation, which docs/THE_NOTEBOOK.md holds as an unanswered authorship question
 
+- Materials II — plaster, floor, leather, ceramic, metal (docs/progress/0042.png): the room's remaining surfaces joined the material system — painted plaster on every wall, reveal, and the ceiling (broad tonal clouds and the faintest trowel unevenness, all at the threshold of noticing — the walls never perform); warm troweled concrete underfoot (fine aggregate, broad low-contrast stains, two hairline cracks; tiling never reads); worn leather on the chair pad (pebble grain smoothed and lightened where a body rests); glazed ceramic for the mug and pencil jar; clay for the plant's pot; and honest material response — not textures — for the camera, canisters, headphones, tripod, and baseboards (roughness and metalness tuned so metal reads as metal and painted trim carries a slight sheen)
+
 ---
 
 ## In Progress
@@ -102,7 +104,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0042 — Materials II: plaster, floor, leather, ceramic, metal.
+WORK ORDER 0043 — Lighting refinement around the new materials.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

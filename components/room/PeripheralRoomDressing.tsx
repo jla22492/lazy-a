@@ -1,6 +1,6 @@
 "use client";
 
-import { paper, wood } from "@/three/materials/procedural";
+import { leather, paper, plaster, wood } from "@/three/materials/procedural";
 import {
   BOOKCASE,
   CHAIR,
@@ -47,7 +47,10 @@ function Chair() {
             seat.depth - pad.inset * 2,
           ]}
         />
-        <meshStandardMaterial color={padColor} />
+        <meshStandardMaterial
+          map={leather({ seed: 429, base: padColor, worn: 0.7 })}
+          roughness={0.6}
+        />
       </mesh>
       {/* Legs. */}
       {[
@@ -106,7 +109,10 @@ function Plant() {
         <cylinderGeometry
           args={[pot.radius, pot.radius * 0.82, pot.height, 20]}
         />
-        <meshStandardMaterial color={pot.color} />
+        <meshStandardMaterial
+          map={plaster({ seed: 433, base: pot.color, age: 0.5 })}
+          roughness={0.85}
+        />
       </mesh>
       {foliage.clumps.map((clump) => (
         <mesh

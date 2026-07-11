@@ -288,6 +288,234 @@ export function cardboard(seed: number, base: string): CanvasTexture {
   );
 }
 
+export interface PlasterParams {
+  seed: number;
+  base: string;
+  /** 0..1 — blemishes and tonal history; keep low, the walls stay quiet. */
+  age: number;
+  size?: number;
+}
+
+/**
+ * Painted plaster (WORK ORDER 0042): broad tonal clouds and the faintest
+ * trowel unevenness. The daylight is unremarkable by design, so the walls
+ * must never perform — everything here sits at the threshold of noticing.
+ */
+export function plasterTexture(params: PlasterParams): CanvasTexture {
+  const size = params.size ?? 1024;
+  const random = seededRandom(params.seed);
+  const context = makeCanvas(size, size);
+  const base = rgb(params.base);
+
+  context.fillStyle = style(base, 1);
+  context.fillRect(0, 0, size, size);
+
+  /* Broad tonal clouds — the wall was painted by a person. */
+  for (let index = 0; index < 9; index++) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = size * (0.2 + random() * 0.45);
+    const gradient = context.createRadialGradient(x, y, 1, x, y, radius);
+    const light = random() < 0.5;
+    gradient.addColorStop(
+      0,
+      light ? "rgba(255, 253, 248, 0.03)" : "rgba(40, 36, 30, 0.028)",
+    );
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+
+  /* Fine grain so the surface never reads as vector-flat. */
+  for (let index = 0; index < 1600; index++) {
+    const tone = random() < 0.5 ? 255 : 20;
+    context.fillStyle = `rgba(${tone}, ${tone}, ${tone}, ${
+      random() * 0.016
+    })`;
+    context.fillRect(random() * size, random() * size, 1 + random(), 1);
+  }
+
+  /* Age: a few faint scuffs and one hairline blemish. */
+  if (params.age > 0) {
+    const scuffs = Math.round(4 * params.age);
+    for (let index = 0; index < scuffs; index++) {
+      const x = random() * size;
+      const y = size * (0.6 + random() * 0.38);
+      context.fillStyle = `rgba(70, 62, 52, ${0.04 + random() * 0.05})`;
+      const w = 8 + random() * 30;
+      context.fillRect(x, y, w, 1.5 + random() * 2);
+    }
+  }
+
+  return toTexture(context);
+}
+
+/**
+ * The studio floor (WORK ORDER 0042): warm troweled concrete — fine
+ * aggregate, broad stains, all low contrast. Tiles via RepeatWrapping;
+ * contrast stays low enough that the repeat never reads.
+ */
+export function concreteTexture(seed: number, base: string): CanvasTexture {
+  const size = 1024;
+  const random = seededRandom(seed);
+  const context = makeCanvas(size, size);
+  const baseColor = rgb(base);
+
+  context.fillStyle = style(baseColor, 1);
+  context.fillRect(0, 0, size, size);
+
+  /* Broad moisture/wear stains. */
+  for (let index = 0; index < 7; index++) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = size * (0.15 + random() * 0.35);
+    const gradient = context.createRadialGradient(x, y, 1, x, y, radius);
+    const light = random() < 0.4;
+    gradient.addColorStop(
+      0,
+      light ? "rgba(255, 250, 240, 0.03)" : "rgba(35, 30, 24, 0.035)",
+    );
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+
+  /* Fine aggregate speckle. */
+  for (let index = 0; index < 5200; index++) {
+    const tone = random() < 0.5 ? 250 : 18;
+    context.fillStyle = `rgba(${tone}, ${tone}, ${tone}, ${
+      random() * 0.03
+    })`;
+    context.fillRect(random() * size, random() * size, 1, 1);
+  }
+
+  /* A couple of hairline cracks. */
+  for (let index = 0; index < 2; index++) {
+    let x = random() * size;
+    let y = random() * size;
+    context.strokeStyle = "rgba(40, 34, 28, 0.12)";
+    context.lineWidth = 0.8;
+    context.beginPath();
+    context.moveTo(x, y);
+    const steps = 6 + Math.floor(random() * 5);
+    for (let step = 0; step < steps; step++) {
+      x += (random() - 0.5) * 90;
+      y += 30 + random() * 50;
+      context.lineTo(x, y);
+    }
+    context.stroke();
+  }
+
+  return toTexture(context);
+}
+
+export interface LeatherParams {
+  seed: number;
+  base: string;
+  /** 0..1 — sheen lightening where a body has worn it smooth. */
+  worn: number;
+}
+
+/** Worn leather: pebble grain, tone drift, smoothed where it is sat on. */
+export function leatherTexture(params: LeatherParams): CanvasTexture {
+  const size = 512;
+  const random = seededRandom(params.seed);
+  const context = makeCanvas(size, size);
+  const base = rgb(params.base);
+
+  context.fillStyle = style(base, 1);
+  context.fillRect(0, 0, size, size);
+
+  /* Pebble grain: dense small dark cells. */
+  for (let index = 0; index < 3800; index++) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = 1 + random() * 2.2;
+    context.fillStyle = `rgba(20, 14, 10, ${0.03 + random() * 0.05})`;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  /* Tone drift. */
+  for (let index = 0; index < 4; index++) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = size * (0.25 + random() * 0.35);
+    const gradient = context.createRadialGradient(x, y, 1, x, y, radius);
+    gradient.addColorStop(0, "rgba(30, 20, 12, 0.05)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+
+  /* Worn sheen: the center smooths and lightens where a body rests. */
+  if (params.worn > 0) {
+    const gradient = context.createRadialGradient(
+      size / 2,
+      size / 2,
+      1,
+      size / 2,
+      size / 2,
+      size * 0.45,
+    );
+    gradient.addColorStop(0, `rgba(255, 240, 220, ${0.09 * params.worn})`);
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+
+  return toTexture(context);
+}
+
+/** Glazed ceramic: near-flat with faint glaze drift and sparse speckle. */
+export function ceramicTexture(seed: number, base: string): CanvasTexture {
+  const size = 256;
+  const random = seededRandom(seed);
+  const context = makeCanvas(size, size);
+  const baseColor = rgb(base);
+
+  context.fillStyle = style(baseColor, 1);
+  context.fillRect(0, 0, size, size);
+
+  for (let index = 0; index < 3; index++) {
+    const x = random() * size;
+    const y = random() * size;
+    const radius = size * (0.3 + random() * 0.3);
+    const gradient = context.createRadialGradient(x, y, 1, x, y, radius);
+    gradient.addColorStop(0, "rgba(255, 252, 246, 0.05)");
+    gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, size, size);
+  }
+  for (let index = 0; index < 90; index++) {
+    context.fillStyle = `rgba(60, 50, 40, ${0.04 + random() * 0.05})`;
+    context.fillRect(random() * size, random() * size, 1, 1);
+  }
+
+  return toTexture(context);
+}
+
+export function plaster(params: PlasterParams): CanvasTexture {
+  return cached(`plaster:${JSON.stringify(params)}`, () =>
+    plasterTexture(params),
+  );
+}
+
+export function concrete(seed: number, base: string): CanvasTexture {
+  return cached(`concrete:${seed}:${base}`, () => concreteTexture(seed, base));
+}
+
+export function leather(params: LeatherParams): CanvasTexture {
+  return cached(`leather:${JSON.stringify(params)}`, () =>
+    leatherTexture(params),
+  );
+}
+
+export function ceramic(seed: number, base: string): CanvasTexture {
+  return cached(`ceramic:${seed}:${base}`, () => ceramicTexture(seed, base));
+}
+
 /** Kraft cardboard for print tubes: warm fiber plus a spiral seam. */
 export function cardboardTexture(seed: number, base: string): CanvasTexture {
   const size = 512;

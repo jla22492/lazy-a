@@ -77,12 +77,12 @@ function OffstageTripod() {
           castShadow
         >
           <cylinderGeometry args={[legRadius, legRadius, legLength, 8]} />
-          <meshStandardMaterial color={color} />
+          <meshStandardMaterial color={color} roughness={0.5} metalness={0.45} />
         </mesh>
       ))}
       <mesh position={[0, height + head.height / 2, 0]} castShadow>
         <boxGeometry args={[head.width, head.height, head.depth]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial color={color} roughness={0.5} metalness={0.45} />
       </mesh>
     </group>
   );
