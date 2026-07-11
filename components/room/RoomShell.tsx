@@ -1,6 +1,6 @@
 "use client";
 
-import { plaster } from "@/three/materials/procedural";
+import { frostedPaneTexture, plaster } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -246,7 +246,10 @@ export function RoomShell() {
       )}
       {/* Frosted pane at the reveal's outer plane. Unlit material: the
           wall is backlit, so a lit material would render the glass dark —
-          the pane must read as the daylight itself. */}
+          the pane must read as the daylight itself. Since 0049 it carries
+          one soft vertical band near its rear edge: something stands
+          outside the window, unexplained — the world continues past the
+          glass. */}
       <mesh
         position={[
           rightWall.x + win.reveal,
@@ -256,7 +259,9 @@ export function RoomShell() {
         rotation-y={FACING_LEFT}
       >
         <planeGeometry args={[WINDOW_WIDTH, win.head - win.sill]} />
-        <meshBasicMaterial color={win.paneColor} />
+        {/* Band near U=0.07: the frame's visible sliver is the pane's
+            first ~8% (z 0.55-0.62), so the presence must live there. */}
+        <meshBasicMaterial map={frostedPaneTexture(win.paneColor, 0.07, 0.09)} />
       </mesh>
       {/* Window reveal: sill, head, and jamb returns spanning the wall's
           thickness — the minimum trim for believable construction. */}

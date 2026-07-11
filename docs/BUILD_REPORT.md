@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0048 — Power II: The Person's Devices (Creative Sprint 02, order 3 of 10)
+WORK ORDER 0049 — The Larger World: Off-Screen Light & Shadow (Creative Sprint 02, order 4 of 10)
 
 ## Version
 
@@ -10,17 +10,17 @@ v0.1
 
 ## Summary
 
-- One piece, chosen over several candidates because absence outperforms presence (docs/progress/0048.png):
-- The phone charger: its block is plugged into the power strip by the right wall; its pale cable rises from behind the bench and lies across the temporary zone in a lazy S — threaded between the tape roll and the film canisters, the way cables actually end up — connector face-up. And no phone. It left with its owner minutes ago. The charger is the room's strongest evidence that someone just stood up: the manifest's "implies" answer is the phone in someone's pocket, the person carrying it, and their intention to return.
-- Deliberately NOT added: a laptop, a card reader, more devices. The identity question ("how digital is Lazy A?") deserves authorship, not set dressing — and a cable implying a computer is stronger than a computer. The one visible supply cable still disappears behind the bench's right leg toward something unseen.
-- Cable is a proper swept tube along an authored curve — the first non-primitive geometry in the room, justified because a cable's believability IS its path.
-- Manifest: 28 pieces, all four questions answered.
-- Verification: type-check and production build pass; 0048.png reviewed at full frame and in close crop on the temporary zone.
+- Three additions, all evidence of the world beyond the frame, all below the threshold of noticing (docs/progress/0049.png; verified against 0048 by amplified image diff, because at honest levels the eye alone can't audit them):
+- The window's daylight patch: a soft warm quad on the floor whose four corners are the window opening's sill and head edges projected along the sun's real direction — computed, not composed. It lands as a diagonal warmth on the floor right of the chair, felt more than seen. The renderer cannot transport light through the opening itself (the walls deliberately do not cast), so the patch is authored; its geometry is not.
+- Corner occlusion: four thin fades (~14cm reach) where the walls meet — the ambient occlusion real corners gather and our direct-plus-hemisphere lighting cannot compute. The rear corners stop reading as the clean edges of a set.
+- Pane presence: the frosted pane's visible sliver now carries one soft vertical darker band — something stands outside the window, unexplained. The room never says what. (First authored at the wrong end of the pane's UV — the visible sliver is the first ~8% — and moved where it can actually be seen.)
+- Honesty note for the next review: these are the room's first authored light planes. Each approximates real light transport rather than decorating, and each is parameterized against the true room geometry — but they are a stage convention, and I want the Creative Director's eyes on whether they stay on the right side of "chase truth."
+- Verification: type-check and production build pass; amplified diff confirms all three effects exist exactly where computed; full-frame review confirms none of them announce themselves.
 
 ## Decisions Required
 
-None.
+None (the honesty note above is flagged for internal review #1, not a blocking decision).
 
 ## Ready for
 
-WORK ORDER 0049 — The larger world: off-screen light & shadow.
+WORK ORDER 0050 — Habits I: ghosts on the walls, then internal review #1.

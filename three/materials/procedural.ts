@@ -496,6 +496,84 @@ export function ceramicTexture(seed: number, base: string): CanvasTexture {
   return toTexture(context);
 }
 
+/**
+ * A soft-edged white quad (WORK ORDER 0049): alpha feathers to zero at the
+ * borders. Used additively as the window's daylight patch on the floor —
+ * light the renderer cannot transport itself, authored from the real
+ * window and sun geometry.
+ */
+export function featheredQuadTexture(feather: number): CanvasTexture {
+  const size = 256;
+  const context = makeCanvas(size, size);
+  const f = Math.floor(size * feather);
+  const gradient = (a: number, b: number, vertical: boolean) => {
+    const g = vertical
+      ? context.createLinearGradient(0, a, 0, b)
+      : context.createLinearGradient(a, 0, b, 0);
+    return g;
+  };
+  context.fillStyle = "rgba(255, 255, 255, 1)";
+  context.fillRect(0, 0, size, size);
+  /* Feather all four edges by multiplying alpha down to zero. */
+  context.globalCompositeOperation = "destination-in";
+  for (const [a, b, vertical] of [
+    [0, f, true],
+    [size, size - f, true],
+    [0, f, false],
+    [size, size - f, false],
+  ] as const) {
+    const g = gradient(a, b, vertical);
+    g.addColorStop(0, "rgba(0, 0, 0, 0)");
+    g.addColorStop(1, "rgba(0, 0, 0, 1)");
+    context.fillStyle = g;
+    context.fillRect(0, 0, size, size);
+  }
+  context.globalCompositeOperation = "source-over";
+  return toTexture(context);
+}
+
+/**
+ * A one-sided alpha falloff (WORK ORDER 0049): opaque at U=0 fading to
+ * transparent at U=1. Colored black and laid along wall junctions, it
+ * approximates the ambient occlusion that gathers in real corners.
+ */
+export function cornerFalloffTexture(): CanvasTexture {
+  const size = 128;
+  const context = makeCanvas(size, size);
+  const g = context.createLinearGradient(0, 0, size, 0);
+  g.addColorStop(0, "rgba(255, 255, 255, 1)");
+  g.addColorStop(1, "rgba(255, 255, 255, 0)");
+  context.fillStyle = g;
+  context.fillRect(0, 0, size, size);
+  return toTexture(context);
+}
+
+/**
+ * The frosted pane with presence (WORK ORDER 0049): the base daylight
+ * tone carries one soft vertical darker band — something stands outside
+ * the window, unexplained. The world continues past the glass.
+ */
+export function frostedPaneTexture(
+  base: string,
+  bandCenter: number,
+  bandWidth: number,
+): CanvasTexture {
+  const size = 512;
+  const context = makeCanvas(size, size);
+  const baseColor = rgb(base);
+  context.fillStyle = style(baseColor, 1);
+  context.fillRect(0, 0, size, size);
+  const cx = bandCenter * size;
+  const half = (bandWidth / 2) * size;
+  const g = context.createLinearGradient(cx - half * 2, 0, cx + half * 2, 0);
+  g.addColorStop(0, "rgba(90, 84, 72, 0)");
+  g.addColorStop(0.5, "rgba(90, 84, 72, 0.16)");
+  g.addColorStop(1, "rgba(90, 84, 72, 0)");
+  context.fillStyle = g;
+  context.fillRect(0, 0, size, size);
+  return toTexture(context);
+}
+
 export function plaster(params: PlasterParams): CanvasTexture {
   return cached(`plaster:${JSON.stringify(params)}`, () =>
     plasterTexture(params),
