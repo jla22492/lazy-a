@@ -47,14 +47,43 @@ export const ROOM = {
   rearWall: {
     /** Just behind the workbench's back edge, as a real bench sits. */
     z: -0.45,
-    /** From the left-wall corner to well past the right frame edge. */
-    spanX: [-2.2, 5.8] as const,
+    /** Corner to corner between the side walls. */
+    spanX: [-2.2, 2.2] as const,
   },
   leftWall: {
     /** Comfortable working clearance from the bench's left end. */
     x: -2.2,
     /** From the rear-wall corner to well behind the camera. */
     spanZ: [-0.45, 6] as const,
+  },
+  /**
+   * Right wall (WORK ORDER 0012): closes the room on the side the daylight
+   * enters from. Its inner face is backlit and reads darkest, as real
+   * window walls do.
+   */
+  rightWall: {
+    x: 2.2,
+    spanZ: [-0.45, 6] as const,
+  },
+  /**
+   * Window opening in the right wall — the implied source of the daylight.
+   * Frosted: it admits light but shows no exterior view. Standard sill and
+   * head heights.
+   */
+  window: {
+    sill: 0.9,
+    head: 2.0,
+    spanZ: [0.45, 1.35] as const,
+    /** The pane sits slightly behind the inner face, implying wall depth. */
+    recess: 0.03,
+    /** Frosted glass: bright, diffuse, viewless. */
+    paneColor: "#f4f2ec",
+  },
+  /** Simple painted baseboard grounding every wall-floor junction. */
+  baseboard: {
+    height: 0.09,
+    depth: 0.012,
+    color: "#e3ded2",
   },
   /**
    * One quiet plane at wall height covering the walls' footprint. It does

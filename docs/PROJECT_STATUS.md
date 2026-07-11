@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-REVISION WORK ORDER R-0011 — Remove the Hero Print (complete)
+WORK ORDER 0012 — Establish the Room's Permanent Architecture (complete)
 
 ---
 
@@ -44,7 +44,8 @@ REVISION WORK ORDER R-0011 — Remove the Hero Print (complete)
 - Studio built (/studio + /studio/state.json): internal production board derived live from PROJECT_STATUS.md, BUILD_REPORT.md, docs/progress/, and git; docs/BUILD_REPORT.md becomes the canonical home of each order's Build Report
 - Studio published to GitHub Pages (https://jla22492.github.io/lazy-a/studio/), rebuilt by CI on every push — the Creative Director's canonical review surface per the confirmed hybrid workflow (public Studio for state, in-chat images for visual review)
 - Workbench language established (three/scene/workspace.ts): four named zones — reference (rear band), resting (front-left), active (front-center), temporary (front-right) — assuming a right-handed worker at the open side; future bench objects are placed by naming a zone; dev-only overlay via ?zones=1; notebook placement confirmed by the language (active zone, dominant-hand edge) and unmoved
-- Hero print experiment run and reversed (docs/progress/0011.png → R-0011.png): a leaning print on the bench became the compositional subject, violating "nothing should feel staged"; removed per Creative Director review. Conclusion: the hero print belongs to the room (permanent), not the workbench (today's work) — its future home is the wall architecture, not yet built
+- Hero print experiment run and reversed (docs/progress/0011.png → R-0011.png): a leaning print on the bench became the compositional subject, violating "nothing should feel staged"; removed per Creative Director review. Conclusion: the hero print belongs to the room (permanent), not the workbench (today's work) — its future home is the wall architecture
+- Permanent architecture completed (docs/progress/0012.png): right wall closing the room at x=+2.2 with a frosted window opening (sill 0.9m, head 2.0m — the implied daylight source, no exterior view), and 9cm baseboards on all three walls; the doorway was deliberately not built (implied entrance sits behind the locked camera — building it now would be overbuilding)
 
 ---
 
@@ -56,7 +57,7 @@ None.
 
 ## Next Recommended Work Order
 
-Establish the wall architecture that will eventually hold the hero print.
+Place the hero print where the completed architecture says it belongs (Layer 2 — permanent identity).
 
 ---
 
@@ -64,7 +65,7 @@ Establish the wall architecture that will eventually hold the hero print.
 
 - CameraRig verbs are intentionally empty declarations; their movement behavior is not yet defined.
 - Dev-server hot reload does not re-apply Canvas camera props; reload the page after editing camera constants.
-- The viewer cannot stand farther left than x ≈ −0.55 at the current lens and distance without the frame's upper-right corner rising above the 2.4 m rear wall; the ceiling now covers that region on wider viewports, but the wall-top seam becomes visible there.
+- The right wall now closes the room where the frame's upper-right rays land, resolving the old void exposure; the leftward camera limit note (x ≈ −0.55) is retained for history but no longer binding.
 - The ceiling underside is bounce-lit only (no direct sun, physically correct) and reads very dark if ever seen; acceptable while it stays out of frame, revisit when a lighting or camera-movement order exposes it.
 - GSAP and Leva are installed but unused until animation and debug work begins.
 - Dev mode occasionally logs a hydration-mismatch warning (`isolation: isolate` on body) and counts it as "1 issue" in the Next dev badge. It is injected by Next's own dev-tools overlay, is intermittent, and cannot occur in production builds; no app code is involved (we are on the latest Next).
@@ -80,7 +81,7 @@ Establish the wall architecture that will eventually hold the hero print.
 🔒 The camera's gaze rests on the work surface, not the horizon.
 🔒 The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height. (R-0007 — approved by the Creative Director)
 🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
-🔒 The room is inferred, not presented: rear wall, left wall, and ceiling; the right wall stays absent until direction says otherwise.
+🔒 The room is a complete permanent shell: rear wall, left wall, right wall with a frosted window (the implied light source, never a view), ceiling, baseboards. Identity enters in layers: architecture → permanent identity → active workspace → impossible moments.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
 🔒 No interactions yet.

@@ -2,7 +2,7 @@
 
 ## Work Order
 
-REVISION WORK ORDER R-0011 — Remove the Hero Print
+WORK ORDER 0012 — Establish the Room's Permanent Architecture
 
 ## Version
 
@@ -10,11 +10,13 @@ v0.1
 
 ## Summary
 
-- Hero print blockout removed (component, constants, scene mount); the room is restored exactly — docs/progress/R-0011.png is byte-identical to 0010.png.
-- Notebook, camera, lighting, room geometry, and the workbench language all untouched.
-- Creative review findings documented: a leaning print on the bench reads as a compositional subject and feels staged. The experiment's conclusion — the workbench tells what is happening today; the room tells who the person is — is recorded as a Creative Lock, and the hero print's future home is the wall architecture, which does not exist yet.
-- The 0011 experiment remains part of the visual history (0011.png retained in the timeline).
-- Note: CHANGELOG.md was not updated per this order, but it still contains the 0011 line "The hero print appeared…" from the previous order. Say the word if you would rather that line be struck or annotated.
+- Right wall added at x=+2.2 (mirroring the left wall's clearance), closing the room. Its inner face is backlit by the established daylight and therefore reads as the darkest wall — physically correct for a window wall.
+- Window opening in the right wall (standard sill 0.9m, head 2.0m, 0.9m wide) with a frosted pane recessed 3cm behind the inner face: it is the implied source of the daylight that has always entered from the right, and it shows no exterior view. It sits just outside the locked frame — present, never announced.
+- 9cm painted baseboards along all three walls; the visible change in the opening frame is a single quiet grounding line at the rear wall-floor junction.
+- Doorway deliberately not built: the implied entrance is behind the locked camera, so building it now would be overbuilding per the order's own rule. It can enter when camera movement makes it observable.
+- Rear wall and ceiling spans tightened to the room's true footprint (occluded regions only; no visible change). The right wall also closes the old wide-viewport void exposure.
+- Validation passed: with every movable object removed, the shell reads as a believable, complete, quiet room.
+- CHANGELOG revised per direction: the hero print experiment is recorded as explored-and-reverted, and the completed shell is recorded as an experience milestone.
 
 ## Decisions Required
 
@@ -22,4 +24,4 @@ None.
 
 ## Ready For
 
-WORK ORDER 0012.
+Creative review of docs/progress/0012.png, then WORK ORDER 0013.
