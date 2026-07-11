@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0022 — The First Look
+WORK ORDER 0023 — Attention Before Interaction
 
 ## Version
 
@@ -10,12 +10,11 @@ v0.1
 
 ## Summary
 
-- The visitor can turn their head while standing at WORKING. Orientation only; the body stays rooted; the settled gaze is the neck's neutral.
-- Built as a neck, not a camera rig: comfortable sustained range (±55° yaw; +20° up / −35° down — people look down at benches more than up), tanh soft limits so the neck resists at its extremes instead of hitting walls, and ~150ms critically-damped pursuit so the head has mass. Releasing input leaves attention exactly where the visitor put it — no recentering, per the new lock.
-- Coordination with the step: a small shared visitor-state marks the body's location; the look behavior only acts after the walk and settle complete, so the two camera behaviors never fight.
-- TEMPORARY controls (drag, or held arrow keys) — an interaction model comes later by direction. A dev-only ?autolook parameter scripts a look sequence for headless capture.
-- Motion review: docs/progress/0022.mp4 — 14.7 seconds: arrival, the walk and settle, a quiet look left, a longer look right, then attention resting where it was left.
-- New Creative Lock recorded: attention follows the visitor; the room never forces the gaze. CHANGELOG updated: the observer became a participant.
+- The room can now notice what the visitor is observing. The attention system (three/animation/attention.ts) models real attention: meaningful objects register with a position and physical radius; a gaze cone sized to each object's angular size accumulates dwell while held and decays when the gaze leaves (attention lingers rather than resetting); a target becomes OBSERVED only after 0.8 seconds of sustained gaze, and releases with hysteresis — glances never count, boundaries never flicker.
+- The sensor is a Presence behavior that reads the camera after the movement behaviors have finished each frame, so perception always sees the final gaze. The notebook is the first registered target; any future meaningful object registers with one hook.
+- Entirely invisible: no highlights, outlines, cursors, prompts, or UI. The visitor experience is visually identical (0023.png).
+- Verified end-to-end in a live session: nothing observed at the settled gaze (observation requires intent — the notebook sits outside the neutral gaze cone); "notebook" observed after ~2.4s of steered sustained gaze; released cleanly after looking away.
+- New Creative Lock recorded: observation always precedes interaction. Every future interaction begins with noticing.
 
 ## Decisions Required
 
@@ -23,4 +22,4 @@ None.
 
 ## Ready For
 
-Creative review of docs/progress/0022.mp4, then WORK ORDER 0023.
+WORK ORDER 0024.

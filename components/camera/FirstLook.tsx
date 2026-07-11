@@ -123,6 +123,14 @@ export function FirstLook() {
        left, a longer turn right, then attention left where it landed. */
     let autoTimers: number[] = [];
     if (process.env.NODE_ENV !== "production") {
+      /* Dev verification hook: steer the head directly. */
+      (
+        window as Window & { __setLook?: (yaw: number, pitch: number) => void }
+      ).__setLook = (yaw: number, pitch: number) => {
+        engaged.current = true;
+        look.current.targetYaw = yaw;
+        look.current.targetPitch = pitch;
+      };
       const auto = new URLSearchParams(window.location.search).get("autolook");
       if (auto) {
         const startAt = Number(auto) * 1000;

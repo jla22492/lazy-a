@@ -1,5 +1,7 @@
 "use client";
 
+import type { AttentionTarget } from "@/three/animation/attention";
+import { useAttentionTarget } from "@/three/hooks/useAttentionTarget";
 import { NOTEBOOK, WORKBENCH } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -8,6 +10,14 @@ const REST_POSITION = fromWorkbench([
   WORKBENCH.surfaceHeight + NOTEBOOK.thickness / 2,
   NOTEBOOK.offset[2],
 ]);
+
+/** The first meaningful object the room can notice being observed. */
+const ATTENTION_TARGET: AttentionTarget = {
+  name: "notebook",
+  position: REST_POSITION,
+  /** Half-diagonal of the closed notebook. */
+  radius: 0.13,
+};
 
 /**
  * Primitive blockout of the notebook — the first object with narrative
@@ -20,6 +30,7 @@ const REST_POSITION = fromWorkbench([
  * (WORK ORDER 0010); it does not move.
  */
 export function Notebook() {
+  useAttentionTarget(ATTENTION_TARGET);
   return (
     <mesh
       position={REST_POSITION}
