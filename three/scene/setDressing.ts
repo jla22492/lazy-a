@@ -395,6 +395,20 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "it without looking",
   },
   {
+    name: "PhoneCharger",
+    zone: "workbench",
+    story:
+      "the block lives in the strip and the cable lies across the bench " +
+      "in a lazy S, connector up — and no phone; it left with its owner " +
+      "minutes ago",
+    identity: "the person is reachable, busy, and nearby",
+    unresolved: "waiting for the phone to come back, as it does every hour",
+    arrived: "the cable, a year ago; the phone, gone since the person stood up",
+    implies:
+      "the phone in someone's pocket, the person carrying it, and their " +
+      "intention to return",
+  },
+  {
     name: "PowerRun",
     zone: "edgeOfFrame",
     story:

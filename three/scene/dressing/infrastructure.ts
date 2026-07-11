@@ -74,6 +74,38 @@ export interface CableRun {
   to: { x: number; z: number };
 }
 
+/**
+ * The phone charger (WORK ORDER 0048) — the block lives in the strip; its
+ * cable rises from behind the bench and lies across the temporary zone in
+ * a lazy S, connector up, PHONE ABSENT. The phone left with its owner:
+ * the strongest evidence in the room that someone just stood up.
+ */
+export const PHONE_CHARGER = {
+  /** The wall-wart block plugged into the strip's far socket. */
+  block: {
+    at: { x: 1.74, z: 0.83 },
+    width: 0.035,
+    height: 0.028,
+    depth: 0.035,
+    yaw: 1.35,
+    color: "#dedad0",
+  },
+  /** Bench-local path of the visible cable, over the rear edge to rest. */
+  cable: {
+    radius: 0.0032,
+    color: "#cfccc4",
+    /** A lazy S across the temporary zone; the last point is the connector. */
+    path: [
+      { x: 0.63, y: -0.004, z: -0.383 },
+      { x: 0.67, y: 0, z: -0.2 },
+      { x: 0.56, y: 0, z: -0.02 },
+      { x: 0.63, y: 0, z: 0.09 },
+      { x: 0.57, y: 0, z: 0.15 },
+    ],
+    connector: { width: 0.009, height: 0.005, length: 0.02 },
+  },
+} as const;
+
 export const CABLE = {
   thickness: 0.009,
   color: "#31302e",

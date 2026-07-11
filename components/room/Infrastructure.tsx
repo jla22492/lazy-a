@@ -1,11 +1,16 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { CatmullRomCurve3, Vector3 } from "three";
+
 import { ROOM, WORKBENCH } from "@/three/scene/constants";
 import {
   CABLE,
   DESK_LAMP,
   OUTLET_PLATE,
   OUTLETS,
+  PHONE_CHARGER,
   type Outlet,
 } from "@/three/scene/dressing/infrastructure";
 import { fromWorkbench } from "@/three/scene/world";
@@ -156,6 +161,65 @@ function CableRuns() {
 }
 
 /**
+ * The phone charger: block in the strip, cable in a lazy S across the
+ * bench's temporary zone, connector up — and no phone. It left with its
+ * owner. (WORK ORDER 0048.)
+ */
+function PhoneCharger() {
+  const { block, cable } = PHONE_CHARGER;
+  const surface = WORKBENCH.surfaceHeight;
+  const curve = useMemo(
+    () =>
+      new CatmullRomCurve3(
+        cable.path.map(
+          (p) => new Vector3(p.x, surface + cable.radius + p.y, p.z),
+        ),
+      ),
+    [cable, surface],
+  );
+  const end = cable.path[cable.path.length - 1];
+  const beforeEnd = cable.path[cable.path.length - 2];
+  const heading = Math.atan2(end.x - beforeEnd.x, end.z - beforeEnd.z);
+  return (
+    <>
+      <mesh
+        position={[block.at.x, block.height / 2 + 0.038, block.at.z]}
+        rotation={[0, block.yaw, 0]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[block.width, block.height, block.depth]} />
+        <meshStandardMaterial color={block.color} roughness={0.55} />
+      </mesh>
+      <mesh castShadow receiveShadow>
+        <tubeGeometry args={[curve, 32, cable.radius, 6, false]} />
+        <meshStandardMaterial color={cable.color} roughness={0.6} />
+      </mesh>
+      {/* The connector, face up, waiting for a phone that left. */}
+      <mesh
+        position={[
+          end.x,
+          surface + cable.connector.height / 2,
+          end.z + 0.012,
+        ]}
+        rotation={[0, heading, 0]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry
+          args={[
+            cable.connector.width,
+            cable.connector.height,
+            cable.connector.length,
+          ]}
+        />
+        <meshStandardMaterial color={cable.color} roughness={0.5} />
+      </mesh>
+    </>
+  );
+}
+
+/**
  * The room's power infrastructure (WORK ORDER 0047): outlets low on the
  * walls, cables hugging the seams, a lamp still aimed from last night.
  * A functioning room is more believable than a decorated room.
@@ -168,6 +232,7 @@ export function Infrastructure() {
       ))}
       <DeskLamp />
       <CableRuns />
+      <PhoneCharger />
     </group>
   );
 }
