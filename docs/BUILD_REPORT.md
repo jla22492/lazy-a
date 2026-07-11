@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0043 — Lighting Refinement (Creative Sprint 01, order 8 of 10)
+WORK ORDER 0044 — The Edit (Creative Sprint 01, order 9 of 10)
 
 ## Version
 
@@ -10,11 +10,15 @@ v0.1
 
 ## Summary
 
-- Truth, not beauty. Two changes, both in service of the materials, neither visible as "lighting" (docs/progress/0043.png):
-- Shadow fidelity: the set dressing added pencil-scale casters, and 2048 shadow texels stretched across a 12m span rendered their shadows chunky or absent — the pencil jar, tape roll, film canisters, and camera floated. The shadow map doubled to 4096 across a tighter 10m span (~2.4mm per texel); an A/B crop against 0042 confirms every small object now casts a fine contact shadow and visibly sits ON the bench. Objects grounding is the light revealing material truth.
-- Bounce rebalance: the fill's ground return warmed a step and dropped from 0.5 to 0.44 — the floor is concrete and the bench is wood now, and the light bouncing off them should say so. The sun models the new surfaces slightly more; nothing announces itself.
-- The sun's color, position, intensity, and the daylight-breath behavior are untouched. The daylight remains unremarkable by design.
-- Verification: type-check and production build pass; 0043.png captured and A/B-compared against 0042.png in the small-object shadow region.
+- Not cleaning — discovering what the room never needed. Every backlog item from both production design reviews, executed (docs/progress/0044.png):
+- The chair is evidence now. Pushed well out of the working lane (its owner works standing), turned away from square, and it picked up a second job: the work cloth drapes over its back — a thin saddle and two uneven falls, not an object. A chair with a job doesn't ask to be sat in. (The first cloth attempt rendered as a solid box — exactly the "geometry, not story" failure — and was re-authored as a drape.)
+- The plant drinks the light. Every foliage clump reaches toward the window, harder the higher it grows — phototropism, not composition — and one leaf has let go onto the floor: the room's only biology, and its quietest relationship.
+- The pinned cluster evolved: one item didn't survive the edit, angles disagree harder, two overlaps read decisively, one photo hangs visibly slipped where its second pin gave months ago (nobody minds — the room's first quiet disagreement), and one outlier is pinned alone, far from the conversation.
+- Subtractions: the square photo, one sticky note (one task got done), the fallen shipping tube (the bottom-right floor was the room's busiest patch), and one cable segment — the power run is a fact, not a subject.
+- Adjustments: test prints lean at genuinely different angles now; the standing canister and camera separated so the bench's right no longer clusters into one dark silhouette.
+- Untouched, deliberately: the hero print stays blank — the absence is becoming intentional, per direction.
+- The manifest reflects every change: 26 pieces (one added — the cloth; one merged away — the fallen tube), each still answering story, identity, unresolved, and arrived.
+- Verification: type-check and production build pass; 0044.png reviewed at full frame and in close crop on the chair.
 
 ## Decisions Required
 
@@ -22,4 +26,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0044 — The Edit.
+WORK ORDER 0045 — Final polish, review assets, and the Creative Sprint Review.

@@ -221,10 +221,13 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     zone: "referenceWall",
     story:
       "photographs and notes pinned one at a time over years, overlapping " +
-      "because no one ever takes the older ones down first",
+      "because no one ever takes the older ones down first; one photo's " +
+      "second pin gave months ago and it hangs slipped — nobody minds; " +
+      "one outlier is pinned alone, far from the conversation",
     identity: "influences accumulate here; taste is visible history",
     unresolved:
-      "each is still influencing; unpinning one is a decision no one has made",
+      "each is still influencing; unpinning one is a decision no one has " +
+      "made — and re-pinning the slipped one keeps not mattering enough",
     arrived: "one at a time across five years; nothing has ever been taken down",
   },
   {
@@ -252,7 +255,8 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     zone: "referenceWall",
     story:
       "slapped low on the wall at the eye-line of someone leaning over the " +
-      "bench, each at its own angle",
+      "bench, each at its own angle; there were three this morning — one " +
+      "task got done",
     identity: "thinking overflows the desk; the wall catches it",
     unresolved: "each one is a task not yet done",
     arrived: "this week, one per interruption",
@@ -261,19 +265,23 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     name: "Chair",
     zone: "peripheralRoom",
     story:
-      "pulled back from the bench and turned seventeen degrees away — " +
-      "someone stood up quickly and it never got pushed back in",
-    identity: "work here gets interrupted by better ideas",
-    unresolved: "its sitter intends to come straight back",
-    arrived: "years ago with the bench; moved a dozen times a day since",
+      "pushed aside out of the working lane — its owner works standing — " +
+      "and it never came back; along the way it picked up a second job " +
+      "as the place the work cloth lives",
+    identity: "work here happens standing; even the furniture gets repurposed",
+    unresolved: "it has a job now; pushing it in would make the cloth homeless",
+    arrived: "years ago with the bench; pushed aside months ago and stayed",
   },
   {
     name: "Plant",
     zone: "peripheralRoom",
     story:
-      "the one living thing in the room, in the corner the light reaches — " +
-      "watered irregularly, thriving anyway",
-    identity: "the studio keeps something alive that isn't a project",
+      "the one living thing in the room, standing in its darkest corner — " +
+      "every clump reaches toward the window, harder the higher it grows, " +
+      "and one leaf has let go onto the floor; it drinks the light",
+    identity:
+      "the studio keeps something alive that isn't a project, and it " +
+      "belongs to the window, not the composition",
     unresolved: "permanent resident: it belongs to the room, not the work",
     arrived: "three years ago, a gift; the room's oldest living resident",
   },
@@ -313,9 +321,8 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     name: "ShippingTubes",
     zone: "edgeOfFrame",
     story:
-      "print tubes leaning in the right rear corner where deliveries get " +
-      "parked, one fallen and rolled a little way out — half-cut by the " +
-      "frame's edge, never composed for it",
+      "print tubes leaning against the right wall where deliveries get " +
+      "parked — half-cut by the frame's edge, never composed for it",
     identity: "work arrives and leaves this room; it has an outside",
     unresolved: "opening them is a task that keeps losing to the current work",
     arrived: "two weeks ago; the fallen one fell the day it arrived",
@@ -329,6 +336,17 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     identity: "the studio's tools outnumber what any one view can hold",
     unresolved: "between setups, exactly where a tripod waits",
     arrived: "years ago as gear; last week to that spot by the window",
+  },
+  {
+    name: "WorkCloth",
+    zone: "peripheralRoom",
+    story:
+      "draped over the chair's back mid-errand and never folded — the " +
+      "chair became its home, which is half of why the chair never gets " +
+      "pushed back in",
+    identity: "hands get dirty here; the cloth is used, not displayed",
+    unresolved: "it will be needed again long before it is ever folded",
+    arrived: "last week, and it keeps not leaving",
   },
   {
     name: "PowerRun",

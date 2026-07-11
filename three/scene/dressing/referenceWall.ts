@@ -38,22 +38,29 @@ export const HERO_PRINT = {
  * paper notes; angles disagree because they were pinned months apart.
  */
 export const PINNED_CLUSTER = {
+  /**
+   * The Edit (0044): evolved over years, not assembled in an afternoon.
+   * One fewer item (the square photo didn't survive), angles that disagree
+   * harder, two decisive overlaps, one photo whose second pin gave — it
+   * hangs slipped and nobody has fixed it — and one outlier pinned alone,
+   * far from the conversation.
+   */
   photoColor: "#8d857a",
   paperColor: "#ded5bc",
   thickness: 0.0008,
   items: [
     /* 4x6" photo, landscape. */
-    { w: 0.152, h: 0.102, x: -1.05, y: 1.66, roll: 0.05, kind: "photo" },
-    /* 5x7" photo, portrait, overlapping its neighbor's corner. */
-    { w: 0.127, h: 0.178, x: -0.88, y: 1.58, roll: -0.03, kind: "photo" },
+    { w: 0.152, h: 0.102, x: -1.05, y: 1.66, roll: 0.13, kind: "photo" },
+    /* 5x7" photo, portrait, overlapping its neighbor's corner hard. */
+    { w: 0.127, h: 0.178, x: -0.93, y: 1.6, roll: -0.06, kind: "photo" },
     /* A5 note. */
-    { w: 0.148, h: 0.21, x: -0.68, y: 1.68, roll: 0.08, kind: "paper" },
-    /* Small square photo. */
-    { w: 0.1, h: 0.1, x: -0.98, y: 1.42, roll: -0.07, kind: "photo" },
+    { w: 0.148, h: 0.21, x: -0.68, y: 1.68, roll: 0.16, kind: "paper" },
     /* A torn strip of paper — a phrase someone keeps. */
     { w: 0.19, h: 0.05, x: -0.72, y: 1.47, roll: 0.03, kind: "paper" },
-    /* 4x6" photo, portrait, drifting below the cluster's center of mass. */
-    { w: 0.102, h: 0.152, x: -0.55, y: 1.36, roll: -0.05, kind: "photo" },
+    /* The slipped one: its second pin gave months ago. Nobody minds. */
+    { w: 0.102, h: 0.152, x: -0.55, y: 1.35, roll: -0.38, kind: "photo" },
+    /* The outlier: pinned alone, far from the conversation. */
+    { w: 0.148, h: 0.105, x: -1.62, y: 1.78, roll: 0.07, kind: "paper" },
   ],
 } as const;
 
@@ -111,11 +118,11 @@ export const STICKY_NOTES = {
   color: "#d3c27e",
   /**
    * Right of the hero print, low, over the bench's temporary zone — where
-   * a hand actually reaches the wall. Clear of the propped test prints.
+   * a hand actually reaches the wall. The Edit (0044): two, not three —
+   * one task got done.
    */
   items: [
     { x: 0.88, y: 1.12, roll: 0.09 },
-    { x: 0.99, y: 1.06, roll: -0.12 },
-    { x: 0.94, y: 1.19, roll: 0.05 },
+    { x: 0.97, y: 1.05, roll: -0.14 },
   ],
 } as const;

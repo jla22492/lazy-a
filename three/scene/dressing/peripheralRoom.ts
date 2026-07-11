@@ -15,9 +15,16 @@
  * ~17 degrees away from the desk: interrupted, not arranged.
  */
 export const CHAIR = {
-  at: { x: 0.38, z: 1.05 },
-  /** Turned away from square: the 17-degree story. */
-  yaw: -0.3,
+  /**
+   * The Edit (0044): the chair is evidence, not furniture. Its owner works
+   * standing — the chair was pushed aside out of the working lane and
+   * never came back, and it picked up a second job along the way: the
+   * work cloth lives over its back. A chair with a job doesn't ask to be
+   * sat in.
+   */
+  at: { x: 0.66, z: 1.18 },
+  /** Turned well away from square — abandoned mid-move, not arranged. */
+  yaw: -0.72,
   seat: { width: 0.45, depth: 0.42, height: 0.45, thickness: 0.04 },
   /** A worn leather pad on a wooden chair — color split arrives later. */
   pad: { thickness: 0.018, inset: 0.03 },
@@ -30,6 +37,16 @@ export const CHAIR = {
   },
   woodColor: "#6e5b48",
   padColor: "#5a4a3c",
+  /** The work cloth draped over the top slat — the chair's second job. */
+  cloth: {
+    width: 0.27,
+    drop: 0.19,
+    thickness: 0.007,
+    yaw: 0.1,
+    /** Hangs unevenly: less of it fell on the near side. */
+    frontDrop: 0.11,
+    color: "#847966",
+  },
 } as const;
 
 /**
@@ -40,15 +57,29 @@ export const PLANT = {
   /** Squeezed into the corner beside the bookcase. */
   at: { x: -1.95, z: 0.12 },
   pot: { radius: 0.13, height: 0.28, color: "#8a6a55" },
-  /** Blockout foliage: overlapping rounded masses, not leaves yet. */
+  /**
+   * Blockout foliage: overlapping rounded masses, not leaves yet.
+   * The Edit (0044): the plant drinks the light — it stands in the room's
+   * darkest corner and every clump reaches toward the window, harder the
+   * higher it grows (phototropism, not composition). It belongs to the
+   * window, not to the frame.
+   */
   foliage: {
     color: "#66705c",
     clumps: [
-      { x: 0, y: 0.56, z: 0, r: 0.18 },
-      { x: 0.09, y: 0.74, z: 0.05, r: 0.14 },
-      { x: -0.1, y: 0.7, z: -0.04, r: 0.12 },
-      { x: 0.02, y: 0.87, z: -0.02, r: 0.1 },
+      { x: 0.03, y: 0.56, z: 0.01, r: 0.18 },
+      { x: 0.14, y: 0.75, z: 0.06, r: 0.14 },
+      { x: -0.04, y: 0.69, z: -0.03, r: 0.12 },
+      { x: 0.16, y: 0.9, z: 0.01, r: 0.1 },
     ],
+  },
+  /** One leaf that let go — the floor's only biology. */
+  droppedLeaf: {
+    at: { x: -1.62, z: 0.38 },
+    length: 0.07,
+    width: 0.035,
+    yaw: 1.9,
+    color: "#77755a",
   },
 } as const;
 

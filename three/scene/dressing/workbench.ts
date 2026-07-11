@@ -26,8 +26,8 @@ export const TEST_PRINTS = {
       height: 0.178,
       x: -0.09,
       z: -0.355,
-      yaw: 0.09,
-      lean: 0.52,
+      yaw: 0.12,
+      lean: 0.56,
       color: "#e6dfd0",
     },
     /* Another 5x7" portrait, propped separately, a touch straighter. */
@@ -36,8 +36,8 @@ export const TEST_PRINTS = {
       height: 0.178,
       x: 0.08,
       z: -0.365,
-      yaw: -0.06,
-      lean: 0.47,
+      yaw: -0.08,
+      lean: 0.45,
       color: "#ded6c5",
     },
     /* 6x4" landscape resting against the second print's corner. */
@@ -46,8 +46,8 @@ export const TEST_PRINTS = {
       height: 0.102,
       x: 0.17,
       z: -0.34,
-      yaw: 0.18,
-      lean: 0.42,
+      yaw: 0.24,
+      lean: 0.34,
       color: "#e9e3d6",
     },
   ],
@@ -145,14 +145,14 @@ export const FILM_CANISTERS = {
   radius: 0.0155,
   height: 0.05,
   color: "#2f2f2f",
-  standing: { x: 0.56, z: 0.2 },
+  standing: { x: 0.52, z: 0.26 },
   /** The second one fell over and nobody minded. */
-  fallen: { x: 0.62, z: 0.27, yaw: 1.1 },
+  fallen: { x: 0.6, z: 0.31, yaw: 1.1 },
 } as const;
 
 /** Temporary zone: the camera set down after checking a frame. */
 export const CAMERA = {
-  at: { x: 0.74, z: 0.1 },
+  at: { x: 0.78, z: 0.04 },
   body: { width: 0.14, height: 0.09, depth: 0.045 },
   lens: { radius: 0.03, length: 0.05 },
   prism: { width: 0.05, height: 0.025, depth: 0.04 },

@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0043 — Lighting Refinement (Sprint 01, order 8 of 10)
+WORK ORDER 0044 — The Edit (Sprint 01, order 9 of 10)
 
 ---
 
@@ -97,6 +97,8 @@ WORK ORDER 0043 — Lighting Refinement (Sprint 01, order 8 of 10)
 - Second production design review held (after 0042): materials approved — the walls' quiet tonal variation called the biggest surprise, the workbench now reads "work surface" not "table"; new Creative Lock named (nothing exists to decorate; everything survived previous decisions) and the room's guiding word coined: CONTINUED; The Edit's backlog grew (chair must become evidence, plant commits to drinking the window's light, one or two quiet disagreements, hero print stays blank)
 - Lighting refined around the materials (docs/progress/0043.png): truth, not beauty — the set dressing added pencil-scale casters that 2048 shadow texels across a 12m span rendered chunky or missing, so the shadow map doubled to 4096 across a tighter 10m span (~2.4mm per texel: the pencil jar, tape roll, canisters, and camera now cast fine contact shadows and visibly sit ON the bench instead of floating); the bounce fill warmed a step and dropped slightly (the floor is concrete and the bench wood now — the return light should say so) so the sun models the new surfaces instead of the fill flattening them; the light itself is unchanged and unnoticeable, by instruction
 
+- The Edit (docs/progress/0044.png): the full review backlog, executed as subtraction and story — the chair became evidence (pushed well out of the working lane, turned away, and given a second job: the work cloth now lives over its back — a chair with a job doesn't ask to be sat in); the plant committed to drinking the light (every clump reaches toward the window, harder the higher it grows, and one leaf let go onto the floor); the pinned cluster evolved over years instead of an afternoon (one item didn't survive, angles disagree harder, one photo hangs slipped where its second pin gave months ago, one outlier is pinned alone far from the conversation); one sticky note came down because one task got done; the fallen shipping tube was removed and the power cable calmed to a thinner two-segment run (the bottom-right floor was the room's busiest patch); the test prints lean at genuinely different angles; the dark masses on the bench's right separated; the hero print remains blank — the absence is becoming intentional
+
 ---
 
 ## In Progress
@@ -107,7 +109,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0044 — The Edit (ruthless subtraction; the full review backlog).
+WORK ORDER 0045 — Final polish, review assets, and the Creative Sprint Review — then a full stop for Jonathan's review.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

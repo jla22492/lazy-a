@@ -12,7 +12,7 @@ import { fromWorkbench } from "@/three/scene/world";
 
 /** The chair someone stood up from quickly. */
 function Chair() {
-  const { at, yaw, seat, pad, leg, back, woodColor, padColor } = CHAIR;
+  const { at, yaw, seat, pad, leg, back, woodColor, padColor, cloth } = CHAIR;
   const chairWood = wood({
     seed: 461,
     base: woodColor,
@@ -96,13 +96,67 @@ function Chair() {
         />
         <meshStandardMaterial map={chairWood} roughness={0.7} />
       </mesh>
+      {/* The work cloth over the slat: a thin drape, not an object — a
+          narrow saddle across the slat's top and two thin uneven falls. */}
+      <group
+        position={[
+          0.03,
+          back.height - back.slat.fromTop + cloth.thickness,
+          -legZ,
+        ]}
+        rotation={[0, cloth.yaw, 0]}
+      >
+        <mesh position={[0, 0, 0]} castShadow receiveShadow>
+          <boxGeometry
+            args={[cloth.width, cloth.thickness, back.slat.thickness + 0.016]}
+          />
+          <meshStandardMaterial
+            map={paper({ seed: 471, base: cloth.color, fiber: 0.65 })}
+            roughness={0.95}
+          />
+        </mesh>
+        <mesh
+          position={[
+            0,
+            -cloth.drop / 2,
+            -(back.slat.thickness / 2 + 0.008 + cloth.thickness / 2),
+          ]}
+          rotation={[0.04, 0, 0.03]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry args={[cloth.width, cloth.drop, cloth.thickness]} />
+          <meshStandardMaterial
+            map={paper({ seed: 471, base: cloth.color, fiber: 0.65 })}
+            roughness={0.95}
+          />
+        </mesh>
+        <mesh
+          position={[
+            0.008,
+            -cloth.frontDrop / 2,
+            back.slat.thickness / 2 + 0.008 + cloth.thickness / 2,
+          ]}
+          rotation={[-0.04, 0, -0.05]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry
+            args={[cloth.width * 0.94, cloth.frontDrop, cloth.thickness]}
+          />
+          <meshStandardMaterial
+            map={paper({ seed: 472, base: cloth.color, fiber: 0.65 })}
+            roughness={0.95}
+          />
+        </mesh>
+      </group>
     </group>
   );
 }
 
 /** The one living thing in the room. */
 function Plant() {
-  const { at, pot, foliage } = PLANT;
+  const { at, pot, foliage, droppedLeaf } = PLANT;
   return (
     <group position={[at.x, 0, at.z]}>
       <mesh position={[0, pot.height / 2, 0]} castShadow receiveShadow>
@@ -124,6 +178,19 @@ function Plant() {
           <meshStandardMaterial color={foliage.color} />
         </mesh>
       ))}
+      {/* The leaf that let go, flat on the floor in world space. */}
+      <mesh
+        position={[
+          droppedLeaf.at.x - at.x,
+          0.002,
+          droppedLeaf.at.z - at.z,
+        ]}
+        rotation={[-Math.PI / 2, 0, droppedLeaf.yaw]}
+        receiveShadow
+      >
+        <circleGeometry args={[droppedLeaf.length / 2, 10]} />
+        <meshStandardMaterial color={droppedLeaf.color} />
+      </mesh>
     </group>
   );
 }

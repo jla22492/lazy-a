@@ -10,7 +10,7 @@ import { fromWorkbench } from "@/three/scene/world";
 
 /** Print tubes leaning in the right rear corner, half-cut by the frame. */
 function ShippingTubes() {
-  const { corner, color, tubes, fallen } = SHIPPING_TUBES;
+  const { corner, color, tubes } = SHIPPING_TUBES;
   return (
     <>
       {tubes.map((tube) => (
@@ -35,20 +35,6 @@ function ShippingTubes() {
           <meshStandardMaterial map={cardboard(481, color)} roughness={0.92} />
         </mesh>
       ))}
-      <mesh
-        position={[fallen.at.x, fallen.radius, fallen.at.z]}
-        rotation={[Math.PI / 2, 0, fallen.yaw]}
-        castShadow
-        receiveShadow
-      >
-        <cylinderGeometry
-          args={[fallen.radius, fallen.radius, fallen.length, 14]}
-        />
-        <meshStandardMaterial
-          map={cardboard(482, SHIPPING_TUBES.color)}
-          roughness={0.92}
-        />
-      </mesh>
     </>
   );
 }
