@@ -53,11 +53,18 @@ export function scheduleProgressShot(state: RootState): void {
       requestAnimationFrame(tick);
       return;
     }
+    /* ?shotdelay=N defers either capture — stills for timing a pose,
+       recordings for opening a clip mid-journey (WORK ORDER 0028). */
     const shotDelay = Number(params.get("shotdelay")) || 0;
     if (shotName) {
       window.setTimeout(() => captureStill(state, shotName), shotDelay * 1000);
     }
-    if (recordName) captureClip(state, recordName, seconds);
+    if (recordName) {
+      window.setTimeout(
+        () => captureClip(state, recordName, seconds),
+        shotDelay * 1000,
+      );
+    }
   };
   requestAnimationFrame(tick);
 }

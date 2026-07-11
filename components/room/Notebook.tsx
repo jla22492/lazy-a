@@ -20,10 +20,12 @@ import {
 import {
   carryPoint,
   gazeGoal,
+  HELD_ASIDE,
   HELD_BELOW_EYE,
   HELD_FORWARD,
   HELD_REGARD_PITCH,
   HELD_TILT,
+  HELD_YAW_SKEW,
   pickupPose,
   pursueGaze,
 } from "@/three/animation/pickup";
@@ -74,12 +76,22 @@ const ACCEPTANCE_POLICY: AcceptancePolicy = {
   accepts: () => true,
 };
 
-/** Where a standing person holds a closed notebook (WORK ORDER 0027). */
+/**
+ * Where a standing person holds a closed notebook (WORK ORDERS 0027,
+ * 0028): low in both hands, biased toward the dominant hand.
+ */
 const HELD_POSITION: [number, number, number] = [
-  WORKING_EYE[0] + Math.sin(NEUTRAL_DIR.yaw) * HELD_FORWARD,
+  WORKING_EYE[0] +
+    Math.sin(NEUTRAL_DIR.yaw) * HELD_FORWARD +
+    Math.cos(NEUTRAL_DIR.yaw) * HELD_ASIDE,
   WORKING_EYE[1] - HELD_BELOW_EYE,
-  WORKING_EYE[2] - Math.cos(NEUTRAL_DIR.yaw) * HELD_FORWARD,
+  WORKING_EYE[2] -
+    Math.cos(NEUTRAL_DIR.yaw) * HELD_FORWARD +
+    Math.sin(NEUTRAL_DIR.yaw) * HELD_ASIDE,
 ];
+
+/** The hold's casual final orientation: a few degrees off square. */
+const HELD_YAW = NEUTRAL_DIR.yaw + HELD_YAW_SKEW;
 
 /** Unit XZ direction from the working eyes toward the notebook at rest. */
 const TOWARD_NOTEBOOK: [number, number] = (() => {
@@ -155,13 +167,12 @@ export function Notebook() {
         const mesh = meshRef.current;
         if (mesh) {
           const at = carryPoint(REST_POSITION, HELD_POSITION, pose.carry);
-          mesh.position.set(...at);
-          /* The notebook tilts toward the reader as it rises, and turns
-             square to the body's facing. */
+          mesh.position.set(at[0], at[1] + pose.settleY, at[2]);
+          /* The notebook tilts toward the reader as it rises, turning
+             to the hold's casual off-square angle. */
           mesh.rotation.set(
             HELD_TILT * pose.carry,
-            NOTEBOOK.rotationY +
-              (NEUTRAL_DIR.yaw - NOTEBOOK.rotationY) * pose.carry,
+            NOTEBOOK.rotationY + (HELD_YAW - NOTEBOOK.rotationY) * pose.carry,
             0,
           );
           camera.position.set(...pose.eye);

@@ -15,5 +15,6 @@
 - The visitor took the first step: one quiet walk from the doorway pause to the workbench — the first human action in Lazy A, and the moment the camera proved it is a person.
 - The visitor can look around: standing at the bench, the head turns the way a neck turns — and wherever they leave their attention, it stays. The observer became a participant.
 - The notebook was picked up: the first real interaction in Lazy A. The visitor observed it, meant it, offered — the room accepted — and a body bent, reached, paused, and lifted it into a comfortable hold. Not "the notebook animated"; the visitor picked it up.
+- Holding became its own experience: the notebook settles low in the hands, the arms take its weight, and the room stays present around it. The pause between picking something up and deciding what to do with it is now a place the experience is willing to live — a pause as meaning, not latency.
 
 Record experience changes here, not just technical ones.

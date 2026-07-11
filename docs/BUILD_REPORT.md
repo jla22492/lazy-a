@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0027 — The First Interaction: Picking Up the Notebook
+WORK ORDER 0028 — Holding
 
 ## Version
 
@@ -10,12 +10,13 @@ v0.1
 
 ## Summary
 
-- The entire pipeline culminates in one human action: the visitor arrives, walks, settles, looks, observes the notebook, becomes ready, holds a deliberate commitment, offers — the room accepts — and the body picks the notebook up (docs/progress/0027.mp4).
-- The pickup is a physical model (three/animation/pickup.ts), not a tween: a slight bend forward and down to reach (0.55s), a beat while the hand closes (0.2s), then the lift (0.95s) as the body straightens. The notebook clears the surface vertically before arcing toward the body — the way a hand actually takes an object off a bench — and settles into a two-handed chest-height hold, tilted toward the reader.
-- The eyes behave like eyes: they stay on the object through the reach and grasp, then rise to a settled regard as the notebook arrives in the hold, so the held notebook rests low in vision with the room beyond it. The camera never travels; the notebook never flies toward the camera.
-- The order ends the instant the notebook is comfortably held: complete stillness. Nothing opens, no pages, no impossible moment, no sound, no UI. visitorState.holding = "notebook" freezes free-look until held-state looking is directed.
-- The commitment gesture (press-and-hold) remains TEMPORARY input plumbing, exactly like the walk trigger; releasing before the hold matures does nothing, and every path still runs through the locked grammar — no readiness, no commitment; no intent, no offer; no acceptance, no action.
-- Verified live end-to-end in a headless capture run: the sequence only fires after observation matures readiness, a twitch never lifts the notebook, and the second offer declines because the first was spent.
+- The held state is now a destination, not a transition (docs/progress/0028.mp4): the notebook rests low in both hands near the waist — 0.33m below the eyes, 0.48m ahead, biased 9cm toward the dominant hand and a few degrees askew, with an eased tilt. Held things sit off-axis; presented things sit centered. This reads as held.
+- The arms accept the weight: as the lift completes, the notebook dips ~11mm in one damped motion and comes to rest — once, in keeping with "the room settles, it does not breathe." After that, true stillness; nothing loops, nothing waits.
+- The room remains present: the settled regard now drops to the work surface, so the bench and the wall hold the frame while the notebook occupies the lower third of vision. Neither dominates. The 0027 ending's discovery ("the room disappears") is resolved — the visitor is a person standing in a room holding a notebook, not a screen displaying an object.
+- Nothing was added beyond the hold: no opening, no pages, no text, no impossible moments, no sound, no UI.
+- Capture pipeline: ?shotdelay now defers ?record as well as ?shot, so motion reviews can open mid-journey — 0028.mp4 shows only the completed pickup, the comfortable hold, and stillness, per the order.
+- Validation asked and answered: watching the hold, the natural feeling is a person deciding what to do next — not an animation waiting for the next animation.
+- New Creative Lock recorded: Holding is its own experience.
 
 ## Decisions Required
 
@@ -23,4 +24,4 @@ None.
 
 ## Ready for
 
-The Creative Director's next order — the notebook is in hand.
+The Creative Director's next order — the visitor is holding the notebook, deciding.

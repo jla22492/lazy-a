@@ -22,19 +22,36 @@ export const LIFT_DURATION = 0.95;
 
 export const PICKUP_TOTAL = REACH_DURATION + GRASP_PAUSE + LIFT_DURATION;
 
-/** Where a standing person holds a closed notebook: ahead and below the
- * eyes, resting at chest height in both hands. */
-export const HELD_FORWARD = 0.46;
-export const HELD_BELOW_EYE = 0.27;
+/**
+ * Where a standing person holds a closed notebook while deciding what
+ * to do with it (WORK ORDER 0028): resting low in both hands near the
+ * waist, biased toward the dominant hand, slightly askew. Held things
+ * sit off-axis; presented things sit centered — this must read as held.
+ */
+export const HELD_FORWARD = 0.48;
+export const HELD_BELOW_EYE = 0.33;
+/** Toward the dominant hand (the workspace assumes a right-handed worker). */
+export const HELD_ASIDE = 0.09;
 /** Tilted toward the face, the way a notebook is held before opening. */
-export const HELD_TILT = -0.95;
+export const HELD_TILT = -0.85;
+/** A casual few degrees off square — in hands, not on display. */
+export const HELD_YAW_SKEW = 0.14;
+
+/**
+ * The arms accept the weight: as the lift completes, the notebook dips
+ * a few millimetres and recovers — once, then true stillness.
+ */
+export const WEIGHT_SETTLE_DURATION = 1.1;
+const WEIGHT_SETTLE_DIP = 0.011;
+const WEIGHT_SETTLE_HZ = 1.3;
+const WEIGHT_SETTLE_DAMPING = 3.2;
 
 /**
  * Once the notebook settles into the hold, the head rises to a
  * comfortable regard: the notebook sits low in vision, the room beyond
  * it — not pressed against the eyes. Radians below horizontal.
  */
-export const HELD_REGARD_PITCH = -0.35;
+export const HELD_REGARD_PITCH = -0.45;
 /** The eyes begin rising off the object this far into the carry. */
 export const REGARD_ONSET = 0.35;
 /** How quickly the gaze pursues its target (seconds to ~63%). */
@@ -54,6 +71,8 @@ export interface PickupPose {
   eye: [number, number, number];
   /** 0..1 progress of the notebook along rest → held. */
   carry: number;
+  /** Vertical weight-settle offset once the hold is reached. */
+  settleY: number;
   done: boolean;
 }
 
@@ -79,6 +98,15 @@ export function pickupPose(
     (t - REACH_DURATION - GRASP_PAUSE) / LIFT_DURATION,
   );
 
+  /** After the lift, the arms take the load: one damped dip, then rest. */
+  const ts = t - PICKUP_TOTAL;
+  const settleY =
+    ts > 0 && ts < WEIGHT_SETTLE_DURATION
+      ? -WEIGHT_SETTLE_DIP *
+        Math.exp(-WEIGHT_SETTLE_DAMPING * ts) *
+        Math.sin(2 * Math.PI * WEIGHT_SETTLE_HZ * ts)
+      : 0;
+
   return {
     eye: [
       WORKING_EYE[0] + towardNotebook[0] * REACH_FORWARD * bend,
@@ -86,7 +114,8 @@ export function pickupPose(
       WORKING_EYE[2] + towardNotebook[1] * REACH_FORWARD * bend,
     ],
     carry,
-    done: t >= PICKUP_TOTAL,
+    settleY,
+    done: t >= PICKUP_TOTAL + WEIGHT_SETTLE_DURATION,
   };
 }
 
