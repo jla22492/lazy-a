@@ -2,7 +2,7 @@
 
 ## Work Order
 
-REVISION WORK ORDER R-0013 — Reduce the Window's Presence
+WORK ORDER 0014 — Establish the Entrance
 
 ## Version
 
@@ -10,11 +10,11 @@ v0.1
 
 ## Summary
 
-- Least-invasive solution: the window opening slid 30cm forward along the right wall (spanZ 0.25–1.15 → 0.55–1.45). Construction, lighting, camera, and composition untouched.
-- The locked frame's visible band of the right wall ends at z ≈ 0.65, so only a ~9cm sliver of glass now enters the extreme frame corner: the daylight stays justified while the window recedes to the edge of awareness.
-- The shift also biases the implied light source slightly further toward the sun's true direction — physically more coherent, not less.
-- Validation: a first-time visitor would not describe the room as "having a window"; they would say the light feels believable.
-- Capture pipeline hardening continued: capture mode now applies as a post-mount state update (the previous hydration-suppressed style was unreliable), and captures require the tab to be foregrounded once so the renderer initializes.
+- Doorway opening in the left wall behind the camera (spanZ 4.7–5.6m, standard 0.9m x 2.05m interior opening, same 10cm reveal construction as the window, no door or hardware). The baseboard correctly breaks at the opening.
+- Placement follows the story already locked into the composition: the visitor who entered and stopped slightly left of the workbench came through this doorway. The room's arrival narrative and its architecture now agree.
+- The doorway sits entirely outside the locked frame: docs/progress/0014.png is byte-identical to R-0013.png. A supplementary construction view is saved as docs/progress/0014-entrance-view.png.
+- Validation passed: if the camera turned around tomorrow, the room makes architectural sense — walls, window, entrance, and baseboards form a coherent permanent shell.
+- CHANGELOG not updated: no visitor-perceivable change.
 
 ## Decisions Required
 
@@ -22,4 +22,4 @@ None.
 
 ## Ready For
 
-Creative review of docs/progress/R-0013.png, then WORK ORDER 0014.
+WORK ORDER 0015.

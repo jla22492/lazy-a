@@ -3,7 +3,15 @@
 import { ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
-const { wall, rearWall, leftWall, rightWall, window: win, baseboard } = ROOM;
+const {
+  wall,
+  rearWall,
+  leftWall,
+  rightWall,
+  window: win,
+  door,
+  baseboard,
+} = ROOM;
 
 const REAR_WIDTH = rearWall.spanX[1] - rearWall.spanX[0];
 const REAR_CENTER_X = (rearWall.spanX[0] + rearWall.spanX[1]) / 2;
@@ -62,7 +70,48 @@ const RIGHT_PANELS: ReadonlyArray<{
   },
 ];
 
-/** Baseboards along each wall's floor junction, inset to sit proud of the plaster. */
+/**
+ * The left wall is three panels around the doorway opening — the room's
+ * entrance, behind the camera (WORK ORDER 0014). No door, no hardware:
+ * the opening alone.
+ */
+const DOOR_WIDTH = door.spanZ[1] - door.spanZ[0];
+const DOOR_CENTER_Z = (door.spanZ[0] + door.spanZ[1]) / 2;
+const LEFT_PANELS: ReadonlyArray<{
+  key: string;
+  /** [centerZ, centerY, width, height] on the wall plane. */
+  rect: [number, number, number, number];
+}> = [
+  {
+    key: "rear-of-door",
+    rect: [
+      (leftWall.spanZ[0] + door.spanZ[0]) / 2,
+      wall.height / 2,
+      door.spanZ[0] - leftWall.spanZ[0],
+      wall.height,
+    ],
+  },
+  {
+    key: "front-of-door",
+    rect: [
+      (door.spanZ[1] + leftWall.spanZ[1]) / 2,
+      wall.height / 2,
+      leftWall.spanZ[1] - door.spanZ[1],
+      wall.height,
+    ],
+  },
+  {
+    key: "above-door",
+    rect: [
+      DOOR_CENTER_Z,
+      (door.head + wall.height) / 2,
+      DOOR_WIDTH,
+      wall.height - door.head,
+    ],
+  },
+];
+
+/** Baseboards along each wall's floor junction; the left run breaks at the doorway. */
 const BASEBOARDS: ReadonlyArray<{
   key: string;
   position: [number, number, number];
@@ -80,14 +129,24 @@ const BASEBOARDS: ReadonlyArray<{
     length: REAR_WIDTH,
   },
   {
-    key: "left",
+    key: "left-rear-of-door",
     position: [
       leftWall.x + baseboard.depth / 2,
       baseboard.height / 2,
-      LEFT_CENTER_Z,
+      (leftWall.spanZ[0] + door.spanZ[0]) / 2,
     ],
     rotationY: FACING_RIGHT,
-    length: LEFT_LENGTH,
+    length: door.spanZ[0] - leftWall.spanZ[0],
+  },
+  {
+    key: "left-front-of-door",
+    position: [
+      leftWall.x + baseboard.depth / 2,
+      baseboard.height / 2,
+      (door.spanZ[1] + leftWall.spanZ[1]) / 2,
+    ],
+    rotationY: FACING_RIGHT,
+    length: leftWall.spanZ[1] - door.spanZ[1],
   },
   {
     key: "right",
@@ -117,14 +176,57 @@ export function RoomShell() {
         <planeGeometry args={[REAR_WIDTH, wall.height]} />
         <meshStandardMaterial color={wall.color} />
       </mesh>
-      <mesh
-        position={[leftWall.x, wall.height / 2, LEFT_CENTER_Z]}
-        rotation-y={FACING_RIGHT}
-        receiveShadow
-      >
-        <planeGeometry args={[LEFT_LENGTH, wall.height]} />
-        <meshStandardMaterial color={wall.color} />
-      </mesh>
+      {LEFT_PANELS.filter(({ rect }) => rect[2] > 0 && rect[3] > 0).map(
+        ({ key, rect: [centerZ, centerY, width, height] }) => (
+          <mesh
+            key={key}
+            position={[leftWall.x, centerY, centerZ]}
+            rotation-y={FACING_RIGHT}
+            receiveShadow
+          >
+            <planeGeometry args={[width, height]} />
+            <meshStandardMaterial color={wall.color} />
+          </mesh>
+        ),
+      )}
+      {/* Doorway reveal: head and jamb returns spanning the wall's
+          thickness. No sill — the floor runs through the opening. */}
+      {(
+        [
+          {
+            key: "door-head",
+            args: [door.reveal, 0.01, DOOR_WIDTH],
+            position: [
+              leftWall.x - door.reveal / 2,
+              door.head + 0.005,
+              DOOR_CENTER_Z,
+            ],
+          },
+          {
+            key: "door-jamb-rear",
+            args: [door.reveal, door.head, 0.01],
+            position: [
+              leftWall.x - door.reveal / 2,
+              door.head / 2,
+              door.spanZ[0] - 0.005,
+            ],
+          },
+          {
+            key: "door-jamb-front",
+            args: [door.reveal, door.head, 0.01],
+            position: [
+              leftWall.x - door.reveal / 2,
+              door.head / 2,
+              door.spanZ[1] + 0.005,
+            ],
+          },
+        ] as const
+      ).map(({ key, args, position }) => (
+        <mesh key={key} position={[...position]} receiveShadow>
+          <boxGeometry args={[...args]} />
+          <meshStandardMaterial color={wall.color} />
+        </mesh>
+      ))}
       {RIGHT_PANELS.filter(({ rect }) => rect[2] > 0 && rect[3] > 0).map(
         ({ key, rect: [centerZ, centerY, width, height] }) => (
           <mesh

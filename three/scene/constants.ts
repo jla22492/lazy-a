@@ -87,6 +87,19 @@ export const ROOM = {
     /** Frosted daylight glass; quiet warm white. */
     paneColor: "#f2ede0",
   },
+  /**
+   * Doorway in the left wall, behind the camera (WORK ORDER 0014): the
+   * room's architectural entrance. The visitor who "entered and stopped
+   * slightly left of the workbench" came through here. Standard interior
+   * opening; no door, no hardware — the opening alone. Never visible from
+   * the locked opening composition.
+   */
+  door: {
+    head: 2.05,
+    spanZ: [4.7, 5.6] as const,
+    /** Same wall thickness as the window reveal. */
+    reveal: 0.1,
+  },
   /** Simple painted baseboard grounding every wall-floor junction. */
   baseboard: {
     height: 0.09,
