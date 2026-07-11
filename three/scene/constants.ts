@@ -76,7 +76,12 @@ export const ROOM = {
   window: {
     sill: 0.9,
     head: 2.0,
-    spanZ: [0.25, 1.15] as const,
+    /**
+     * R-0013: positioned so only a ~9cm sliver of glass enters the locked
+     * frame's corner — the daylight reads as explained without the window
+     * ever becoming a compositional element.
+     */
+    spanZ: [0.55, 1.45] as const,
     /** Wall thickness: the reveal depth of the opening. */
     reveal: 0.1,
     /** Frosted daylight glass; quiet warm white. */

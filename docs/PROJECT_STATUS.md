@@ -14,7 +14,7 @@ Sprint 001
 
 ## Current Work Order
 
-WORK ORDER 0013 — Establish the Window (complete)
+REVISION WORK ORDER R-0013 — Reduce the Window's Presence (complete)
 
 ---
 
@@ -46,7 +46,8 @@ WORK ORDER 0013 — Establish the Window (complete)
 - Workbench language established (three/scene/workspace.ts): four named zones — reference (rear band), resting (front-left), active (front-center), temporary (front-right) — assuming a right-handed worker at the open side; future bench objects are placed by naming a zone; dev-only overlay via ?zones=1; notebook placement confirmed by the language (active zone, dominant-hand edge) and unmoved
 - Hero print experiment run and reversed (docs/progress/0011.png → R-0011.png): a leaning print on the bench became the compositional subject, violating "nothing should feel staged"; removed per Creative Director review. Conclusion: the hero print belongs to the room (permanent), not the workbench (today's work) — its future home is the wall architecture
 - Permanent architecture completed (docs/progress/0012.png): right wall closing the room at x=+2.2 with a frosted window opening (sill 0.9m, head 2.0m — the implied daylight source, no exterior view), and 9cm baseboards on all three walls; the doorway was deliberately not built (implied entrance sits behind the locked camera — building it now would be overbuilding)
-- Window established as the daylight's architectural source (docs/progress/0013.png): unlit frosted pane (the glass is the light — a lit material renders dark on the backlit wall), 10cm reveal with sill/head/jamb returns, repositioned so a quiet sliver enters the locked frame's right edge
+- Window established as the daylight's architectural source (docs/progress/0013.png): unlit frosted pane (the glass is the light — a lit material renders dark on the backlit wall), 10cm reveal with sill/head/jamb returns
+- Window presence reduced per creative review (docs/progress/R-0013.png): the opening slid 30cm forward along the wall so only a ~9cm glass sliver enters the locked frame's corner — daylight explained, window subconscious; opening composition reaffirmed as locked against the corrected true-proportion frame
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---

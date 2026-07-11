@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Canvas, type RootState } from "@react-three/fiber";
 
 import { CameraRig } from "@/components/camera/CameraRig";
@@ -30,13 +32,16 @@ export function Stage() {
   /* Camera studies (WORK ORDER 0006): ?study=<id> previews an alternative
      viewpoint. Without the parameter, this is exactly the baseline. */
   const study = activeStudy();
+  /* Applied after mount so server and client render identically; the
+     resize observer then re-measures the pinned canvas. */
+  const [captureMode, setCaptureMode] = useState(false);
+  useEffect(() => {
+    if (isCaptureRun()) setCaptureMode(true);
+  }, []);
   return (
     /* Capture runs pin the canvas to 1280x720 so progress screenshots are
        true 16:9 regardless of the capturing browser's window shape. */
-    <div
-      suppressHydrationWarning
-      style={isCaptureRun() ? CAPTURE_SIZE : { width: "100%", height: "100%" }}
-    >
+    <div style={captureMode ? CAPTURE_SIZE : { width: "100%", height: "100%" }}>
       <Canvas
         shadows="soft"
         /* Keep the frame readable after render so progress screenshots
