@@ -2,13 +2,17 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse, type NextRequest } from "next/server";
 
-const FILENAME_PATTERN = /^(R-)?\d{4}[A-Za-z0-9-]*\.png$/;
-const PNG_PREFIX = "data:image/png;base64,";
+const FILENAME_PATTERN = /^(R-)?\d{4}[A-Za-z0-9-]*\.(png|mp4|webm)$/;
+const DATA_PREFIXES = [
+  "data:image/png;base64,",
+  "data:video/mp4;base64,",
+  "data:video/webm;base64,",
+];
 
 /**
- * Development-only endpoint backing the progress-screenshot convention
- * (docs/progress/NNNN.png, one per Work Order). Never available in
- * production builds.
+ * Development-only endpoint backing the progress-capture convention
+ * (docs/progress/NNNN.png stills and NNNN.mp4/.webm motion reviews).
+ * Never available in production builds.
  */
 export async function POST(request: NextRequest) {
   if (process.env.NODE_ENV === "production") {
@@ -23,9 +27,10 @@ export async function POST(request: NextRequest) {
   if (!filename || !FILENAME_PATTERN.test(filename)) {
     return NextResponse.json({ error: "invalid filename" }, { status: 400 });
   }
-  if (!dataUrl?.startsWith(PNG_PREFIX)) {
+  const prefix = DATA_PREFIXES.find((p) => dataUrl?.startsWith(p));
+  if (!dataUrl || !prefix) {
     return NextResponse.json(
-      { error: "expected a PNG data URL" },
+      { error: "expected a PNG or video data URL" },
       { status: 400 },
     );
   }
@@ -34,7 +39,7 @@ export async function POST(request: NextRequest) {
   await mkdir(directory, { recursive: true });
   await writeFile(
     path.join(directory, filename),
-    Buffer.from(dataUrl.slice(PNG_PREFIX.length), "base64"),
+    Buffer.from(dataUrl.slice(prefix.length), "base64"),
   );
 
   return NextResponse.json({ saved: filename });

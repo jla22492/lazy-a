@@ -90,20 +90,22 @@ function parseDecisionsRequired(body: string): string[] {
 
 /**
  * Chronological ordering for progress filenames: work-order number, then
- * base shots before R- revisions of the same number, then study suffixes
- * (0006-A … 0006-E) alphabetically.
+ * base captures before R- revisions of the same number, then study
+ * suffixes (0006-A … 0006-E) alphabetically.
  */
 function shotSortKey(name: string): [number, number, string] {
-  const match = name.match(/^(R-)?(\d{4})(.*)\.png$/);
+  const match = name.match(/^(R-)?(\d{4})(.*)\.(?:png|mp4|webm)$/);
   if (!match) return [Number.MAX_SAFE_INTEGER, 0, name];
   return [Number.parseInt(match[2], 10), match[1] ? 1 : 0, match[3]];
 }
 
-/** All progress screenshots, newest first. */
+/** All progress captures (stills and motion reviews), newest first. */
 export function listScreenshots(): string[] {
   let names: string[];
   try {
-    names = readdirSync(PROGRESS_DIR).filter((name) => name.endsWith(".png"));
+    names = readdirSync(PROGRESS_DIR).filter((name) =>
+      /\.(png|mp4|webm)$/.test(name),
+    );
   } catch {
     return [];
   }

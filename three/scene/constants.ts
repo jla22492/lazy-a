@@ -201,4 +201,15 @@ export const DAYLIGHT = {
     groundColor: "#a89e90",
     intensity: 0.5,
   },
+  /**
+   * The first breath (WORK ORDER 0018): daylight sways imperceptibly, the
+   * way real light through glass never holds perfectly still. Amplitudes
+   * are fractions of the sun's intensity; the movement lives mostly in the
+   * slow drift phase with a whisper of the breath phase on top. Below the
+   * threshold of watching — its absence, not its presence, is felt.
+   */
+  breath: {
+    driftAmplitude: 0.02,
+    breathAmplitude: 0.006,
+  },
 } as const;

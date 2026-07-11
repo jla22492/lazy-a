@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0017 — Establish Presence Without Motion (complete)
+WORK ORDER 0018 — The First Breath (complete)
 
 ---
 
@@ -54,6 +54,8 @@ WORK ORDER 0017 — Establish Presence Without Motion (complete)
 - Room clock established (three/animation/roomClock.ts + RoomClockDriver + useRoomClock): the room's single heartbeat — elapsed/delta plus a 5s breath phase (calm resting-human tempo) and a 90s ambient drift phase; advanced once per frame before all other callbacks; all future behaviors derive from it (0016.png byte-identical to 0015.png)
 - Presence system established (three/animation/presence.ts + useRoomBehavior): the room's behavioral registry — future behaviors (ambient / camera / environment / impossible) register with the room and are ticked in deterministic order by the same driver that advances the clock; registration is decoupled from enablement; nothing is registered yet (0017.png byte-identical to 0016.png)
 - Room clock philosophy clarified per Creative Director: the clock represents room time; advancing with the render loop is a Version 1 implementation detail, not a design law
+- The first breath (docs/progress/0018.mp4): the room's first living behavior — daylight intensity sways imperceptibly (±2% on the 90s drift phase, ±0.6% on the 5s breath phase), registered with the Presence system as "daylight-breath"; the room no longer feels frozen, and nothing can be pointed at
+- Motion-review pipeline established: ?record=NNNN.mp4&seconds=N records the canvas at normal speed; captures run in a dedicated headless Chrome (SwiftShader renders identically) because visible-browser capture throttles when occluded
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---

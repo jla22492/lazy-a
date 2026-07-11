@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0017 — Establish Presence Without Motion
+WORK ORDER 0018 — The First Breath
 
 ## Version
 
@@ -10,11 +10,12 @@ v0.1
 
 ## Summary
 
-- The Presence system exists (three/animation/presence.ts): a registry the room owns, where future behaviors — ambient, camera, environment, impossible — register themselves instead of running isolated frame loops. The same driver that advances the room clock ticks every enabled behavior, in deterministic insertion order, immediately after the clock updates.
-- Registration is decoupled from enablement: a behavior can exist quietly long before it acts. A React lifetime helper (useRoomBehavior) registers and unregisters behaviors with their components. A listBehaviors() snapshot exists for debugging and future Studio surfacing.
-- Nothing is registered, nothing is enabled, nothing renders: 0017.png is byte-identical to 0016.png.
-- Room clock philosophy clarified as directed: the clock represents room time; the render-loop coupling is a Version 1 implementation detail, and no future behavior may assume the room pauses when unobserved. The principle "the room exists whether or not it is being observed" is recorded as a Creative Lock.
-- Validation: ten future behaviors would share one clock, one tick order, one registry — one living room.
+- The room's first living behavior: daylight intensity sways imperceptibly with the room clock — ±2% on the 90-second drift phase (the tempo of atmosphere) with a ±0.6% whisper of the 5-second breath phase. Real light through glass never holds perfectly still; now neither does the room's.
+- It is the Presence system's first registered behavior ("daylight-breath", kind: environment), driven entirely by the room clock — no isolated timers, exactly as the architecture intended.
+- Magnitude validation: with the behavior disabled the room reads frozen again; watching the enabled room, nothing identifiable moves. The sway is felt as absence-of-deadness, not seen as motion.
+- Motion review recorded: docs/progress/0018.mp4 — 11.8 seconds, normal speed, 1280x720.
+- New capture infrastructure: ?record=NNNN.mp4&seconds=N records the canvas via MediaRecorder (native H.264); captures now run in a dedicated headless Chrome instance because visible-browser capture throttles when the window is occluded (producing time-compressed clips — discovered and fixed during this order). The Studio timeline now renders motion reviews as playable video.
+- CHANGELOG updated: the room took its first breath.
 
 ## Decisions Required
 
@@ -22,4 +23,4 @@ None.
 
 ## Ready For
 
-WORK ORDER 0018.
+Creative review of docs/progress/0018.mp4, then WORK ORDER 0019.

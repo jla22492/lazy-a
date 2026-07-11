@@ -20,13 +20,13 @@ import { scheduleProgressShot } from "@/three/scene/progressShot";
 /** Progress captures always render at exactly 16:9 (1280x720). */
 const CAPTURE_SIZE = { width: 1280, height: 720 } as const;
 
-/** True when this page load exists to take a progress screenshot (dev only). */
+/** True when this page load exists to take a progress capture (dev only). */
 function isCaptureRun(): boolean {
-  return (
-    process.env.NODE_ENV !== "production" &&
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).has("shot")
-  );
+  if (process.env.NODE_ENV === "production" || typeof window === "undefined") {
+    return false;
+  }
+  const params = new URLSearchParams(window.location.search);
+  return params.has("shot") || params.has("record");
 }
 
 /** The film stage: neutral void, base lighting, bare floor, the workbench, a human camera. */

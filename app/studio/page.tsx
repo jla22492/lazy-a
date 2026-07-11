@@ -15,7 +15,35 @@ export const dynamic = "force-static";
 
 /** Progress images live under the Pages basePath in the public build. */
 const IMAGE_PREFIX =
-  process.env.STATIC_EXPORT === "1" ? "/lazy-a/studio/progress" : "/studio/progress";
+  process.env.STATIC_EXPORT === "1"
+    ? "/lazy-a/studio/progress"
+    : "/studio/progress";
+
+const isVideo = (name: string) => /\.(mp4|webm)$/.test(name);
+
+/** A progress capture: motion reviews render as video, stills as images. */
+function Capture({ name, alt }: { name: string; alt: string }) {
+  if (isVideo(name)) {
+    return (
+      <video
+        src={`${IMAGE_PREFIX}/${name}`}
+        controls
+        muted
+        loop
+        playsInline
+        className="w-full border border-neutral-200"
+      />
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`${IMAGE_PREFIX}/${name}`}
+      alt={alt}
+      className="w-full border border-neutral-200"
+    />
+  );
+}
 
 export const metadata = {
   title: "Lazy A — Studio",
@@ -154,11 +182,9 @@ export default function StudioPage() {
         <Section title="Current Experience">
           {state.latestScreenshot ? (
             <figure className="space-y-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`${IMAGE_PREFIX}/${state.latestScreenshot}`}
-                alt={`Latest progress screenshot (${state.latestScreenshot})`}
-                className="w-full border border-neutral-200"
+              <Capture
+                name={state.latestScreenshot}
+                alt={`Latest progress capture (${state.latestScreenshot})`}
               />
               <figcaption className="text-xs text-neutral-500">
                 {state.latestScreenshot}
@@ -205,14 +231,9 @@ export default function StudioPage() {
           <ul className="space-y-8">
             {state.screenshots.map((shot) => (
               <li key={shot} className="space-y-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`${IMAGE_PREFIX}/${shot}`}
-                  alt={`Progress screenshot ${shot}`}
-                  className="w-full border border-neutral-200"
-                />
+                <Capture name={shot} alt={`Progress capture ${shot}`} />
                 <p className="text-xs text-neutral-500">
-                  {shot.replace(/\.png$/, "")}
+                  {shot.replace(/\.(png|mp4|webm)$/, "")}
                 </p>
               </li>
             ))}

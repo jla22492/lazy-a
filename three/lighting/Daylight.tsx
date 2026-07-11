@@ -1,18 +1,52 @@
 "use client";
 
+import { useMemo, useRef } from "react";
+
+import type { DirectionalLight } from "three";
+
+import type { RoomBehavior } from "@/three/animation/presence";
+import { useRoomBehavior } from "@/three/hooks/useRoomBehavior";
 import { DAYLIGHT } from "@/three/scene/constants";
 
-const { sun, bounce } = DAYLIGHT;
+const { sun, bounce, breath } = DAYLIGHT;
+
+const FULL_CYCLE = Math.PI * 2;
 
 /**
  * Believable daylight (WORK ORDER 0005): a single sun entering from outside
  * the frame, plus one subtle bounce fill so shadows never go dead. Not mood,
  * not cinematography — light that behaves like it already existed.
+ *
+ * The first breath (WORK ORDER 0018): the sun's intensity sways
+ * imperceptibly with the room clock — mostly on the slow drift phase, with
+ * a whisper of the breath phase — registered with the Presence system as
+ * the room's first living behavior.
  */
 export function Daylight() {
+  const sunRef = useRef<DirectionalLight>(null);
+
+  const daylightBreath = useMemo<RoomBehavior>(
+    () => ({
+      name: "daylight-breath",
+      kind: "environment",
+      enabled: true,
+      onRoomTick: (clock) => {
+        if (!sunRef.current) return;
+        const sway =
+          1 +
+          breath.driftAmplitude * Math.sin(clock.drift * FULL_CYCLE) +
+          breath.breathAmplitude * Math.sin(clock.breath * FULL_CYCLE);
+        sunRef.current.intensity = sun.intensity * sway;
+      },
+    }),
+    [],
+  );
+  useRoomBehavior(daylightBreath);
+
   return (
     <>
       <directionalLight
+        ref={sunRef}
         castShadow
         color={sun.color}
         intensity={sun.intensity}

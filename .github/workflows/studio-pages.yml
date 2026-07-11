@@ -32,8 +32,8 @@ jobs:
       - run: npm ci
       - name: Remove development-only routes
         run: rm -rf app/api app/studio/progress
-      - name: Serve progress screenshots as static assets
-        run: mkdir -p public/studio/progress && cp docs/progress/*.png public/studio/progress/
+      - name: Serve progress captures as static assets
+        run: mkdir -p public/studio/progress && cp docs/progress/* public/studio/progress/
       - name: Build static export
         run: npm run build
         env:
