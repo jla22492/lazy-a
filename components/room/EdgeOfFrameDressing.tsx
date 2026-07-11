@@ -1,11 +1,7 @@
 "use client";
 
 import { cardboard } from "@/three/materials/procedural";
-import {
-  OFFSTAGE_TRIPOD,
-  POWER_RUN,
-  SHIPPING_TUBES,
-} from "@/three/scene/dressing/edgeOfFrame";
+import { POWER_RUN, SHIPPING_TUBES } from "@/three/scene/dressing/edgeOfFrame";
 import { fromWorkbench } from "@/three/scene/world";
 
 /** Print tubes leaning in the right rear corner, half-cut by the frame. */
@@ -36,41 +32,6 @@ function ShippingTubes() {
         </mesh>
       ))}
     </>
-  );
-}
-
-/** The tripod the frame never sees — only its shadow crosses the floor. */
-function OffstageTripod() {
-  const { at, height, legSpread, legRadius, head, yaw, color } =
-    OFFSTAGE_TRIPOD;
-  const legLean = Math.atan(legSpread / 2 / height);
-  const legLength = Math.sqrt(height * height + (legSpread / 2) ** 2);
-  return (
-    <group position={[at.x, 0, at.z]} rotation={[0, yaw, 0]}>
-      {[0, (2 * Math.PI) / 3, (4 * Math.PI) / 3].map((angle) => (
-        <mesh
-          key={angle}
-          position={[
-            (Math.cos(angle) * legSpread) / 4,
-            legLength / 2 - 0.01,
-            (Math.sin(angle) * legSpread) / 4,
-          ]}
-          rotation={[
-            Math.sin(angle) * legLean,
-            0,
-            -Math.cos(angle) * legLean,
-          ]}
-          castShadow
-        >
-          <cylinderGeometry args={[legRadius, legRadius, legLength, 8]} />
-          <meshStandardMaterial color={color} roughness={0.5} metalness={0.45} />
-        </mesh>
-      ))}
-      <mesh position={[0, height + head.height / 2, 0]} castShadow>
-        <boxGeometry args={[head.width, head.height, head.depth]} />
-        <meshStandardMaterial color={color} roughness={0.5} metalness={0.45} />
-      </mesh>
-    </group>
   );
 }
 
@@ -115,14 +76,14 @@ function PowerRun() {
 /**
  * The edge of frame's set dressing (WORK ORDER 0040) — Zone 4, blockout
  * pass. The world continues beyond the browser: tubes cut by the frame's
- * right edge, a tripod that exists only as a shadow, and power arriving
- * from somewhere. Primitive geometry and flat color only.
+ * right edge and power arriving from somewhere. (The offstage tripod was
+ * retired at the Sprint 02 orientation — it had become the storytelling
+ * device instead of a piece of evidence.)
  */
 export function EdgeOfFrameDressing() {
   return (
     <group position={fromWorkbench([0, 0, 0])}>
       <ShippingTubes />
-      <OffstageTripod />
       <PowerRun />
     </group>
   );

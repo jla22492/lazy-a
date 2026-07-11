@@ -8,13 +8,13 @@ v0.1
 
 ## Current Sprint
 
-Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTATION.md; exactly 10 implementation work orders 0036–0045, then a Creative Sprint Review and a full stop for Jonathan's review. Prior phases: Architecture locked at 0014, Presence closed at 0015, Behavior closed at the Creative Reset with the notebook pipeline archived as completed research.)
+Creative Sprint 02 — Reveal the Person (docs/SPRINT_02.md; exactly 10 implementation work orders 0046–0055, then a Creative Sprint Review and a full stop for Jonathan's review. Sprint 01 — Dress the Room, 0036–0045 — approved by Jonathan. Prior phases: Architecture locked at 0014, Presence closed at 0015, Behavior closed at the Creative Reset with the notebook pipeline archived as completed research.)
 
 ---
 
 ## Current Work Order
 
-WORK ORDER 0045 — Final Polish & Sprint Review (Sprint 01, order 10 of 10 — SPRINT COMPLETE)
+WORK ORDER 0046 — Sprint 02 Orientation & the Invisible-World Contract (Sprint 02, order 1 of 10)
 
 ---
 
@@ -100,18 +100,20 @@ WORK ORDER 0045 — Final Polish & Sprint Review (Sprint 01, order 10 of 10 — 
 - The Edit (docs/progress/0044.png): the full review backlog, executed as subtraction and story — the chair became evidence (pushed well out of the working lane, turned away, and given a second job: the work cloth now lives over its back — a chair with a job doesn't ask to be sat in); the plant committed to drinking the light (every clump reaches toward the window, harder the higher it grows, and one leaf let go onto the floor); the pinned cluster evolved over years instead of an afternoon (one item didn't survive, angles disagree harder, one photo hangs slipped where its second pin gave months ago, one outlier is pinned alone far from the conversation); one sticky note came down because one task got done; the fallen shipping tube was removed and the power cable calmed to a thinner two-segment run (the bottom-right floor was the room's busiest patch); the test prints lean at genuinely different angles; the dark masses on the bench's right separated; the hero print remains blank — the absence is becoming intentional
 
 - CREATIVE SPRINT 01 COMPLETE (docs/progress/0045.png + 0045.mp4): the tenth implementation work order closed the sprint — final still and an 8-second motion review captured (the room at rest: the only movement is the daylight's sub-perceptual breath), CHANGELOG updated with the sprint milestone, and the Creative Sprint Review posted to the Creative Director thread with before/after stills and the film; per the sprint termination rule, implementation stops here completely and waits for Jonathan's creative review — no 11th work order
+- SPRINT 01 APPROVED by Jonathan; CREATIVE SPRINT 02 AUTHORIZED — Reveal the Person (docs/SPRINT_02.md): whose workspace is this, answered through habits, infrastructure, history, and personality — never branding; five new locks recorded (personality through habits; a functioning room; the browser interrupts a larger world; real time vs offline rendering; surprise is the reward for belief) plus the guiding principle: everything visible implies something invisible
+- Sprint 02 orientation implemented (docs/progress/0046.png): the mission and direction committed as docs/SPRINT_02.md; the manifest gained its fourth required answer — "implies": what larger, unseen world each object proves (all 25 pieces answered); and the offstage tripod was retired — it had become the storytelling device instead of a piece of evidence, and the right side of the frame calms without its shadow theater
 
 ---
 
 ## In Progress
 
-Nothing — Creative Sprint 01 is complete. Implementation is stopped, awaiting Jonathan's review.
+Creative Sprint 02 — Reveal the Person (work orders 0046–0055).
 
 ---
 
 ## Next Recommended Work Order
 
-None until Jonathan reviews Sprint 01 and authorizes Creative Sprint 02. (The Creative Director's queued candidates: wall complexity "imperceptible complexity, not more contrast"; the hero print's content; the first perceptual surprise; identity objects and navigation.)
+WORK ORDER 0047 — Power I: the room is on the grid.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -172,3 +174,8 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The notebook interaction pipeline (0027–0034) is completed research into interaction language: preserved and valid, never the roadmap. The workbench, not the notebook, is the center of the experience.
 🔒 Rooms are written in layers of time, not layers of objects. Every object answers "when did this arrive?" — and the answers span years, not hours. (Named at the sprint's first production design review.)
 🔒 Nothing exists to decorate. Everything exists because it survived previous decisions. (Named at the second production design review, with the room's guiding word: the room feels CONTINUED — arrived at in the middle of an ongoing creative life — never lived-in, messy, or curated.)
+🔒 The room reveals personality through habits, not possessions. (Sprint 02.)
+🔒 A functioning room is more believable than a decorated room. (Sprint 02.)
+🔒 The browser interrupts a larger world — it does not contain one. Everything visible should imply something invisible: a cable implies a computer, a chair implies a person, a shadow implies an object, a coffee ring implies yesterday. (Sprint 02.)
+🔒 The room is rendered in real time. The impossible is rendered offline — authored moments enter the room as video textures and other authored surfaces, never as real-time effects. (Sprint 02.)
+🔒 Surprise is the reward for believing the room is real. (Sprint 02.)

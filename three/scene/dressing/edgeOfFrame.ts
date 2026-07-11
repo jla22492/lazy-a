@@ -31,22 +31,6 @@ export const SHIPPING_TUBES = {
 } as const;
 
 /**
- * The tripod — entirely outside the locked frame, past its right edge by
- * the window. It exists physically and honestly; the composition only
- * ever sees its shadow crossing the floor. The room does not explain.
- */
-export const OFFSTAGE_TRIPOD = {
-  at: { x: 1.98, z: 1.15 },
-  /** Standing height to the head. */
-  height: 1.42,
-  legSpread: 0.4,
-  legRadius: 0.014,
-  head: { width: 0.11, height: 0.09, depth: 0.09 },
-  yaw: 0.7,
-  color: "#2e2c2a",
-} as const;
-
-/**
  * Power reaching the bench: a strip on the floor by the right wall, its
  * cable running toward the bench's right leg and out of mind. The room
  * works for a living; electricity comes from somewhere.
