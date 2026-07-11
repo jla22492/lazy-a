@@ -14,5 +14,6 @@
 - The room took its first breath: the daylight now sways below the threshold of noticing, and the room stopped being a frozen render — it exists in time.
 - The visitor took the first step: one quiet walk from the doorway pause to the workbench — the first human action in Lazy A, and the moment the camera proved it is a person.
 - The visitor can look around: standing at the bench, the head turns the way a neck turns — and wherever they leave their attention, it stays. The observer became a participant.
+- The notebook was picked up: the first real interaction in Lazy A. The visitor observed it, meant it, offered — the room accepted — and a body bent, reached, paused, and lifted it into a comfortable hold. Not "the notebook animated"; the visitor picked it up.
 
 Record experience changes here, not just technical ones.

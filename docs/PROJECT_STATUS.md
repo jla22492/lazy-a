@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0026 — Acceptance Before Interaction (complete)
+WORK ORDER 0027 — The First Interaction: Picking Up the Notebook (complete)
 
 ---
 
@@ -66,6 +66,7 @@ WORK ORDER 0026 — Acceptance Before Interaction (complete)
 - Intent system established (three/animation/intent.ts + IntentSensor): the final decision layer — commitment can only begin on a ready target, must be held 0.35s (a decision, not a twitch), cancels if readiness breaks mid-hold, and the resulting intent is consumed exactly once with a 0.5s expiry; no input bound yet; verified live (not-ready commits refused, twitches die, held commits mature, single consumption, mid-hold readiness break cancels) — accidental interaction is structurally impossible
 - Acceptance system established (three/animation/acceptance.ts + useAcceptancePolicy): the room's half of the conversation — requestInteraction(target) consumes intent and the room answers (accepted / declined-no-intent / declined-by-room); an answered offer is spent even when declined; per-target acceptance policies carry the room's future context; the notebook's policy currently always accepts; verified live (offers without intent decline, earned offers accept, spent offers decline) — the interaction grammar is complete: observe → ready → intend → offer → the room answers
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
+- The first interaction implemented (docs/progress/0027.mp4): the notebook is picked up exactly as a person would — the full grammar culminates (observed → ready → held commitment → offer → the room accepts) and then the body performs the action: a slight bend forward and down to reach (0.55s), a beat while the hand closes (0.2s), then the lift (0.95s) as the body straightens and the notebook rises — clearing the surface vertically first, arcing to a two-handed chest-height hold, tilting toward the reader; the eyes stay on the object through the grasp and rise to a settled regard as it arrives; the head then holds still (visitorState.holding freezes free-look until held-state looking is directed); nothing opens, nothing else changes; TEMPORARY commitment gesture is press-and-hold (dev-only ?autopickup for capture)
 
 ---
 
@@ -77,7 +78,7 @@ None.
 
 ## Next Recommended Work Order
 
-Place the hero print where the completed architecture says it belongs (Layer 2 — permanent identity).
+The Creative Director's next order in the film phase — the notebook is in hand; what happens with it next is a creative decision.
 
 ---
 
@@ -115,4 +116,4 @@ Place the hero print where the completed architecture says it belongs (Layer 2 �
 🔒 The visitor offers. The room accepts. Interactions never execute because intent exists — the room always makes the final decision.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
-🔒 No interactions yet.
+🔒 The body performs the action. Objects never fly toward the camera; the camera never becomes an interface. (First upheld by the notebook pickup, 0027.)

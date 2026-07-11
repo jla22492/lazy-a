@@ -11,4 +11,6 @@ export const visitorState = {
   position: "arrival" as StandingPositionName | null,
   /** True while a movement behavior is carrying the body. */
   moving: false,
+  /** What the hands hold, if anything (WORK ORDER 0027). */
+  holding: null as string | null,
 };

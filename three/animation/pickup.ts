@@ -1,0 +1,140 @@
+/**
+ * The pickup (WORK ORDER 0027): the first real interaction. A person
+ * picks a notebook up off a workbench — the body performs the action:
+ * a slight bend forward to reach, a beat while the hand closes, then
+ * the lift as the body straightens and the notebook rises to a natural
+ * two-handed hold below the gaze line. The camera never travels;
+ * the notebook never flies.
+ */
+
+import { WORKING_EYE } from "@/three/animation/firstStep";
+
+/** Reaching down to a bench-height object: a slight bend, not a stoop. */
+export const REACH_DURATION = 0.55;
+export const REACH_DIP = 0.1;
+export const REACH_FORWARD = 0.13;
+
+/** The hand closes; the world pauses for a breath. */
+export const GRASP_PAUSE = 0.2;
+
+/** The lift: body straightens, the notebook comes up to the hold. */
+export const LIFT_DURATION = 0.95;
+
+export const PICKUP_TOTAL = REACH_DURATION + GRASP_PAUSE + LIFT_DURATION;
+
+/** Where a standing person holds a closed notebook: ahead and below the
+ * eyes, resting at chest height in both hands. */
+export const HELD_FORWARD = 0.46;
+export const HELD_BELOW_EYE = 0.27;
+/** Tilted toward the face, the way a notebook is held before opening. */
+export const HELD_TILT = -0.95;
+
+/**
+ * Once the notebook settles into the hold, the head rises to a
+ * comfortable regard: the notebook sits low in vision, the room beyond
+ * it — not pressed against the eyes. Radians below horizontal.
+ */
+export const HELD_REGARD_PITCH = -0.35;
+/** The eyes begin rising off the object this far into the carry. */
+export const REGARD_ONSET = 0.35;
+/** How quickly the gaze pursues its target (seconds to ~63%). */
+export const GAZE_TAU = 0.25;
+
+function smootherstep(t: number): number {
+  const x = Math.min(Math.max(t, 0), 1);
+  return x * x * x * (x * (x * 6 - 15) + 10);
+}
+
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+export interface PickupPose {
+  /** Where the eyes are. */
+  eye: [number, number, number];
+  /** 0..1 progress of the notebook along rest → held. */
+  carry: number;
+  done: boolean;
+}
+
+/**
+ * The body's pose `t` seconds into the pickup. `towardNotebook` is the
+ * unit XZ direction from the eyes to the notebook at rest.
+ */
+export function pickupPose(
+  t: number,
+  towardNotebook: readonly [number, number],
+): PickupPose {
+  /** Reach: bend slightly forward and down. */
+  const reach = smootherstep(t / REACH_DURATION);
+  /** Recover: straighten during the lift. */
+  const recover = smootherstep(
+    (t - REACH_DURATION - GRASP_PAUSE) / LIFT_DURATION,
+  );
+  /** Net bend: fully reached at the grasp, back upright by the hold. */
+  const bend = reach * (1 - recover);
+
+  /** The notebook travels only during the lift. */
+  const carry = smootherstep(
+    (t - REACH_DURATION - GRASP_PAUSE) / LIFT_DURATION,
+  );
+
+  return {
+    eye: [
+      WORKING_EYE[0] + towardNotebook[0] * REACH_FORWARD * bend,
+      WORKING_EYE[1] - REACH_DIP * bend,
+      WORKING_EYE[2] + towardNotebook[1] * REACH_FORWARD * bend,
+    ],
+    carry,
+    done: t >= PICKUP_TOTAL,
+  };
+}
+
+/**
+ * The notebook's path from rest to held: it lifts off the surface first,
+ * then arcs toward the body — the vertical component leads, the way a
+ * hand actually clears an object off a surface.
+ */
+/**
+ * Where the eyes want to rest `carry` of the way through the lift:
+ * on the object until it clears the bench, then rising toward the
+ * settled regard as the notebook arrives in the hold.
+ */
+export function gazeGoal(
+  notebook: readonly [number, number, number],
+  regard: readonly [number, number, number],
+  carry: number,
+): [number, number, number] {
+  const rise = smootherstep((carry - REGARD_ONSET) / (1 - REGARD_ONSET));
+  return [
+    lerp(notebook[0], regard[0], rise),
+    lerp(notebook[1], regard[1], rise),
+    lerp(notebook[2], regard[2], rise),
+  ];
+}
+
+/** Frame-rate-independent pursuit of the gaze toward its goal. */
+export function pursueGaze(
+  gaze: [number, number, number],
+  goal: readonly [number, number, number],
+  dt: number,
+): void {
+  const k = 1 - Math.exp(-dt / GAZE_TAU);
+  gaze[0] += (goal[0] - gaze[0]) * k;
+  gaze[1] += (goal[1] - gaze[1]) * k;
+  gaze[2] += (goal[2] - gaze[2]) * k;
+}
+
+export function carryPoint(
+  rest: readonly [number, number, number],
+  held: readonly [number, number, number],
+  carry: number,
+): [number, number, number] {
+  /** Vertical leads the horizontal by easing faster early. */
+  const liftBias = Math.min(1, carry * 1.35);
+  return [
+    lerp(rest[0], held[0], carry * carry * (3 - 2 * carry)),
+    lerp(rest[1], held[1], liftBias),
+    lerp(rest[2], held[2], carry * carry * (3 - 2 * carry)),
+  ];
+}

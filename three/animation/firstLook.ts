@@ -7,6 +7,20 @@
  * recentered: where the visitor leaves their gaze is where it stays.
  */
 
+import { WORKING_EYE, WORKING_GAZE } from "@/three/animation/firstStep";
+
+/** The settled gaze direction is the neck's neutral. */
+export const NEUTRAL_DIR = (() => {
+  const dx = WORKING_GAZE[0] - WORKING_EYE[0];
+  const dy = WORKING_GAZE[1] - WORKING_EYE[1];
+  const dz = WORKING_GAZE[2] - WORKING_EYE[2];
+  const horizontal = Math.hypot(dx, dz);
+  return {
+    yaw: Math.atan2(dx, -dz),
+    pitch: Math.atan2(dy, horizontal),
+  };
+})();
+
 /** Comfortable sustained head-turn range, radians (~55°). */
 export const YAW_LIMIT = 0.96;
 /** People look down at a bench more than they look up. */

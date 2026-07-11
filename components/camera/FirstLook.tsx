@@ -8,24 +8,13 @@ import {
   createLookState,
   DRAG_SENSITIVITY,
   KEY_RATE,
+  NEUTRAL_DIR,
   tickLook,
 } from "@/three/animation/firstLook";
-import { WORKING_EYE, WORKING_GAZE } from "@/three/animation/firstStep";
+import { WORKING_EYE } from "@/three/animation/firstStep";
 import type { RoomBehavior } from "@/three/animation/presence";
 import { visitorState } from "@/three/animation/visitorState";
 import { useRoomBehavior } from "@/three/hooks/useRoomBehavior";
-
-/** The settled gaze direction is the neck's neutral. */
-const NEUTRAL_DIR = (() => {
-  const dx = WORKING_GAZE[0] - WORKING_EYE[0];
-  const dy = WORKING_GAZE[1] - WORKING_EYE[1];
-  const dz = WORKING_GAZE[2] - WORKING_EYE[2];
-  const horizontal = Math.hypot(dx, dz);
-  return {
-    yaw: Math.atan2(dx, -dz),
-    pitch: Math.atan2(dy, horizontal),
-  };
-})();
 
 /** How far ahead of the eyes the gaze point sits. */
 const GAZE_REACH = 2;
@@ -50,6 +39,9 @@ export function FirstLook() {
       kind: "camera",
       enabled: true,
       onRoomTick: (clock) => {
+        /* While holding something, the head stays with the object
+           (WORK ORDER 0027) — held-state looking arrives by direction. */
+        if (visitorState.holding !== null) return;
         if (!(visitorState.position === "working") || !engaged.current) return;
         const state = look.current;
         tickLook(state, clock.delta);
