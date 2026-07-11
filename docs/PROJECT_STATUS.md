@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0044 — The Edit (Sprint 01, order 9 of 10)
+WORK ORDER 0045 — Final Polish & Sprint Review (Sprint 01, order 10 of 10 — SPRINT COMPLETE)
 
 ---
 
@@ -99,17 +99,19 @@ WORK ORDER 0044 — The Edit (Sprint 01, order 9 of 10)
 
 - The Edit (docs/progress/0044.png): the full review backlog, executed as subtraction and story — the chair became evidence (pushed well out of the working lane, turned away, and given a second job: the work cloth now lives over its back — a chair with a job doesn't ask to be sat in); the plant committed to drinking the light (every clump reaches toward the window, harder the higher it grows, and one leaf let go onto the floor); the pinned cluster evolved over years instead of an afternoon (one item didn't survive, angles disagree harder, one photo hangs slipped where its second pin gave months ago, one outlier is pinned alone far from the conversation); one sticky note came down because one task got done; the fallen shipping tube was removed and the power cable calmed to a thinner two-segment run (the bottom-right floor was the room's busiest patch); the test prints lean at genuinely different angles; the dark masses on the bench's right separated; the hero print remains blank — the absence is becoming intentional
 
+- CREATIVE SPRINT 01 COMPLETE (docs/progress/0045.png + 0045.mp4): the tenth implementation work order closed the sprint — final still and an 8-second motion review captured (the room at rest: the only movement is the daylight's sub-perceptual breath), CHANGELOG updated with the sprint milestone, and the Creative Sprint Review posted to the Creative Director thread with before/after stills and the film; per the sprint termination rule, implementation stops here completely and waits for Jonathan's creative review — no 11th work order
+
 ---
 
 ## In Progress
 
-Creative Sprint 01 — Dress the Room (work orders 0036–0045).
+Nothing — Creative Sprint 01 is complete. Implementation is stopped, awaiting Jonathan's review.
 
 ---
 
 ## Next Recommended Work Order
 
-WORK ORDER 0045 — Final polish, review assets, and the Creative Sprint Review — then a full stop for Jonathan's review.
+None until Jonathan reviews Sprint 01 and authorizes Creative Sprint 02. (The Creative Director's queued candidates: wall complexity "imperceptible complexity, not more contrast"; the hero print's content; the first perceptual surprise; identity objects and navigation.)
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
