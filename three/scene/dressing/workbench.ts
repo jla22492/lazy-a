@@ -110,12 +110,19 @@ export const HEADPHONES = {
   color: "#3a3a3a",
 } as const;
 
-/** Active zone: the pencil put down mid-thought beside the notebook. */
+/**
+ * Active zone: the pencil resting across the notebook's cover because
+ * someone stopped writing halfway through a thought (0036 review: the
+ * relationship tells the story, not the prop).
+ */
 export const PENCIL = {
-  at: { x: 0.2, z: 0.21 },
+  /** On the notebook itself, a little above its center. */
+  at: { x: 0.345, z: 0.1 },
+  /** The notebook's closed thickness — what the pencil rests on. */
+  restsOn: 0.02,
   length: 0.175,
   radius: 0.0037,
-  yaw: 0.42,
+  yaw: 1.25,
   color: "#b09040",
 } as const;
 

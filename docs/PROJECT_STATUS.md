@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0037 — Dress the Workbench (Sprint 01, order 2 of 10)
+WORK ORDER 0038 — Dress the Reference Wall (Sprint 01, order 3 of 10)
 
 ---
 
@@ -81,6 +81,9 @@ WORK ORDER 0037 — Dress the Workbench (Sprint 01, order 2 of 10)
 
 - Workbench dressed, blockout pass (docs/progress/0037.png): Zone 1 now tells today's story in primitives and flat color — three test prints propped against the rear wall at their own angles (put up one at a time, never a panel), reference books pulled and not reshelved, the pencil jar with residents leaning at their own angles, a tape roll where it landed, the mug that went cold, headphones set down open, a pencil put down mid-thought beside the notebook, today's working papers shuffled under the notebook's edge, two film canisters (one fallen, unminded), and the camera set down lens-toward-the-wall; every piece placed by the bench's zone language with a manifest entry declaring its story and identity; nothing centered, nothing aligned, nothing beautiful yet
 
+- 0037 amended per Creative Director review: the manifest gained a required question — "why hasn't this been put away?" (rooms feel lived in because things are temporarily unresolved, not because they're messy) — answered for every piece; and the pencil moved from beside the notebook to resting across its cover, because someone stopped writing halfway through a thought (the relationship tells the story, not the prop)
+- Reference wall dressed, blockout pass (docs/progress/0038.png): Zone 2 now tells who Lazy A is — the hero print's future home (large, unframed, a hair off level, off-center right where it can be judged from the bench; its content deliberately unauthored), a cluster of photographs and notes pinned one at a time over years (overlapping because no one takes the older ones down first), a picture ledge where things lean while they matter (a framed still, an unframed print overlapping its corner, and a small award turned mostly away — recognition happened, it is not performed), and three sticky notes low on the wall where a hand actually reaches it; nothing centered, nothing level
+
 ---
 
 ## In Progress
@@ -91,7 +94,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0038 — Dress the Reference Wall (identity: pinned and propped, who Lazy A is).
+WORK ORDER 0039 — Dress the Peripheral Room (how Lazy A lives: chair, plant, shelf, floor).
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -105,6 +108,7 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 - The ceiling underside is bounce-lit only (no direct sun, physically correct) and reads very dark if ever seen; acceptable while it stays out of frame, revisit when a lighting or camera-movement order exposes it.
 - GSAP and Leva are installed but unused until animation and debug work begins.
 - Dev mode occasionally logs a hydration-mismatch warning (`isolation: isolate` on body) and counts it as "1 issue" in the Next dev badge. It is injected by Next's own dev-tools overlay, is intermittent, and cannot occur in production builds; no app code is involved (we are on the latest Next).
+- The archived notebook pickup interaction (0027, temporary press-and-hold gesture) still functions; since 0037 the pencil rests across the notebook's cover, so triggering the pickup leaves the pencil floating. Flagged for creative direction rather than silently changed — the pipeline is completed research and its gesture will be re-evaluated when interaction work resumes.
 
 ---
 

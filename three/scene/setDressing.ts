@@ -65,6 +65,13 @@ export interface SetPiece {
   story: string;
   /** Second earning: what the object says about Lazy A. */
   identity: string;
+  /**
+   * The Creative Director's required question (0036 review): why hasn't
+   * this been put away? Rooms feel lived in because things are temporarily
+   * unresolved — not because they're messy. Permanent residents answer
+   * with why they LIVE here instead.
+   */
+  unresolved: string;
 }
 
 /**
@@ -82,6 +89,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "the room exists around this bench; every mark of use the room " +
       "will ever show accumulates here first",
     identity: "Lazy A works with its hands; the work happens in one place",
+    unresolved: "permanent resident: the room grew around it",
   },
   {
     name: "Notebook",
@@ -91,6 +99,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "put down, not put away",
     identity:
       "thinking at Lazy A happens on paper before it happens on screen",
+    unresolved: "today's thinking isn't finished with it",
   },
   {
     name: "TestPrints",
@@ -99,12 +108,14 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "three small prints from the current work propped against the wall " +
       "this morning, to be glanced at while working — not straightened since",
     identity: "the work is judged by looking at it, again and again",
+    unresolved: "still being judged; taking them down would end the question",
   },
   {
     name: "BookStack",
     zone: "workbench",
     story: "pulled from a shelf for one specific page each, never reshelved",
     identity: "influences are working tools, not trophies",
+    unresolved: "each is still holding a page someone means to return to",
   },
   {
     name: "PencilJar",
@@ -113,18 +124,21 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "the bench's one permanent resident; everything in it leans at its " +
       "own angle because it was dropped back in, not arranged",
     identity: "analog tools come first at Lazy A",
+    unresolved: "permanent resident: the one thing on the bench that lives here",
   },
   {
     name: "TapeRoll",
     zone: "workbench",
     story: "used to prop the test prints an hour ago and left where it landed",
     identity: "things here get pinned, propped, and taped — process is physical",
+    unresolved: "a temporary solution that is quietly becoming permanent",
   },
   {
     name: "Mug",
     zone: "workbench",
     story: "half-finished and gone cold; its owner got pulled into the work",
     identity: "sessions here run long enough for coffee to go cold",
+    unresolved: "the conversation that interrupted it isn't over",
   },
   {
     name: "Headphones",
@@ -132,12 +146,16 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     story: "taken off and set down open, the way they land when someone " +
       "needs to hear the room",
     identity: "sound is half the film",
+    unresolved: "the next listen is minutes away, not hours",
   },
   {
     name: "Pencil",
     zone: "workbench",
-    story: "put down mid-thought beside the notebook, still pointing at it",
+    story:
+      "resting across the notebook's cover because someone stopped writing " +
+      "halfway through a thought",
     identity: "the notebook is written in, daily — the pencil proves it",
+    unresolved: "the thought it was writing stopped halfway",
   },
   {
     name: "LooseSheets",
@@ -146,6 +164,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "today's working papers, shuffled rather than stacked; one edge sits " +
       "under the notebook because the notebook arrived later",
     identity: "planning at Lazy A happens by hand, in layers",
+    unresolved: "today's plan is still being reshuffled",
   },
   {
     name: "FilmCanisters",
@@ -153,6 +172,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     story:
       "emptied from a jacket pocket mid-task; one fell over and nobody minded",
     identity: "Lazy A still shoots film — patience is a value",
+    unresolved: "waiting to be developed — patience, not neglect",
   },
   {
     name: "Camera",
@@ -161,6 +181,56 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "set down after checking a frame, lens angled back toward the wall — " +
       "a tool between uses, never a display piece",
     identity: "the instrument of the trade lives on the bench, not a shelf",
+    unresolved: "the next frame check could come at any moment",
+  },
+  {
+    name: "HeroPrint",
+    zone: "referenceWall",
+    story:
+      "the studio's current defining image, hung unframed and a hair off " +
+      "level where it can be judged from the bench — not where a decorator " +
+      "would center it",
+    identity:
+      "the work itself is the identity; its content is a creative decision " +
+      "still to be authored",
+    unresolved: "still deciding whether it is finished",
+  },
+  {
+    name: "PinnedCluster",
+    zone: "referenceWall",
+    story:
+      "photographs and notes pinned one at a time over years, overlapping " +
+      "because no one ever takes the older ones down first",
+    identity: "influences accumulate here; taste is visible history",
+    unresolved:
+      "each is still influencing; unpinning one is a decision no one has made",
+  },
+  {
+    name: "PictureLedge",
+    zone: "referenceWall",
+    story:
+      "the wall's only furniture: things lean here while they matter — a " +
+      "framed still, an unframed print overlapping its corner",
+    identity: "work is lived with before it is hung; the wall auditions first",
+    unresolved: "everything on it is between temporary and permanent",
+  },
+  {
+    name: "Award",
+    zone: "referenceWall",
+    story:
+      "at the ledge's end, turned mostly away — it lives here, but it " +
+      "isn't allowed to look at everyone",
+    identity: "recognition happened; it is not performed",
+    unresolved: "never put away because putting it away would also be a statement",
+  },
+  {
+    name: "StickyNotes",
+    zone: "referenceWall",
+    story:
+      "slapped low on the wall at the eye-line of someone leaning over the " +
+      "bench, each at its own angle",
+    identity: "thinking overflows the desk; the wall catches it",
+    unresolved: "each one is a task not yet done",
   },
 ];
 

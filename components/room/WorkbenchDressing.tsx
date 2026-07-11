@@ -161,12 +161,12 @@ function Headphones() {
   );
 }
 
-/** The pencil put down mid-thought beside the notebook. */
+/** The pencil resting across the notebook, stopped halfway through a thought. */
 function Pencil() {
-  const { at, length, radius, yaw, color } = PENCIL;
+  const { at, restsOn, length, radius, yaw, color } = PENCIL;
   return (
     <mesh
-      position={[at.x, SURFACE + radius, at.z]}
+      position={[at.x, SURFACE + restsOn + radius, at.z]}
       rotation={[Math.PI / 2, 0, yaw]}
       castShadow
       receiveShadow
