@@ -1,0 +1,173 @@
+"use client";
+
+import { ROOM, WORKBENCH } from "@/three/scene/constants";
+import {
+  CABLE,
+  DESK_LAMP,
+  OUTLET_PLATE,
+  OUTLETS,
+  type Outlet,
+} from "@/three/scene/dressing/infrastructure";
+import { fromWorkbench } from "@/three/scene/world";
+
+const REAR_Z = ROOM.rearWall.z;
+const RIGHT_X = ROOM.rightWall.x;
+
+/** One duplex outlet plate with two recessed sockets. */
+function OutletPlate({ outlet }: { outlet: Outlet }) {
+  const { width, height, depth, color, socket } = OUTLET_PLATE;
+  const onRear = outlet.wall === "rear";
+  const position: [number, number, number] = onRear
+    ? [outlet.along, outlet.height, REAR_Z + depth / 2]
+    : [RIGHT_X - depth / 2, outlet.height, outlet.along];
+  const rotationY = onRear ? 0 : -Math.PI / 2;
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial color={color} roughness={0.5} />
+      </mesh>
+      {[0.028, -0.028].map((y) => (
+        <mesh key={y} position={[0, y, depth / 2 - socket.inset + 0.0005]}>
+          <boxGeometry args={[socket.width, socket.height, socket.inset]} />
+          <meshStandardMaterial color={socket.color} roughness={0.6} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/**
+ * The desk lamp: base on the bench, two enamel arms, a spun shade aimed at
+ * the active zone from last night. Off — the daylight is doing its job.
+ */
+function DeskLamp() {
+  const { at, base, arm1, arm2, head, enamel, joint } = DESK_LAMP;
+  const surface = WORKBENCH.surfaceHeight;
+  /* Arm 1 rises from the base at a lean; arm 2 folds forward and down.
+     Positions are computed so the joints meet believably. */
+  const a1TopX = Math.sin(arm1.yaw) * Math.sin(arm1.pitch) * arm1.length;
+  const a1TopY = Math.cos(arm1.pitch) * arm1.length;
+  const a1TopZ = Math.cos(arm1.yaw) * Math.sin(arm1.pitch) * arm1.length;
+  return (
+    <group position={[at.x, surface, at.z]}>
+      {/* Weighted base. */}
+      <mesh position={[0, base.height / 2, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[base.radius, base.radius, base.height, 20]} />
+        <meshStandardMaterial color={enamel} roughness={0.45} />
+      </mesh>
+      {/* Lower arm. */}
+      <mesh
+        position={[a1TopX / 2, base.height + a1TopY / 2, a1TopZ / 2]}
+        rotation={[arm1.pitch * Math.cos(arm1.yaw), 0, -arm1.pitch * Math.sin(arm1.yaw)]}
+        castShadow
+      >
+        <cylinderGeometry args={[arm1.radius, arm1.radius, arm1.length, 10]} />
+        <meshStandardMaterial color={enamel} roughness={0.45} />
+      </mesh>
+      {/* Elbow joint. */}
+      <mesh
+        position={[a1TopX, base.height + a1TopY, a1TopZ]}
+        castShadow
+      >
+        <sphereGeometry args={[0.014, 10, 8]} />
+        <meshStandardMaterial color={joint} roughness={0.4} metalness={0.3} />
+      </mesh>
+      {/* Upper arm, folding forward-down toward the bench center. */}
+      <mesh
+        position={[
+          a1TopX + (Math.sin(arm2.pitch) * arm2.length) / 2,
+          base.height + a1TopY + (Math.cos(arm2.pitch) * arm2.length) / 2,
+          a1TopZ + 0.02,
+        ]}
+        rotation={[0, 0, -arm2.pitch]}
+        castShadow
+      >
+        <cylinderGeometry args={[arm2.radius, arm2.radius, arm2.length, 10]} />
+        <meshStandardMaterial color={enamel} roughness={0.45} />
+      </mesh>
+      {/* Head: spun shade, mouth toward the active zone, off. */}
+      <mesh
+        position={[
+          a1TopX + Math.sin(arm2.pitch) * arm2.length,
+          base.height + a1TopY + Math.cos(arm2.pitch) * arm2.length,
+          a1TopZ + 0.02,
+        ]}
+        /* Apex up-back, mouth down toward the active zone — a shade, not
+           an arrow. */
+        rotation={[0.3, 0, -2.75]}
+        castShadow
+      >
+        <coneGeometry args={[head.radius, head.depth, 20, 1, true]} />
+        <meshStandardMaterial color={enamel} roughness={0.45} />
+      </mesh>
+      {/* The cord drops off the bench's rear edge into the gap. */}
+      <mesh
+        position={[0.02, -(surface / 2) + 0.01, -0.13]}
+        rotation={[0.12, 0, 0]}
+        castShadow={false}
+      >
+        <cylinderGeometry
+          args={[DESK_LAMP.cord.thickness / 2, DESK_LAMP.cord.thickness / 2, surface, 6]}
+        />
+        <meshStandardMaterial color={DESK_LAMP.cord.color} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Cable runs hugging the floor-wall seams, plus wall stubs to the outlets. */
+function CableRuns() {
+  const { thickness, color, lampRuns, stripRuns } = CABLE;
+  const runs = [...lampRuns, ...stripRuns];
+  return (
+    <>
+      {runs.map((run) => {
+        const dx = run.to.x - run.from.x;
+        const dz = run.to.z - run.from.z;
+        const length = Math.hypot(dx, dz);
+        return (
+          <mesh
+            key={`${run.from.x},${run.from.z}`}
+            position={[
+              (run.from.x + run.to.x) / 2,
+              thickness / 2,
+              (run.from.z + run.to.z) / 2,
+            ]}
+            rotation={[0, Math.atan2(dx, dz), 0]}
+            receiveShadow
+          >
+            <boxGeometry args={[thickness, thickness, length]} />
+            <meshStandardMaterial color={color} />
+          </mesh>
+        );
+      })}
+      {/* Wall stubs: the last vertical inches up to each outlet. */}
+      <mesh position={[-1.02, 0.13, REAR_Z + 0.008]} receiveShadow>
+        <boxGeometry args={[thickness, 0.26, thickness]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh position={[RIGHT_X - 0.008, 0.13, 0.87]} receiveShadow>
+        <boxGeometry args={[thickness, 0.26, thickness]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+    </>
+  );
+}
+
+/**
+ * The room's power infrastructure (WORK ORDER 0047): outlets low on the
+ * walls, cables hugging the seams, a lamp still aimed from last night.
+ * A functioning room is more believable than a decorated room.
+ */
+export function Infrastructure() {
+  return (
+    <group position={fromWorkbench([0, 0, 0])}>
+      {OUTLETS.map((outlet) => (
+        <OutletPlate key={`${outlet.wall}-${outlet.along}`} outlet={outlet} />
+      ))}
+      <DeskLamp />
+      <CableRuns />
+    </group>
+  );
+}

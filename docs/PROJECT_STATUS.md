@@ -14,7 +14,7 @@ Creative Sprint 02 — Reveal the Person (docs/SPRINT_02.md; exactly 10 implemen
 
 ## Current Work Order
 
-WORK ORDER 0046 — Sprint 02 Orientation & the Invisible-World Contract (Sprint 02, order 1 of 10)
+WORK ORDER 0047 — Power I: The Room Is on the Grid (Sprint 02, order 2 of 10)
 
 ---
 
@@ -102,6 +102,7 @@ WORK ORDER 0046 — Sprint 02 Orientation & the Invisible-World Contract (Sprint
 - CREATIVE SPRINT 01 COMPLETE (docs/progress/0045.png + 0045.mp4): the tenth implementation work order closed the sprint — final still and an 8-second motion review captured (the room at rest: the only movement is the daylight's sub-perceptual breath), CHANGELOG updated with the sprint milestone, and the Creative Sprint Review posted to the Creative Director thread with before/after stills and the film; per the sprint termination rule, implementation stops here completely and waits for Jonathan's creative review — no 11th work order
 - SPRINT 01 APPROVED by Jonathan; CREATIVE SPRINT 02 AUTHORIZED — Reveal the Person (docs/SPRINT_02.md): whose workspace is this, answered through habits, infrastructure, history, and personality — never branding; five new locks recorded (personality through habits; a functioning room; the browser interrupts a larger world; real time vs offline rendering; surprise is the reward for belief) plus the guiding principle: everything visible implies something invisible
 - Sprint 02 orientation implemented (docs/progress/0046.png): the mission and direction committed as docs/SPRINT_02.md; the manifest gained its fourth required answer — "implies": what larger, unseen world each object proves (all 25 pieces answered); and the offstage tripod was retired — it had become the storytelling device instead of a piece of evidence, and the right side of the frame calms without its shadow theater
+- Power I — the room is on the grid (docs/progress/0047.png): two duplex outlets low on the walls (one half-hidden by the bookcase, the way outlets always are; one out of frame below the window — the strip's cable exits the frame toward it), cables that hug the floor-wall seams instead of cutting across open floor (the 0040 diagonal run is gone; what remains visible is one short slack leaving the strip before it disappears behind the bench's right leg — the visible end of an invisible supply), and the desk lamp: dark green enamel, two joints, off because the daylight is doing its job, its head still aimed at the active zone from last night's session, its cord dropping off the bench's rear edge into the gap nobody looks at
 
 ---
 
@@ -113,7 +114,7 @@ Creative Sprint 02 — Reveal the Person (work orders 0046–0055).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0047 — Power I: the room is on the grid.
+WORK ORDER 0048 — Power II: the person's devices.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

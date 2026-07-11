@@ -45,16 +45,17 @@ export const POWER_RUN = {
     color: "#3d3b38",
   },
   /**
-   * Blockout cable: low flat segments approximating a lazy slack run.
-   * The Edit (0044): two segments, thinner — the power run is a fact,
-   * not a subject.
+   * Power I (0047): the diagonal floor run is gone — cables hug seams now
+   * (see dressing/infrastructure.ts). What remains here is one short slack
+   * of cable leaving the strip toward the bench before it disappears
+   * behind the bench's right leg: the visible end of an invisible supply.
    */
   cable: {
     thickness: 0.009,
     color: "#31302e",
     segments: [
-      { from: { x: 1.72, z: 0.84 }, to: { x: 1.15, z: 0.6 } },
-      { from: { x: 1.15, z: 0.6 }, to: { x: 0.84, z: 0.34 } },
+      { from: { x: 1.72, z: 0.8 }, to: { x: 1.3, z: 0.55 } },
+      { from: { x: 1.3, z: 0.55 }, to: { x: 0.92, z: 0.33 } },
     ],
   },
 } as const;

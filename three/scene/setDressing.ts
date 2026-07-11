@@ -370,6 +370,31 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     implies: "dirty hands, real work, and a person who wipes and keeps moving",
   },
   {
+    name: "Outlets",
+    zone: "edgeOfFrame",
+    story:
+      "two duplex plates low on the walls, one half-hidden by the bookcase " +
+      "the way outlets always are — installed when the building was, " +
+      "yellowed a shade past the paint",
+    identity: "the room is part of a building; Lazy A rents from reality",
+    unresolved: "permanent residents: they were here before the studio was",
+    arrived: "with the building, decades ago",
+    implies: "the wiring in the walls, the meter, the grid, the landlord",
+  },
+  {
+    name: "DeskLamp",
+    zone: "workbench",
+    story:
+      "dark green enamel, two joints, standing at the bench's rear corner — " +
+      "off, because the daylight is doing its job, but its head is still " +
+      "aimed at the active zone from last night's session",
+    identity: "work here continues after dark; the lamp remembers the hour",
+    unresolved: "still aimed where last night's work happened",
+    arrived: "years ago, secondhand; the enamel was already chipped",
+    implies: "the nights this room works through, and a person who adjusts " +
+      "it without looking",
+  },
+  {
     name: "PowerRun",
     zone: "edgeOfFrame",
     story:
