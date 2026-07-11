@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0039 — Dress the Peripheral Room (Sprint 01, order 4 of 10)
+WORK ORDER 0040 — Dress the Edge of Frame (Sprint 01, order 5 of 10)
 
 ---
 
@@ -86,6 +86,8 @@ WORK ORDER 0039 — Dress the Peripheral Room (Sprint 01, order 4 of 10)
 
 - Peripheral room dressed, blockout pass (docs/progress/0039.png): Zone 3 now tells how Lazy A lives — the chair pulled back from the bench and turned seventeen degrees away (someone stood up quickly; it never got pushed back in), the working library against the rear wall below the picture ledge (leaning spines, a flat pile where returns get dropped, back open to the plaster, standing off the wall by the baseboard's depth as real furniture must), a mounted print leaning against the bookcase's front at floor level (finished work waiting its turn), the one living plant squeezed into the corner beside the library, and a single sheet on the floor that slid off the bench and hasn't been picked up; the bookcase was first authored on the left wall and moved to the rear wall when the locked frame proved the left wall lives entirely outside the composition
 
+- Edge of frame dressed, blockout pass (docs/progress/0040.png): Zone 4 now suggests the world continues beyond the browser — print tubes leaning against the right wall exactly where the frame cuts them (deliveries get parked there; one fell and rolled a little way out), the tripod standing by the window entirely outside the locked frame (one leg slivers into the right edge; mostly it exists as a shadow crossing the floor — the room never explains it), and a power strip with a lazy slack cable running toward the bench leg and out of mind; nothing in this zone is composed for the frame — pieces are cut by its edges or reach in only by shadow
+
 ---
 
 ## In Progress
@@ -96,7 +98,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0040 — Dress the Edge of Frame (the world continues beyond the browser), then the sprint's first production design review with the Creative Director.
+WORK ORDER 0041 — Materials I: wood & paper (texture is emotion), following the sprint's first production design review with the Creative Director.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

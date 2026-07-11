@@ -279,6 +279,34 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     identity: "even finished work waits its turn here",
     unresolved: "hanging it would mean deciding it is done",
   },
+  {
+    name: "ShippingTubes",
+    zone: "edgeOfFrame",
+    story:
+      "print tubes leaning in the right rear corner where deliveries get " +
+      "parked, one fallen and rolled a little way out — half-cut by the " +
+      "frame's edge, never composed for it",
+    identity: "work arrives and leaves this room; it has an outside",
+    unresolved: "opening them is a task that keeps losing to the current work",
+  },
+  {
+    name: "OffstageTripod",
+    zone: "edgeOfFrame",
+    story:
+      "standing by the window entirely outside the locked frame; only its " +
+      "shadow crosses the floor — the room never explains it",
+    identity: "the studio's tools outnumber what any one view can hold",
+    unresolved: "between setups, exactly where a tripod waits",
+  },
+  {
+    name: "PowerRun",
+    zone: "edgeOfFrame",
+    story:
+      "a strip by the right wall and a lazy slack cable running toward the " +
+      "bench leg and out of mind",
+    identity: "the room works for a living; electricity comes from somewhere",
+    unresolved: "cable management is nobody's favorite job",
+  },
 ];
 
 /** The manifest for one zone, for dressing components and reviews. */
