@@ -50,28 +50,80 @@ export const CHAIR = {
 } as const;
 
 /**
- * The floor plant in the rear-left corner — the one living thing in the
- * room. Watered irregularly, thriving anyway.
+ * The floor plant in the rear-left corner — the one living thing in a
+ * room full of manufactured objects. That is why the person keeps it
+ * (internal review #1 asked; this is the answer, and it is built, not
+ * asserted): everything else in the room was made; this grows. Watered
+ * irregularly, thriving anyway, reaching for a window it can barely see.
+ *
+ * 0051: real construction — a rubber plant. Stems curve toward the
+ * light; broad oval leaves attach along them, older ones darker and
+ * drooping, the newest bright and vertical, one gone yellow and not yet
+ * fallen. No two leaves agree — nothing manufactured ever disagrees
+ * with itself like this.
  */
 export const PLANT = {
   /** Squeezed into the corner beside the bookcase. */
   at: { x: -1.95, z: 0.12 },
   pot: { radius: 0.13, height: 0.28, color: "#8a6a55" },
+  /** The soil surface, sunken and dry at the edges. */
+  soil: { inset: 0.02, depth: 0.03, color: "#4a3d30" },
   /**
-   * Blockout foliage: overlapping rounded masses, not leaves yet.
-   * The Edit (0044): the plant drinks the light — it stands in the room's
-   * darkest corner and every clump reaches toward the window, harder the
-   * higher it grows (phototropism, not composition). It belongs to the
-   * window, not to the frame.
+   * Stems as curves (bench-local to the pot center): each bows toward
+   * +X — the window — harder as it rises. Leaves sit along each stem:
+   * `t` is the position along the curve, `yaw` the direction the leaf
+   * faces (0 = toward the window), `droop` the tilt from vertical.
    */
-  foliage: {
-    color: "#66705c",
-    clumps: [
-      { x: 0.03, y: 0.56, z: 0.01, r: 0.18 },
-      { x: 0.14, y: 0.75, z: 0.06, r: 0.14 },
-      { x: -0.04, y: 0.69, z: -0.03, r: 0.12 },
-      { x: 0.16, y: 0.9, z: 0.01, r: 0.1 },
+  stems: {
+    radius: 0.006,
+    color: "#5a6349",
+    curves: [
+      {
+        points: [
+          { x: -0.02, y: 0.26, z: 0.01 },
+          { x: 0.0, y: 0.6, z: 0.02 },
+          { x: 0.09, y: 0.92, z: 0.03 },
+        ],
+        leaves: [
+          { t: 0.45, yaw: -0.7, droop: 1.15, size: 0.085, tone: "old" },
+          { t: 0.7, yaw: 0.4, droop: 0.85, size: 0.095, tone: "old" },
+          { t: 0.92, yaw: -0.15, droop: 0.55, size: 0.09, tone: "mid" },
+          { t: 1.0, yaw: 0.1, droop: 0.25, size: 0.075, tone: "new" },
+        ],
+      },
+      {
+        points: [
+          { x: 0.03, y: 0.26, z: -0.03 },
+          { x: 0.08, y: 0.52, z: -0.05 },
+          { x: 0.19, y: 0.74, z: -0.04 },
+        ],
+        leaves: [
+          { t: 0.5, yaw: 2.4, droop: 1.25, size: 0.08, tone: "old" },
+          { t: 0.78, yaw: 1.6, droop: 0.8, size: 0.09, tone: "mid" },
+          /* The one that went yellow and hasn't fallen yet. */
+          { t: 0.6, yaw: 3.4, droop: 1.45, size: 0.07, tone: "yellow" },
+          { t: 1.0, yaw: 0.3, droop: 0.35, size: 0.08, tone: "new" },
+        ],
+      },
+      {
+        points: [
+          { x: -0.04, y: 0.26, z: 0.05 },
+          { x: -0.06, y: 0.46, z: 0.08 },
+          { x: 0.02, y: 0.6, z: 0.1 },
+        ],
+        leaves: [
+          { t: 0.55, yaw: 4.2, droop: 1.1, size: 0.075, tone: "old" },
+          { t: 0.85, yaw: 5.3, droop: 0.9, size: 0.08, tone: "mid" },
+          { t: 1.0, yaw: 0.0, droop: 0.45, size: 0.07, tone: "new" },
+        ],
+      },
     ],
+  },
+  leafTones: {
+    old: "#4f5a42",
+    mid: "#5e6b4d",
+    new: "#75835c",
+    yellow: "#a89a55",
   },
   /** One leaf that let go — the floor's only biology. */
   droppedLeaf: {

@@ -14,7 +14,7 @@ Creative Sprint 02 — Reveal the Person (docs/SPRINT_02.md; exactly 10 implemen
 
 ## Current Work Order
 
-WORK ORDER 0050 — Habits I: Ghosts on the Walls (Sprint 02, order 5 of 10)
+WORK ORDER 0051 — The Plant Becomes Inevitable (Sprint 02, order 6 of 10)
 
 ---
 
@@ -106,6 +106,8 @@ WORK ORDER 0050 — Habits I: Ghosts on the Walls (Sprint 02, order 5 of 10)
 - Power II — the person's devices (docs/progress/0048.png): the phone charger — its block plugged into the strip, its pale cable rising from behind the bench and lying across the temporary zone in a lazy S threaded between the tape roll and the canisters, connector face-up — and no phone: it left with its owner minutes ago, the room's strongest evidence that someone just stood up
 - The larger world — off-screen light and shadow (docs/progress/0049.png): three authored approximations of light the renderer cannot transport itself, each derived from real geometry, all below the threshold of noticing — the window's daylight patch on the floor (its four corners are the window opening's sill and head edges projected along the sun's true direction; a diagonal warmth right of the chair that is felt more than seen), corner occlusion where the walls meet (four thin fades, ~14cm reach — the corners stop reading as the clean edges of a set), and one soft vertical band on the frosted pane's visible sliver: something stands outside the window, unexplained — the world continues past the glass
 - Habits I — ghosts on the walls (docs/progress/0050.png): time painted into the surfaces themselves, no new geometry — the rear wall alone carries two ghosts (lighter patches of old paint where prints used to hang, adhesive residue still at two corners: one is the hero print's predecessor, and today's hero hangs off-center partly because the old spot was taken; one came down inside the cluster's territory), seven pin holes that outlived their pins, and on the bench the pencil jar's halo — the un-sunned disc under the one object that never moves
+- Internal review #1 held (after 0050): approved and on course — the authored light planes ruled evidence of light, never lighting (every shadow has an unseen source, every patch an architectural explanation); the lamp, the absent phone, and the wall ghosts singled out; new lock recorded (nothing in the room is self-contained); the plant survives 0051 only as a built decision, and remaining notes queued (the room still feels composed; the room still ends at the browser; the desk is an island — connection is logistic, not visual)
+- The plant became inevitable (docs/progress/0051.png): the sphere-clump blockout is gone — a rubber plant now, built as the decision it answers to ("the one living thing in a room full of manufactured objects"): three stems curve from dry-edged soil toward the window, harder as they rise; ten broad oval leaves, older ones darker and drooping, the newest bright and near-vertical, one gone yellow and not yet fallen — no two leaves agree, and nothing manufactured ever disagrees with itself like this; its wall shadow is the most organic shape in the room
 
 ---
 
@@ -117,7 +119,7 @@ Creative Sprint 02 — Reveal the Person (work orders 0046–0055).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0051 — The plant becomes inevitable, following internal review #1.
+WORK ORDER 0052 — Habits II: the person's routines.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -183,3 +185,4 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The browser interrupts a larger world — it does not contain one. Everything visible should imply something invisible: a cable implies a computer, a chair implies a person, a shadow implies an object, a coffee ring implies yesterday. (Sprint 02.)
 🔒 The room is rendered in real time. The impossible is rendered offline — authored moments enter the room as video textures and other authored surfaces, never as real-time effects. (Sprint 02.)
 🔒 Surprise is the reward for believing the room is real. (Sprint 02.)
+🔒 Nothing in the room is self-contained. Every object belongs to a larger system — the mug to a sink, the chair to a body, the cable to a computer, the power to the building, the window to another world. The browser belongs to none of them. (Named at Sprint 02's first internal review, with the ruling that authored light planes are evidence of light, never lighting: every shadow has an unseen source, every patch an architectural explanation.)

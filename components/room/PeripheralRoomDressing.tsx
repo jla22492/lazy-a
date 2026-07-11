@@ -1,5 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { CatmullRomCurve3, DoubleSide, Vector3 } from "three";
+
 import { leather, paper, plaster, wood } from "@/three/materials/procedural";
 import {
   BOOKCASE,
@@ -154,9 +158,23 @@ function Chair() {
   );
 }
 
-/** The one living thing in the room. */
+/**
+ * The one living thing in a room full of manufactured objects — that is
+ * why the person keeps it, and the build says so: stems bow toward the
+ * window, no two leaves agree, one has gone yellow and not yet fallen.
+ */
 function Plant() {
-  const { at, pot, foliage, droppedLeaf } = PLANT;
+  const { at, pot, soil, stems, leafTones, droppedLeaf } = PLANT;
+  const curves = useMemo(
+    () =>
+      stems.curves.map(
+        (stem) =>
+          new CatmullRomCurve3(
+            stem.points.map((p) => new Vector3(p.x, p.y, p.z)),
+          ),
+      ),
+    [stems],
+  );
   return (
     <group position={[at.x, 0, at.z]}>
       <mesh position={[0, pot.height / 2, 0]} castShadow receiveShadow>
@@ -168,16 +186,54 @@ function Plant() {
           roughness={0.85}
         />
       </mesh>
-      {foliage.clumps.map((clump) => (
-        <mesh
-          key={`${clump.x},${clump.y}`}
-          position={[clump.x, clump.y, clump.z]}
-          castShadow
-        >
-          <sphereGeometry args={[clump.r, 12, 10]} />
-          <meshStandardMaterial color={foliage.color} />
+      {/* Soil, sunken below the rim. */}
+      <mesh position={[0, pot.height - soil.depth, 0]} receiveShadow>
+        <cylinderGeometry
+          args={[
+            pot.radius - soil.inset,
+            pot.radius - soil.inset,
+            0.005,
+            18,
+          ]}
+        />
+        <meshStandardMaterial color={soil.color} roughness={1} />
+      </mesh>
+      {/* Stems bowing toward the window. */}
+      {curves.map((curve, stemIndex) => (
+        <mesh key={stemIndex} castShadow>
+          <tubeGeometry args={[curve, 12, stems.radius, 6, false]} />
+          <meshStandardMaterial color={stems.color} roughness={0.8} />
         </mesh>
       ))}
+      {/* Leaves: broad ovals, each at its own age and angle. */}
+      {stems.curves.map((stem, stemIndex) =>
+        stem.leaves.map((leaf, leafIndex) => {
+          const anchor = curves[stemIndex].getPoint(leaf.t);
+          return (
+            <group
+              key={`${stemIndex}-${leafIndex}`}
+              position={[anchor.x, anchor.y, anchor.z]}
+              rotation={[0, leaf.yaw, 0]}
+            >
+              {/* The oval hangs off its stem point, drooping by age. */}
+              <mesh
+                position={[leaf.size * 0.75, 0, 0]}
+                rotation={[0, 0, -leaf.droop]}
+                /* Broad oval, not a disc: elongated along its own axis. */
+                scale={[1.5, 1, 1]}
+                castShadow
+              >
+                <circleGeometry args={[leaf.size, 12]} />
+                <meshStandardMaterial
+                  color={leafTones[leaf.tone as keyof typeof leafTones]}
+                  roughness={0.75}
+                  side={DoubleSide}
+                />
+              </mesh>
+            </group>
+          );
+        }),
+      )}
       {/* The leaf that let go, flat on the floor in world space. */}
       <mesh
         position={[
