@@ -21,5 +21,6 @@
 - The thumb found the cover: the visitor's second real decision, and the body's answer — weight to one hand, the opening edge offered up to the other. Everything is ready and nothing is spent; the first irreversible act still belongs entirely to the visitor.
 - The notebook opened: the first irreversible act in Lazy A, chosen by the visitor and performed by the body — the cover swung on its real hinge and came to rest, and the relationship changed. Not because the notebook changed; because the visitor did. Nothing has been read.
 - The eyes arrived on the page: vision landed before meaning — the visitor sees the open notebook and has not read it. Seeing and understanding are now separate events, the way body and mind have been all along.
+- The project found its constitution: Lazy A is a company website where the company itself is expressed through a living environment that quietly refuses to behave exactly how you expect. The notebook's journey closed as completed research, the visitor became a perspective rather than a character, and the room — not the interaction — became the work. Dressing the set begins.
 
 Record experience changes here, not just technical ones.

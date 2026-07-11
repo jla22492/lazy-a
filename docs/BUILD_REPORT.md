@@ -2,7 +2,7 @@
 
 ## Work Order
 
-CREATIVE WORK ORDER 0035 — The Voice of the Notebook
+WORK ORDER 0036 — The Constitution & the Set-Dressing Framework (Creative Sprint 01, order 1 of 10)
 
 ## Version
 
@@ -10,18 +10,16 @@ v0.1
 
 ## Summary
 
-- Implementation is paused, as ordered. No application code changed; no animation, no interaction, no new systems; nothing visitor-facing moved. No media was recorded because there is nothing new to see — this order lives entirely in docs/THE_NOTEBOOK.md.
-- docs/THE_NOTEBOOK.md now defines the project's first true authorship decisions across twelve domains: identity (who is speaking), time (when is the notebook), audience and privacy (who was this written for), awareness (does the notebook know it is read), completeness, uniformity of hand, ownership (which contains which — the room or the notebook), form of content, the first page specifically, reading as interaction, impossibility (where reality is allowed to leak), and memory (what persists between visits).
-- Every question is posed without an answer, per the order. Where an existing Creative Lock already bounds the answer space — the room's heartbeat, discovery-not-announcement, the experience waits for the visitor, opening changes the relationship, seeing precedes understanding — the lock is cited as a boundary condition the eventual answer must respect or formally revise.
-- The document closes with a dependency map: each future implementation domain (typography, first-page layout, page-turn mechanics, reading acceptance policies, impossible moments, persistence, sound, whatever follows reading) is mapped to the question sections that gate it, so it is always explicit which authorship decision unblocks which engineering.
-- Validation asked and answered: a designer receiving only this document would know every major creative decision that still requires authorship — and would find none of them prematurely made.
-- CHANGELOG intentionally not updated, per the order.
-- New Creative Lock recorded: meaning precedes mechanics.
+- The Creative Reset is now in version control: docs/ORIENTATION.md records the Creative Director's orientation update as the project's creative constitution — what Lazy A is (a company website where the company is expressed through a living environment that quietly refuses to behave exactly how you expect), the perspective law (no hands, no body, no avatar, ever), unexpectedness over realism, website-first timing, the four storytelling zones, texture as a first-class discipline, the three kinds of surprise in strict order, and Sprint 01's mission and hard 10-work-order termination.
+- Creative Locks updated to match: the constitution, the perspective law, unexpectedness outranks realism, the website comes first, everything earns its place twice, texture is emotion, surprise order, and the camera lock revision Jonathan approved ("The camera inherits human behavior; it never becomes a human character," superseding "The camera never travels; a person moves"). The notebook interaction pipeline (0027–0034) is formally archived as completed research — preserved, valid, never the roadmap.
+- Set-dressing framework built (three/scene/setDressing.ts): the four room storytelling zones as code (workbench / reference wall / peripheral room / edge of frame, each with what it tells), the SetPiece contract requiring every dressed object to declare its zone, its story (the human trace that explains it, written as an interrupted moment), and its identity (what it says about Lazy A) — the "earns its place twice" rule as a type. The dressing manifest is the single authored record of what the room contains; dressing components implement manifest entries, never invent objects. The existing workbench and notebook are its first two entries.
+- No visitor-facing change: 0036 renders identically to 0035 by design. No media captured — there is nothing new to see; this order lays the production-design floor plan.
+- Verification: production build and lint pass; the dressing manifest type-checks against the zone registry.
 
 ## Decisions Required
 
-All of docs/THE_NOTEBOOK.md — deliberately. The questions are the deliverable; the answers are yours.
+None.
 
 ## Ready for
 
-Your authorship. Implementation of meaning resumes as the answers arrive, in whatever order you choose to give them.
+WORK ORDER 0037 — Dress the Workbench: blockout fidelity, everything exists, nothing beautiful.

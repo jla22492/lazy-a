@@ -8,13 +8,13 @@ v0.1
 
 ## Current Sprint
 
-Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase closed at 0015 with the realization that stillness exists in time, not in frames)
+Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTATION.md; exactly 10 implementation work orders 0036–0045, then a Creative Sprint Review and a full stop for Jonathan's review. Prior phases: Architecture locked at 0014, Presence closed at 0015, Behavior closed at the Creative Reset with the notebook pipeline archived as completed research.)
 
 ---
 
 ## Current Work Order
 
-CREATIVE WORK ORDER 0035 — The Voice of the Notebook (complete; documentation only)
+WORK ORDER 0036 — The Constitution & the Set-Dressing Framework (Sprint 01, order 1 of 10)
 
 ---
 
@@ -76,17 +76,22 @@ CREATIVE WORK ORDER 0035 — The Voice of the Notebook (complete; documentation 
 - Holding refined as its own experience (docs/progress/0028.mp4): the held state rebalanced from "presented" to "held" — the notebook rests low in both hands near the waist (0.33m below the eyes, 0.48m ahead), biased 9cm toward the dominant hand and a few degrees askew, its tilt eased; the arms visibly accept the weight as the lift completes (one damped ~11mm dip, then true stillness); the settled regard drops to the work surface so the bench and wall hold the frame with the notebook in the lower third — the room remains present, neither dominates; capture pipeline gained deferred recording (?shotdelay now applies to ?record) so films can open mid-journey
 - The first interaction implemented (docs/progress/0027.mp4): the notebook is picked up exactly as a person would — the full grammar culminates (observed → ready → held commitment → offer → the room accepts) and then the body performs the action: a slight bend forward and down to reach (0.55s), a beat while the hand closes (0.2s), then the lift (0.95s) as the body straightens and the notebook rises — clearing the surface vertically first, arcing to a two-handed chest-height hold, tilting toward the reader; the eyes stay on the object through the grasp and rise to a settled regard as it arrives; the head then holds still (visitorState.holding freezes free-look until held-state looking is directed); nothing opens, nothing else changes; TEMPORARY commitment gesture is press-and-hold (dev-only ?autopickup for capture)
 
+- CREATIVE RESET (docs/ORIENTATION.md): the Creative Director's orientation update is now the project's creative constitution — Lazy A is a company website where the company is expressed through a living environment that quietly refuses to behave exactly how you expect; the notebook interaction pipeline (0027–0034) is archived as completed research into interaction language (preserved, valid, no longer the roadmap); the implementation role becomes Production Designer / Art Director / Experience Engineer; the room is dressed in four storytelling zones (workbench, reference wall, peripheral room, edge of frame); texture becomes a first-class design discipline; surprise is built perceptual → behavioral → narrative, in that order
+- Set-dressing framework established (three/scene/setDressing.ts): the four room storytelling zones as code, the SetPiece contract (every object declares its zone, its story — the human trace that explains it — and what it says about Lazy A: "everything earns its place twice"), and the dressing manifest as the single authored record of what the room contains; the existing workbench and notebook are the manifest's first entries; no visitor-facing change (0036 renders identically to 0035)
+
 ---
 
 ## In Progress
 
-None.
+Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ---
 
 ## Next Recommended Work Order
 
-The Creative Director answers the authorship questions in docs/THE_NOTEBOOK.md — implementation of meaning resumes only as those answers arrive.
+WORK ORDER 0037 — Dress the Workbench (blockout fidelity: everything exists, nothing beautiful).
+
+docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
 ---
 
@@ -116,7 +121,7 @@ The Creative Director answers the authorship questions in docs/THE_NOTEBOOK.md �
 🔒 The room has one heartbeat: every time-based behavior derives from the room clock, never from isolated timers.
 🔒 The room exists whether or not it is being observed; the visitor arrives in the middle of its life. Implementation may approximate this, but the experience must never imply otherwise.
 🔒 The room settles; it does not breathe. Behaviors read as a physical space relaxing with the day, never as an organism — the room is a place where life has accumulated, not a creature.
-🔒 The camera never travels. A person moves. Every camera behavior must be imaginable as a human body shifting weight, stepping, leaning, sitting, or turning.
+🔒 The camera inherits human behavior. It never becomes a human character. (Supersedes "The camera never travels; a person moves" at the Creative Reset — settling, leaning, turning, and re-aligning remain the camera's vocabulary; body ownership does not.)
 🔒 Attention follows the visitor. The room never forces the visitor's gaze.
 🔒 Observation always precedes interaction.
 🔒 Observation enables readiness. Readiness enables interaction. Interaction never happens directly from gaze — there is always an intermediate state.
@@ -134,3 +139,11 @@ The Creative Director answers the authorship questions in docs/THE_NOTEBOOK.md �
 🔒 Opening changes the relationship. Not because the notebook changes — because the visitor does. Crossing a boundary is quietly irreversible, never dramatic.
 🔒 Seeing precedes understanding. The notebook becomes visible before it becomes meaningful — vision and comprehension are separate events, as body and mind are.
 🔒 Meaning precedes mechanics. The notebook's voice is authored before its behaviors are engineered — creative answers gate implementation, never the reverse.
+🔒 The constitution (docs/ORIENTATION.md): Lazy A is a company website where the company itself is expressed through a living environment that quietly refuses to behave exactly how you expect. Not a game, not a film, not an interactive experience. Every decision reinforces this.
+🔒 The visitor inhabits a perspective, never a character. Human presence is implied, never depicted — no hands, no arms, no body, no avatar, ever.
+🔒 Unexpectedness outranks realism. Realism exists only to make the unexpected believable; when the two conflict, protect the unexpected.
+🔒 The website comes first. Recognition, then curiosity, then discovery — atmosphere never delays understanding, wonder never delays communication.
+🔒 Everything earns its place twice. First by belonging in the room, second by saying something about Lazy A; failing either, it is removed.
+🔒 Texture is emotion. Every material decision answers "what does this surface feel like," never merely "what color is it."
+🔒 Surprise is built in order: perceptual, then behavioral, then narrative — never skipping ahead.
+🔒 The notebook interaction pipeline (0027–0034) is completed research into interaction language: preserved and valid, never the roadmap. The workbench, not the notebook, is the center of the experience.
