@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0020 — The First Step
+WORK ORDER 0021 — Settle Into Position
 
 ## Version
 
@@ -10,12 +10,12 @@ v0.1
 
 ## Summary
 
-- The first human action exists: the visitor walks from ARRIVAL to WORKING using the standing positions from 0019. One trigger, one step, nothing else responds.
-- The movement is a body, not a camera: casual indoor pace (1.15 m/s across the 3.8m path, ~3.3 seconds), a smootherstep velocity profile (zero velocity and acceleration at both ends — bodies, not motors), a faint 1.75Hz step-rhythm in the eyes that is silent at both ends and fullest mid-stride, and a gaze that stays on the room until late in the walk, then eases down onto the work surface as the body settles. The settled frame holds the notebook at hand with the bench's rear edge and the wall keeping the room present — tuned through three iterations (straight-down felt like staring; too-shallow read as empty planes).
-- Implemented as the Presence system's second behavior ("person-step", kind: camera), time-anchored to the room clock. The CameraRig verb vocabulary was not extended — walking is not one of the four locked verbs, so the transition lives as an internal behavior pending your direction on whether "step" enters the vocabulary.
-- TEMPORARY trigger, per the order: click/tap anywhere or Space. A dev-only ?autostep parameter exists for headless capture. No permanent interaction model was built.
-- New Creative Lock recorded: the camera never travels; a person moves.
-- Motion review: docs/progress/0020.mp4 — 12.5 seconds: arrival stillness, trigger at ~3s, the walk, and the settled working position.
+- The body now finishes arriving. In the first ~1.3 seconds after the walk ends: momentum carries the center of mass about 12mm past the stop along the walk direction, a damped sway at natural standing frequency (1.4Hz, decayed to ~1% by the end) brings it back to rest, a 6mm knee-soften dip resolves, and the head settles a beat behind the body (the gaze eases the last fraction into place).
+- The oscillation starts at zero displacement with forward momentum — physically, the plant of the final step — so the walk flows into the settle without a seam.
+- It happens exactly once. There is no idle cycle; after settling, the visitor is simply standing, and the only life in the frame is the daylight's Version-1 sway.
+- Implemented inside the existing person-step behavior and room-clock timing — no new systems, no new triggers.
+- Motion review: docs/progress/0021.mp4 — 12.6 seconds: arrival, transition, settling, complete stillness.
+- CHANGELOG not updated: the settle is deliberately below the threshold of noticing; it belongs to the first-step milestone already recorded.
 
 ## Decisions Required
 
@@ -23,4 +23,4 @@ None.
 
 ## Ready For
 
-Creative review of docs/progress/0020.mp4, then WORK ORDER 0021.
+Creative review of docs/progress/0021.mp4, then WORK ORDER 0022.

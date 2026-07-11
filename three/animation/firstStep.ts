@@ -63,6 +63,32 @@ export interface WalkPose {
   done: boolean;
 }
 
+/**
+ * Settling (WORK ORDER 0021): the body finishes arriving. Momentum
+ * carries the center of mass a touch past the stop, then a damped sway
+ * brings it to rest — once, never looping. Amplitudes are millimeters;
+ * if it can be noticed, it is too large.
+ */
+const SETTLE_DURATION = 1.3;
+/** Natural standing-sway frequency. */
+const SETTLE_FREQUENCY = 1.4;
+/** Decay: the sway is ~1% by the end of the settle. */
+const SETTLE_DAMPING = 3.5;
+/** Forward drift past the stop, along the walk direction. */
+const SETTLE_FORWARD = 0.012;
+/** The final knee-soften dip. */
+const SETTLE_DIP = 0.006;
+/** The head arrives a beat after the body. */
+const SETTLE_GAZE_LAG = 0.6;
+
+export const STEP_TOTAL_DURATION = WALK_DURATION + SETTLE_DURATION;
+
+/** Unit direction of travel in XZ, for the settle's forward sway. */
+const WALK_DIR = [
+  (WORKING_EYE[0] - ARRIVAL_EYE[0]) / WALK_DISTANCE,
+  (WORKING_EYE[2] - ARRIVAL_EYE[2]) / WALK_DISTANCE,
+];
+
 /** Pose of the walking body at `t` seconds after the step began. */
 export function walkPose(t: number): WalkPose {
   const progress = smootherstep(t / WALK_DURATION);
@@ -76,17 +102,33 @@ export function walkPose(t: number): WalkPose {
     (progress - GAZE_SHIFT_START) / (1 - GAZE_SHIFT_START),
   );
 
+  /** After the walk: one damped sway, starting from zero with momentum. */
+  const ts = t - WALK_DURATION;
+  let settleForward = 0;
+  let settleY = 0;
+  let settleGazeY = 0;
+  if (ts > 0) {
+    const decay = Math.exp(-SETTLE_DAMPING * ts);
+    const phase = 2 * Math.PI * SETTLE_FREQUENCY * ts;
+    settleForward = SETTLE_FORWARD * decay * Math.sin(phase);
+    settleY = -SETTLE_DIP * decay * Math.sin(phase * 0.5);
+    settleGazeY =
+      SETTLE_DIP * decay * Math.sin(Math.max(phase - SETTLE_GAZE_LAG, 0));
+  }
+
   return {
     eye: [
-      lerp(ARRIVAL_EYE[0], WORKING_EYE[0], progress),
-      EYE_HEIGHT + bob,
-      lerp(ARRIVAL_EYE[2], WORKING_EYE[2], progress),
+      lerp(ARRIVAL_EYE[0], WORKING_EYE[0], progress) +
+        WALK_DIR[0] * settleForward,
+      EYE_HEIGHT + bob + settleY,
+      lerp(ARRIVAL_EYE[2], WORKING_EYE[2], progress) +
+        WALK_DIR[1] * settleForward,
     ],
     gaze: [
       lerp(ARRIVAL_GAZE[0], WORKING_GAZE[0], gazeT),
-      lerp(ARRIVAL_GAZE[1], WORKING_GAZE[1], gazeT),
+      lerp(ARRIVAL_GAZE[1], WORKING_GAZE[1], gazeT) + settleGazeY,
       lerp(ARRIVAL_GAZE[2], WORKING_GAZE[2], gazeT),
     ],
-    done: t >= WALK_DURATION,
+    done: t >= STEP_TOTAL_DURATION,
   };
 }

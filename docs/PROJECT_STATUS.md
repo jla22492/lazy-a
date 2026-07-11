@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0020 — The First Step (complete)
+WORK ORDER 0021 — Settle Into Position (complete)
 
 ---
 
@@ -59,6 +59,7 @@ WORK ORDER 0020 — The First Step (complete)
 - Daylight sway approved as Version 1 of environmental presence; per creative review, future behaviors read as SETTLING (a physical space) rather than breathing (an organism)
 - Visitor positions established (three/scene/workspace.ts STANDING_POSITIONS): arrival (the locked opening composition's own footprint — camera and story share one origin), working (hips ~25cm from the bench edge, centered on the active zone), considering (~1.7m back from the reference wall); every future camera movement originates from these (0019.png visually identical to 0018)
 - The first step implemented (docs/progress/0020.mp4): the visitor walks from ARRIVAL to WORKING — casual indoor pace (1.15 m/s over 3.8m ≈ 3.3s), smoothed human acceleration/deceleration, faint step-rhythm eye bob that fades at both ends, gaze easing from the room onto the work surface as the body settles; a Presence behavior ("person-step") driven by the room clock; TEMPORARY trigger (click or Space, plus dev-only ?autostep for capture) — no permanent interaction model yet
+- Settling implemented (docs/progress/0021.mp4): the body finishes arriving — momentum carries the center of mass ~12mm past the stop, then a damped sway (1.4Hz, ~1% by 1.3s) brings it to rest, with a 6mm knee-soften dip and the head arriving a beat after the body; occurs exactly once, then complete stillness — no idle loop
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---
