@@ -14,7 +14,7 @@ Creative Sprint 01 — Dress the Room (begun at the Creative Reset, docs/ORIENTA
 
 ## Current Work Order
 
-WORK ORDER 0036 — The Constitution & the Set-Dressing Framework (Sprint 01, order 1 of 10)
+WORK ORDER 0037 — Dress the Workbench (Sprint 01, order 2 of 10)
 
 ---
 
@@ -79,6 +79,8 @@ WORK ORDER 0036 — The Constitution & the Set-Dressing Framework (Sprint 01, or
 - CREATIVE RESET (docs/ORIENTATION.md): the Creative Director's orientation update is now the project's creative constitution — Lazy A is a company website where the company is expressed through a living environment that quietly refuses to behave exactly how you expect; the notebook interaction pipeline (0027–0034) is archived as completed research into interaction language (preserved, valid, no longer the roadmap); the implementation role becomes Production Designer / Art Director / Experience Engineer; the room is dressed in four storytelling zones (workbench, reference wall, peripheral room, edge of frame); texture becomes a first-class design discipline; surprise is built perceptual → behavioral → narrative, in that order
 - Set-dressing framework established (three/scene/setDressing.ts): the four room storytelling zones as code, the SetPiece contract (every object declares its zone, its story — the human trace that explains it — and what it says about Lazy A: "everything earns its place twice"), and the dressing manifest as the single authored record of what the room contains; the existing workbench and notebook are the manifest's first entries; no visitor-facing change (0036 renders identically to 0035)
 
+- Workbench dressed, blockout pass (docs/progress/0037.png): Zone 1 now tells today's story in primitives and flat color — three test prints propped against the rear wall at their own angles (put up one at a time, never a panel), reference books pulled and not reshelved, the pencil jar with residents leaning at their own angles, a tape roll where it landed, the mug that went cold, headphones set down open, a pencil put down mid-thought beside the notebook, today's working papers shuffled under the notebook's edge, two film canisters (one fallen, unminded), and the camera set down lens-toward-the-wall; every piece placed by the bench's zone language with a manifest entry declaring its story and identity; nothing centered, nothing aligned, nothing beautiful yet
+
 ---
 
 ## In Progress
@@ -89,7 +91,7 @@ Creative Sprint 01 — Dress the Room (work orders 0036–0045).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0037 — Dress the Workbench (blockout fidelity: everything exists, nothing beautiful).
+WORK ORDER 0038 — Dress the Reference Wall (identity: pinned and propped, who Lazy A is).
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

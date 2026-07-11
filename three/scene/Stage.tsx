@@ -13,6 +13,7 @@ import { FirstStep } from "@/components/camera/FirstStep";
 import { Notebook } from "@/components/room/Notebook";
 import { RoomShell } from "@/components/room/RoomShell";
 import { Workbench } from "@/components/room/Workbench";
+import { WorkbenchDressing } from "@/components/room/WorkbenchDressing";
 import { WorkspaceZones } from "@/components/room/WorkspaceZones";
 import { RoomClockDriver } from "@/three/animation/RoomClockDriver";
 import { Daylight } from "@/three/lighting/Daylight";
@@ -79,6 +80,7 @@ export function Stage() {
         <Floor />
         <RoomShell />
         <Workbench />
+        <WorkbenchDressing />
         <Notebook />
         <WorkspaceZones />
         <CameraRig />

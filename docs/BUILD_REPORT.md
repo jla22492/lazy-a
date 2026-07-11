@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0036 — The Constitution & the Set-Dressing Framework (Creative Sprint 01, order 1 of 10)
+WORK ORDER 0037 — Dress the Workbench (Creative Sprint 01, order 2 of 10)
 
 ## Version
 
@@ -10,11 +10,13 @@ v0.1
 
 ## Summary
 
-- The Creative Reset is now in version control: docs/ORIENTATION.md records the Creative Director's orientation update as the project's creative constitution — what Lazy A is (a company website where the company is expressed through a living environment that quietly refuses to behave exactly how you expect), the perspective law (no hands, no body, no avatar, ever), unexpectedness over realism, website-first timing, the four storytelling zones, texture as a first-class discipline, the three kinds of surprise in strict order, and Sprint 01's mission and hard 10-work-order termination.
-- Creative Locks updated to match: the constitution, the perspective law, unexpectedness outranks realism, the website comes first, everything earns its place twice, texture is emotion, surprise order, and the camera lock revision Jonathan approved ("The camera inherits human behavior; it never becomes a human character," superseding "The camera never travels; a person moves"). The notebook interaction pipeline (0027–0034) is formally archived as completed research — preserved, valid, never the roadmap.
-- Set-dressing framework built (three/scene/setDressing.ts): the four room storytelling zones as code (workbench / reference wall / peripheral room / edge of frame, each with what it tells), the SetPiece contract requiring every dressed object to declare its zone, its story (the human trace that explains it, written as an interrupted moment), and its identity (what it says about Lazy A) — the "earns its place twice" rule as a type. The dressing manifest is the single authored record of what the room contains; dressing components implement manifest entries, never invent objects. The existing workbench and notebook are its first two entries.
-- No visitor-facing change: 0036 renders identically to 0035 by design. No media captured — there is nothing new to see; this order lays the production-design floor plan.
-- Verification: production build and lint pass; the dressing manifest type-checks against the zone registry.
+- Zone 1 is dressed at blockout fidelity: everything exists, nothing is beautiful. Ten authored pieces joined the notebook on the bench, each with measured real-world proportions, flat placeholder color, a placement chosen by the bench's zone language (workspace.ts), and a manifest entry declaring its story and its identity — the "earns its place twice" contract in practice.
+- The rear band (looked at more than touched): three test prints propped against the rear wall at their own sizes and angles — first authored as three identical prints, which merged into one aligned panel that accidentally read as a screen; re-authored as mixed sizes leaning independently, because the wrong silhouette told a wrong story on an analog bench. Reference books stacked where they were pulled; the pencil jar (the bench's one permanent resident); a roll of masking tape where it landed after propping the prints.
+- The resting zone: the mug that went cold, handle turned away; headphones set down open, the way they land when someone needs to hear the room.
+- The active zone: today's working papers shuffled rather than stacked, one edge under the notebook because the notebook arrived later; a pencil put down mid-thought, still pointing at it.
+- The temporary zone: two 35mm film canisters emptied from a pocket (one fell over and nobody minded) and the camera set down after checking a frame, lens angled back toward the wall — used, not displayed.
+- New components: components/room/WorkbenchDressing.tsx rendering three/scene/dressing/workbench.ts; SET_MANIFEST grew from 2 to 12 entries. No interactions were added or changed; the dressing is entirely static.
+- Verification: type-check and production build pass; docs/progress/0037.png captured from the locked composition and reviewed against the four review questions. Honest self-answer: the bench now invites a second look while nothing moves; the left cluster (books/mug/headphones) sits a touch tight and is flagged for The Edit (0044).
 
 ## Decisions Required
 
@@ -22,4 +24,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0037 — Dress the Workbench: blockout fidelity, everything exists, nothing beautiful.
+WORK ORDER 0038 — Dress the Reference Wall.

@@ -92,6 +92,76 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     identity:
       "thinking at Lazy A happens on paper before it happens on screen",
   },
+  {
+    name: "TestPrints",
+    zone: "workbench",
+    story:
+      "three small prints from the current work propped against the wall " +
+      "this morning, to be glanced at while working — not straightened since",
+    identity: "the work is judged by looking at it, again and again",
+  },
+  {
+    name: "BookStack",
+    zone: "workbench",
+    story: "pulled from a shelf for one specific page each, never reshelved",
+    identity: "influences are working tools, not trophies",
+  },
+  {
+    name: "PencilJar",
+    zone: "workbench",
+    story:
+      "the bench's one permanent resident; everything in it leans at its " +
+      "own angle because it was dropped back in, not arranged",
+    identity: "analog tools come first at Lazy A",
+  },
+  {
+    name: "TapeRoll",
+    zone: "workbench",
+    story: "used to prop the test prints an hour ago and left where it landed",
+    identity: "things here get pinned, propped, and taped — process is physical",
+  },
+  {
+    name: "Mug",
+    zone: "workbench",
+    story: "half-finished and gone cold; its owner got pulled into the work",
+    identity: "sessions here run long enough for coffee to go cold",
+  },
+  {
+    name: "Headphones",
+    zone: "workbench",
+    story: "taken off and set down open, the way they land when someone " +
+      "needs to hear the room",
+    identity: "sound is half the film",
+  },
+  {
+    name: "Pencil",
+    zone: "workbench",
+    story: "put down mid-thought beside the notebook, still pointing at it",
+    identity: "the notebook is written in, daily — the pencil proves it",
+  },
+  {
+    name: "LooseSheets",
+    zone: "workbench",
+    story:
+      "today's working papers, shuffled rather than stacked; one edge sits " +
+      "under the notebook because the notebook arrived later",
+    identity: "planning at Lazy A happens by hand, in layers",
+  },
+  {
+    name: "FilmCanisters",
+    zone: "workbench",
+    story:
+      "emptied from a jacket pocket mid-task; one fell over and nobody minded",
+    identity: "Lazy A still shoots film — patience is a value",
+  },
+  {
+    name: "Camera",
+    zone: "workbench",
+    story:
+      "set down after checking a frame, lens angled back toward the wall — " +
+      "a tool between uses, never a display piece",
+    identity: "the instrument of the trade lives on the bench, not a shelf",
+  },
 ];
 
 /** The manifest for one zone, for dressing components and reviews. */
