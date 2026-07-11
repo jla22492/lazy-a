@@ -20,12 +20,12 @@ export const STEP_FREQUENCY = 1.75;
 /** Where the gaze begins easing toward its destination (walk progress). */
 const GAZE_SHIFT_START = 0.6;
 
-const ARRIVAL_EYE = fromWorkbench([
+export const ARRIVAL_EYE = fromWorkbench([
   STANDING_POSITIONS.arrival.at[0],
   EYE_HEIGHT,
   STANDING_POSITIONS.arrival.at[1],
 ]);
-const WORKING_EYE = fromWorkbench([
+export const WORKING_EYE = fromWorkbench([
   STANDING_POSITIONS.working.at[0],
   EYE_HEIGHT,
   STANDING_POSITIONS.working.at[1],
@@ -38,7 +38,7 @@ const ARRIVAL_GAZE = fromWorkbench([0, 0.9, 0]);
  * beyond the notebook — the notebook sits prominent in the lower frame
  * while the bench's rear edge and the wall's base keep the room present.
  */
-const WORKING_GAZE = fromWorkbench([0.2, 0.9, -0.1]);
+export const WORKING_GAZE = fromWorkbench([0.2, 0.9, -0.1]);
 
 const WALK_DISTANCE = Math.hypot(
   WORKING_EYE[0] - ARRIVAL_EYE[0],

@@ -13,5 +13,6 @@
 - The daylight found its window: a quiet frosted opening now glows at the edge of the frame, and the light that has always filled the room finally makes sense.
 - The room took its first breath: the daylight now sways below the threshold of noticing, and the room stopped being a frozen render — it exists in time.
 - The visitor took the first step: one quiet walk from the doorway pause to the workbench — the first human action in Lazy A, and the moment the camera proved it is a person.
+- The visitor can look around: standing at the bench, the head turns the way a neck turns — and wherever they leave their attention, it stays. The observer became a participant.
 
 Record experience changes here, not just technical ones.

@@ -6,6 +6,7 @@ import { useThree } from "@react-three/fiber";
 
 import { walkPose } from "@/three/animation/firstStep";
 import type { RoomBehavior } from "@/three/animation/presence";
+import { visitorState } from "@/three/animation/visitorState";
 import { useRoomBehavior } from "@/three/hooks/useRoomBehavior";
 
 /** Sentinel: the step was triggered and anchors to room time on the next tick. */
@@ -36,7 +37,10 @@ export function FirstStep() {
         const pose = walkPose(clock.elapsed - walkStart.current);
         camera.position.set(...pose.eye);
         camera.lookAt(...pose.gaze);
-        if (pose.done) walkStart.current = null;
+        if (pose.done) {
+          walkStart.current = null;
+          visitorState.atWorking = true;
+        }
       },
     }),
     [camera],

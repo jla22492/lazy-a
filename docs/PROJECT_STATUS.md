@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0021 — Settle Into Position (complete)
+WORK ORDER 0022 — The First Look (complete)
 
 ---
 
@@ -60,6 +60,7 @@ WORK ORDER 0021 — Settle Into Position (complete)
 - Visitor positions established (three/scene/workspace.ts STANDING_POSITIONS): arrival (the locked opening composition's own footprint — camera and story share one origin), working (hips ~25cm from the bench edge, centered on the active zone), considering (~1.7m back from the reference wall); every future camera movement originates from these (0019.png visually identical to 0018)
 - The first step implemented (docs/progress/0020.mp4): the visitor walks from ARRIVAL to WORKING — casual indoor pace (1.15 m/s over 3.8m ≈ 3.3s), smoothed human acceleration/deceleration, faint step-rhythm eye bob that fades at both ends, gaze easing from the room onto the work surface as the body settles; a Presence behavior ("person-step") driven by the room clock; TEMPORARY trigger (click or Space, plus dev-only ?autostep for capture) — no permanent interaction model yet
 - Settling implemented (docs/progress/0021.mp4): the body finishes arriving — momentum carries the center of mass ~12mm past the stop, then a damped sway (1.4Hz, ~1% by 1.3s) brings it to rest, with a 6mm knee-soften dip and the head arriving a beat after the body; occurs exactly once, then complete stillness — no idle loop
+- The first look implemented (docs/progress/0022.mp4): head movement while standing at WORKING — a neck, not a camera rig: comfortable human range (±55° yaw, +20/−35° pitch) with tanh soft limits, ~150ms critically-damped pursuit, no recentering (attention stays where the visitor leaves it); the settled gaze is the neck's neutral; body rooted, orientation only; TEMPORARY controls (drag or arrow keys, dev-only ?autolook for capture)
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---
@@ -103,6 +104,7 @@ Place the hero print where the completed architecture says it belongs (Layer 2 �
 🔒 The room exists whether or not it is being observed; the visitor arrives in the middle of its life. Implementation may approximate this, but the experience must never imply otherwise.
 🔒 The room settles; it does not breathe. Behaviors read as a physical space relaxing with the day, never as an organism — the room is a place where life has accumulated, not a creature.
 🔒 The camera never travels. A person moves. Every camera behavior must be imaginable as a human body shifting weight, stepping, leaning, sitting, or turning.
+🔒 Attention follows the visitor. The room never forces the visitor's gaze.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
 🔒 No interactions yet.
