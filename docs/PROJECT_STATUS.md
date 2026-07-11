@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0034 — Seeing (complete)
+CREATIVE WORK ORDER 0035 — The Voice of the Notebook (complete; documentation only)
 
 ---
 
@@ -66,6 +66,7 @@ WORK ORDER 0034 — Seeing (complete)
 - Intent system established (three/animation/intent.ts + IntentSensor): the final decision layer — commitment can only begin on a ready target, must be held 0.35s (a decision, not a twitch), cancels if readiness breaks mid-hold, and the resulting intent is consumed exactly once with a 0.5s expiry; no input bound yet; verified live (not-ready commits refused, twitches die, held commits mature, single consumption, mid-hold readiness break cancels) — accidental interaction is structurally impossible
 - Acceptance system established (three/animation/acceptance.ts + useAcceptancePolicy): the room's half of the conversation — requestInteraction(target) consumes intent and the room answers (accepted / declined-no-intent / declined-by-room); an answered offer is spent even when declined; per-target acceptance policies carry the room's future context; the notebook's policy currently always accepts; verified live (offers without intent decline, earned offers accept, spent offers decline) — the interaction grammar is complete: observe → ready → intend → offer → the room answers
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
+- The Voice of the Notebook prepared (docs/THE_NOTEBOOK.md — documentation only, no visitor-facing changes): implementation paused at the CD's first true design summit; the document defines every authorship question that must be answered before the implementation of meaning begins — identity, time, audience and privacy, awareness, completeness, uniformity of hand, ownership, form of content, the first page, reading as interaction, impossibility, and memory — each mapped to the implementation domains it gates (typography, layout, page turns, acceptance policies, impossible moments, persistence); it deliberately answers none of them
 - Seeing implemented (docs/progress/0034.mp4): vision arrives before meaning — a beat after the cover comes to rest (0.5s), the eyes make one small natural settling (0.9s, the same pursuit physics as every gaze) from where the opening action left them onto the center of the first visible page; not a decision and not comprehension — perception following the physical act; the body and the notebook do not move; the page stays visually quiet; then complete stillness — reading has not begun
 - Opening implemented (docs/progress/0033.mp4): the first irreversible act — the notebook gained real construction (page block + back cover, a 3mm front cover hinged at the spine edge under the supporting hand, and a first page of quiet paper that exists physically without becoming the subject); on the visitor's third deliberate commitment the cover rotates around its real hinge to its natural open rest just past vertical (2.0 rad over 1.15s, no hesitation, no flourish), while the supporting hand answers — part of the grip roll releases and the book settles 4mm as the cover's weight leaves the block; the closed notebook's silhouette is unchanged from every prior order; contents remain emotionally unrevealed; then complete stillness — reading has not begun
 - Finding the cover implemented (docs/progress/0032.mp4): the visitor's second deliberate decision, made through the full grammar — the notebook's attention center now travels with the notebook (the 0031 dormant note, fixed the moment it became meaningful), so observing what you hold matures readiness; a second held commitment offers, the room accepts, and the hands prepare: weight shifts to the supporting hand, the book settles into the palm, and the opening edge rolls up toward the dominant thumb (one 0.7s motion after a 0.15s onset); the cover never separates, the gaze never moves, then true stillness; preparation is reversible — opening is not
@@ -85,7 +86,7 @@ None.
 
 ## Next Recommended Work Order
 
-The Creative Director's next order in the film phase — the notebook is in hand; what happens with it next is a creative decision.
+The Creative Director answers the authorship questions in docs/THE_NOTEBOOK.md — implementation of meaning resumes only as those answers arrive.
 
 ---
 
@@ -132,3 +133,4 @@ The Creative Director's next order in the film phase — the notebook is in hand
 🔒 The body prepares before it commits. Every irreversible act is preceded by a reversible, unconscious preparation.
 🔒 Opening changes the relationship. Not because the notebook changes — because the visitor does. Crossing a boundary is quietly irreversible, never dramatic.
 🔒 Seeing precedes understanding. The notebook becomes visible before it becomes meaningful — vision and comprehension are separate events, as body and mind are.
+🔒 Meaning precedes mechanics. The notebook's voice is authored before its behaviors are engineered — creative answers gate implementation, never the reverse.
