@@ -14,7 +14,7 @@ Creative Sprint 02 — Reveal the Person (docs/SPRINT_02.md; exactly 10 implemen
 
 ## Current Work Order
 
-WORK ORDER 0051 — The Plant Becomes Inevitable (Sprint 02, order 6 of 10)
+WORK ORDER 0052 — Habits II: The Person's Routines (Sprint 02, order 7 of 10)
 
 ---
 
@@ -108,6 +108,7 @@ WORK ORDER 0051 — The Plant Becomes Inevitable (Sprint 02, order 6 of 10)
 - Habits I — ghosts on the walls (docs/progress/0050.png): time painted into the surfaces themselves, no new geometry — the rear wall alone carries two ghosts (lighter patches of old paint where prints used to hang, adhesive residue still at two corners: one is the hero print's predecessor, and today's hero hangs off-center partly because the old spot was taken; one came down inside the cluster's territory), seven pin holes that outlived their pins, and on the bench the pencil jar's halo — the un-sunned disc under the one object that never moves
 - Internal review #1 held (after 0050): approved and on course — the authored light planes ruled evidence of light, never lighting (every shadow has an unseen source, every patch an architectural explanation); the lamp, the absent phone, and the wall ghosts singled out; new lock recorded (nothing in the room is self-contained); the plant survives 0051 only as a built decision, and remaining notes queued (the room still feels composed; the room still ends at the browser; the desk is an island — connection is logistic, not visual)
 - The plant became inevitable (docs/progress/0051.png): the sphere-clump blockout is gone — a rubber plant now, built as the decision it answers to ("the one living thing in a room full of manufactured objects"): three stems curve from dry-edged soil toward the window, harder as they rise; ten broad oval leaves, older ones darker and drooping, the newest bright and near-vertical, one gone yellow and not yet fallen — no two leaves agree, and nothing manufactured ever disagrees with itself like this; its wall shadow is the most organic shape in the room
+- Habits II — the person's routines (docs/progress/0052.png): five filled notebooks piled on top of the bookcase, identical to the one on the bench — oldest at the bottom and most faded; they always buy the same notebook, and the pile is the room's quietest biography (the sixth is on the bench, half-finished); tape residue on the wall just above the test prints — the tape-and-prop habit, remembered by the plaster; and the bench's front edge worn at the working position, where a belt buckle and two forearms have rested for years
 
 ---
 
@@ -119,7 +120,7 @@ Creative Sprint 02 — Reveal the Person (work orders 0046–0055).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0052 — Habits II: the person's routines.
+WORK ORDER 0053 — Dimensionality & cohesion, then internal review #2.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

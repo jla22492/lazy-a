@@ -37,6 +37,9 @@ export function Workbench() {
       { u: 0.55, v: 0.72, r: 0.2 },
       /* Temporary zone — set-down scuffing, lighter. */
       { u: 0.82, v: 0.7, r: 0.12 },
+      /* The front edge at the working position (0052): where a belt
+         buckle and two forearms have rested for years. */
+      { u: 0.53, v: 0.97, r: 0.09 },
     ],
     rings: [
       /* Where the mug lives (resting zone) — and where it used to live. */

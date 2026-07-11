@@ -189,6 +189,20 @@ export const BOOKCASE = {
     flatStack: { count: 3, w: 0.24, d: 0.17, each: 0.028 },
     colors: ["#6b5d4f", "#55604f", "#474645", "#7a6a55", "#5c5348", "#665e51"],
   },
+  /**
+   * Habits II (0052): the filled notebooks — identical to the one on the
+   * bench, stacked flat at the lower shelf's right end, oldest at the
+   * bottom and most faded. They always buy the same notebook. Years of
+   * thinking, one A5 at a time — the room's quietest biography.
+   */
+  notebookStack: {
+    width: 0.148,
+    length: 0.21,
+    thickness: 0.02,
+    /** Bottom to top: oldest first, each less faded than the one below. */
+    fades: ["#5a5a58", "#525251", "#4b4b4a", "#454545", "#414141"],
+    yaws: [0.06, -0.04, 0.1, 0.02, -0.07],
+  },
 } as const;
 
 /**

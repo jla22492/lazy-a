@@ -271,7 +271,7 @@ function DroppedSheet() {
 
 /** The working library that feeds the bench's book stack. */
 function Bookcase() {
-  const { at, width, height, depth, panelThickness, shelfHeights, color, books } =
+  const { at, width, height, depth, panelThickness, shelfHeights, color, books, notebookStack } =
     BOOKCASE;
   const caseWood = wood({
     seed: 463,
@@ -328,6 +328,35 @@ function Bookcase() {
           );
         });
       })}
+      {/* The filled notebooks (0052): identical to the bench's, oldest
+          at the bottom and most faded — they always buy the same one. */}
+      {notebookStack.fades.map((fade: string, index: number) => (
+        <mesh
+          key={`nb-${index}`}
+          /* On top of the case — where filled notebooks actually pile,
+             and the one surface the leaning board can't hide. */
+          position={[
+            0.02,
+            height + notebookStack.thickness * (index + 0.5),
+            -0.25,
+          ]}
+          rotation={[0, notebookStack.yaws[index], 0]}
+          castShadow
+          receiveShadow
+        >
+          <boxGeometry
+            args={[
+              notebookStack.length,
+              notebookStack.thickness,
+              notebookStack.width,
+            ]}
+          />
+          <meshStandardMaterial
+            map={paper({ seed: 521 + index, base: fade, fiber: 0.4, handled: 0.5 })}
+            roughness={0.8}
+          />
+        </mesh>
+      ))}
       {/* Flat stack at the upper shelf's right end. */}
       {Array.from({ length: books.flatStack.count }, (_, index) => (
         <mesh

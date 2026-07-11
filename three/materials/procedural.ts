@@ -320,6 +320,11 @@ export interface PlasterParams {
   ghosts?: ReadonlyArray<{ u: number; v: number; w: number; h: number }>;
   /** Old pin holes that outlived their pins. UV space. */
   pinHoles?: ReadonlyArray<{ u: number; v: number }>;
+  /**
+   * Tape residue (WORK ORDER 0052): the yellowed flecks left where tape
+   * held something and was pulled away — the wall remembers the habit.
+   */
+  residue?: ReadonlyArray<{ u: number; v: number }>;
 }
 
 /**
@@ -389,6 +394,16 @@ export function plasterTexture(params: PlasterParams): CanvasTexture {
     context.fillStyle = "rgba(120, 104, 76, 0.16)";
     context.fillRect(gx - 1, gy - 1, 5, 4);
     context.fillRect(gx + gw - 4, gy + gh - 3, 5, 4);
+  }
+
+  /* Tape residue: yellowed adhesive flecks where the habit lives. */
+  for (const mark of params.residue ?? []) {
+    const x = mark.u * size;
+    const y = (1 - mark.v) * size;
+    context.fillStyle = "rgba(150, 128, 88, 0.22)";
+    context.fillRect(x - 3, y - 1.5, 6, 3.5);
+    context.fillStyle = "rgba(150, 128, 88, 0.1)";
+    context.fillRect(x - 4.5, y - 2.5, 9, 5.5);
   }
 
   /* Pin holes that outlived their pins. */

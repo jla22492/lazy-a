@@ -186,6 +186,12 @@ export function RoomShell() {
       /* One that came down inside the cluster's territory. */
       { u: 0.323, v: 0.633, w: 0.034, h: 0.083 },
     ],
+    residue: [
+      /* Above the test prints: the tape-and-prop habit, remembered. */
+      { u: 0.478, v: 0.455 },
+      { u: 0.503, v: 0.462 },
+      { u: 0.537, v: 0.45 },
+    ],
     pinHoles: [
       { u: 0.285, v: 0.7 },
       { u: 0.31, v: 0.64 },

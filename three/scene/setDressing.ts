@@ -335,6 +335,21 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     implies: "a library larger than one case, and years of reading habits",
   },
   {
+    name: "NotebookStack",
+    zone: "peripheralRoom",
+    story:
+      "five filled notebooks piled on top of the case, identical to the one " +
+      "on the bench — oldest at the bottom, most faded; they always buy " +
+      "the same notebook",
+    identity:
+      "years of thinking, one A5 at a time — the room's quietest biography",
+    unresolved: "the sixth is on the bench, half-finished",
+    arrived: "one per season, for years",
+    implies:
+      "everything already written — a mind's archive, closed but kept in " +
+      "reach",
+  },
+  {
     name: "LeaningBoard",
     zone: "peripheralRoom",
     story:
