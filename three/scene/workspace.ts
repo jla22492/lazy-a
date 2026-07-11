@@ -77,3 +77,58 @@ export function zoneCenter(name: WorkZoneName): [number, number] {
     (zone.zRange[0] + zone.zRange[1]) / 2,
   ];
 }
+
+/**
+ * Standing positions (WORK ORDER 0019) — where a human body naturally
+ * occupies this workspace. Implementation concepts only; they never
+ * appear in the visitor experience. Every future camera movement,
+ * interaction, and placement decision originates from one of these,
+ * so movement always has a physically believable origin.
+ *
+ * Positions are bench-local XZ offsets of the body's center (feet);
+ * eyes sit at EYE_HEIGHT above them. `facing` is where the body
+ * naturally orients.
+ */
+export interface StandingPosition {
+  /** Bench-local XZ of the body's center. */
+  at: readonly [number, number];
+  /** Bench-local XZ point the body naturally faces. */
+  facing: readonly [number, number];
+  /** The human moment this position belongs to. */
+  purpose: string;
+}
+
+export const STANDING_POSITIONS = {
+  /**
+   * Just inside the room, two quiet steps from the doorway. This is the
+   * locked opening composition's camera position (STAGE.camera stands
+   * here at eye height) — the visitor's story and the camera system
+   * share one origin.
+   */
+  arrival: {
+    at: [-0.55, 4.377],
+    facing: [0, 0],
+    purpose: "pausing after entering; taking the room in",
+  },
+  /**
+   * At the bench, centered on the ACTIVE zone, hips a hand's width
+   * (~25cm) from the front edge — standard standing-work clearance.
+   */
+  working: {
+    at: [0.05, 0.625],
+    facing: [0.05, -0.2],
+    purpose: "hands on the work surface; the notebook within reach",
+  },
+  /**
+   * A step back from the bench — a comfortable viewing distance
+   * (~1.7m) from the rear wall's reference band, where propped
+   * material is read rather than touched.
+   */
+  considering: {
+    at: [-0.2, 1.3],
+    facing: [-0.2, -0.375],
+    purpose: "standing back to look at what leans against the wall",
+  },
+} as const satisfies Record<string, StandingPosition>;
+
+export type StandingPositionName = keyof typeof STANDING_POSITIONS;

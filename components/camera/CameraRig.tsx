@@ -10,6 +10,11 @@ import { useImperativeHandle, type Ref } from "react";
  * All camera positions are defined as offsets from the workbench origin —
  * see three/scene/world.ts. The verbs will resolve their targets through
  * that convention, never through arbitrary world coordinates.
+ *
+ * Every movement originates from a STANDING_POSITION
+ * (three/scene/workspace.ts) — the ergonomic places a body actually
+ * occupies in this room. The camera never travels; a person moves
+ * (WORK ORDER 0019).
  */
 export interface CameraRigHandle {
   sit: () => void;

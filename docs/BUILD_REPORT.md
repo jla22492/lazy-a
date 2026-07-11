@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0018 — The First Breath
+WORK ORDER 0019 — Establish the Visitor Position
 
 ## Version
 
@@ -10,12 +10,12 @@ v0.1
 
 ## Summary
 
-- The room's first living behavior: daylight intensity sways imperceptibly with the room clock — ±2% on the 90-second drift phase (the tempo of atmosphere) with a ±0.6% whisper of the 5-second breath phase. Real light through glass never holds perfectly still; now neither does the room's.
-- It is the Presence system's first registered behavior ("daylight-breath", kind: environment), driven entirely by the room clock — no isolated timers, exactly as the architecture intended.
-- Magnitude validation: with the behavior disabled the room reads frozen again; watching the enabled room, nothing identifiable moves. The sway is felt as absence-of-deadness, not seen as motion.
-- Motion review recorded: docs/progress/0018.mp4 — 11.8 seconds, normal speed, 1280x720.
-- New capture infrastructure: ?record=NNNN.mp4&seconds=N records the canvas via MediaRecorder (native H.264); captures now run in a dedicated headless Chrome instance because visible-browser capture throttles when the window is occluded (producing time-compressed clips — discovered and fixed during this order). The Studio timeline now renders motion reviews as playable video.
-- CHANGELOG updated: the room took its first breath.
+- The workspace language now includes STANDING_POSITIONS (three/scene/workspace.ts): where a human body naturally occupies this room. Implementation concepts only — nothing visitor-facing.
+- Three positions, from real ergonomics: ARRIVAL — just inside the room, two steps from the doorway; this is exactly the locked opening composition's camera footprint, so the visitor's story and the camera system share one origin. WORKING — at the bench, centered on the active zone, hips a hand's width (~25cm) from the front edge, standard standing-work clearance. CONSIDERING — a step back, ~1.7m viewing distance from the rear wall's reference band.
+- Each position carries a facing and a purpose; eyes sit at the established EYE_HEIGHT. The CameraRig's contract is updated: every future movement originates from a standing position — the camera never travels; a person moves.
+- Your settling-not-breathing note is recorded as a Creative Lock; the current daylight sway stands unchanged as Version 1 of environmental presence.
+- Validation: camera movements originating from these positions trace real human paths (enter → arrive → step to the bench → step back to consider), so they will read as physically natural.
+- Visitor experience unchanged; 0019.png visually identical to 0018.
 
 ## Decisions Required
 
@@ -23,4 +23,4 @@ None.
 
 ## Ready For
 
-Creative review of docs/progress/0018.mp4, then WORK ORDER 0019.
+WORK ORDER 0020.

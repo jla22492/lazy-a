@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0018 — The First Breath (complete)
+WORK ORDER 0019 — Establish the Visitor Position (complete)
 
 ---
 
@@ -56,6 +56,8 @@ WORK ORDER 0018 — The First Breath (complete)
 - Room clock philosophy clarified per Creative Director: the clock represents room time; advancing with the render loop is a Version 1 implementation detail, not a design law
 - The first breath (docs/progress/0018.mp4): the room's first living behavior — daylight intensity sways imperceptibly (±2% on the 90s drift phase, ±0.6% on the 5s breath phase), registered with the Presence system as "daylight-breath"; the room no longer feels frozen, and nothing can be pointed at
 - Motion-review pipeline established: ?record=NNNN.mp4&seconds=N records the canvas at normal speed; captures run in a dedicated headless Chrome (SwiftShader renders identically) because visible-browser capture throttles when occluded
+- Daylight sway approved as Version 1 of environmental presence; per creative review, future behaviors read as SETTLING (a physical space) rather than breathing (an organism)
+- Visitor positions established (three/scene/workspace.ts STANDING_POSITIONS): arrival (the locked opening composition's own footprint — camera and story share one origin), working (hips ~25cm from the bench edge, centered on the active zone), considering (~1.7m back from the reference wall); every future camera movement originates from these (0019.png visually identical to 0018)
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---
@@ -97,6 +99,7 @@ Place the hero print where the completed architecture says it belongs (Layer 2 �
 🔒 Architecture Phase — locked. The permanent shell does not change without a Revision Work Order.
 🔒 The room has one heartbeat: every time-based behavior derives from the room clock, never from isolated timers.
 🔒 The room exists whether or not it is being observed; the visitor arrives in the middle of its life. Implementation may approximate this, but the experience must never imply otherwise.
+🔒 The room settles; it does not breathe. Behaviors read as a physical space relaxing with the day, never as an organism — the room is a place where life has accumulated, not a creature.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
 🔒 No interactions yet.
