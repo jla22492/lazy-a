@@ -3,6 +3,10 @@
 import { useMemo } from "react";
 
 import {
+  lastInteractionResponse,
+  requestInteraction,
+} from "@/three/animation/acceptance";
+import {
   beginCommit,
   consumeIntent,
   intentOf,
@@ -38,11 +42,15 @@ export function IntentSensor() {
       __beginCommit?: (target: string) => boolean;
       __releaseCommit?: () => void;
       __consumeIntent?: (target: string) => boolean;
+      __requestInteraction?: (target: string) => string;
+      __lastResponse?: () => unknown;
     };
     dev.__intent = intentOf;
     dev.__beginCommit = beginCommit;
     dev.__releaseCommit = releaseCommit;
     dev.__consumeIntent = consumeIntent;
+    dev.__requestInteraction = requestInteraction;
+    dev.__lastResponse = lastInteractionResponse;
   }
 
   return null;

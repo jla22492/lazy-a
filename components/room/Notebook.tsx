@@ -1,7 +1,9 @@
 "use client";
 
+import type { AcceptancePolicy } from "@/three/animation/acceptance";
 import type { AttentionTarget } from "@/three/animation/attention";
 import { conditions, type ReadinessRule } from "@/three/animation/readiness";
+import { useAcceptancePolicy } from "@/three/hooks/useAcceptancePolicy";
 import { useAttentionTarget } from "@/three/hooks/useAttentionTarget";
 import { useReadinessRule } from "@/three/hooks/useReadinessRule";
 import { NOTEBOOK, WORKBENCH } from "@/three/scene/constants";
@@ -35,6 +37,16 @@ const READINESS_RULE: ReadinessRule = {
 };
 
 /**
+ * The room's answer for the notebook (WORK ORDER 0026). It currently has
+ * no reason to refuse; future context — an impossible moment in progress,
+ * the room's own timing — joins here without touching the pipeline.
+ */
+const ACCEPTANCE_POLICY: AcceptancePolicy = {
+  target: "notebook",
+  accepts: () => true,
+};
+
+/**
  * Primitive blockout of the notebook — the first object with narrative
  * weight. It establishes position, scale, and orientation only; detail
  * arrives in later work orders (WORK ORDER 0009).
@@ -47,6 +59,7 @@ const READINESS_RULE: ReadinessRule = {
 export function Notebook() {
   useAttentionTarget(ATTENTION_TARGET);
   useReadinessRule(READINESS_RULE);
+  useAcceptancePolicy(ACCEPTANCE_POLICY);
   return (
     <mesh
       position={REST_POSITION}
