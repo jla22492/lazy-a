@@ -1,9 +1,14 @@
 /**
- * Where the visitor's body currently is (WORK ORDER 0022).
+ * Where the visitor's body currently is (WORK ORDERS 0022, 0024).
  * A tiny shared truth so behaviors can coordinate without coupling:
- * the step behavior writes it, the look behavior reads it.
+ * movement behaviors write it, perception and readiness read it.
  */
+
+import type { StandingPositionName } from "@/three/scene/workspace";
+
 export const visitorState = {
-  /** True once the walk and settle have completed. */
-  atWorking: false,
+  /** The standing position the body occupies; null while in motion. */
+  position: "arrival" as StandingPositionName | null,
+  /** True while a movement behavior is carrying the body. */
+  moving: false,
 };

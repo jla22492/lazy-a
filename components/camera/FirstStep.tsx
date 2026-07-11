@@ -39,7 +39,8 @@ export function FirstStep() {
         camera.lookAt(...pose.gaze);
         if (pose.done) {
           walkStart.current = null;
-          visitorState.atWorking = true;
+          visitorState.position = "working";
+          visitorState.moving = false;
         }
       },
     }),
@@ -52,6 +53,8 @@ export function FirstStep() {
       if (walked.current) return;
       walked.current = true;
       walkStart.current = PENDING;
+      visitorState.position = null;
+      visitorState.moving = true;
     };
 
     const onKey = (event: KeyboardEvent) => {

@@ -7,6 +7,7 @@ import { Vector3 } from "three";
 
 import { getAttention, tickAttention } from "@/three/animation/attention";
 import type { RoomBehavior } from "@/three/animation/presence";
+import { readinessOf } from "@/three/animation/readiness";
 import { useRoomBehavior } from "@/three/hooks/useRoomBehavior";
 
 /**
@@ -37,8 +38,12 @@ export function AttentionSensor() {
 
   if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
     /* Dev observability only — never surfaced in the experience. */
-    (window as Window & { __attention?: () => unknown }).__attention =
-      getAttention;
+    const dev = window as Window & {
+      __attention?: () => unknown;
+      __ready?: (target: string) => unknown;
+    };
+    dev.__attention = getAttention;
+    dev.__ready = readinessOf;
   }
 
   return null;

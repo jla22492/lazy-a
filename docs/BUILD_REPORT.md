@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0023 — Attention Before Interaction
+WORK ORDER 0024 — Readiness Before Interaction
 
 ## Version
 
@@ -10,11 +10,12 @@ v0.1
 
 ## Summary
 
-- The room can now notice what the visitor is observing. The attention system (three/animation/attention.ts) models real attention: meaningful objects register with a position and physical radius; a gaze cone sized to each object's angular size accumulates dwell while held and decays when the gaze leaves (attention lingers rather than resetting); a target becomes OBSERVED only after 0.8 seconds of sustained gaze, and releases with hysteresis — glances never count, boundaries never flicker.
-- The sensor is a Presence behavior that reads the camera after the movement behaviors have finished each frame, so perception always sees the final gaze. The notebook is the first registered target; any future meaningful object registers with one hook.
-- Entirely invisible: no highlights, outlines, cursors, prompts, or UI. The visitor experience is visually identical (0023.png).
-- Verified end-to-end in a live session: nothing observed at the settled gaze (observation requires intent — the notebook sits outside the neutral gaze cone); "notebook" observed after ~2.4s of steered sustained gaze; released cleanly after looking away.
-- New Creative Lock recorded: observation always precedes interaction. Every future interaction begins with noticing.
+- The readiness system exists (three/animation/readiness.ts): each meaningful object registers a rule composed from a shared condition vocabulary — observed, standing-at-position, not-moving — with room for future contextual conditions. Every future interaction asks exactly one question: isReady(target). Introspection (readinessOf) reports which conditions hold a target back, for engineering only.
+- The visitor's body is now modeled properly: visitorState carries a standing position (arrival/working/considering or null while in motion) and a moving flag, written by movement behaviors and read by perception and readiness.
+- The notebook's rule: standing at WORKING, still, and genuinely observing it. Verified live through the whole journey: not ready at arrival, not ready mid-walk, not ready at the bench's neutral gaze — ready only during sustained observation, releasing on look-away.
+- One honest finding from verification: from ARRIVAL, the notebook happens to sit near the opening composition's natural gaze line, so the attention system counts it as observed there — and readiness still correctly refuses because the body is in the wrong place. The layered philosophy is doing exactly the work it was designed for.
+- Entirely invisible; the visitor experience is unchanged (0024.png).
+- New Creative Lock recorded: observation enables readiness; readiness enables interaction; interaction never happens directly from gaze.
 
 ## Decisions Required
 
@@ -22,4 +23,4 @@ None.
 
 ## Ready For
 
-WORK ORDER 0024.
+WORK ORDER 0025.

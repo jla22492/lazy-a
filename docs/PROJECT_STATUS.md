@@ -14,7 +14,7 @@ Sprint 001 — Behavior Phase (Architecture Phase locked at 0014; Presence Phase
 
 ## Current Work Order
 
-WORK ORDER 0023 — Attention Before Interaction (complete)
+WORK ORDER 0024 — Readiness Before Interaction (complete)
 
 ---
 
@@ -62,6 +62,7 @@ WORK ORDER 0023 — Attention Before Interaction (complete)
 - Settling implemented (docs/progress/0021.mp4): the body finishes arriving — momentum carries the center of mass ~12mm past the stop, then a damped sway (1.4Hz, ~1% by 1.3s) brings it to rest, with a 6mm knee-soften dip and the head arriving a beat after the body; occurs exactly once, then complete stillness — no idle loop
 - The first look implemented (docs/progress/0022.mp4): head movement while standing at WORKING — a neck, not a camera rig: comfortable human range (±55° yaw, +20/−35° pitch) with tanh soft limits, ~150ms critically-damped pursuit, no recentering (attention stays where the visitor leaves it); the settled gaze is the neck's neutral; body rooted, orientation only; TEMPORARY controls (drag or arrow keys, dev-only ?autolook for capture)
 - Attention system established (three/animation/attention.ts + AttentionSensor + useAttentionTarget): the room can notice which meaningful object the visitor is observing — gaze-cone detection sized to each object's physical radius, dwell that accumulates and decays (attention lingers), sustained-gaze threshold (0.8s) with hysteresis so glances never count; entirely invisible, no responses; the notebook is the first registered target; verified end-to-end (observed after sustained gaze, released after looking away)
+- Readiness system established (three/animation/readiness.ts + useReadinessRule): per-target rules built from a shared condition vocabulary (observed / standing-at-position / not-moving, extensible for future context); visitorState upgraded to a body model (position + moving); future interactions ask one question — isReady(target); the notebook's rule requires standing at WORKING + still + observing; verified live through the full journey (not ready at arrival or mid-walk or at neutral gaze; ready only while observing at the bench; releases on look-away)
 - Capture fidelity fixed: progress shots 0009–0012 were horizontally stretched ~1.4x by a viewport-aspect bug in the capture pipeline; captures now render in a pinned 1280x720 canvas and preserve aspect, so every future frame is true 16:9
 
 ---
@@ -107,6 +108,7 @@ Place the hero print where the completed architecture says it belongs (Layer 2 �
 🔒 The camera never travels. A person moves. Every camera behavior must be imaginable as a human body shifting weight, stepping, leaning, sitting, or turning.
 🔒 Attention follows the visitor. The room never forces the visitor's gaze.
 🔒 Observation always precedes interaction.
+🔒 Observation enables readiness. Readiness enables interaction. Interaction never happens directly from gaze — there is always an intermediate state.
 🔒 Daylight is unremarkable by design: source outside the frame, never revealed; no mood, no drama.
 🔒 The workbench tells what is happening today; the room tells who the person is. Identity objects belong to the room's architecture, not the desk.
 🔒 No interactions yet.

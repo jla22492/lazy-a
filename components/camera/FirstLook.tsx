@@ -50,7 +50,7 @@ export function FirstLook() {
       kind: "camera",
       enabled: true,
       onRoomTick: (clock) => {
-        if (!visitorState.atWorking || !engaged.current) return;
+        if (!(visitorState.position === "working") || !engaged.current) return;
         const state = look.current;
         tickLook(state, clock.delta);
         const yaw = NEUTRAL_DIR.yaw + state.yaw;
@@ -73,13 +73,13 @@ export function FirstLook() {
     let keyTimer: number | undefined;
 
     const onPointerDown = () => {
-      if (visitorState.atWorking) dragging = true;
+      if (visitorState.position === "working") dragging = true;
     };
     const onPointerUp = () => {
       dragging = false;
     };
     const onPointerMove = (event: PointerEvent) => {
-      if (!dragging || !visitorState.atWorking) return;
+      if (!dragging || !(visitorState.position === "working")) return;
       engaged.current = true;
       look.current.targetYaw -= event.movementX * DRAG_SENSITIVITY;
       look.current.targetPitch -= event.movementY * DRAG_SENSITIVITY;
@@ -88,7 +88,7 @@ export function FirstLook() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!event.code.startsWith("Arrow")) return;
       keysDown.add(event.code);
-      engaged.current = visitorState.atWorking;
+      engaged.current = visitorState.position === "working";
       if (keyTimer === undefined) {
         let last = performance.now();
         const step = () => {
@@ -135,7 +135,7 @@ export function FirstLook() {
       if (auto) {
         const startAt = Number(auto) * 1000;
         const set = (yaw: number, pitch: number) => () => {
-          if (!visitorState.atWorking) return;
+          if (!(visitorState.position === "working")) return;
           engaged.current = true;
           look.current.targetYaw = yaw;
           look.current.targetPitch = pitch;

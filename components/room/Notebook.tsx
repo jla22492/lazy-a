@@ -1,7 +1,9 @@
 "use client";
 
 import type { AttentionTarget } from "@/three/animation/attention";
+import { conditions, type ReadinessRule } from "@/three/animation/readiness";
 import { useAttentionTarget } from "@/three/hooks/useAttentionTarget";
+import { useReadinessRule } from "@/three/hooks/useReadinessRule";
 import { NOTEBOOK, WORKBENCH } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -20,6 +22,19 @@ const ATTENTION_TARGET: AttentionTarget = {
 };
 
 /**
+ * When engaging the notebook would be appropriate (WORK ORDER 0024):
+ * standing at the bench, no longer moving, genuinely observing it.
+ */
+const READINESS_RULE: ReadinessRule = {
+  target: "notebook",
+  conditions: [
+    conditions.atPosition("working"),
+    conditions.still(),
+    conditions.observed("notebook"),
+  ],
+};
+
+/**
  * Primitive blockout of the notebook — the first object with narrative
  * weight. It establishes position, scale, and orientation only; detail
  * arrives in later work orders (WORK ORDER 0009).
@@ -31,6 +46,7 @@ const ATTENTION_TARGET: AttentionTarget = {
  */
 export function Notebook() {
   useAttentionTarget(ATTENTION_TARGET);
+  useReadinessRule(READINESS_RULE);
   return (
     <mesh
       position={REST_POSITION}
