@@ -7,6 +7,7 @@ import { AgXToneMapping } from "three";
 
 import { AttentionSensor } from "@/components/camera/AttentionSensor";
 import { CameraRig } from "@/components/camera/CameraRig";
+import { IntentSensor } from "@/components/camera/IntentSensor";
 import { FirstLook } from "@/components/camera/FirstLook";
 import { FirstStep } from "@/components/camera/FirstStep";
 import { Notebook } from "@/components/room/Notebook";
@@ -84,6 +85,7 @@ export function Stage() {
         <FirstStep />
         <FirstLook />
         <AttentionSensor />
+        <IntentSensor />
       </Canvas>
     </div>
   );

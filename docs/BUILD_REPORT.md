@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0024 — Readiness Before Interaction
+WORK ORDER 0025 — Intent Before Interaction
 
 ## Version
 
@@ -10,12 +10,11 @@ v0.1
 
 ## Summary
 
-- The readiness system exists (three/animation/readiness.ts): each meaningful object registers a rule composed from a shared condition vocabulary — observed, standing-at-position, not-moving — with room for future contextual conditions. Every future interaction asks exactly one question: isReady(target). Introspection (readinessOf) reports which conditions hold a target back, for engineering only.
-- The visitor's body is now modeled properly: visitorState carries a standing position (arrival/working/considering or null while in motion) and a moving flag, written by movement behaviors and read by perception and readiness.
-- The notebook's rule: standing at WORKING, still, and genuinely observing it. Verified live through the whole journey: not ready at arrival, not ready mid-walk, not ready at the bench's neutral gaze — ready only during sustained observation, releasing on look-away.
-- One honest finding from verification: from ARRIVAL, the notebook happens to sit near the opening composition's natural gaze line, so the attention system counts it as observed there — and readiness still correctly refuses because the body is in the wrong place. The layered philosophy is doing exactly the work it was designed for.
-- Entirely invisible; the visitor experience is unchanged (0024.png).
-- New Creative Lock recorded: observation enables readiness; readiness enables interaction; interaction never happens directly from gaze.
+- The decision pipeline is complete: observation → readiness → intent. The intent system (three/animation/intent.ts) models deliberate commitment: it can only BEGIN toward a target that is ready, must be HELD for 0.35 seconds (long enough to be a decision, short enough to feel immediate), CANCELS instantly if readiness breaks mid-hold, and the resulting intent is CONSUMED exactly once — with a 0.5-second expiry, because commitment is a moment, not a state.
+- No input is bound yet, per the order: future deliberate actions speak through beginCommit/releaseCommit, and future interactions pass through one gate — consumeIntent(target).
+- Verified live, all five semantics: a commit attempted while not ready is refused; a 120ms twitch produces nothing; a held commit matures into intent; intent consumes once and only once; looking away mid-hold cancels the commitment. Accidental interaction is structurally impossible.
+- Visitor experience unchanged (0025.png); nothing rendered, nothing bound, nothing visible.
+- New Creative Locks recorded: readiness permits; intent commits.
 
 ## Decisions Required
 
@@ -23,4 +22,4 @@ None.
 
 ## Ready For
 
-WORK ORDER 0025.
+WORK ORDER 0026.
