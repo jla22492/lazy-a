@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0066 — Review #2 Corrections (Creative Sprint 03, order 11 of 15)
+WORK ORDER 0067 — Fidelity Pass (Creative Sprint 03, order 12 of 15)
 
 ## Version
 
@@ -10,11 +10,12 @@ v0.1
 
 ## Summary
 
-- Review #2's rulings, executed (docs/progress/0066.png):
-- The walked-route overlay is gone. The standing wear stays — one feels discovered, the other felt authored. Two locks recorded: a room is remembered by its interruptions, not its possessions; and editing is the room's highest craft — Lazy A's design language, discovered across three sprints of subtraction.
-- The tallies reduced to two gates: one complete, one stopped at three bars.
-- The placeholders diversified through physical history, never content: the oldest pinned photo is sun-faded; its neighbor's corner was bent and never flattened; the slipped photo is glossier stock; the torn strip is kraft; one sticky note faded a season further than the other; one test print arrived under a binder clip while the other's corner is bent; the considered print is lab-fresh gloss; the leaning board is kraft-backed; and the hero print became heavier stock — the thickness reads at its edge, and the blankness stays untouched. The paper system gained faded and bentCorner as history parameters. Never the same blank twice.
-- Verification: type-check and production build pass; 0066.png reviewed at full frame and wall crop.
+- The three weakest close-ups, strengthened within stage fidelity (docs/progress/0067.png):
+- The crumpled miss: now two intersecting irregular solids (an icosahedron and a dodecahedron at disagreeing scales and rotations) — the union silhouette breaks the single-polyhedron tell that made it the room's weakest object in close crop.
+- The lamp's shade: widened and shortened, given a brass neck where it meets the arm, and made double-sided so its interior reads. A shade now, not a horn.
+- The plant's leaves: edge resolution raised a register; the ovals stop faceting at frame distance.
+- Nothing else touched — fidelity spending stays proportionate to what the locked composition can see, and the offline-render pipeline remains the eventual home of true close-up work.
+- Verification: type-check and production build pass; 0067.png reviewed in lamp and crumple crops.
 
 ## Decisions Required
 
@@ -22,4 +23,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0067 — Fidelity pass on the weakest close-ups.
+WORK ORDER 0068 — The third edit.
