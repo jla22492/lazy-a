@@ -1,6 +1,6 @@
 "use client";
 
-import { frostedPaneTexture, plaster } from "@/three/materials/procedural";
+import { frostedPaneTexture, plaster, plasterNormal } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -236,7 +236,7 @@ export function RoomShell() {
         receiveShadow
       >
         <planeGeometry args={[REAR_WIDTH, wall.height]} />
-        <meshStandardMaterial map={rearPlaster} roughness={0.94} />
+        <meshStandardMaterial map={rearPlaster} normalMap={plasterNormal(427)} roughness={0.94} />
       </mesh>
       {LEFT_PANELS.filter(({ rect }) => rect[2] > 0 && rect[3] > 0).map(
         ({ key, rect: [centerZ, centerY, width, height] }) => (
@@ -247,7 +247,7 @@ export function RoomShell() {
             receiveShadow
           >
             <planeGeometry args={[width, height]} />
-            <meshStandardMaterial map={wallPlaster} roughness={0.94} />
+            <meshStandardMaterial map={wallPlaster} normalMap={plasterNormal(427)} roughness={0.94} />
           </mesh>
         ),
       )}
@@ -286,7 +286,7 @@ export function RoomShell() {
       ).map(({ key, args, position }) => (
         <mesh key={key} position={[...position]} receiveShadow>
           <boxGeometry args={[...args]} />
-          <meshStandardMaterial map={wallPlaster} roughness={0.94} />
+          <meshStandardMaterial map={wallPlaster} normalMap={plasterNormal(427)} roughness={0.94} />
         </mesh>
       ))}
       {RIGHT_PANELS.filter(({ rect }) => rect[2] > 0 && rect[3] > 0).map(
@@ -298,7 +298,7 @@ export function RoomShell() {
             receiveShadow
           >
             <planeGeometry args={[width, height]} />
-            <meshStandardMaterial map={wallPlaster} roughness={0.94} />
+            <meshStandardMaterial map={wallPlaster} normalMap={plasterNormal(427)} roughness={0.94} />
           </mesh>
         ),
       )}
@@ -365,7 +365,7 @@ export function RoomShell() {
       ).map(({ key, args, position }) => (
         <mesh key={key} position={[...position]} receiveShadow>
           <boxGeometry args={[...args]} />
-          <meshStandardMaterial map={wallPlaster} roughness={0.94} />
+          <meshStandardMaterial map={wallPlaster} normalMap={plasterNormal(427)} roughness={0.94} />
         </mesh>
       ))}
       {BASEBOARDS.map(({ key, position, rotationY, length }) => (
@@ -385,7 +385,7 @@ export function RoomShell() {
         receiveShadow
       >
         <planeGeometry args={[REAR_WIDTH, LEFT_LENGTH]} />
-        <meshStandardMaterial map={wallPlaster} roughness={0.96} />
+        <meshStandardMaterial map={wallPlaster} normalMap={plasterNormal(427)} roughness={0.96} />
       </mesh>
     </group>
   );

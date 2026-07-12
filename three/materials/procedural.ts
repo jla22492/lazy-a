@@ -956,3 +956,136 @@ export function cardboardTexture(seed: number, base: string): CanvasTexture {
 
   return toTexture(context);
 }
+
+/* ------------------------------------------------------------------ */
+/* Relief (WORK ORDER 0095): normal maps.                             */
+/* The single biggest "this is a rendering" tell is optical flatness. */
+/* These height fields are generated with the same seeded language as */
+/* the color layers and converted to tangent-space normals; they ride */
+/* UNDER the history layer — the scars and mug rings survive.         */
+/* Normal maps are data, not color: no sRGB.                          */
+/* ------------------------------------------------------------------ */
+
+function heightToNormalTexture(
+  height: CanvasRenderingContext2D,
+  strength: number,
+): CanvasTexture {
+  const { width, height: h } = height.canvas;
+  const source = height.getImageData(0, 0, width, h).data;
+  const out = makeCanvas(width, h);
+  const image = out.createImageData(width, h);
+  const at = (x: number, y: number) =>
+    source[(((y + h) % h) * width + ((x + width) % width)) * 4];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < width; x++) {
+      const dx = (at(x + 1, y) - at(x - 1, y)) * strength;
+      const dy = (at(x, y + 1) - at(x, y - 1)) * strength;
+      const inv = 1 / Math.sqrt(dx * dx + dy * dy + 255 * 255);
+      const i = (y * width + x) * 4;
+      image.data[i] = 127.5 + dx * inv * 127.5;
+      image.data[i + 1] = 127.5 - dy * inv * 127.5;
+      image.data[i + 2] = 255 * inv * 127.5 + 127.5;
+      image.data[i + 3] = 255;
+    }
+  }
+  out.putImageData(image, 0, 0);
+  const texture = new CanvasTexture(out.canvas);
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+/** Wood relief: grain ridges along Y, plank seams, shallow gouges. */
+export function woodNormal(seed: number, strength = 2.2): CanvasTexture {
+  return cached(`woodNormal:${seed}:${strength}`, () => {
+    const size = 512;
+    const context = makeCanvas(size, size);
+    const random = seededRandom(seed);
+    context.fillStyle = "rgb(128,128,128)";
+    context.fillRect(0, 0, size, size);
+    /* Grain: long soft vertical streaks at varying depth. */
+    for (let i = 0; i < 340; i++) {
+      const x = random() * size;
+      const w = 1 + random() * 3;
+      const tone = 118 + random() * 20;
+      context.fillStyle = `rgba(${tone},${tone},${tone},${0.25 + random() * 0.3})`;
+      context.fillRect(x, 0, w, size);
+    }
+    /* Plank seams: crisp grooves. */
+    const planks = 4 + Math.floor(random() * 2);
+    for (let p = 1; p < planks; p++) {
+      const x = (size / planks) * p + (random() - 0.5) * 8;
+      context.fillStyle = "rgba(70,70,70,0.9)";
+      context.fillRect(x, 0, 2, size);
+    }
+    /* A few shallow dents where years landed. */
+    for (let i = 0; i < 14; i++) {
+      const g = context.createRadialGradient(
+        random() * size, random() * size, 0,
+        random() * size, random() * size, 6 + random() * 18,
+      );
+      g.addColorStop(0, "rgba(100,100,100,0.5)");
+      g.addColorStop(1, "rgba(128,128,128,0)");
+      context.fillStyle = g;
+      context.fillRect(0, 0, size, size);
+    }
+    return heightToNormalTexture(context, strength);
+  });
+}
+
+/** Plaster relief: broad undulation and the faintest trowel arcs. */
+export function plasterNormal(seed: number, strength = 1.1): CanvasTexture {
+  return cached(`plasterNormal:${seed}:${strength}`, () => {
+    const size = 512;
+    const context = makeCanvas(size, size);
+    const random = seededRandom(seed);
+    context.fillStyle = "rgb(128,128,128)";
+    context.fillRect(0, 0, size, size);
+    /* Broad clouds: the wall breathes at arm scale. */
+    for (let i = 0; i < 26; i++) {
+      const x = random() * size;
+      const y = random() * size;
+      const r = 60 + random() * 140;
+      const tone = 120 + random() * 16;
+      const g = context.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(${tone},${tone},${tone},0.35)`);
+      g.addColorStop(1, "rgba(128,128,128,0)");
+      context.fillStyle = g;
+      context.fillRect(0, 0, size, size);
+    }
+    /* Trowel: long low arcs a roller leaves at raking light. */
+    context.lineWidth = 10;
+    for (let i = 0; i < 12; i++) {
+      const y = random() * size;
+      const tone = 122 + random() * 12;
+      context.strokeStyle = `rgba(${tone},${tone},${tone},0.22)`;
+      context.beginPath();
+      context.moveTo(-40, y);
+      context.bezierCurveTo(
+        size * 0.3, y + (random() - 0.5) * 60,
+        size * 0.7, y + (random() - 0.5) * 60,
+        size + 40, y + (random() - 0.5) * 40,
+      );
+      context.stroke();
+    }
+    return heightToNormalTexture(context, strength);
+  });
+}
+
+/** Paper tooth: the finest surface a raking light can find. */
+export function paperNormal(seed: number, strength = 0.7): CanvasTexture {
+  return cached(`paperNormal:${seed}:${strength}`, () => {
+    const size = 256;
+    const context = makeCanvas(size, size);
+    const random = seededRandom(seed);
+    context.fillStyle = "rgb(128,128,128)";
+    context.fillRect(0, 0, size, size);
+    for (let i = 0; i < 5200; i++) {
+      const tone = 116 + random() * 24;
+      context.fillStyle = `rgba(${tone},${tone},${tone},0.5)`;
+      context.fillRect(random() * size, random() * size, 1.4, 1.4);
+    }
+    return heightToNormalTexture(context, strength);
+  });
+}

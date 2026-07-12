@@ -4,7 +4,9 @@ import { useMemo } from "react";
 
 import { CatmullRomCurve3, DoubleSide, Vector3 } from "three";
 
-import { leather, paper, plaster, wood } from "@/three/materials/procedural";
+import { RoundedBox } from "@react-three/drei";
+
+import { leather, paper, plaster, wood, woodNormal } from "@/three/materials/procedural";
 import {
   BOOKCASE,
   CHAIR,
@@ -31,14 +33,21 @@ function Chair() {
   return (
     <group position={[at.x, 0, at.z]} rotation={[0, yaw, 0]}>
       {/* Seat. */}
-      <mesh
+      {/* Bevels (0095): nothing real has a mathematically sharp edge. */}
+      <RoundedBox
+        args={[seat.width, seat.thickness, seat.depth]}
+        radius={0.006}
+        smoothness={3}
         position={[0, seat.height - seat.thickness / 2, 0]}
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[seat.width, seat.thickness, seat.depth]} />
-        <meshStandardMaterial map={chairWood} roughness={0.7} />
-      </mesh>
+        <meshStandardMaterial
+          map={chairWood}
+          normalMap={woodNormal(461, 1.4)}
+          roughness={0.7}
+        />
+      </RoundedBox>
       {/* Worn leather pad. */}
       <mesh
         position={[0, seat.height + pad.thickness / 2, 0]}
@@ -99,7 +108,11 @@ function Chair() {
         <boxGeometry
           args={[seat.width - 0.04, back.slat.height, back.slat.thickness]}
         />
-        <meshStandardMaterial map={chairWood} roughness={0.7} />
+        <meshStandardMaterial
+          map={chairWood}
+          normalMap={woodNormal(461, 1.4)}
+          roughness={0.7}
+        />
       </mesh>
       {/* The work cloth over the slat: a thin drape, not an object — a
           narrow saddle across the slat's top and two thin uneven falls. */}

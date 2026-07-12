@@ -2,13 +2,13 @@
 
 import { Suspense, useRef } from "react";
 
-import { useTexture, useVideoTexture } from "@react-three/drei";
+import { RoundedBox, useTexture, useVideoTexture } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { SRGBColorSpace } from "three";
 
 import logoNote from "@/public/brand/logo-note.png";
 import { assetPath } from "@/lib/assetPath";
-import { paper, wood } from "@/three/materials/procedural";
+import { paper, wood, woodNormal } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import {
   HERO_PRINT,
@@ -222,17 +222,21 @@ function PictureLedge() {
   const surfaceY = center.y + thickness / 2;
   return (
     <>
-      <mesh
+      {/* Bevelled since 0095: a real board's edge, softened by hands. */}
+      <RoundedBox
+        args={[length, thickness, depth]}
+        radius={0.004}
+        smoothness={3}
         position={[center.x, center.y, WALL_Z + depth / 2]}
         castShadow
         receiveShadow
       >
-        <boxGeometry args={[length, thickness, depth]} />
         <meshStandardMaterial
           map={wood({ seed: 441, base: color, grain: "#5b4a38", age: 0.5 })}
+          normalMap={woodNormal(441, 1.4)}
           roughness={0.75}
         />
-      </mesh>
+      </RoundedBox>
       {/* Framed still, leaning back to the wall. */}
       <mesh
         position={[

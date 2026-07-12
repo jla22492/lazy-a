@@ -1,6 +1,6 @@
 "use client";
 
-import { talliedWood, wood } from "@/three/materials/procedural";
+import { talliedWood, wood, woodNormal } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -77,12 +77,24 @@ export function Workbench() {
         receiveShadow
       >
         <boxGeometry args={[top.width, top.thickness, top.depth]} />
-        {/* Face order: +x, -x, +y (top), -y, +z (front edge), -z. */}
+        {/* Face order: +x, -x, +y (top), -y, +z (front edge), -z.
+            Relief (0095): the grain catches light — normals ride under
+            the wear so the history survives. */}
         <meshStandardMaterial attach="material-0" map={legTexture} roughness={0.75} />
         <meshStandardMaterial attach="material-1" map={legTexture} roughness={0.75} />
-        <meshStandardMaterial attach="material-2" map={topTexture} roughness={0.72} />
+        <meshStandardMaterial
+          attach="material-2"
+          map={topTexture}
+          normalMap={woodNormal(benchWood.seed)}
+          roughness={0.72}
+        />
         <meshStandardMaterial attach="material-3" map={legTexture} roughness={0.8} />
-        <meshStandardMaterial attach="material-4" map={edgeTexture} roughness={0.74} />
+        <meshStandardMaterial
+          attach="material-4"
+          map={edgeTexture}
+          normalMap={woodNormal(benchWood.seed + 2, 1.6)}
+          roughness={0.74}
+        />
         <meshStandardMaterial attach="material-5" map={legTexture} roughness={0.75} />
       </mesh>
       {LEG_POSITIONS.map((position) => (
