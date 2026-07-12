@@ -85,6 +85,16 @@ export function Arrival() {
   const poses = useMemo(() => {
     const end = new Vector3(...STAGE.camera.position);
     const endGaze = new Vector3(...STAGE.camera.lookAt);
+    /* The frame survives the viewport (0079): a narrow window doesn't
+       amputate the bench — the body simply stands further back. The
+       stance is chosen once, at arrival, the way a person picks where
+       to stand for the room they walked into; resizing mid-visit does
+       not move a standing body. At 16:9 and wider, nothing changes. */
+    if (typeof window !== "undefined") {
+      const aspect = window.innerWidth / Math.max(window.innerHeight, 1);
+      const extraBack = Math.min(Math.max(1.1 * (1.5 - aspect), 0), 0.9);
+      end.z += extraBack;
+    }
     const start = end.clone().add(START_OFFSET);
     const startGaze = endGaze.clone().add(GAZE_START_OFFSET);
     /* The walk's forward direction, for overshoot and sway axes. */

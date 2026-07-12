@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0078 — The Conversations Settle (Sprint 04, order 8 of 15)
+WORK ORDER 0079 — Responsive Stance (Sprint 04, order 9 of 15)
 
 ---
 
@@ -140,6 +140,7 @@ WORK ORDER 0078 — The Conversations Settle (Sprint 04, order 8 of 15)
 - The Conversation (0076, docs/progress/0076-conversation.png): clicking a destination is paying closer attention, and the room respectfully gives it space — the body leans in (15–20cm by destination intimacy, one ease of mass, never a new composition) while an editorial caption quietly materializes beside the object: the destination's name, a hairline, and unwritten placeholder lines (layout awaiting authorship, never lorem) — almost typeset, like a gallery caption, never UI; Escape or a click on empty space eases the body back to the exact stance; verified live end to end (lean 0.2m toward FILMS, one caption alone, exact return); two locks recorded (content belongs in the room even as HTML; navigation changes attention before location) and the roadmap named: Attention → Conversation → Rooms
 - One cloth (0077): the interface's entire typographic surface — wordmark, attention labels, conversation captions — now reads from a single type system (components/site/type.ts): one family, one tracking (the system's signature), one ink ramp; the Creative Director's "cut from the same typographic system" note, made structural; when typography is properly authored, that day is one edit
 - The conversations settle (0078, docs/progress/0078-journal.png + 0078-work.png): JOURNAL and WORK verified from their leaned viewpoints — WORK typesets on the open wall right of the notes; JOURNAL's first anchor collided with the lamp from the leaned view and moved to the clear wall directly above its pile, where it reads as a true gallery caption for its subject
+- Responsive stance (0079): a narrow viewport no longer amputates the bench — the body simply stands further back, chosen once at arrival the way a person picks where to stand for the room they walked into (up to 0.9m at phone portrait; nothing changes at 16:9 and wider; resizing mid-visit does not move a standing body); verified at 375x812 — the working center, hero print, chair, and pendant all hold, and the crop-from-a-larger-place grammar makes portrait feel like a tighter crop of the same room rather than a broken layout
 
 ---
 
