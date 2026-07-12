@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0079 — Responsive Stance (Creative Sprint 04, order 9 of 15)
+WORK ORDER 0081 — Consequence (Creative Sprint 04, order 11 of 15)
 
 ## Version
 
@@ -10,15 +10,16 @@ v0.1
 
 ## Summary
 
-- A company website gets visited on phones, and the locked composition assumed a wide frame. The cinematographer's answer, not the renderer's: a narrow window doesn't amputate the bench — the body simply stands further back.
-- The stance adapts once, at arrival (up to +0.9m of distance at phone portrait, easing in from aspect 1.5; at 16:9 and wider, nothing changes — every existing capture is untouched). Resizing mid-visit does not move a standing body; the next visit stands correctly for its window.
-- Verified at 375x812: the working center, hero print, chair, and pendant all hold, the wordmark sits correctly, and — the quiet win — the crop-from-a-larger-place grammar makes portrait feel like a tighter crop of the same room rather than a broken layout. The recomposition keeps paying rent.
-- Verification: type-check and production build pass; live camera sampled at z=4.9 on a phone viewport (rest: 4.0).
+- The mid-review's one consistent miss, built: click FILMS → lean in → the room becomes quieter → the work appears.
+- During a conversation, the daylight's breath softens toward 40% of itself and the dust slows toward half pace — riding the exact ease of the lean, one gesture with two effects, easing fully back when the conversation ends. The living behaviors read a shared quiet level (three/interface/quiet.ts) that the conversation drives.
+- Framed deliberately, and recorded in the code's own comments: the room does not perform for the visitor — it quiets for the WORK, the way a host lowers the music when the guest of honor speaks. This consciously evolves the original non-negotiable ("the room never acknowledges the visitor"): the room acknowledges the work. Flagging the evolution here, in the open, rather than quietly reinterpreting a founding rule.
+- Sub-perceptual by design: nobody will point at it, and the conversation will feel different in a way they can't name — which has been the room's whole method since the first breath.
+- Verification: type-check and production build pass; the lean, responsive stance, and quiet level verified composing correctly in a live browser.
 
 ## Decisions Required
 
-None.
+None (the non-negotiable's evolution is noted for the Creative Director's eyes at the sprint review).
 
 ## Ready for
 
-WORK ORDER 0080 — the sprint's mid-review.
+WORK ORDER 0082 — the work appears.
