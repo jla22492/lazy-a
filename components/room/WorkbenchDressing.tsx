@@ -1,5 +1,7 @@
 "use client";
 
+import { RoundedBox } from "@react-three/drei";
+
 import { ceramic, paper } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import {
@@ -182,8 +184,18 @@ function Mug() {
   return (
     <group position={[at.x, SURFACE, at.z]} rotation={[0, handleYaw, 0]}>
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[radius, radius * 0.94, height, 20]} />
+        <cylinderGeometry args={[radius, radius * 0.94, height, 24]} />
         <meshStandardMaterial map={ceramic(437, color)} roughness={0.35} />
+      </mesh>
+      {/* 0098: a rolled rim and the dark of an interior — a mug, not a
+          cylinder. The last coffee's level line lives just inside. */}
+      <mesh position={[0, height, 0]}>
+        <torusGeometry args={[radius - 0.0022, 0.0024, 10, 24]} />
+        <meshStandardMaterial map={ceramic(437, color)} roughness={0.32} />
+      </mesh>
+      <mesh position={[0, height - 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[radius - 0.0045, 24]} />
+        <meshStandardMaterial color="#2e2620" roughness={0.6} />
       </mesh>
       <mesh position={[radius + 0.012, height * 0.55, 0]} castShadow>
         <torusGeometry args={[0.02, 0.006, 8, 16]} />
@@ -283,25 +295,69 @@ function FilmCanisters() {
 function Camera() {
   const { at, body, lens, prism, yaw, bodyColor, lensColor } = CAMERA;
   return (
+    /* Rebuilt at 0098 (the five tells): a camera body, not a black box —
+       rounded housing, leatherette band, a lens with a hood ring and a
+       recessed dark element, the prism hump softened, a shutter button.
+       Still procedural, still the same object that was set down
+       lens-toward-the-wall in 0037. */
     <group position={[at.x, SURFACE, at.z]} rotation={[0, yaw, 0]}>
-      <mesh position={[0, body.height / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[body.width, body.height, body.depth]} />
-        <meshStandardMaterial color={bodyColor} roughness={0.45} metalness={0.3} />
-      </mesh>
+      <RoundedBox
+        args={[body.width, body.height, body.depth]}
+        radius={0.006}
+        smoothness={3}
+        position={[0, body.height / 2, 0]}
+        castShadow
+        receiveShadow
+      >
+        <meshStandardMaterial color={bodyColor} roughness={0.42} metalness={0.35} />
+      </RoundedBox>
+      {/* Leatherette grip band around the middle. */}
+      <RoundedBox
+        args={[body.width + 0.002, body.height * 0.48, body.depth + 0.002]}
+        radius={0.005}
+        smoothness={2}
+        position={[0, body.height * 0.42, 0]}
+        castShadow
+      >
+        <meshStandardMaterial color="#2a2a2a" roughness={0.85} metalness={0.05} />
+      </RoundedBox>
+      {/* Lens barrel, hood ring, and the dark recessed element. */}
       <mesh
         position={[0, body.height / 2, body.depth / 2 + lens.length / 2]}
         rotation={[Math.PI / 2, 0, 0]}
         castShadow
       >
-        <cylinderGeometry args={[lens.radius, lens.radius, lens.length, 20]} />
-        <meshStandardMaterial color={lensColor} roughness={0.35} metalness={0.4} />
+        <cylinderGeometry args={[lens.radius, lens.radius * 0.92, lens.length, 28]} />
+        <meshStandardMaterial color={lensColor} roughness={0.38} metalness={0.45} />
       </mesh>
       <mesh
-        position={[0, body.height + prism.height / 2, 0]}
+        position={[0, body.height / 2, body.depth / 2 + lens.length - 0.003]}
+        rotation={[Math.PI / 2, 0, 0]}
+      >
+        <torusGeometry args={[lens.radius * 0.94, 0.0035, 10, 28]} />
+        <meshStandardMaterial color="#1b1b1b" roughness={0.3} metalness={0.5} />
+      </mesh>
+      <mesh
+        position={[0, body.height / 2, body.depth / 2 + lens.length + 0.001]}
+        rotation={[Math.PI / 2, 0, 0]}
+      >
+        <cylinderGeometry args={[lens.radius * 0.62, lens.radius * 0.62, 0.004, 24]} />
+        <meshStandardMaterial color="#0d0d10" roughness={0.15} metalness={0.6} />
+      </mesh>
+      {/* Prism hump, softened. */}
+      <RoundedBox
+        args={[prism.width, prism.height, prism.depth]}
+        radius={0.005}
+        smoothness={2}
+        position={[0, body.height + prism.height / 2 - 0.002, 0]}
         castShadow
       >
-        <boxGeometry args={[prism.width, prism.height, prism.depth]} />
-        <meshStandardMaterial color={bodyColor} roughness={0.45} metalness={0.3} />
+        <meshStandardMaterial color={bodyColor} roughness={0.42} metalness={0.35} />
+      </RoundedBox>
+      {/* Shutter button, where a right thumb expects it. */}
+      <mesh position={[body.width / 2 - 0.016, body.height + 0.0025, 0.008]}>
+        <cylinderGeometry args={[0.004, 0.004, 0.005, 12]} />
+        <meshStandardMaterial color="#8f8a80" roughness={0.35} metalness={0.6} />
       </mesh>
     </group>
   );
