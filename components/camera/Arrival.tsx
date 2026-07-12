@@ -104,6 +104,8 @@ export function Arrival() {
           done.current = true;
           camera.position.copy(poses.end);
           camera.lookAt(poses.endGaze);
+          (window as Window & { __arrivalDone?: boolean }).__arrivalDone =
+            true;
           return;
         }
         if (waitingForRecorder()) {
@@ -155,6 +157,9 @@ export function Arrival() {
           done.current = true;
           camera.position.copy(poses.end);
           camera.lookAt(poses.endGaze);
+          /* The interface waits for the body to arrive (0076). */
+          (window as Window & { __arrivalDone?: boolean }).__arrivalDone =
+            true;
         }
       },
     }),
