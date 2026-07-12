@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0085 — Final Polish & Sprint Review (Creative Sprint 04, order 15 of 15 — SPRINT COMPLETE)
+WORK ORDER 0086 — Live Deploy (Creative Sprint 05A, item 1 of 6)
 
 ## Version
 
@@ -10,16 +10,31 @@ v0.1
 
 ## Summary
 
-- The sprint's closing order: verification, review assets, documentation, the full stop.
-- Review assets: docs/progress/0085.png (the homepage at rest) and docs/progress/0085.mp4 — the product film: the approach walk, the settle, the dust, and the lean into the FILMS conversation, end to end. One honest limitation recorded: canvas recordings cannot see the HTML interface layer, so the captions and gallery live in the full-page stills (0073-full, 0076-conversation, 0082-films); a future screen-capture pipeline would film both.
-- CHANGELOG gained the sprint milestone: the website arrived — the room has graduated from subject to medium.
-- Termination honored: exactly 15 work orders (0071–0085), one mandatory checkpoint (0071, approved), one mid-review (0080), two of Jonathan's mid-flight directions executed as revisions (R-0071 left-wall-only; R-0072 the approach). Implementation stops completely; no Work Order 0086 until Jonathan reviews Sprint 04.
-- Verification: type-check and production build pass; the film's transport encoding round-trips byte-identically.
+- The room is public. https://jla22492.github.io/lazy-a/ serves the actual
+  experience — not just the Studio — on Jonathan's phone or anywhere else.
+- No new deployment machinery was needed: the existing studio-pages CI has
+  static-exported the whole app (room page included, dev-only API routes
+  removed) since the Studio was published. What was missing was proof; this
+  order is that proof.
+- Verification ran against the DEPLOYED URL, not localhost, per the sprint
+  brief: headless Chrome (SwiftShader, `--screenshot --timeout=12000`)
+  captured the live site after the arrival settled. docs/progress/0086.png
+  (1280x720) is visually identical to the local reference 0085.png — same
+  composition, same dust, same wordmark. docs/progress/0086-phone.png
+  (375x812) confirms the responsive stance holds on a phone viewport.
+- Deploy freshness confirmed: the Pages build for the current head commit
+  completed successfully (~1 min per push), so every subsequent 05A order
+  becomes reviewable on the live URL about a minute after its push.
+- Deployed-URL capture technique recorded for the sprint: the dev-only
+  ?shot pipeline cannot run in production, so live captures use headless
+  Chrome's own screenshot path (write file, then kill the process — the
+  new headless mode does not always exit on WebGL pages). The Playwright
+  pipeline (order 0091) will supersede this for films.
 
 ## Decisions Required
 
-None — the sprint review is Jonathan's to make.
+None.
 
 ## Ready for
 
-Jonathan's creative review of Sprint 04.
+WORK ORDER 0087 — the real logo into the wordmark.

@@ -8,13 +8,13 @@ v0.1
 
 ## Current Sprint
 
-Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 implementation work orders 0056–0070 with internal reviews after 0060/0065/0070, then a Creative Sprint Review and a full stop for Jonathan's review. Sprints 01 — Dress the Room — and 02 — Reveal the Person — both approved by Jonathan. Prior phases: Architecture locked at 0014, Presence closed at 0015, Behavior closed at the Creative Reset with the notebook pipeline archived as completed research.)
+Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DIRECTLY by Jonathan after his Sprint 04 review — the Creative Director is out of the loop this sprint and audits the trail afterward. Phase 05A: six work orders 0086–0091 — live deploy, the real logo, the video-texture spike, the seated arrival, the destination remap with placeholder journal, and the Playwright screen-capture pipeline — then a full stop for Jonathan's review before 05B. Sprints 01–04 all approved by Jonathan.)
 
 ---
 
 ## Current Work Order
 
-WORK ORDER 0085 — Final Polish & Sprint Review (Sprint 04, order 15 of 15 — SPRINT COMPLETE)
+WORK ORDER 0086 — Live Deploy (Sprint 05A, item 1 of 6 — COMPLETE)
 
 ---
 
@@ -147,18 +147,20 @@ WORK ORDER 0085 — Final Polish & Sprint Review (Sprint 04, order 15 of 15 — 
 - The motion language codified (0083): every duration and ease the interface uses now lives in one file (components/site/motion.ts), named for what it means — answer (90ms), materialize (240ms), sibling stagger (70ms), the lean (0.9s), dwell (0.45s), release (0.22s) — the rhythm auditable, the eventual authored motion pass a one-file edit, exactly like the type system
 - The fourth edit (0084): the interface audited at the room's own bar — one violation found and fixed: the three captions' unwritten lines shared one rhythm (the same blank three times), and each destination now carries its own (FILMS two confident lines, JOURNAL three wordy ones, WORK two short) — never the same blank twice, applied to the interface itself; nothing else failed the truth bar; the WORK destination stays pending the information-architecture ruling the mid-review left open
 - CREATIVE SPRINT 04 COMPLETE (docs/progress/0085.png + 0085.mp4): the fifteenth order closed the sprint — the product film captured end to end (the approach, the settle, the dust, the lean into FILMS; the interface's HTML layer lives in the full-page stills, as canvas films cannot see it), CHANGELOG updated (the website arrived), and the Sprint 04 Review posted with before/after, the film, and the honest gaps; implementation stops completely per the termination rule — no Work Order 0086 until Jonathan reviews
+- SPRINT 04 APPROVED by Jonathan; CREATIVE SPRINT 05 AUTHORIZED directly by him — The Six-Second Homepage (docs/SPRINT_05.md, the ruling document; it wins over older locks where they conflict): the 4s/5s/6s acceptance clock, the destination remap (JOURNAL = the notebook, CONTACT = the phone charger, FILMS = the wall photographs), and two constitution amendments to be executed this sprint (the perspective sits; the impossible is no longer deferred); the Creative Director is out of the loop for the sprint and audits the artifact trail afterward
+- The room went public (0086, docs/progress/0086.png + 0086-phone.png): https://jla22492.github.io/lazy-a/ serves the actual experience — the existing studio-pages CI already static-exported the room page, and this order proved it: the live site captured headlessly at the deployed URL matches the local reference frame (0085.png) and holds the responsive stance at a phone viewport; every future push is live about a minute later
 
 ---
 
 ## In Progress
 
-Creative Sprint 04 — The Website Arrives (work orders 0071–0085). The 0071 recomposition is APPROVED; homepage experience work is unlocked — every remaining order must produce a visitor-visible improvement within the first ten seconds.
+Creative Sprint 05, phase 05A — The Six-Second Homepage (work orders 0086–0091, directed by Jonathan personally). Complete: 0086 (live deploy). Remaining: 0087 logo, 0088 video-texture spike, 0089 seated arrival, 0090 destination remap + placeholder journal, 0091 screen-capture pipeline. Full stop after 0091 for Jonathan's review; no 05B work before it.
 
 ---
 
 ## Next Recommended Work Order
 
-None until Jonathan reviews Sprint 03 and authorizes what follows. (Named-but-deferred territory: composition, timing, revelation, and restraint — the "never seen a website feel like this" register the Creative Director asked me to notice but not chase; the authorship of content — the hero print's image, the notes' words — remains with Jonathan and the Creative Director; and the impossible still waits for a room that deserves it, which this one now may.)
+WORK ORDER 0087 — the real Lazy A logo replaces the placeholder text wordmark (keeping the 0073 restraint ruling: orientation, not branding).
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

@@ -29,4 +29,6 @@
 
 - The website arrived: the room grew past the browser's left edge and a body now walks you to the workbench on every visit — with weight, with a settle, with eyes that land after the feet. LAZY A says its name once, quietly, and never again. Rest your attention on the hero print and FILMS answers; click, and you lean in while the room holds its breath and three unwritten frames wait for their films. The room has graduated from subject to medium: it is no longer the project — it is the language the project speaks.
 
+- The room went public: anyone, on any device, can now walk in — https://jla22492.github.io/lazy-a/ serves the experience itself, and what a phone shows is the same room at a tighter crop. The website stopped being a rehearsal.
+
 Record experience changes here, not just technical ones.
