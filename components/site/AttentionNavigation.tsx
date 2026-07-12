@@ -44,6 +44,9 @@ interface Destination {
   intimacy: number;
   /** The first project experience (0082): unwritten gallery frames. */
   gallery?: boolean;
+  /** Each destination's unwritten lines carry their own rhythm (0084):
+      never the same blank twice, applied to the interface itself. */
+  lineWidths: readonly number[];
 }
 
 const DESTINATIONS: readonly Destination[] = [
@@ -56,6 +59,7 @@ const DESTINATIONS: readonly Destination[] = [
     caption: [1.06, 1.52, -0.42],
     intimacy: 0.2,
     gallery: true,
+    lineWidths: [118, 88],
   },
   {
     id: "journal",
@@ -67,6 +71,8 @@ const DESTINATIONS: readonly Destination[] = [
        lamp from the leaned viewpoint (0078). */
     caption: [-1.82, 1.08, -0.26],
     intimacy: 0.16,
+    /* The journal will be the wordiest destination. */
+    lineWidths: [104, 96, 84],
   },
   {
     id: "work",
@@ -76,6 +82,7 @@ const DESTINATIONS: readonly Destination[] = [
     anchor: [0.78, 1.08, 0.06],
     caption: [1.14, 1.02, 0.06],
     intimacy: 0.15,
+    lineWidths: [96, 72],
   },
 ];
 
@@ -145,7 +152,7 @@ function Caption({ destination }: { destination: Destination }) {
         }}
       />
       {/* Unwritten lines: layout awaiting authorship, never lorem. */}
-      {[112, 96, 104].map((width, index) => (
+      {destination.lineWidths.map((width, index) => (
         <div
           key={index}
           style={{
