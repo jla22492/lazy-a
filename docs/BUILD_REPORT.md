@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0092 — Eyes Above the Desk & the Magic Window (Sprint 05B, order 1)
+WORK ORDER 0093 — The Clock, Instrumented (Sprint 05B, order 2)
 
 ## Version
 
@@ -10,24 +10,23 @@ v0.1
 
 ## Summary
 
-- Jonathan's ruling executed: the seated eyes now sit clearly above the
-  desk (1.25m — 35cm over the work surface, an upright adult) and the
-  resting regard tips a few degrees down, so the desktop reads as a
-  SURFACE below the visitor instead of an edge-on sliver. The hero print
-  was re-hung a hair lower (center 1.27) to keep the whole image inside
-  the higher frame. The turned-head read of the journal improved exactly
-  as Jonathan predicted — the page fills more of the regard and the
-  placeholder paragraph reads comfortably (docs/progress/0092-journal.png
-  + 0092-journal-zoom.png).
-- The magic window: after the settle, the frame rests untouched for 15
-  seconds while the hero plays. Verified ON THE LIVE DEPLOY with a
-  15-second two-sample canvas diff: static wall and desk regions changed
-  by at most 1 level (the sub-perceptual breath) while the hero region
-  changed by 137 — the camera is motionless and the only motion is the
-  magic. The review film now holds this window before any visiting.
-- Arrival re-measured after the eye change: settled ~3.4s on the visitor
-  clock (docs/progress/0092-arrival.mp4). Dwell verification passes for
-  all three destinations on the live deploy at the new coordinates.
+- Jonathan's 4/5/6 acceptance criteria are now MEASURED, not designed-
+  toward: scripts/measure-clock.mjs opens the live site the way a
+  stranger does and detects each beat from the outside — the settle
+  (a static wall region ceasing to change), the magic (the hero region
+  beginning to move after the settle), and the answer (pointer rest to
+  visible label).
+- The live deploy passes every beat with no tuning required:
+  settle 3.91s (≤4), the hero begins 4.41s (the ~5s window), a
+  destination answers 0.68s after rest (≤1s of resting attention, well
+  inside the 6s promise). No timing was changed — the measured clock
+  says the room already keeps it, and tuning without a measured failure
+  is decorating.
+- The performance budget became a GATE: scripts/perf-gate.mjs fails on
+  median fps under 55 or compressed transfer over 8MB. The live site
+  measures 59.9fps and 1.17MB. Every remaining 05B order (normals, GI,
+  models, IBL) must pass this gate before its push — fidelity spends
+  inside the budget or doesn't ship.
 
 ## Decisions Required
 
@@ -35,4 +34,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0093 — timing instrumentation and the 4/5/6 tune.
+WORK ORDER 0094 — the phone composition.
