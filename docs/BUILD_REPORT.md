@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0070 — Final Polish & Sprint Review (Creative Sprint 03, order 15 of 15 — SPRINT COMPLETE)
+WORK ORDER 0072 — The Arrival (Creative Sprint 04, order 2 of 15)
 
 ## Version
 
@@ -10,18 +10,17 @@ v0.1
 
 ## Summary
 
-- The sprint's closing order: verification, review assets, documentation, the full stop.
-- Review assets: docs/progress/0070.png (the room as Sprint 03 leaves it) and docs/progress/0070.mp4 (8 seconds at rest — the daylight's breath remains the only motion, and the room now answers both of the sprint's questions in stillness: what was interrupted thirty seconds ago, and what resumes thirty seconds after we leave).
-- CHANGELOG gained the sprint milestone: the room became a place — remembered by its interruptions, strengthened by subtraction.
-- PROJECT_STATUS records the sprint complete, with the deferred territory named (composition/timing/revelation/restraint; content authorship; the impossible).
-- The Sprint 03 Review posted to the Creative Director thread with before (0055) / after (0070) stills, the resting film, and an honest artistic assessment of where the room still falls short.
-- Termination honored: exactly 15 work orders (0056–0070), each committed and pushed. No Work Order 0071 until Jonathan reviews Sprint 03.
-- Verification: type-check and production build pass; both captures reviewed; the film's transport encoding round-trips byte-identically (SHA-256 verified).
+- The constitution's opening beat exists (docs/progress/0072.mp4): on every visit, the viewpoint begins a half-step shy of the composition — slightly back, a breath higher, gaze a touch wide — and settles once over 1.4 seconds, the gaze landing a quarter-second after the body, the way eyes settle after feet stop. Cubic ease-out; no path, no tour; it reads as arriving, never traveling. Then the camera is exactly the locked R-0071 composition and the behavior retires.
+- Visitor-visible within the first ten seconds: it IS the first second and a half.
+- Registered as a camera behavior on the room clock ("arrival"), consistent with every motion system since 0016.
+- Verified live, not just filmed: the camera was sampled in a real browser settling 4.28 → 4.00 over the settle window, holding the exact end pose after.
+- Captures stay deterministic: ?shot skips the settle; ?record with ?arrive films it — the settle now waits for the recorder's true start (headless recording begins unpredictably late, which silently hid motion from review films; the recorder now raises a flag the settle listens for). This fix benefits every future motion review.
+- Follows Jonathan's R-0071 amendment (committed separately): the left wall opened, the right side restored exactly as built.
 
 ## Decisions Required
 
-None — the sprint review is Jonathan's to make.
+None.
 
 ## Ready for
 
-Jonathan's creative review of Sprint 03.
+WORK ORDER 0073 — Recognition: the site says its name.
