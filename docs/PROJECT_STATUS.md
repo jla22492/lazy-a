@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0061 — The Person's Marks (Sprint 03, order 6 of 15)
+WORK ORDER 0062 — Routes of Habit (Sprint 03, order 7 of 15)
 
 ---
 
@@ -120,6 +120,7 @@ WORK ORDER 0061 — The Person's Marks (Sprint 03, order 6 of 15)
 - Right-side rebalance & the chair's moment (docs/progress/0060.png): the chair moved to a body-width behind the bench, half-turned the way a sitter turns when they rise and walk toward the door — interrupted a moment ago, not abandoned across the room (the work cloth keeps its home on its back); the shipping tubes slid deeper into the frame's cut and the power strip tucked nearer the wall — the right side finally weighs what it should
 - Internal review #1 held (after 0060): threshold crossed — "the room is beginning to stop feeling staged and start feeling inherited"; the smoke detector's near-invisibility ratified as Sprint 03's calibration (the most believable objects are almost invisible); new lock recorded (habits reveal identity better than possessions); all three removal candidates ruled OUT (second tube, fallen canister, the award — it told "creative," which the room already tells); the wall directed to accumulate accidents across decades; Act II caution: author patterns, never character; the sprint's real question named — if I arrived thirty seconds earlier, what would I have interrupted?
 - The person's marks (docs/progress/0061.png): the three ruled removals executed, and the bench's front edge — given its own face material — now carries three small five-bar gates in graphite near the working position, one bar at a time over months, the last gate unfinished at three: the person keeps score of something only they know; believable at a glance, deliberately unreadable as content, and almost invisible at frame distance, per the sprint's calibration
+- Routes of habit (docs/progress/0062.png): the wall became a record instead of a composition — five unconnected accidents from different decades (a paint touch-up from a warmer can, a lone nail hole, a lone screw hole unrelated to the shelf's pairs, a hairline crack wandering down from the ceiling line, and a hip-height polish where someone has brushed past the bench's end for years); and the floor now remembers the person's movement — a faint grime-polish along the walk from the doorway behind the camera to the bench, and a worn patch where the body always stands, both derived from the room's true geometry (the doorway's direction, STANDING_POSITIONS.working)
 
 ---
 
@@ -131,7 +132,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0062 — Routes of habit: the wall's accidents and the floor's paths.
+WORK ORDER 0063 — The window's world deepens.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

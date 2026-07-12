@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0061 — The Person's Marks (Creative Sprint 03, order 6 of 15)
+WORK ORDER 0062 — Routes of Habit (Creative Sprint 03, order 7 of 15)
 
 ## Version
 
@@ -10,11 +10,11 @@ v0.1
 
 ## Summary
 
-- Review #1's rulings executed, then Act II's first pattern (docs/progress/0061.png):
-- Removed: the second shipping tube (one tube cut by the frame is a stronger sentence), the fallen film canister (the pair had become an argument), and the award (it told "creative," which the room already tells — it revealed no new truth). The manifest holds 32 pieces.
-- The tallies: the bench's front edge — now its own face material, so the marks live on the edge alone — carries three small five-bar gates in graphite near the working position. One bar at a time, over months; the last gate stops at three, because whatever it counts isn't done. A pattern, not a biography: the person keeps score of something only they know, and the marks are deliberately unreadable as content. At frame distance they are almost invisible, which review #1 ratified as exactly the sprint's register.
-- New lock recorded (habits reveal identity better than possessions), along with the review's calibrations and the sprint's real question: if I arrived thirty seconds earlier, what would I have interrupted?
-- Verification: type-check and production build pass; 0061.png reviewed at full frame and in bench-edge crop.
+- Review #1 asked for the wall to accumulate accidents, not decoration — and for the person's movement to leave evidence (docs/progress/0062.png):
+- The wall's accidents: five, each from a different decade, cause, and person — a paint touch-up dabbed from a warmer can than the wall (unrelated to the cooler repair above it), a lone nail hole, a lone screw hole unrelated to the shelf's bracket pairs, one hairline crack wandering down from where the building settles, and a hip-height polish where someone has brushed past the bench's end toward the bookcase for years. Nothing connected — that is the point. The plaster system gained touchUps and cracks as parameters.
+- The floor's routes: a faint grime-polish along the walked line from the doorway behind the camera to the bench, and a worn patch where the body always stands. Both are derived — the path aims at the true doorway direction, the patch sits on STANDING_POSITIONS.working — and both live at the almost-invisible register the sprint calibrated to.
+- The thirty-seconds-earlier question now has a spatial answer: the visitor stands on the very route the person walks, facing the spot where they were just standing.
+- Verification: type-check and production build pass; 0062.png reviewed at full frame.
 
 ## Decisions Required
 
@@ -22,4 +22,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0062 — Routes of habit: the wall's accidents and the floor's paths.
+WORK ORDER 0063 — The window's world deepens.

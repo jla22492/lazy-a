@@ -190,6 +190,8 @@ export function RoomShell() {
        arrangement nobody remembers, and a repair painted in slightly
        the wrong white. */
     screwHoles: [
+      /* A lone screw hole (0062), unrelated to the shelf's pairs. */
+      { u: 0.955, v: 0.625 },
       { u: 0.1136, v: 0.883 },
       { u: 0.1136, v: 0.85 },
       { u: 0.2727, v: 0.883 },
@@ -197,7 +199,16 @@ export function RoomShell() {
     ],
     repairs: [{ u: 0.852, v: 0.8125, w: 0.068, h: 0.1 }],
     /* The vent's breath (0058): dust drifted onto the paint above it. */
-    stains: [{ u: 0.898, v: 0.945, w: 0.1, h: 0.06 }],
+    stains: [
+      { u: 0.898, v: 0.945, w: 0.1, h: 0.06 },
+      /* The polish (0062): hip-height, where someone has brushed past
+         the bench's end toward the bookcase for years. */
+      { u: 0.2727, v: 0.44, w: 0.07, h: 0.13 },
+    ],
+    /* The wall as a record (0062): accidents from different decades,
+       different causes, different people — nothing connected. */
+    touchUps: [{ u: 0.068, v: 0.458, r: 0.014 }],
+    cracks: [{ u: 0.784, v: 0.94, length: 0.12 }],
     residue: [
       /* Above the test prints: the tape-and-prop habit, remembered. */
       { u: 0.478, v: 0.455 },
@@ -205,6 +216,8 @@ export function RoomShell() {
       { u: 0.537, v: 0.45 },
     ],
     pinHoles: [
+      /* The lone nail hole (0062): one decision, one decade, unexplained. */
+      { u: 0.716, v: 0.717 },
       { u: 0.285, v: 0.7 },
       { u: 0.31, v: 0.64 },
       { u: 0.352, v: 0.72 },

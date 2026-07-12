@@ -340,6 +340,17 @@ export interface PlasterParams {
    * breathes onto the paint around it, year after year.
    */
   stains?: ReadonlyArray<{ u: number; v: number; w: number; h: number }>;
+  /**
+   * Touch-ups (WORK ORDER 0062): small irregular dabs of paint from a
+   * different can in a different decade — warmer where the repair was
+   * cooler. Accidents of maintenance, unconnected to anything.
+   */
+  touchUps?: ReadonlyArray<{ u: number; v: number; r: number }>;
+  /**
+   * Hairline cracks (WORK ORDER 0062): plaster giving up quietly,
+   * wandering down from where the building settles.
+   */
+  cracks?: ReadonlyArray<{ u: number; v: number; length: number }>;
 }
 
 /**
@@ -391,6 +402,42 @@ export function plasterTexture(params: PlasterParams): CanvasTexture {
       const w = 8 + random() * 30;
       context.fillRect(x, y, w, 1.5 + random() * 2);
     }
+  }
+
+  /* Touch-ups: paint from a different can, a different decade. */
+  for (const dab of params.touchUps ?? []) {
+    const cx = dab.u * size;
+    const cy = (1 - dab.v) * size;
+    const r = dab.r * size;
+    context.fillStyle = "rgba(238, 231, 216, 0.22)";
+    context.beginPath();
+    /* An irregular blob: a few overlapping ellipses, the way a brush dabs. */
+    context.ellipse(cx, cy, r, r * 0.7, 0.4, 0, Math.PI * 2);
+    context.fill();
+    context.beginPath();
+    context.ellipse(cx + r * 0.4, cy + r * 0.3, r * 0.7, r * 0.5, -0.3, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  /* Hairline cracks: wandering down from where the building settles. */
+  for (const crack of params.cracks ?? []) {
+    const startX = crack.u * size;
+    const startY = (1 - crack.v) * size;
+    const totalLen = crack.length * size;
+    context.strokeStyle = "rgba(58, 50, 40, 0.28)";
+    context.lineWidth = 0.7;
+    context.beginPath();
+    context.moveTo(startX, startY);
+    let x = startX;
+    let y = startY;
+    const cr = seededRandom(params.seed + Math.floor(startX));
+    const steps = 7;
+    for (let step = 0; step < steps; step++) {
+      x += (cr() - 0.5) * 9;
+      y += totalLen / steps;
+      context.lineTo(x, y);
+    }
+    context.stroke();
   }
 
   /* Stains: the dust a vent breathes onto its wall. */

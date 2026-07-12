@@ -379,6 +379,33 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     implies: "the floor beyond the frame, where things keep rolling",
   },
   {
+    name: "WallAccidents",
+    zone: "edgeOfFrame",
+    story:
+      "a touch-up from a different can in a different decade, a lone nail " +
+      "hole, a lone screw hole, a hairline crack wandering down from the " +
+      "ceiling line, and a hip-height polish where someone has brushed " +
+      "past the bench's end for years — different causes, different " +
+      "people, nothing connected",
+    identity: "the wall is a record, not a composition",
+    unresolved: "permanent residents: accidents don't get resolved, they " +
+      "get painted over eventually",
+    arrived: "across twenty years, one accident at a time",
+    implies: "every tenant, repair, and shortcut this room has survived",
+  },
+  {
+    name: "FloorRoutes",
+    zone: "peripheralRoom",
+    story:
+      "a faint grime-polish along the walk from the doorway to the bench, " +
+      "and a worn patch where the body always stands — the same route, " +
+      "years of it",
+    identity: "the person's movement is a habit the floor remembers",
+    unresolved: "still being walked, daily",
+    arrived: "gradually; nobody decided it",
+    implies: "the doorway behind the camera, and every trip through it",
+  },
+  {
     name: "AbandonedHook",
     zone: "edgeOfFrame",
     story:
