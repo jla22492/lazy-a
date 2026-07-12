@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0074 — The Patience Reward (Sprint 04, order 4 of 15)
+WORK ORDER 0075 — Attention (Sprint 04, order 5 of 15; includes R-0072, Jonathan's approach direction)
 
 ---
 
@@ -135,6 +135,7 @@ WORK ORDER 0074 — The Patience Reward (Sprint 04, order 4 of 15)
 - The arrival (docs/progress/0072.mp4): the constitution's opening beat — the viewpoint begins a half-step shy of the composition (slightly back, a breath higher, gaze a touch wide) and settles once over 1.4 seconds with the gaze landing a beat after the body, the way eyes settle after feet stop; verified live (camera sampled settling 4.28 → 4.00 over the settle window) and deterministic for captures (?shot skips it; ?record with ?arrive films it, the settle now waiting for the recorder's true start); at its review the Creative Director named a new lock — the room should reward patience, never require it — and declared the transition: stop improving the room, start building the website that lives inside it
 - Recognition (docs/progress/0073-full.png): the project's first and only pixel of website chrome, ruled and specified by the Creative Director — a quiet HTML wordmark, LAZY A, top-left, very small, wide-tracked, low contrast (not low opacity), no animation, no entrance, no logo mark; orientation, not UI: it answers "am I on the right website?" without asking for attention, and then everything else happens in the room; the browser title already read Lazy A
 - The patience reward (docs/progress/0074.mp4): dust in the light — a few dozen motes drifting down the window's shaft of daylight, living in the true light volume (the prism from the window opening along the sun's real direction to the floor patch), at dust speeds, each with its own slow wander, deterministic for captures; two seconds of visiting never shows them, thirty seconds does, and they demand nothing — the room's first fulfillment of "reward patience, never require it"
+- The arrival became an APPROACH (R-0072, Jonathan's direction; docs/progress/R-0072.mp4): the opening is now the POV of someone walking to the workbench with the heaviness of a body — a ~1.7m walk from the door's side in one ease of mass, a faint step-rhythm bob and lateral sway fading in and out (the 0020 first-step research, reborn), momentum carrying the body a centimeter past the stop with a damped settle (the 0021 research), and the gaze starting on the room and landing on the work a beat after the feet stop; the dust motes were also re-homed a meter into the light shaft so none ever sits in front of the bright pane, and the opening gaze keeps the bounce-lit ceiling to a thin honest edge
 
 ---
 

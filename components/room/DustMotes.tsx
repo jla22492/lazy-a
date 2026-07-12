@@ -42,16 +42,19 @@ export function DustMotes() {
     const sun = new Vector3(...DAYLIGHT.sun.position).normalize().negate();
     const { window: win, rightWall } = ROOM;
     /* Spawn across the window opening; travel along the sun into the room. */
+    /* Dust is only visible against darker air — motes begin a meter into
+       the shaft so none ever sits in front of the bright pane (R-0072). */
     const spawn = () => {
       const z = win.spanZ[0] + random() * (win.spanZ[1] - win.spanZ[0]);
       const y = win.sill + random() * (win.head - win.sill);
-      return new Vector3(rightWall.x, y, z);
+      const origin = new Vector3(rightWall.x, y, z);
+      return origin.addScaledVector(sun, 1.0 + random() * 0.4);
     };
     const positions = new Float32Array(MOTE_COUNT * 3);
     const motes = Array.from({ length: MOTE_COUNT }, (_, index) => {
       const origin = spawn();
       /* Scatter each mote partway down the shaft so the air starts lived-in. */
-      const along = random() * 2.2;
+      const along = random() * 1.4;
       const p = origin.clone().addScaledVector(sun, along);
       positions.set([p.x, p.y, p.z], index * 3);
       return {
@@ -102,11 +105,11 @@ export function DustMotes() {
   return (
     <points ref={pointsRef} geometry={system.geometry} position={fromWorkbench([0, 0, 0])}>
       <pointsMaterial
-        size={2.2}
+        size={1.8}
         sizeAttenuation={false}
         color="#fff4e0"
         transparent
-        opacity={0.3}
+        opacity={0.18}
         blending={AdditiveBlending}
         depthWrite={false}
       />
