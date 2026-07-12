@@ -58,7 +58,9 @@ const DESTINATIONS: readonly Destination[] = [
     center: [-1.43, 0.98, -0.28],
     radius: 0.17,
     anchor: [-1.43, 1.13, -0.26],
-    caption: [-0.98, 1.06, -0.26],
+    /* Clear wall left of the pile — the first anchor collided with the
+       lamp from the leaned viewpoint (0078). */
+    caption: [-1.82, 1.08, -0.26],
     intimacy: 0.16,
   },
   {
