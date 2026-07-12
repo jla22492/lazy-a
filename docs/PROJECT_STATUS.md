@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0071 — Recompose the Room (Sprint 04, order 1 of 15 — AT CHECKPOINT, awaiting Creative Direction approval)
+WORK ORDER 0072 — The Arrival (Sprint 04, order 2 of 15)
 
 ---
 
@@ -135,7 +135,7 @@ WORK ORDER 0071 — Recompose the Room (Sprint 04, order 1 of 15 — AT CHECKPOI
 
 ## In Progress
 
-Creative Sprint 04 — The Website Arrives (work orders 0071–0085). 0071 is at its mandatory checkpoint: composition posted for Creative Direction approval; homepage work does not begin until approved.
+Creative Sprint 04 — The Website Arrives (work orders 0071–0085). The 0071 recomposition is APPROVED; homepage experience work is unlocked — every remaining order must produce a visitor-visible improvement within the first ten seconds.
 
 ---
 
@@ -166,7 +166,7 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The world origin (0,0,0) is the exact center of the workbench — permanent.
 🔒 The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 🔒 The camera's gaze rests on the work surface, not the horizon.
-🔒 The opening view is a person who walked in and naturally stopped: normal lens (fov 35), eye height, slightly left of the bench axis, gaze settled just above the work — and neither wall corner in frame: the browser is a crop from a larger room, never a stage. (0071 — recomposed under Jonathan's revision order, superseding R-0007; pending Creative Direction approval at the 0071 checkpoint.)
+🔒 The opening view is a person who walked in and naturally stopped: normal lens (fov 35), eye height, slightly left of the bench axis, gaze settled just above the work — and neither wall corner in frame: the browser is a crop from a larger room, never a stage. (0071 — recomposed under Jonathan's revision order, superseding R-0007; APPROVED by Creative Direction at the checkpoint.)
 🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
 🔒 The room is a complete permanent shell: rear wall, left wall with the entrance doorway behind the camera, right wall with a frosted window (the implied light source, never a view), ceiling, baseboards. Identity enters in layers: architecture → permanent identity → active workspace → impossible moments.
 🔒 The room's history is told by light before it is told by objects.
@@ -215,3 +215,5 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 Habits reveal identity better than possessions. Anyone can own a camera; only one person consistently leaves their pencil exactly where it naturally rolls. (Named at Sprint 03's first internal review, with two calibrations: the most believable objects are almost invisible, and every addition must make the room more singular, not more detailed. The sprint's question: if I arrived thirty seconds earlier, what would I have interrupted?)
 🔒 A room is remembered by its interruptions, not its possessions. The mug isn't interesting; the mug four centimeters from where it usually sits is. (Named at Sprint 03's second internal review, with the companion question: what will happen here thirty seconds after I leave?)
 🔒 Editing is the room's highest craft. Everything that has succeeded across three sprints succeeded by subtraction — this is Lazy A's design language, discovered, not decided. (Named at Sprint 03's second internal review.)
+🔒 Density is no longer the goal. Presence is. The Museum Phase: every object stops asking "am I in the right place?" and starts asking "am I worthy of being looked at?" (Named at the 0071 checkpoint, with the role shift: cinematographer, not production designer — light, framing, hierarchy, restraint, atmosphere, negative space, visual rhythm; optimize for emotional presence, never environmental completeness.)
+🔒 Every sprint from now on should make fewer decisions, but better ones. (Named at the 0071 checkpoint.)
