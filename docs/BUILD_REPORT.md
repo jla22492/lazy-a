@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0064 — Five Minutes Ago (Creative Sprint 03, order 9 of 15)
+WORK ORDER 0065 — Cohesion Pass (Creative Sprint 03, order 10 of 15)
 
 ## Version
 
@@ -10,17 +10,17 @@ v0.1
 
 ## Summary
 
-- "If I arrived thirty seconds earlier, what would I have interrupted?" now has an answer in objects (docs/progress/0064.png):
-- The considered print: the third test print came down from the wall minutes ago and lies flat, half onto today's working papers. The wall keeps its empty spot; the bench holds the act itself — comparing a print against the notes, mid-decision. It goes back up, or it doesn't. This is the room's freshest and most legible interruption, and it connects two zones with one gesture.
-- The mug off its ring: set down four centimeters from its usual spot, the morning's ring showing beside it. The last sip happened minutes ago; the wood remembers where the mug spent the morning.
-- The tape tab: the torn end still stands off the roll — nobody smooths the tab down until the next use, and the next use hasn't come.
-- Three traces, all patterns (never character), stacked on the room's existing layers of time: years in the wall, months in the tallies, hours in the cold coffee, and now minutes.
-- Verification: type-check and production build pass; 0064.png reviewed at full frame and in bench crop.
+- Act II closes (docs/progress/0065.png):
+- The vent stopped being placed and got found: moved to an awkward nine centimeters off the right corner, its dust stain following. Ducts go where ducts go; nobody composed this. My own review #1 self-critique, resolved.
+- The pinned cluster shed its last manners: the landscape photo and the torn strip now disagree a few degrees harder — the final degrees between "arranged casually" and "accumulated."
+- A full-frame relationship audit confirmed the room's layers of time now run continuously: decades (the wall's accidents, the hook, the outlets), years (the bench's wear, the notebook pile, the floor's routes), months (the tallies, the slipped photo), hours (the cold coffee), and minutes (the considered print, the off-ring mug, the standing tab). No gaps, no contradictions found.
+- Verification: type-check and production build pass; 0065.png reviewed at full frame.
+- Internal review #2 posted with the four honest answers.
 
 ## Decisions Required
 
-None.
+None (review #2's questions answered in the thread).
 
 ## Ready for
 
-WORK ORDER 0065 — Cohesion pass, then internal review #2.
+Internal review #2, then WORK ORDER 0066 — its corrections.
