@@ -999,7 +999,9 @@ function heightToNormalTexture(
 /** Wood relief: grain ridges along Y, plank seams, shallow gouges. */
 export function woodNormal(seed: number, strength = 2.2): CanvasTexture {
   return cached(`woodNormal:${seed}:${strength}`, () => {
-    const size = 512;
+    /* 256: the Sobel pass is the load path's biggest cost, and the
+       grain reads identically from the seat (0099 clock guard). */
+    const size = 256;
     const context = makeCanvas(size, size);
     const random = seededRandom(seed);
     context.fillStyle = "rgb(128,128,128)";
@@ -1037,7 +1039,7 @@ export function woodNormal(seed: number, strength = 2.2): CanvasTexture {
 /** Plaster relief: broad undulation and the faintest trowel arcs. */
 export function plasterNormal(seed: number, strength = 1.1): CanvasTexture {
   return cached(`plasterNormal:${seed}:${strength}`, () => {
-    const size = 512;
+    const size = 256;
     const context = makeCanvas(size, size);
     const random = seededRandom(seed);
     context.fillStyle = "rgb(128,128,128)";
