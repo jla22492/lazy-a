@@ -807,6 +807,14 @@ export function frostedPaneTexture(
   const baseColor = rgb(base);
   context.fillStyle = style(baseColor, 1);
   context.fillRect(0, 0, size, size);
+  /* The sky is brighter than the ground, even through frost (0063). */
+  const sky = context.createLinearGradient(0, 0, 0, size);
+  sky.addColorStop(0, "rgba(255, 253, 246, 0.09)");
+  sky.addColorStop(0.5, "rgba(255, 253, 246, 0)");
+  sky.addColorStop(1, "rgba(120, 110, 94, 0.05)");
+  context.fillStyle = sky;
+  context.fillRect(0, 0, size, size);
+  /* The vertical presence outside. */
   const cx = bandCenter * size;
   const half = (bandWidth / 2) * size;
   const g = context.createLinearGradient(cx - half * 2, 0, cx + half * 2, 0);
@@ -815,7 +823,52 @@ export function frostedPaneTexture(
   g.addColorStop(1, "rgba(90, 84, 72, 0)");
   context.fillStyle = g;
   context.fillRect(0, 0, size, size);
+  /* A fainter horizontal member meeting it — a railing's corner (0063). */
+  const railY = 0.42 * size;
+  const rail = context.createLinearGradient(0, railY - 10, 0, railY + 10);
+  rail.addColorStop(0, "rgba(90, 84, 72, 0)");
+  rail.addColorStop(0.5, "rgba(90, 84, 72, 0.09)");
+  rail.addColorStop(1, "rgba(90, 84, 72, 0)");
+  context.fillStyle = rail;
+  context.fillRect(0, railY - 10, cx + half * 2, 20);
+  /* Two old rain streaks in the frost. */
+  for (const streakU of [0.045, 0.11]) {
+    const x = streakU * size;
+    const streak = context.createLinearGradient(x - 3, 0, x + 3, 0);
+    streak.addColorStop(0, "rgba(255, 253, 246, 0)");
+    streak.addColorStop(0.5, "rgba(255, 253, 246, 0.1)");
+    streak.addColorStop(1, "rgba(255, 253, 246, 0)");
+    context.fillStyle = streak;
+    context.fillRect(x - 3, size * 0.15, 6, size * 0.8);
+  }
   return toTexture(context);
+}
+
+/**
+ * The window patch with the outside presence crossing it (0063): the
+ * same vertical something that darkens the pane interrupts the light it
+ * lets in — one story, two surfaces.
+ */
+export function windowPatchTexture(
+  feather: number,
+  bandV: number,
+): CanvasTexture {
+  const base = featheredQuadTexture(feather);
+  const canvas = base.image as HTMLCanvasElement;
+  const context = canvas.getContext("2d");
+  if (!context) return base;
+  const size = canvas.width;
+  const by = bandV * size;
+  const g = context.createLinearGradient(0, by - 14, 0, by + 14);
+  g.addColorStop(0, "rgba(0, 0, 0, 0)");
+  g.addColorStop(0.5, "rgba(0, 0, 0, 0.5)");
+  g.addColorStop(1, "rgba(0, 0, 0, 0)");
+  context.globalCompositeOperation = "destination-out";
+  context.fillStyle = g;
+  context.fillRect(0, by - 14, size, 28);
+  context.globalCompositeOperation = "source-over";
+  base.needsUpdate = true;
+  return base;
 }
 
 export function plaster(params: PlasterParams): CanvasTexture {

@@ -12,6 +12,7 @@ import {
 import {
   cornerFalloffTexture,
   featheredQuadTexture,
+  windowPatchTexture,
 } from "@/three/materials/procedural";
 import { DAYLIGHT, ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
@@ -52,7 +53,9 @@ function WindowPatch() {
   return (
     <mesh geometry={geometry}>
       <meshBasicMaterial
-        map={featheredQuadTexture(0.35)}
+        /* The vertical presence outside the pane interrupts its own
+           light (0063) — one story, two surfaces. */
+        map={windowPatchTexture(0.35, 0.12)}
         color="#fff3df"
         transparent
         opacity={0.085}
