@@ -26,7 +26,14 @@ export const HERO_PRINT = {
   width: 0.5,
   height: 0.7,
   thickness: 0.002,
-  center: { x: 0.55, y: 1.52 },
+  /**
+   * RE-HUNG for the seated eye (R-0088/R-0089, Jonathan's rulings: the
+   * hero shot lives here and plays once the visitor settles, so the
+   * seated frame must hold it whole). The old height (y 1.52) suited a
+   * standing viewer; the maker took it down and re-hung it a step
+   * lower, above the pencil jar, where it can be judged from the chair.
+   */
+  center: { x: 0.55, y: 1.3 },
   /** Hung by hand: a hair off level. */
   roll: 0.012,
   color: "#9c9284",
@@ -61,8 +68,12 @@ export const PINNED_CLUSTER = {
     /* 5x7" photo, portrait, overlapping the landscape's corner because
        nobody wanted to move the older pin. */
     { w: 0.127, h: 0.178, x: -0.97, y: 1.61, roll: -0.06, kind: "photo" },
-    /* A5 note, curling off the wall at its bottom edge. */
-    { w: 0.148, h: 0.21, x: -0.68, y: 1.68, roll: 0.16, kind: "paper", curl: 0.14 },
+    /* A5 note, curling off the wall at its bottom edge — since R-0087
+       it carries the studio's letterpress logo (Jonathan's ruling: the
+       logo is part of the room, on the note above the lamp, never a
+       website overlay), re-pinned a hand lower so the seated frame
+       reads it. */
+    { w: 0.148, h: 0.21, x: -0.68, y: 1.56, roll: 0.16, kind: "paper", curl: 0.14, logo: true },
     /* A torn strip of paper — a phrase someone keeps. */
     { w: 0.19, h: 0.05, x: -0.715, y: 1.465, roll: -0.09, kind: "paper" },
     /* The slipped one: its second pin gave months ago. Nobody minds. */

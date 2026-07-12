@@ -16,16 +16,16 @@
  */
 export const CHAIR = {
   /**
-   * RECOMPOSED (0071): absence, never hospitality. The chair stands where
-   * a rising body leaves it — pushed back from the working position,
-   * still facing the bench, barely askew, its back three-quarters to the
-   * visitor. Nothing about it invites; everything about it says someone
-   * was here seconds ago. The frame's bottom edge cuts its rear legs:
-   * the crop of a larger room. The cloth keeps its home on the back.
+   * RE-STAGED (R-0089, Jonathan's ruling): angled toward the desk but
+   * moved to the side — exactly how a chair stands when someone pushed
+   * back, swiveled a little, and got up mid-work. It reads clearly in
+   * the arrival's wide opening; from the seated rest it sits behind the
+   * visitor's shoulder, out of frame — the visitor's own seat stays
+   * implied, never depicted. The cloth keeps its home on the back.
    */
-  at: { x: 0.42, z: 0.95 },
-  /** Facing the bench as its sitter left it, a few degrees askew. */
-  yaw: 0.18,
+  at: { x: 0.95, z: 0.78 },
+  /** Angled toward the desk, turned the way a rising body leaves it. */
+  yaw: 0.55,
   seat: { width: 0.45, depth: 0.42, height: 0.45, thickness: 0.04 },
   /** A worn leather pad on a wooden chair — color split arrives later. */
   pad: { thickness: 0.018, inset: 0.03 },

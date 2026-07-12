@@ -1,5 +1,13 @@
 "use client";
 
+import { Suspense, useRef } from "react";
+
+import { useTexture, useVideoTexture } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { SRGBColorSpace } from "three";
+
+import logoNote from "@/public/brand/logo-note.png";
+import { assetPath } from "@/lib/assetPath";
 import { paper, wood } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import {
@@ -14,7 +22,53 @@ import { fromWorkbench } from "@/three/scene/world";
 /** The rear wall's plaster plane. */
 const WALL_Z = ROOM.rearWall.z;
 
-/** The hero print — large, unframed, off-center, content not yet authored. */
+/**
+ * The hero shot (R-0088, Jonathan's ruling — supersedes "the hero print
+ * stays blank"): the studio's defining image lives on the big print,
+ * and it MOVES. The film waits through the walk — a printed poster like
+ * any other — and begins playing a beat after the perspective settles
+ * into the chair: the ~5-second moment, unprompted, in plain sight.
+ * PLACEHOLDER footage until the moment is authored.
+ */
+const HERO_FILM = {
+  src: "/videos/hero-print-placeholder.mp4",
+  /** The stock keeps a print's margin around the image. */
+  border: 0.008,
+  /** A breath between the settle and the first movement. */
+  settleBeatSeconds: 0.6,
+  roughness: 0.55,
+} as const;
+
+function HeroFilm() {
+  const { width, height, thickness } = HERO_PRINT;
+  const texture = useVideoTexture(assetPath(HERO_FILM.src), {
+    muted: true,
+    loop: true,
+    start: false,
+  });
+  const beat = useRef(0);
+  const playing = useRef(false);
+  useFrame((_, delta) => {
+    if (playing.current) return;
+    const arrived = (window as Window & { __arrivalDone?: boolean })
+      .__arrivalDone;
+    if (!arrived) return;
+    beat.current += delta;
+    if (beat.current < HERO_FILM.settleBeatSeconds) return;
+    playing.current = true;
+    void texture.image.play();
+  });
+  return (
+    <mesh position={[0, 0, thickness * 1.1 + 0.0004]}>
+      <planeGeometry
+        args={[width - HERO_FILM.border * 2, height - HERO_FILM.border * 2]}
+      />
+      <meshStandardMaterial map={texture} roughness={HERO_FILM.roughness} />
+    </mesh>
+  );
+}
+
+/** The hero print — large, unframed, its image now a film (R-0088). */
 function HeroPrint() {
   const { width, height, thickness, center, roll, color } = HERO_PRINT;
   return (
@@ -25,12 +79,39 @@ function HeroPrint() {
       receiveShadow
     >
       {/* Heavier stock than everything around it (0066) — the thickness
-          reads at the edge; the blankness stays untouched. */}
+          reads at the edge. */}
       <boxGeometry args={[width, height, thickness * 2.2]} />
       <meshStandardMaterial
         map={paper({ seed: 411, base: color, fiber: 0.3, handled: 0.15 })}
         roughness={0.68}
       />
+      {/* Until the film is ready, the print is simply its stock. */}
+      <Suspense fallback={null}>
+        <HeroFilm />
+      </Suspense>
+    </mesh>
+  );
+}
+
+/** The logo note's face: the letterpress artwork on its own paper. */
+function LogoNoteFace({
+  w,
+  h,
+  thickness,
+  yOffset,
+}: {
+  w: number;
+  h: number;
+  thickness: number;
+  yOffset: number;
+}) {
+  const texture = useTexture(logoNote.src, (loaded) => {
+    loaded.colorSpace = SRGBColorSpace;
+  });
+  return (
+    <mesh position={[0, yOffset, 0]} castShadow receiveShadow>
+      <boxGeometry args={[w, h, thickness]} />
+      <meshStandardMaterial map={texture} roughness={0.85} />
     </mesh>
   );
 }
@@ -52,41 +133,67 @@ function PinnedCluster() {
               item.y + (curl ? item.h / 2 : 0),
               WALL_Z + WALL_GAP + thickness * (index + 1),
             ]}
-            rotation={[curl ?? 0, 0, item.roll]}
+            /* Negative pitch: the bottom edge lifts OFF the wall. (The
+               positive sign had quietly tilted the curling note INTO the
+               plaster since 0054 — two-thirds buried; the logo moving
+               onto this note exposed it.) */
+            rotation={[-(curl ?? 0), 0, item.roll]}
           >
-            <mesh
-              position={[0, curl ? -item.h / 2 : 0, 0]}
-              castShadow
-              receiveShadow
-            >
-              <boxGeometry args={[item.w, item.h, thickness]} />
-              {/* Physical history varies per item (0066): the oldest photo
-                  is sun-faded, its neighbor's corner never flattened, the
-                  slipped one is glossier stock — never the same blank
-                  twice. */}
-              <meshStandardMaterial
-                map={paper(
-                  item.kind === "photo"
-                    ? {
-                        seed: 421 + index,
-                        base: photoColor,
-                        fiber: 0.12,
-                        handled: 0.3,
-                        faded: index === 0 ? 0.8 : 0,
-                        bentCorner: index === 1,
-                      }
-                    : {
-                        seed: 431 + index,
-                        base: index === 3 ? "#cbbd9d" : paperColor,
-                        fiber: index === 3 ? 0.7 : 0.45,
-                        handled: 0.35,
-                      },
-                )}
-                roughness={
-                  item.kind === "photo" ? (index === 4 ? 0.38 : 0.55) : 0.85
+            {"logo" in item && item.logo ? (
+              /* The studio's letterpress note (R-0087): the logo is part
+                 of the room — printed on this note's own paper, pinned
+                 above the lamp, curling like everything pinned by hand.
+                 Until the texture loads it is simply paper. */
+              <Suspense
+                fallback={
+                  <mesh position={[0, curl ? -item.h / 2 : 0, 0]} castShadow>
+                    <boxGeometry args={[item.w, item.h, thickness]} />
+                    <meshStandardMaterial color={paperColor} roughness={0.85} />
+                  </mesh>
                 }
-              />
-            </mesh>
+              >
+                <LogoNoteFace
+                  w={item.w}
+                  h={item.h}
+                  thickness={thickness}
+                  yOffset={curl ? -item.h / 2 : 0}
+                />
+              </Suspense>
+            ) : (
+              <mesh
+                position={[0, curl ? -item.h / 2 : 0, 0]}
+                castShadow
+                receiveShadow
+              >
+                <boxGeometry args={[item.w, item.h, thickness]} />
+                {/* Physical history varies per item (0066): the oldest photo
+                    is sun-faded, its neighbor's corner never flattened, the
+                    slipped one is glossier stock — never the same blank
+                    twice. */}
+                <meshStandardMaterial
+                  map={paper(
+                    item.kind === "photo"
+                      ? {
+                          seed: 421 + index,
+                          base: photoColor,
+                          fiber: 0.12,
+                          handled: 0.3,
+                          faded: index === 0 ? 0.8 : 0,
+                          bentCorner: index === 1,
+                        }
+                      : {
+                          seed: 431 + index,
+                          base: index === 3 ? "#cbbd9d" : paperColor,
+                          fiber: index === 3 ? 0.7 : 0.45,
+                          handled: 0.35,
+                        },
+                  )}
+                  roughness={
+                    item.kind === "photo" ? (index === 4 ? 0.38 : 0.55) : 0.85
+                  }
+                />
+              </mesh>
+            )}
             {"freshTape" in item && item.freshTape && (
               /* The re-taped corner: tape newer than the photo it holds. */
               <mesh

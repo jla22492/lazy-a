@@ -10,20 +10,20 @@ import { useRoomBehavior } from "@/three/hooks/useRoomBehavior";
 import { EYE_HEIGHT, STAGE } from "@/three/scene/constants";
 
 /**
- * The arrival, SEATED (WORK ORDER 0089, executing the SPRINT_05
- * amendments: the perspective sits, and timing outranks ceremony) — the
- * opening is the POV of someone walking to the workbench and sitting
- * down into the maker's working position:
+ * The arrival, SEATED (R-0089, Jonathan's amendment to the 0089 first
+ * pass) — the opening begins ON the full composition the room was built
+ * for, then becomes the POV of walking to the desk and sitting down:
  *
- * - The walk (~2s): a compressed approach from behind-left (the door's
- *   side) at standing eye height, one ease of mass, with the faint
- *   step-rhythm bob and sway of the 0020 research.
- * - The sit (~1s, beginning as the last step lands): the body lowers
- *   and draws in to the bench in one motion — down to seated work
- *   height, forward to the working position.
- * - The settle: the seat takes the weight — a small damped vertical
- *   compression at body rates (the 0021 research, turned vertical) —
- *   and the gaze lands on the work a beat after the body is down.
+ * - The opening beat (~0.4s): the R-0071 standing composition, whole —
+ *   the room as it has always introduced itself.
+ * - The walk (~2.1s): the approach from that stance to the chair's
+ *   place at the bench, standing height, the 0020 bob and sway.
+ * - The sit (~1s, beginning as the last step lands): down to seated
+ *   work height, in one motion.
+ * - The settle: the seat takes the weight (a damped compression), and
+ *   the gaze — which has been level on the room the whole way — comes
+ *   to rest on the wall-and-desk regard. No downward stare: looking
+ *   down is what choosing JOURNAL or CONTACT does, later.
  *
  * The whole figure completes inside Jonathan's 4-second criterion,
  * measured from recordings, not estimated. It happens once; then the
@@ -31,18 +31,20 @@ import { EYE_HEIGHT, STAGE } from "@/three/scene/constants";
  * Capture runs (?shot / ?record) skip it; ?record with ?arrive films
  * it, the walk waiting for the recorder's true start.
  */
-const WALK_SECONDS = 2.0;
+const OPENING_BEAT_SECONDS = 0.4;
+const WALK_SECONDS = 2.1;
 /** The sit begins as the last step lands, overlapping the walk's end. */
-const SIT_START_SECONDS = 1.8;
+const SIT_START_SECONDS = OPENING_BEAT_SECONDS + WALK_SECONDS - 0.2;
 const SIT_SECONDS = 1.0;
 /** The seat takes the weight: compression decaying at body rates. */
-const SETTLE_SECONDS = 0.9;
-const GAZE_LAG_SECONDS = 0.35;
+const SETTLE_SECONDS = 0.6;
+const GAZE_LAG_SECONDS = 0.3;
 
-/** Where the body stops to sit: a step back from the working position. */
-const PRE_SEAT_PULL_BACK = 0.32;
-/** The approach: from behind-left, the door's side of the room. */
-const WALK_OFFSET = new Vector3(-0.35, 0, 1.45);
+/** Where the body stops to sit: a step back from the seat itself. */
+const PRE_SEAT_PULL_BACK = 0.3;
+/** The opening stance: the locked standing composition (R-0071). */
+const OPENING_POSITION = new Vector3(-0.45, EYE_HEIGHT, 4.0);
+const OPENING_GAZE = new Vector3(0.05, 0.92, 0);
 /** Step rhythm — a casual indoor pace. */
 const BOB_HZ = 1.75;
 const BOB_AMPLITUDE = 0.011;
@@ -50,9 +52,6 @@ const SWAY_AMPLITUDE = 0.0055;
 /** Seat compression: the body sinks a hair past rest and recovers. */
 const COMPRESSION = 0.009;
 const COMPRESSION_HZ = 1.6;
-/** The gaze starts on the room — lifted toward the wall's propped
-    prints, never high enough to pull the ceiling into frame. */
-const GAZE_START_OFFSET = new Vector3(-0.18, 0.35, 0.3);
 
 function easeInOutCubic(t: number): number {
   const clamped = Math.min(Math.max(t, 0), 1);
@@ -107,8 +106,9 @@ export function Arrival() {
       EYE_HEIGHT,
       seated.z + PRE_SEAT_PULL_BACK,
     );
-    const start = preSeat.clone().add(WALK_OFFSET);
-    const startGaze = endGaze.clone().add(GAZE_START_OFFSET);
+    /* The walk begins on the full composition the room was built for. */
+    const start = OPENING_POSITION.clone();
+    const startGaze = OPENING_GAZE.clone();
     const forward = preSeat.clone().sub(start).setY(0).normalize();
     const lateral = new Vector3(-forward.z, 0, forward.x);
     return { start, preSeat, seated, startGaze, endGaze, lateral };
@@ -143,8 +143,15 @@ export function Arrival() {
           return;
         }
 
+        /* The opening beat: the full composition, held. */
+        if (t < OPENING_BEAT_SECONDS) {
+          camera.position.copy(poses.start);
+          camera.lookAt(poses.startGaze);
+          return;
+        }
+
         /* The walk: one ease of mass to the pre-seat mark. */
-        const walkT = Math.min(t / WALK_SECONDS, 1);
+        const walkT = Math.min((t - OPENING_BEAT_SECONDS) / WALK_SECONDS, 1);
         camera.position.lerpVectors(
           poses.start,
           poses.preSeat,

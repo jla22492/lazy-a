@@ -20,13 +20,15 @@ import { setQuietLevel } from "@/three/interface/quiet";
  * name the DESTINATION, never the object.
  *
  * CONVERSATION: clicking a destination is not navigation — it is paying
- * closer attention, and the room respectfully gives it space. The body
- * leans in (~18cm, one ease, never a new composition), and an editorial
- * caption — almost typeset, never UI — quietly materializes beside the
- * object. The room remains fully visible and unchanged: the host. Escape
- * or a click on empty space eases the body back. Content is placeholder
- * layout awaiting authorship: the destination's name and quiet unwritten
- * lines. Navigation changes attention before it changes location.
+ * closer attention. Since R-0090 (Jonathan's ruling) the body never
+ * travels: the visitor stays in the chair and only the HEAD turns
+ * toward the chosen object, one ease, exactly like glancing between
+ * the wall and the notebook at your own desk. An editorial caption —
+ * almost typeset, never UI — quietly materializes beside the object
+ * (or, for JOURNAL, the words rise on the page itself). Escape or a
+ * click on empty space turns the head back. Content is placeholder
+ * layout awaiting authorship. Navigation changes attention before it
+ * changes location.
  */
 
 interface Destination {
@@ -42,9 +44,7 @@ interface Destination {
   /** Where the caption typesets itself during conversation.
       JOURNAL has none: its content illuminates ON the notebook. */
   caption?: [number, number, number];
-  /** How far the body leans for this conversation, meters. */
-  intimacy: number;
-  /** How far the gaze turns toward the object (0..1) — a person
+  /** How far the head turns toward the object (0..1) — a person
       shifting attention at their own desk. Reading the notebook needs
       a real look down; the wall needs barely a glance. */
   gazePull: number;
@@ -75,11 +75,9 @@ const DESTINATIONS: readonly Destination[] = [
     center: [-0.02, 0.99, -0.37],
     radius: 0.2,
     anchor: [-0.02, 1.12, -0.42],
-    /* Clear wall between the prints and the pencil jar — placed by
-       measured projection from the leaned viewpoint (0078 discipline,
-       made quantitative: scripts/probe-projection.mjs). */
-    caption: [0.3, 1.1, -0.44],
-    intimacy: 0.18,
+    /* Clear wall above-left of the prints — re-measured after the hero
+       re-hang claimed the old spot (scripts/probe-projection.mjs). */
+    caption: [-0.25, 1.28, -0.44],
     gazePull: 0.3,
     gallery: true,
     lineWidths: [118, 88],
@@ -94,7 +92,6 @@ const DESTINATIONS: readonly Destination[] = [
     radius: 0.1,
     anchor: [0.35, 0.97, 0.0],
     /* No caption: the journal's words illuminate ON the page. */
-    intimacy: 0.14,
     /* Reading is a real look down — the page must fill the regard. */
     gazePull: 0.85,
     lineWidths: [],
@@ -108,10 +105,9 @@ const DESTINATIONS: readonly Destination[] = [
     center: [0.63, 0.9, -0.35],
     radius: 0.16,
     anchor: [0.63, 0.98, -0.38],
-    /* Clear wall right of the pencil jar, measured from the leaned
-       viewpoint (scripts/probe-projection.mjs). */
-    caption: [0.7, 1.06, -0.44],
-    intimacy: 0.15,
+    /* Clear wall right of the hero print, under the sticky notes —
+       re-measured after the re-hang (scripts/probe-projection.mjs). */
+    caption: [0.95, 0.98, -0.44],
     gazePull: 0.45,
     /* Contact will be the briefest destination. */
     lineWidths: [64, 88],
@@ -282,19 +278,34 @@ export function AttentionNavigation() {
     };
   }, []);
 
+  /* Attention needs a real pointer: before the first pointer movement
+     the framework reports the pointer at the frame's center, which now
+     rests on the propped prints — a label must never appear for a
+     visitor who hasn't moved their mouse. */
+  const pointerAlive = useRef(false);
+  useEffect(() => {
+    const wake = () => {
+      pointerAlive.current = true;
+    };
+    window.addEventListener("pointermove", wake, { once: true });
+    return () => window.removeEventListener("pointermove", wake);
+  }, []);
+
   useFrame((state, delta) => {
     const { raycaster, pointer, camera } = state;
-    raycaster.setFromCamera(pointer, camera);
-    const ray = raycaster.ray;
     let candidate: string | null = null;
-    let best = Infinity;
-    for (const destination of centers) {
-      const distance = ray.distanceToPoint(destination.centerV);
-      if (distance < destination.radius) {
-        const depth = destination.centerV.distanceTo(camera.position);
-        if (depth < best) {
-          best = depth;
-          candidate = destination.id;
+    if (pointerAlive.current) {
+      raycaster.setFromCamera(pointer, camera);
+      const ray = raycaster.ray;
+      let best = Infinity;
+      for (const destination of centers) {
+        const distance = ray.distanceToPoint(destination.centerV);
+        if (distance < destination.radius) {
+          const depth = destination.centerV.distanceTo(camera.position);
+          if (depth < best) {
+            best = depth;
+            candidate = destination.id;
+          }
         }
       }
     }
@@ -343,26 +354,24 @@ export function AttentionNavigation() {
     }
     const pose = basePose.current;
     const eased = easeInOutCubic(leanT.current);
-    /* Consequence (0081): the room quiets exactly as far as the body
-       leans — one gesture, two effects. */
+    /* Consequence (0081): the room quiets exactly as far as the head
+       turns — one gesture, two effects. */
     setQuietLevel(eased);
-    /* Lean target persists through the ease-back even after target clears. */
+    /* Turn target persists through the ease-back even after it clears. */
     if (target) lastTarget.current = target;
-    const leanTo = lastTarget.current;
+    const turnTo = lastTarget.current;
     /* The journal's words rise on the page with the same motion (0090):
        one gesture, every effect. */
-    setJournalLevel(leanTo?.id === "journal" ? eased : 0);
-    if (!leanTo) return;
-    const toward = leanTo.centerV
-      .clone()
-      .sub(pose.position)
-      .setY(0)
-      .normalize()
-      .multiplyScalar(leanTo.intimacy);
-    camera.position.copy(pose.position).addScaledVector(toward, eased);
+    setJournalLevel(turnTo?.id === "journal" ? eased : 0);
+    if (!turnTo) return;
+    /* HEAD ONLY (R-0090, Jonathan's ruling): the body stays in the
+       chair — the camera never travels toward the object. Choosing a
+       destination turns the head, exactly like glancing from the wall
+       down to the notebook at your own desk. */
+    camera.position.copy(pose.position);
     const gazePoint = pose.gaze
       .clone()
-      .lerp(leanTo.centerV, eased * leanTo.gazePull);
+      .lerp(turnTo.centerV, eased * turnTo.gazePull);
     camera.lookAt(gazePoint);
   });
 

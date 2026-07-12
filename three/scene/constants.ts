@@ -170,26 +170,26 @@ export const STAGE = {
     color: "#8f867a",
   },
   /**
-   * The settled composition, SEATED (WORK ORDER 0089, executing the
-   * SPRINT_05 amendment "the perspective sits"; supersedes the 0071
-   * standing recomposition as the resting frame — the standing
-   * composition survives inside the arrival as the walk it settles
-   * from). The visitor arrives INTO the maker's working position at the
-   * bench: eyes over STANDING_POSITIONS.working at seated work height,
-   * the gaze resting on the work surface itself, a hair right of the
-   * body's own axis the way a right-handed worker's attention sits. The
-   * frame holds today's work and the rear band's propped prints; the
-   * room's height lives in the approach, not the rest.
+   * The settled composition, SEATED (R-0089, Jonathan's amendment to
+   * the 0089 first pass): a person sitting at the desk, head level.
+   * The eyes rest a hair below horizontal — what is immediately in a
+   * seated worker's line of sight is the WALL in front of them (the
+   * re-hung hero print, the notes) with the desk held in the frame's
+   * lower third, not a downward stare at the desktop. The downward
+   * look belongs to choosing JOURNAL or CONTACT — a head-turn, later.
+   * The seat sits a step further back than the standing working
+   * position's hip clearance, where a chair actually is.
    */
   camera: {
     /** Normal lens (~50mm equivalent), not wide. */
     fov: 35,
     near: 0.1,
     far: 200,
-    /** Eyes over the bench's working position (0019), seated. */
-    position: fromWorkbench([0.05, SEATED_EYE_HEIGHT, 0.625]),
-    /** The gaze rests on the work surface, biased to the dominant hand. */
-    lookAt: fromWorkbench([0.12, 0.9, -0.2]),
+    /** Seated at the bench, a chair's depth back from its edge. */
+    position: fromWorkbench([0.05, SEATED_EYE_HEIGHT, 1.15]),
+    /** Level regard: the wall and the work share the frame, the studio's
+        note holding the left edge and the hero print the right. */
+    lookAt: fromWorkbench([0.02, 1.15, -0.45]),
   },
 } as const;
 

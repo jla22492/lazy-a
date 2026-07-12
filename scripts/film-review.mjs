@@ -24,9 +24,9 @@ const [width, height] = (
 
 /** Screen positions of the destinations in the settled seated frame. */
 const REST = {
-  journal: [1138, 528],
-  films: [463, 204],
-  contact: [1157, 284],
+  journal: [994, 638],
+  films: [609, 481],
+  contact: [1105, 553],
 };
 /** Empty desk, for ending conversations with a click away. */
 const AWAY = [200, 620];

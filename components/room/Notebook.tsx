@@ -553,13 +553,16 @@ function JournalWords() {
     if (!context) return null;
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = "#efe8d8";
-    context.font = 'italic 28px Georgia, "Iowan Old Style", serif';
+    /* Sized to read from the chair: the head turns down to the page a
+       meter away and never travels closer (R-0090) — so the maker
+       writes large. */
+    context.font = 'italic 42px Georgia, "Iowan Old Style", serif';
     context.textBaseline = "top";
     /* The block sits low on the page, under the pencil's diagonal. */
-    const lineHeight = 44;
-    const top = canvas.height * 0.52;
+    const lineHeight = 56;
+    const top = canvas.height * 0.3;
     JOURNAL_PLACEHOLDER.forEach((line, index) => {
-      context.fillText(line, 40, top + index * lineHeight);
+      context.fillText(line, 32, top + index * lineHeight);
     });
     const created = new CanvasTexture(canvas);
     created.colorSpace = SRGBColorSpace;

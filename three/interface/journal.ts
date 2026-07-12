@@ -33,10 +33,12 @@ export const JOURNAL_GLOW = 0.55;
  * Director. Replace, don't edit.
  */
 export const JOURNAL_PLACEHOLDER = [
-  "Lazy A is a small production company.",
-  "We make films the way this room makes",
-  "anything: slowly, by hand, with more",
-  "taken away than added. The name is",
-  "honest — we would rather do one true",
-  "thing than ten loud ones.",
+  "Lazy A is a small",
+  "production company.",
+  "We make films slowly,",
+  "by hand, with more",
+  "taken away than added.",
+  "The name is honest —",
+  "one true thing beats",
+  "ten loud ones.",
 ] as const;
