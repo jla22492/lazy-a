@@ -36,7 +36,8 @@ const HERO_FILM = {
   border: 0.008,
   /** A breath between the settle and the first movement. */
   settleBeatSeconds: 0.6,
-  roughness: 0.55,
+  /** 0099: printed light — the pane catches the window like gloss stock. */
+  roughness: 0.38,
 } as const;
 
 function HeroFilm() {

@@ -1089,3 +1089,45 @@ export function paperNormal(seed: number, strength = 0.7): CanvasTexture {
     return heightToNormalTexture(context, strength);
   });
 }
+
+
+/**
+ * Micro-imperfection (WORK ORDER 0099): roughness variation for touched
+ * surfaces. Where hands have lived, the finish is smoother — the wear
+ * spots polish; everywhere else, fine noise keeps the sheen from ever
+ * reading uniform. Multiplies the material's roughness (G channel).
+ */
+export function touchedRoughness(
+  seed: number,
+  base: number,
+  spots: ReadonlyArray<{ u: number; v: number; r: number }>,
+): CanvasTexture {
+  return cached(`touchedRoughness:${seed}:${base}`, () => {
+    const size = 256;
+    const context = makeCanvas(size, size);
+    const random = seededRandom(seed);
+    const g = Math.round(base * 255);
+    context.fillStyle = `rgb(${g},${g},${g})`;
+    context.fillRect(0, 0, size, size);
+    for (let i = 0; i < 2600; i++) {
+      const tone = g + (random() - 0.5) * 26;
+      context.fillStyle = `rgb(${tone},${tone},${tone})`;
+      context.fillRect(random() * size, random() * size, 2, 2);
+    }
+    for (const spot of spots) {
+      const grad = context.createRadialGradient(
+        spot.u * size, spot.v * size, 0,
+        spot.u * size, spot.v * size, spot.r * size,
+      );
+      const polished = Math.round(g * 0.78);
+      grad.addColorStop(0, `rgba(${polished},${polished},${polished},0.85)`);
+      grad.addColorStop(1, `rgba(${polished},${polished},${polished},0)`);
+      context.fillStyle = grad;
+      context.fillRect(0, 0, size, size);
+    }
+    const texture = new CanvasTexture(context.canvas);
+    texture.wrapS = RepeatWrapping;
+    texture.wrapT = RepeatWrapping;
+    return texture;
+  });
+}

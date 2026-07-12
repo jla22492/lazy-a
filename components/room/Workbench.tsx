@@ -6,7 +6,7 @@ import { useLoader } from "@react-three/fiber";
 import { SRGBColorSpace, TextureLoader } from "three";
 
 import { assetPath } from "@/lib/assetPath";
-import { talliedWood, wood, woodNormal } from "@/three/materials/procedural";
+import { talliedWood, touchedRoughness, wood, woodNormal } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -104,7 +104,14 @@ export function Workbench() {
           normalMap={woodNormal(benchWood.seed)}
           lightMap={topBounce}
           lightMapIntensity={0.5}
-          roughness={0.72}
+          /* 0099: hands polish where they live — the wear spots carry a
+             slightly closer sheen; roughness never reads uniform. */
+          roughness={1}
+          roughnessMap={touchedRoughness(benchWood.seed, 0.72, [
+            { u: 0.55, v: 0.72, r: 0.2 },
+            { u: 0.82, v: 0.7, r: 0.12 },
+            { u: 0.53, v: 0.97, r: 0.09 },
+          ])}
         />
         <meshStandardMaterial attach="material-3" map={legTexture} roughness={0.8} />
         <meshStandardMaterial
