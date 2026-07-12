@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0079 — Responsive Stance (Sprint 04, order 9 of 15)
+WORK ORDER 0080 — Sprint 04 Mid-Review (Sprint 04, order 10 of 15)
 
 ---
 
