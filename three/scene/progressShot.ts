@@ -109,5 +109,10 @@ function captureClip(
     reader.readAsDataURL(blob);
   };
   recorder.start();
+  /* Motion work that wants to be filmed (e.g. the arrival settle with
+     ?arrive) waits for this flag — the recorder's true start is
+     unpredictable in headless capture (WORK ORDER 0072). */
+  (window as Window & { __recordingStarted?: boolean }).__recordingStarted =
+    true;
   window.setTimeout(() => recorder.stop(), seconds * 1000);
 }

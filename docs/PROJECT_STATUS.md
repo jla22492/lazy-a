@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0072 — The Arrival (Sprint 04, order 2 of 15; follows Jonathan's R-0071 amendment — left side opened, right side restored)
+WORK ORDER 0072 — The Arrival (Sprint 04, order 2 of 15 — complete)
 
 ---
 
@@ -130,6 +130,9 @@ WORK ORDER 0072 — The Arrival (Sprint 04, order 2 of 15; follows Jonathan's R-
 - The third edit (docs/progress/0068.png): every manifest piece audited against "would the room become less true without this?" — one failed: the picture ledge's unframed print, which repeated the leaning board's truth ("work waits its turn") at smaller scale, was removed, and the framed still stands alone on the ledge; everything else holds a truth of its own — the room is lean, and forcing further removals would have been performance, not editing
 - Final light & composition audit (docs/progress/0069.png): quantitative this time — the frame's left/right luminance delta narrowed from -7.1 at the sprint's start to -5.5 (the floor band nearly even at +2.6): the right side measurably weighs what it should; every Sprint 03 caster grounds with a contact shadow; every evidence-of-light plane still lands where its geometry computes; and no tune was warranted — the audit's conclusion is that touching the light now would be decorating, so nothing was touched
 - CREATIVE SPRINT 03 COMPLETE (docs/progress/0070.png + 0070.mp4): the fifteenth work order closed the sprint — final still and an 8-second resting film captured, CHANGELOG updated (the room became a place), and the Sprint 03 Review posted to the Creative Director thread with before/after stills, the film, and an honest artistic assessment of where the room still falls short; implementation stops completely per the termination rule — no Work Order 0071 until Jonathan reviews
+- SPRINT 03 APPROVED; CREATIVE SPRINT 04 AUTHORIZED — The Website Arrives (0071–0085): the room stops being the subject and becomes the interface; every order must produce a visitor-visible homepage improvement within ten seconds
+- The room recomposed (0071 + Jonathan's R-0071 amendment, approved at the mandatory checkpoint): the LEFT wall moved a meter beyond the frame — the plant and bookcase enter cut by the left edge and the room continues out of sight on the side the door is on — while the RIGHT side keeps its original architecture (wall, corner, window sliver) per Jonathan's direction; the camera re-stood as a photographer (a step closer, gaze settled just above the work; the bench finally reads as where the website happens); the chair rebuilt as pure absence (facing the bench as its sitter left it, back three-quarters to the visitor); Museum Phase locks recorded (density is no longer the goal, presence is; fewer decisions, better ones; cinematographer, not production designer)
+- The arrival (docs/progress/0072.mp4): the constitution's opening beat — the viewpoint begins a half-step shy of the composition (slightly back, a breath higher, gaze a touch wide) and settles once over 1.4 seconds with the gaze landing a beat after the body, the way eyes settle after feet stop; verified live (camera sampled settling 4.28 → 4.00 over the settle window) and deterministic for captures (?shot skips it; ?record with ?arrive films it, the settle now waiting for the recorder's true start)
 
 ---
 

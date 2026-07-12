@@ -44,6 +44,22 @@ function shouldSkipSettle(): boolean {
   return params.has("shot") || params.has("record");
 }
 
+/**
+ * Dev-only: with ?record and ?arrive, the settle waits for the recorder
+ * to actually begin (its start is unpredictable in headless capture),
+ * plus a beat of stillness so the film opens at rest.
+ */
+function waitingForRecorder(): boolean {
+  if (typeof window === "undefined") return false;
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has("record") || !params.has("arrive")) return false;
+  return !(window as Window & { __recordingStarted?: boolean })
+    .__recordingStarted;
+}
+
+/** A beat of rest after the recorder starts, before the settle plays. */
+const FILM_LEAD_SECONDS = 1.0;
+
 export function Arrival() {
   const camera = useThree((state) => state.camera);
   const elapsed = useRef(0);
@@ -74,17 +90,27 @@ export function Arrival() {
           camera.lookAt(poses.endGaze);
           return;
         }
+        if (waitingForRecorder()) {
+          elapsed.current = -FILM_LEAD_SECONDS;
+          camera.position.copy(poses.start);
+          camera.lookAt(poses.startGaze);
+          return;
+        }
         elapsed.current += clock.delta;
-        const body = cubicOut(elapsed.current / SETTLE_SECONDS);
-        const gaze = cubicOut(
-          elapsed.current / (SETTLE_SECONDS + GAZE_LAG_SECONDS),
-        );
+        if (elapsed.current < 0) {
+          camera.position.copy(poses.start);
+          camera.lookAt(poses.startGaze);
+          return;
+        }
+        const local = elapsed.current;
+        const body = cubicOut(local / SETTLE_SECONDS);
+        const gaze = cubicOut(local / (SETTLE_SECONDS + GAZE_LAG_SECONDS));
         camera.position.lerpVectors(poses.start, poses.end, body);
         const gazePoint = poses.startGaze
           .clone()
           .lerp(poses.endGaze, gaze);
         camera.lookAt(gazePoint);
-        if (elapsed.current >= SETTLE_SECONDS + GAZE_LAG_SECONDS) {
+        if (local >= SETTLE_SECONDS + GAZE_LAG_SECONDS) {
           done.current = true;
           camera.position.copy(poses.end);
           camera.lookAt(poses.endGaze);

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Canvas, type RootState } from "@react-three/fiber";
 import { AgXToneMapping } from "three";
 
+import { Arrival } from "@/components/camera/Arrival";
 import { AttentionSensor } from "@/components/camera/AttentionSensor";
 import { CameraRig } from "@/components/camera/CameraRig";
 import { IntentSensor } from "@/components/camera/IntentSensor";
@@ -98,6 +99,7 @@ export function Stage() {
         <Notebook />
         <WorkspaceZones />
         <CameraRig />
+        <Arrival />
         <FirstStep />
         <FirstLook />
         <AttentionSensor />
