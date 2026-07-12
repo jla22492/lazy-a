@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0063 — The Window's World Deepens (Sprint 03, order 8 of 15)
+WORK ORDER 0064 — Five Minutes Ago (Sprint 03, order 9 of 15)
 
 ---
 
@@ -122,6 +122,7 @@ WORK ORDER 0063 — The Window's World Deepens (Sprint 03, order 8 of 15)
 - The person's marks (docs/progress/0061.png): the three ruled removals executed, and the bench's front edge — given its own face material — now carries three small five-bar gates in graphite near the working position, one bar at a time over months, the last gate unfinished at three: the person keeps score of something only they know; believable at a glance, deliberately unreadable as content, and almost invisible at frame distance, per the sprint's calibration
 - Routes of habit (docs/progress/0062.png): the wall became a record instead of a composition — five unconnected accidents from different decades (a paint touch-up from a warmer can, a lone nail hole, a lone screw hole unrelated to the shelf's pairs, a hairline crack wandering down from the ceiling line, and a hip-height polish where someone has brushed past the bench's end for years); and the floor now remembers the person's movement — a faint grime-polish along the walk from the doorway behind the camera to the bench, and a worn patch where the body always stands, both derived from the room's true geometry (the doorway's direction, STANDING_POSITIONS.working)
 - The window's world deepened (docs/progress/0063.png): the frosted pane gained a sky (brighter at the top, ground-bounce at the bottom, even through frost), a fainter horizontal member meeting the vertical presence — a railing's corner, maybe; the room never says — and two old rain streaks in the frosting; and the same vertical something that darkens the pane now interrupts the light it lets in, a soft shadow crossing the floor's window patch: one story, two surfaces, all of it outside the browser
+- Five minutes ago (docs/progress/0064.png): the sprint's question answered in objects — the third test print came down from the wall and lies flat, half onto today's working papers (the act the visitor interrupted: comparing a print against the notes; mid-decision — it goes back up, or it doesn't); the mug sits four centimeters off its usual spot with the morning's ring showing beside it (last sip, minutes ago); and the tape roll's torn tab still stands off the roll — the freshest layer of time the room has ever carried
 
 ---
 
@@ -133,7 +134,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0064 — Five minutes ago.
+WORK ORDER 0065 — Cohesion pass, then internal review #2.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

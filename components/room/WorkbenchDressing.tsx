@@ -5,6 +5,7 @@ import { WORKBENCH } from "@/three/scene/constants";
 import {
   BOOK_STACK,
   CAMERA,
+  CONSIDERED_PRINT,
   FILM_CANISTERS,
   HEADPHONES,
   LOOSE_SHEETS,
@@ -118,18 +119,45 @@ function PencilJar() {
   );
 }
 
-/** Masking tape lying flat where it was last used. */
+/** Masking tape lying flat, its torn tab still standing — used minutes ago. */
 function TapeRoll() {
-  const { at, outerRadius, width, yaw, color } = TAPE_ROLL;
+  const { at, outerRadius, width, yaw, color, tab } = TAPE_ROLL;
+  return (
+    <group
+      position={[at.x, SURFACE + width / 2, at.z]}
+      rotation={[0, yaw, 0]}
+    >
+      <mesh castShadow receiveShadow>
+        <cylinderGeometry args={[outerRadius, outerRadius, width, 24]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      <mesh
+        position={[outerRadius - 0.004, width / 2 + tab.length / 2 - 0.004, 0]}
+        rotation={[0, 0, -tab.lift]}
+        castShadow
+      >
+        <boxGeometry args={[tab.width, tab.length, 0.0006]} />
+        <meshStandardMaterial color={tab.color} side={2} />
+      </mesh>
+    </group>
+  );
+}
+
+/** The print taken down minutes ago, lying half onto today's papers. */
+function ConsideredPrint() {
+  const { at, width, height, thickness, yaw, color } = CONSIDERED_PRINT;
   return (
     <mesh
-      position={[at.x, SURFACE + width / 2, at.z]}
+      position={[at.x, SURFACE + 0.0028, at.z]}
       rotation={[0, yaw, 0]}
       castShadow
       receiveShadow
     >
-      <cylinderGeometry args={[outerRadius, outerRadius, width, 24]} />
-      <meshStandardMaterial color={color} />
+      <boxGeometry args={[width, thickness, height]} />
+      <meshStandardMaterial
+        map={paper({ seed: 641, base: color, fiber: 0.35, handled: 0.3 })}
+        roughness={0.62}
+      />
     </mesh>
   );
 }
@@ -275,6 +303,7 @@ export function WorkbenchDressing() {
   return (
     <group position={fromWorkbench([0, 0, 0])}>
       <TestPrints />
+      <ConsideredPrint />
       <BookStack />
       <PencilJar />
       <TapeRoll />

@@ -124,12 +124,25 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     name: "TestPrints",
     zone: "workbench",
     story:
-      "three small prints from the current work propped against the wall " +
-      "this morning, to be glanced at while working — not straightened since",
+      "two prints from the current work still propped against the wall — " +
+      "the third came down five minutes ago and lies on the bench",
     identity: "the work is judged by looking at it, again and again",
     unresolved: "still being judged; taking them down would end the question",
     arrived: "this morning, propped one at a time before the day's work began",
     implies: "the current project they belong to, and the judgment happening around them",
+  },
+  {
+    name: "ConsideredPrint",
+    zone: "workbench",
+    story:
+      "taken down from the rear band minutes ago and laid flat, half onto " +
+      "today's working papers — the act the visitor interrupted: comparing " +
+      "a print against the notes",
+    identity: "judgment at Lazy A is physical; the print comes to the notes",
+    unresolved: "mid-decision — it goes back up, or it doesn't",
+    arrived: "on the bench, five minutes ago; in the room, this morning",
+    implies: "the person who was just holding it, and the decision they " +
+      "left hanging",
   },
   {
     name: "BookStack",
@@ -154,7 +167,9 @@ export const SET_MANIFEST: readonly SetPiece[] = [
   {
     name: "TapeRoll",
     zone: "workbench",
-    story: "used to prop the test prints an hour ago and left where it landed",
+    story:
+      "used to prop the test prints an hour ago and left where it landed, " +
+      "its torn tab still standing off the roll",
     identity: "things here get pinned, propped, and taped — process is physical",
     unresolved: "a temporary solution that is quietly becoming permanent",
     arrived: "an hour ago, mid-errand",
@@ -163,10 +178,12 @@ export const SET_MANIFEST: readonly SetPiece[] = [
   {
     name: "Mug",
     zone: "workbench",
-    story: "half-finished and gone cold; its owner got pulled into the work",
+    story:
+      "half-finished and gone cold, set down four centimeters off its " +
+      "usual spot — the morning's ring shows beside it",
     identity: "sessions here run long enough for coffee to go cold",
     unresolved: "the conversation that interrupted it isn't over",
-    arrived: "two hours ago, full and hot",
+    arrived: "two hours ago, full and hot; last sip, minutes ago",
     implies: "a kitchen somewhere beyond the doorway, and the interrupted conversation",
   },
   {

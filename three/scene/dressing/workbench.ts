@@ -40,17 +40,23 @@ export const TEST_PRINTS = {
       lean: 0.45,
       color: "#ded6c5",
     },
-    /* 6x4" landscape resting against the second print's corner. */
-    {
-      width: 0.152,
-      height: 0.102,
-      x: 0.17,
-      z: -0.34,
-      yaw: 0.24,
-      lean: 0.34,
-      color: "#e9e3d6",
-    },
+    /* The third print (the 6x4" landscape) came down five minutes ago —
+       it lies flat on the bench now, mid-judgment (0064). */
   ],
+} as const;
+
+/**
+ * The considered print (WORK ORDER 0064): taken down from the rear band
+ * minutes ago and laid flat, half onto today's working papers — the act
+ * the visitor interrupted: comparing a print against the notes.
+ */
+export const CONSIDERED_PRINT = {
+  at: { x: 0.12, z: 0.04 },
+  width: 0.152,
+  height: 0.102,
+  thickness: 0.001,
+  yaw: 0.28,
+  color: "#e9e3d6",
 } as const;
 
 /** Rear-left: reference books pulled and never reshelved. */
@@ -86,11 +92,17 @@ export const TAPE_ROLL = {
   width: 0.024,
   yaw: 0.7,
   color: "#d8d2c0",
+  /** 0064: the torn tab still stands off the roll — used minutes ago. */
+  tab: { width: 0.022, length: 0.016, lift: 0.85, color: "#e3ddca" },
 } as const;
 
 /** Resting zone: the mug that went cold. */
 export const MUG = {
-  at: { x: -0.58, z: 0.16 },
+  /**
+   * 0064: set down four centimeters off its usual spot — the morning's
+   * ring shows beside it. The last sip happened minutes ago.
+   */
+  at: { x: -0.55, z: 0.19 },
   radius: 0.041,
   height: 0.095,
   /** Handle turned casually away from the bench's open side. */
