@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0066 — Review #2 Corrections (Sprint 03, order 11 of 15)
+WORK ORDER 0067 — Fidelity Pass (Sprint 03, order 12 of 15)
 
 ---
 
@@ -126,6 +126,7 @@ WORK ORDER 0066 — Review #2 Corrections (Sprint 03, order 11 of 15)
 - Cohesion pass (docs/progress/0065.png): the vent moved from a polite distance to an awkward nine centimeters off the corner, its dust stain following — ducts go where ducts go; nobody composed this — and the pinned cluster shed its last manners (the landscape photo and the torn strip disagree a few degrees harder); Act II closes with the room's layers of time running continuously from decades (the wall's accidents) to minutes (the considered print)
 - Internal review #2 held (after 0065): direction unchanged, execution refined — two new locks (a room is remembered by its interruptions, not its possessions; editing is the room's highest craft — Lazy A's design language, discovered by three sprints of subtraction); the placeholder surfaces diagnosed as repeating one blankness; the route wear ruled out (authored, where the standing wear is discovered); a second question added: what will happen here thirty seconds after I leave?
 - Review #2 corrections (docs/progress/0066.png): the walked-route overlay removed (the standing wear stays); the tallies reduced to two gates (one complete, one unfinished); and the placeholders diversified through physical history, never content — the oldest pinned photo is sun-faded, its neighbor's corner never flattened, the slipped photo is glossier stock, the torn strip is kraft, one sticky note has faded a season further, one test print arrived under a binder clip and the other's corner is bent, the considered print is lab-fresh gloss, the leaning board is kraft-backed, and the hero print became heavier stock whose thickness reads at the edge while its blankness stays untouched — never the same blank twice
+- Fidelity pass (docs/progress/0067.png): the three weakest close-ups strengthened within stage fidelity — the crumpled miss is now two intersecting irregular solids whose union silhouette breaks the single-polyhedron tell; the lamp's shade widened and shortened with a brass neck and a visible interior (a shade, not a horn); and the plant's leaf edges smoothed a register
 
 ---
 
@@ -137,7 +138,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0067 — Fidelity pass: the weakest close-ups.
+WORK ORDER 0068 — The third edit.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

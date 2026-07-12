@@ -55,9 +55,11 @@ export const DESK_LAMP = {
   /** Upper arm: forward and down toward the active zone. */
   arm2: { length: 0.3, radius: 0.007, pitch: 1.85 },
   head: {
-    /** Classic spun-metal shade. */
-    radius: 0.062,
-    depth: 0.09,
+    /** Classic spun-metal shade — widened at 0067 so it reads as a
+        shade, not a horn. */
+    radius: 0.07,
+    depth: 0.072,
+    neck: { radius: 0.011, length: 0.02 },
   },
   enamel: "#3d4a3e",
   joint: "#8a7a52",

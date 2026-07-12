@@ -224,7 +224,7 @@ function Plant() {
                 scale={[1.5, 1, 1]}
                 castShadow
               >
-                <circleGeometry args={[leaf.size, 12]} />
+                <circleGeometry args={[leaf.size, 20]} />
                 <meshStandardMaterial
                   color={leafTones[leaf.tone as keyof typeof leafTones]}
                   roughness={0.75}
@@ -417,20 +417,33 @@ function Wastebasket() {
           <meshStandardMaterial color={color} roughness={0.6} />
         </mesh>
       </group>
-      {/* The miss: a crumpled ball where it landed. */}
-      <mesh
-        position={[crumple.at.x, crumple.radius * 0.8, crumple.at.z]}
-        scale={[1, 0.8, 1]}
-        castShadow
-        receiveShadow
-      >
-        <icosahedronGeometry args={[crumple.radius, 0]} />
-        <meshStandardMaterial
-          map={paper({ seed: 531, base: crumple.color, fiber: 0.4, handled: 0.6 })}
-          roughness={0.95}
-          flatShading
-        />
-      </mesh>
+      {/* The miss: a crumpled ball where it landed. Two intersecting
+          irregular solids (0067) — the union silhouette breaks the single
+          polyhedron's tell. */}
+      <group position={[crumple.at.x, crumple.radius * 0.72, crumple.at.z]}>
+        <mesh scale={[1, 0.72, 0.92]} rotation={[0.3, 0.8, 0.1]} castShadow receiveShadow>
+          <icosahedronGeometry args={[crumple.radius, 0]} />
+          <meshStandardMaterial
+            map={paper({ seed: 531, base: crumple.color, fiber: 0.4, handled: 0.6 })}
+            roughness={0.95}
+            flatShading
+          />
+        </mesh>
+        <mesh
+          position={[crumple.radius * 0.35, -crumple.radius * 0.1, crumple.radius * 0.2]}
+          scale={[0.78, 0.6, 0.85]}
+          rotation={[1.2, 0.2, 0.7]}
+          castShadow
+          receiveShadow
+        >
+          <dodecahedronGeometry args={[crumple.radius, 0]} />
+          <meshStandardMaterial
+            map={paper({ seed: 532, base: crumple.color, fiber: 0.4, handled: 0.6 })}
+            roughness={0.95}
+            flatShading
+          />
+        </mesh>
+      </group>
     </>
   );
 }

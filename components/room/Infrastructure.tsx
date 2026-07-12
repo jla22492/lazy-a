@@ -91,21 +91,27 @@ function DeskLamp() {
         <cylinderGeometry args={[arm2.radius, arm2.radius, arm2.length, 10]} />
         <meshStandardMaterial color={enamel} roughness={0.45} />
       </mesh>
-      {/* Head: spun shade, mouth toward the active zone, off. */}
-      <mesh
+      {/* Head: spun shade with its neck, mouth toward the active zone,
+          off. Double-sided so the shade's interior reads (0067). */}
+      <group
         position={[
           a1TopX + Math.sin(arm2.pitch) * arm2.length,
           base.height + a1TopY + Math.cos(arm2.pitch) * arm2.length,
           a1TopZ + 0.02,
         ]}
-        /* Apex up-back, mouth down toward the active zone — a shade, not
-           an arrow. */
         rotation={[0.3, 0, -2.75]}
-        castShadow
       >
-        <coneGeometry args={[head.radius, head.depth, 20, 1, true]} />
-        <meshStandardMaterial color={enamel} roughness={0.45} />
-      </mesh>
+        <mesh castShadow>
+          <coneGeometry args={[head.radius, head.depth, 20, 1, true]} />
+          <meshStandardMaterial color={enamel} roughness={0.45} side={2} />
+        </mesh>
+        <mesh position={[0, head.depth / 2 + head.neck.length / 2, 0]} castShadow>
+          <cylinderGeometry
+            args={[head.neck.radius, head.neck.radius, head.neck.length, 10]}
+          />
+          <meshStandardMaterial color={joint} roughness={0.4} metalness={0.3} />
+        </mesh>
+      </group>
       {/* The cord drops off the bench's rear edge into the gap. */}
       <mesh
         position={[0.02, -(surface / 2) + 0.01, -0.13]}
