@@ -390,6 +390,18 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "once hung here",
   },
   {
+    name: "Pendant",
+    zone: "edgeOfFrame",
+    story:
+      "a bare bulb on a fabric cord over the bench, off — the cord rises " +
+      "past the top of the frame to a ceiling the visitor never sees",
+    identity: "the room has nights, and a ceiling, and a landlord's wiring",
+    unresolved: "off because the daylight is doing its job; its turn comes",
+    arrived: "with the room; the bulb itself, whenever the last one died",
+    implies: "the ceiling above the frame, the switch by the door behind " +
+      "the camera, and the evenings this room works through",
+  },
+  {
     name: "Vent",
     zone: "edgeOfFrame",
     story:

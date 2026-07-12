@@ -1,5 +1,6 @@
 "use client";
 
+import { ceilingFalloffTexture } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -40,6 +41,20 @@ const SMOKE_DETECTOR = {
   radius: 0.055,
   depth: 0.028,
   color: "#e8e4d8",
+} as const;
+
+/**
+ * The pendant (WORK ORDER 0059) — a bare bulb on a fabric cord, hanging
+ * from a ceiling the frame never sees. The cord enters from above the
+ * top edge: the frame cuts it, and the room continues upward. Off — the
+ * daylight is doing its job; the bulb belongs to the nights.
+ */
+const PENDANT = {
+  at: { x: 0.15, z: 0.1 },
+  bulbHeight: 2.02,
+  cord: { radius: 0.0042, color: "#3a3733" },
+  socket: { radius: 0.013, height: 0.035, color: "#5c5344" },
+  bulb: { radius: 0.032, color: "#d8d0bd" },
 } as const;
 
 export function UpperWall() {
@@ -153,6 +168,79 @@ export function UpperWall() {
           <meshStandardMaterial color="#d5d0c2" roughness={0.65} />
         </mesh>
       </group>
+      {/* The pendant: cord cut by the top of frame, bulb off. */}
+      <group position={[PENDANT.at.x, 0, PENDANT.at.z]}>
+        <mesh
+          position={[
+            0,
+            (PENDANT.bulbHeight + PENDANT.socket.height + 2.4) / 2,
+            0,
+          ]}
+        >
+          <cylinderGeometry
+            args={[
+              PENDANT.cord.radius,
+              PENDANT.cord.radius,
+              2.4 - PENDANT.bulbHeight - PENDANT.socket.height,
+              8,
+            ]}
+          />
+          <meshStandardMaterial color={PENDANT.cord.color} roughness={0.85} />
+        </mesh>
+        <mesh
+          position={[
+            0,
+            PENDANT.bulbHeight + PENDANT.socket.height / 2,
+            0,
+          ]}
+          castShadow
+        >
+          <cylinderGeometry
+            args={[
+              PENDANT.socket.radius,
+              PENDANT.socket.radius * 0.9,
+              PENDANT.socket.height,
+              12,
+            ]}
+          />
+          <meshStandardMaterial
+            color={PENDANT.socket.color}
+            roughness={0.5}
+            metalness={0.3}
+          />
+        </mesh>
+        <mesh position={[0, PENDANT.bulbHeight - PENDANT.bulb.radius * 0.6, 0]} castShadow>
+          <sphereGeometry args={[PENDANT.bulb.radius, 14, 12]} />
+          <meshStandardMaterial color={PENDANT.bulb.color} roughness={0.35} />
+        </mesh>
+      </group>
+      {/* The junction where wall meets ceiling — occlusion the renderer
+          can't compute, evidence of the lid the frame never sees. */}
+      <mesh
+        position={[0, ROOM.wall.height - 0.05, wallZ + 0.0015]}
+      >
+        <planeGeometry args={[4.4, 0.1]} />
+        <meshBasicMaterial
+          map={ceilingFalloffTexture()}
+          color="#1a1611"
+          transparent
+          opacity={0.07}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh
+        position={[ROOM.rightWall.x - 0.0015, ROOM.wall.height - 0.05, 2.775]}
+        rotation={[0, -Math.PI / 2, 0]}
+      >
+        <planeGeometry args={[6.45, 0.1]} />
+        <meshBasicMaterial
+          map={ceilingFalloffTexture()}
+          color="#1a1611"
+          transparent
+          opacity={0.07}
+          depthWrite={false}
+        />
+      </mesh>
     </group>
   );
 }

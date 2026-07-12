@@ -684,6 +684,21 @@ export function cornerFalloffTexture(): CanvasTexture {
  * tone carries one soft vertical darker band — something stands outside
  * the window, unexplained. The world continues past the glass.
  */
+/**
+ * Top-down alpha falloff (WORK ORDER 0059): opaque at V=1 fading down —
+ * the soft occlusion where wall meets ceiling, laid along the junction.
+ */
+export function ceilingFalloffTexture(): CanvasTexture {
+  const size = 128;
+  const context = makeCanvas(size, size);
+  const g = context.createLinearGradient(0, 0, 0, size);
+  g.addColorStop(0, "rgba(255, 255, 255, 1)");
+  g.addColorStop(1, "rgba(255, 255, 255, 0)");
+  context.fillStyle = g;
+  context.fillRect(0, 0, size, size);
+  return toTexture(context);
+}
+
 export function frostedPaneTexture(
   base: string,
   bandCenter: number,
