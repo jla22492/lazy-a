@@ -6,6 +6,8 @@ import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { Vector3 } from "three";
 
+import { TYPE } from "@/components/site/type";
+
 /**
  * Attention & Conversation (WORK ORDERS 0075 + 0076) — the interface.
  *
@@ -78,15 +80,12 @@ const DECAY_RATE = 2.2;
 /** The lean: one ease of mass, there and back. */
 const LEAN_SECONDS = 0.9;
 
-const TYPE_FAMILY =
-  'ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif';
-
 const LABEL_STYLE: React.CSSProperties = {
-  fontFamily: TYPE_FAMILY,
-  fontSize: "11px",
-  fontWeight: 500,
-  letterSpacing: "0.22em",
-  color: "#5d574d",
+  fontFamily: TYPE.family,
+  fontSize: TYPE.size.label,
+  fontWeight: TYPE.weight,
+  letterSpacing: TYPE.tracking,
+  color: TYPE.ink.primary,
   whiteSpace: "nowrap",
   userSelect: "none",
   pointerEvents: "none",
@@ -113,8 +112,8 @@ function Caption({ destination }: { destination: Destination }) {
   return (
     <div
       style={{
-        fontFamily: TYPE_FAMILY,
-        color: "#4c463d",
+        fontFamily: TYPE.family,
+        color: TYPE.ink.primary,
         width: "200px",
         userSelect: "none",
         pointerEvents: "none",
@@ -122,9 +121,9 @@ function Caption({ destination }: { destination: Destination }) {
     >
       <div
         style={{
-          fontSize: "12px",
-          fontWeight: 500,
-          letterSpacing: "0.22em",
+          fontSize: TYPE.size.caption,
+          fontWeight: TYPE.weight,
+          letterSpacing: TYPE.tracking,
         }}
       >
         {destination.label}
@@ -132,7 +131,7 @@ function Caption({ destination }: { destination: Destination }) {
       <div
         style={{
           height: "1px",
-          background: "#8a8375",
+          background: TYPE.ink.hairline,
           opacity: 0.5,
           margin: "10px 0 12px",
           width: "56px",
@@ -145,7 +144,7 @@ function Caption({ destination }: { destination: Destination }) {
           style={{
             height: "7px",
             width: `${width}px`,
-            background: "#8a8375",
+            background: TYPE.ink.hairline,
             opacity: 0.28,
             marginBottom: "9px",
             borderRadius: "1px",

@@ -1,3 +1,5 @@
+import { TYPE } from "@/components/site/type";
+
 /**
  * The wordmark (WORK ORDER 0073) — orientation, not UI.
  *
@@ -17,14 +19,13 @@ export function Wordmark() {
         position: "fixed",
         top: "28px",
         left: "32px",
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif',
-        fontSize: "13px",
-        fontWeight: 500,
-        letterSpacing: "0.22em",
+        fontFamily: TYPE.family,
+        fontSize: TYPE.size.mark,
+        fontWeight: TYPE.weight,
+        letterSpacing: TYPE.tracking,
         /* A step darker than the plaster it floats over — read at a
-           glance, forgotten a moment later. */
-        color: "#6d675d",
+           glance, forgotten a moment later (0077: one cloth). */
+        color: TYPE.ink.primary,
         userSelect: "none",
         pointerEvents: "none",
         zIndex: 10,
