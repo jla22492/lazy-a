@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0073 — Recognition (Creative Sprint 04, order 3 of 15)
+WORK ORDER 0074 — The Patience Reward (Creative Sprint 04, order 4 of 15)
 
 ## Version
 
@@ -10,16 +10,15 @@ v0.1
 
 ## Summary
 
-- The project's first and only pixel of website chrome (docs/progress/0073-full.png), built to the Creative Director's explicit specification at the 0073 ruling: a quiet HTML wordmark — LAZY A — top-left, very small, wide-tracked, low contrast rather than low opacity, no animation, no entrance, no fade, no logo mark. Real website typography (a restrained system sans until typography is authored), not environmental typography.
-- Orientation, not UI: the first second's one job — "you're in the right place" — is done without asking for attention. If someone barely notices it, it worked. Everything else happens in the room.
-- The wordmark is aria-labeled, unselectable, and pointer-transparent; the browser title already reads Lazy A.
-- Visitor-visible within the first ten seconds: it is the first thing legible in the first frame.
-- Verification: type-check passes; verified live in a real browser and captured full-page (HTML + canvas) via headless screenshot — the canvas-only capture pipeline cannot see HTML chrome, so homepage-era review stills gain the full-page variant (0073-full.png).
+- Dust in the light (docs/progress/0074.mp4): the Creative Director's 0072 suggestion, made physical — a few dozen motes drift down the window's shaft of daylight. They live in the true light volume (the prism from the window opening along the sun's real direction toward the 0049 floor patch), fall at dust speeds, and each carries its own slow wander so no two agree. Deterministic (seeded) so captures repeat; driven by the room clock like every motion since 0016.
+- The lock it fulfills, recorded at 0072: the room should reward patience, never require it. Two seconds of visiting never shows the dust; thirty seconds does; it demands nothing. This is the room's second living behavior, eleven work-order generations after its first breath.
+- Visitor-visible within ten seconds? Deliberately borderline: it begins existing immediately and becomes noticeable exactly when the visitor slows down — which is the point, and the lock's own arithmetic.
+- Verification: type-check passes; the film's frame-diff shows the motes moving through the shaft; the still confirms they never read as noise at a glance.
 
 ## Decisions Required
 
-None.
+The tagline question (posed in the thread): "understanding what Lazy A is" within the first breath needs words — whose authorship is yours and Jonathan's.
 
 ## Ready for
 
-WORK ORDER 0074 — Communication: what Lazy A is, within the first breath.
+WORK ORDER 0075 — Communication and navigation, gated on that ruling.
