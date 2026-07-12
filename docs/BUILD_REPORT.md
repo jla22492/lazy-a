@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0078 — The Conversations Settle (Creative Sprint 04, order 8 of 15)
+WORK ORDER 0079 — Responsive Stance (Creative Sprint 04, order 9 of 15)
 
 ## Version
 
@@ -10,11 +10,10 @@ v0.1
 
 ## Summary
 
-- JOURNAL and WORK verified from their actual leaned viewpoints (docs/progress/0078-journal.png, 0078-work.png):
-- WORK: the caption typesets on the open wall right of the sticky notes — clean air, correct adjacency to the camera it captions.
-- JOURNAL: the first anchor collided with the desk lamp from the leaned view (a placement that was fine from the resting stance — leans change what overlaps what). Moved to the clear wall directly above the notebook pile, where it now reads as a true gallery caption for its subject.
-- Every conversation now lands in clean air from its own viewpoint — captions were placed against the leaned geometry, not the resting one.
-- Verification: type-check and production build pass; both conversations photographed via the ?talk capture aid.
+- A company website gets visited on phones, and the locked composition assumed a wide frame. The cinematographer's answer, not the renderer's: a narrow window doesn't amputate the bench — the body simply stands further back.
+- The stance adapts once, at arrival (up to +0.9m of distance at phone portrait, easing in from aspect 1.5; at 16:9 and wider, nothing changes — every existing capture is untouched). Resizing mid-visit does not move a standing body; the next visit stands correctly for its window.
+- Verified at 375x812: the working center, hero print, chair, and pendant all hold, the wordmark sits correctly, and — the quiet win — the crop-from-a-larger-place grammar makes portrait feel like a tighter crop of the same room rather than a broken layout. The recomposition keeps paying rent.
+- Verification: type-check and production build pass; live camera sampled at z=4.9 on a phone viewport (rest: 4.0).
 
 ## Decisions Required
 
@@ -22,4 +21,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0079 — the frame survives the viewport.
+WORK ORDER 0080 — the sprint's mid-review.
