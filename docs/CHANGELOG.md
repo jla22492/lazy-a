@@ -35,4 +35,6 @@
 
 - A picture learned to move: the print lying on the notes — the one taken down mid-judgment — now carries a moving image on its stock, lit by the same window, toned by the same eye, bordered like any print from the lab. The room is rendered live; the impossible arrives from elsewhere. The pipeline the whole idea rests on is real now, waiting only for its authored moment.
 
+- The visitor sits down: the walk to the bench now ends in the maker's own chair-height view of the work — a body lowers, the seat takes its weight, the eyes land on the notes a beat later, all inside four measured seconds. The room wasn't abandoned; it was vacated for you. Today's work fills the frame, and one of the prints on it is quietly playing.
+
 Record experience changes here, not just technical ones.

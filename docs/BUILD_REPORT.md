@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0088 — The Video-Texture Spike (Creative Sprint 05A, item 3 of 6)
+WORK ORDER 0089 — The Seated Arrival, first pass (Creative Sprint 05A, item 4 of 6)
 
 ## Version
 
@@ -10,39 +10,44 @@ v0.1
 
 ## Summary
 
-- The project's riskiest unproven assumption is now proven: offline-rendered
-  content plays inside the real-time room as a video texture, on the same
-  lit, tone-mapped surface language as everything else. The considered
-  print (0064) is the stage, exactly as the sprint brief named it.
-- Jonathan's placeholder clip was conformed to the print's stock: center-
-  cropped from 1080x1920 portrait to the print's 3:2 landscape, muted,
-  compressed to 250KB (public/videos/considered-print-placeholder.mp4).
-  The print's paper shows a 4mm border around the image the way a lab
-  print holds one; the film surface uses a standard material at the
-  stock's own gloss, so the daylight and AgX tone mapping shade the moving
-  image exactly as they shade the paper it lies on. PLACEHOLDER content,
-  flagged for authorship; the ~5s timed reveal belongs to 05B.
-- Proof, three ways. (1) A dev canvas film (docs/progress/0088-motion.mp4;
-  frames at docs/progress/0088-motion-frames.png): the print's pixels
-  change up to 48 levels between extracted frames while an equal-size
-  static wall patch never exceeds 3 — the frames differ over time.
-  (2) The production static build in a real browser: max pixel change 84
-  over 3 seconds at the print. (3) THE LIVE DEPLOYED URL in a real
-  browser: max pixel change 95 over 3 seconds. It plays, in public.
-- Infrastructure this took: lib/assetPath.ts (plain-URL public assets must
-  prepend the GitHub Pages basePath themselves; the framework only
-  rewrites imports), NEXT_PUBLIC_BASE_PATH exposed from next.config.
-- Two capture-environment facts recorded for the sprint: GitHub Pages'
-  CDN can serve the previous build for a minute or two after the workflow
-  reports success (verify the new bundle is being served before capturing),
-  and headless SwiftShader Chrome renders a video texture's frame but does
-  not advance playback — moving-image proof needs a real browser or the
-  dev canvas recorder, which is exactly the gap order 0091 exists to close.
+- The SPRINT_05 amendment "the perspective sits" is executed: the arrival
+  now ends seated in the maker's working position at the bench — eyes
+  over STANDING_POSITIONS.working (0019) at a measured seated work height
+  (SEATED_EYE_HEIGHT = 1.18m), the gaze resting on the work surface,
+  biased a hair toward the dominant hand.
+- The figure: a compressed ~2s walk from the door's side at standing
+  height (the 0020 bob and sway, one ease of mass), the sit beginning as
+  the last step lands (down and in, one motion, ~1s), then the seat
+  taking the weight — a small damped vertical compression (the 0021
+  settling research, turned vertical) — with the gaze landing on the work
+  a beat after the body.
+- MEASURED, not estimated, per the sprint rule: frame-by-frame motion
+  analysis of the recording (docs/progress/0089-arrival.mp4, moments at
+  0089-approach-frames.png) shows first motion at the recorder lead's end
+  and full settle ~3.1 seconds later — inside Jonathan's 4-second
+  criterion with margin. The residual after settle is the video print
+  playing and the dust: the room alive, not the body moving.
+- The settled composition (docs/progress/0089.png, captured from the
+  LIVE deploy) is new: today's work fills the frame — the notebook and
+  pencil, the working papers, the considered print playing its film, the
+  pencil jar, the rear band's propped prints. The room's height now
+  lives in the approach, not the rest. The responsive stance (0079)
+  carries over: narrow viewports settle further back, seated.
+- Honest side effect, intentional: the 0075/0076 attention destinations
+  (hero print, notebook pile, camera) sit OUTSIDE the seated frame, so
+  navigation is dormant until 0090 remaps it to Jonathan's objects —
+  which is the next order by design.
 
 ## Decisions Required
 
-None. (The video content itself remains unauthored by design.)
+The maker's chair still stands pushed-back where they left it (0060/0071),
+while the perspective now sits at the bench in a seat that is implied,
+never depicted. From the settled frame the chair is behind the visitor
+and invisible, so nothing contradicts on screen — but whether the chair
+should remain there, move under the visitor's implied seat, or leave the
+room entirely under the amended absence story is a staging question only
+Jonathan can rule on. First pass leaves it untouched.
 
 ## Ready for
 
-WORK ORDER 0089 — the seated arrival.
+WORK ORDER 0090 — the destination remap and the placeholder journal.

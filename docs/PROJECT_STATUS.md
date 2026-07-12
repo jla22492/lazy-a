@@ -14,7 +14,7 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-WORK ORDER 0088 — The Video-Texture Spike (Sprint 05A, item 3 of 6 — COMPLETE)
+WORK ORDER 0089 — The Seated Arrival, first pass (Sprint 05A, item 4 of 6 — COMPLETE)
 
 ---
 
@@ -149,6 +149,7 @@ WORK ORDER 0088 — The Video-Texture Spike (Sprint 05A, item 3 of 6 — COMPLET
 - CREATIVE SPRINT 04 COMPLETE (docs/progress/0085.png + 0085.mp4): the fifteenth order closed the sprint — the product film captured end to end (the approach, the settle, the dust, the lean into FILMS; the interface's HTML layer lives in the full-page stills, as canvas films cannot see it), CHANGELOG updated (the website arrived), and the Sprint 04 Review posted with before/after, the film, and the honest gaps; implementation stops completely per the termination rule — no Work Order 0086 until Jonathan reviews
 - SPRINT 04 APPROVED by Jonathan; CREATIVE SPRINT 05 AUTHORIZED directly by him — The Six-Second Homepage (docs/SPRINT_05.md, the ruling document; it wins over older locks where they conflict): the 4s/5s/6s acceptance clock, the destination remap (JOURNAL = the notebook, CONTACT = the phone charger, FILMS = the wall photographs), and two constitution amendments to be executed this sprint (the perspective sits; the impossible is no longer deferred); the Creative Director is out of the loop for the sprint and audits the artifact trail afterward
 - The room went public (0086, docs/progress/0086.png + 0086-phone.png): https://jla22492.github.io/lazy-a/ serves the actual experience — the existing studio-pages CI already static-exported the room page, and this order proved it: the live site captured headlessly at the deployed URL matches the local reference frame (0085.png) and holds the responsive stance at a phone viewport; every future push is live about a minute later
+- The perspective sits (0089, docs/progress/0089.png + 0089-arrival.mp4 + 0089-approach-frames.png): the SPRINT_05 amendment executed — the arrival is now a ~2s walk from the door's side that lowers into the maker's working position as the last step lands, the seat taking the weight with a damped compression, the gaze landing on the work a beat after the body; measured frame-by-frame from the recording at ~3.1 seconds first-step-to-settle, inside Jonathan's 4-second criterion; the settled composition is new — today's work fills the frame at seated eye height (1.18m over STANDING_POSITIONS.working) and the room's height lives in the approach; verified on the live deploy; the old attention destinations sit outside the seated frame, dormant until 0090 remaps them (by design); the maker's chair staging under the amended absence story is flagged for Jonathan in the build report
 - The impossible pipeline is proven (0088, docs/progress/0088.png + 0088-print-zoom.png + 0088-motion.mp4 + 0088-motion-frames.png): the considered print's picture is now a VIDEO — Jonathan's placeholder clip conformed to the print's 3:2 stock with a lab border, playing muted on a loop as a texture under the room's own daylight and AgX tone mapping; proven three ways (dev canvas film frame-diff 48 vs static floor 3; production build max diff 84/3s; the LIVE deployed URL max diff 95/3s in a real browser); the Sprint 02 lock — real-time room, offline impossible, entering as video textures — is no longer a theory; content is placeholder and unauthored, and the ~5s timed reveal belongs to 05B
 - The real logo arrived (0087, docs/progress/0087.png): Jonathan's letterpress lockup — the lazy-A brand mark asleep under its zzz, LAZY A, PRODUCTIONS — replaced the placeholder text wordmark under the unchanged 0073 restraint ruling (top-left, small, no animation, orientation not branding); the artwork was re-inked in the type system's primary on a transparent ground so it floats over the plaster at the same step of contrast the text held; verified live at the deployed URL
 
@@ -156,13 +157,13 @@ WORK ORDER 0088 — The Video-Texture Spike (Sprint 05A, item 3 of 6 — COMPLET
 
 ## In Progress
 
-Creative Sprint 05, phase 05A — The Six-Second Homepage (work orders 0086–0091, directed by Jonathan personally). Complete: 0086 (live deploy), 0087 (the real logo), 0088 (video-texture spike). Remaining: 0089 seated arrival, 0090 destination remap + placeholder journal, 0091 screen-capture pipeline. Full stop after 0091 for Jonathan's review; no 05B work before it.
+Creative Sprint 05, phase 05A — The Six-Second Homepage (work orders 0086–0091, directed by Jonathan personally). Complete: 0086 (live deploy), 0087 (the real logo), 0088 (video-texture spike), 0089 (seated arrival). Remaining: 0090 destination remap + placeholder journal, 0091 screen-capture pipeline. Full stop after 0091 for Jonathan's review; no 05B work before it.
 
 ---
 
 ## Next Recommended Work Order
 
-WORK ORDER 0089 — the seated arrival, first pass: ~2s approach ending at the bench's working position at seated eye height, tuned against the 4-second criterion.
+WORK ORDER 0090 — the destination remap: JOURNAL to the notebook, CONTACT to the phone charger, FILMS to the wall photographs, with placeholder journal text ON the notebook page.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -187,7 +188,9 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The world origin (0,0,0) is the exact center of the workbench — permanent.
 🔒 The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 🔒 The camera's gaze rests on the work surface, not the horizon.
-🔒 The opening view is a person who walked in and naturally stopped: normal lens (fov 35), eye height, slightly left of the bench axis, gaze settled just above the work. The LEFT side runs open past the frame (its corner never seen — the room continues); the RIGHT side keeps its original architecture: the wall, the corner, and the window's sliver of daylight. (R-0071 — recomposed under Jonathan's revision order and amended per his direction mid-checkpoint, superseding R-0007.)
+🔒 The opening view is a person who walked in and naturally stopped: normal lens (fov 35), eye height, slightly left of the bench axis, gaze settled just above the work. The LEFT side runs open past the frame (its corner never seen — the room continues); the RIGHT side keeps its original architecture: the wall, the corner, and the window's sliver of daylight. (R-0071 — recomposed under Jonathan's revision order and amended per his direction mid-checkpoint, superseding R-0007. Superseded as the RESTING frame by the seated composition at 0089 under the SPRINT_05 amendment — the standing view survives inside the approach.)
+🔒 The perspective sits. The arrival ends seated in the maker's working position at the bench: the person stepped out, and the room was vacated FOR the visitor. This evolves — does not break — the absence story and the chair-absence lock: the maker's chair still stands where they rose, and the seat the visitor occupies belongs to the perspective — implied, never depicted, like the body itself. (SPRINT_05 amendment, Jonathan's direct ruling, executed at 0089; chair staging under the evolved story awaits his review.)
+🔒 Timing outranks ceremony. The arrival completes and settles inside four seconds, measured from recordings, never estimated — the room's manners must never cost the visitor time. (SPRINT_05 amendment, Jonathan's direct ruling, executed at 0089.)
 🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
 🔒 The room is a complete permanent shell: rear wall, left wall with the entrance doorway behind the camera, right wall with a frosted window (the implied light source, never a view), ceiling, baseboards. Identity enters in layers: architecture → permanent identity → active workspace → impossible moments.
 🔒 The room's history is told by light before it is told by objects.
