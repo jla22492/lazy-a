@@ -65,6 +65,9 @@ box("rightwall_rear", (0.1, 2.0, 2.4), (2.25, -0.5 + 1.0 - 1.55, 1.2), plaster)
 box("window", (0.02, 1.1, 1.1), (2.24, 0.6, 1.45), pane)
 # Bench: one mass at the origin, 0.9 high.
 box("bench", (1.8, 0.75, 0.9), (0, 0, 0.45), wood)
+# The chair (R-0089 staging), so its occlusion prints into the floor.
+box("chair", (0.45, 0.42, 0.45), (0.95, -0.78, 0.225), wood)
+box("chairback", (0.45, 0.03, 0.4), (0.95, -0.97, 0.65), wood)
 
 # The rear wall (three z=-0.45 -> blender y=0.45), the bake receiver.
 bpy.ops.mesh.primitive_plane_add(size=1, location=(-0.5, 0.449, 1.2))
@@ -120,6 +123,14 @@ def bake(obj, filename, size=512):
     print(f"BAKED {filename}")
 
 
+# The floor's visible patch (0097): x -3.2..2.2, three-z -0.45..4.5.
+bpy.ops.mesh.primitive_plane_add(size=1, location=(-0.5, -2.025 + 0.45, 0.002))
+floor_patch = bpy.context.active_object
+floor_patch.name = "floorpatch"
+floor_patch.scale = (5.4, 4.95, 1)
+floor_patch.data.materials.append(concrete)
+
 bake(rear, "gi-rearwall.png")
 bake(bench_top, "gi-benchtop.png")
-print("SPIKE BAKE COMPLETE")
+bake(floor_patch, "gi-floor.png")
+print("FULL BAKE COMPLETE")

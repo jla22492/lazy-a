@@ -14,6 +14,10 @@ import {
   featheredQuadTexture,
   windowPatchTexture,
 } from "@/three/materials/procedural";
+import { useLoader } from "@react-three/fiber";
+import { SRGBColorSpace, TextureLoader } from "three";
+
+import { assetPath } from "@/lib/assetPath";
 import { DAYLIGHT, ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -26,6 +30,39 @@ import { fromWorkbench } from "@/three/scene/world";
  * entirely from the room's true geometry. Off-screen light, on-screen
  * evidence.
  */
+/**
+ * The floor's computed bounce (WORK ORDER 0097): the room's indirect
+ * light, baked in the Blender twin with the bench and chair as true
+ * occluders, laid additively over the concrete the way every
+ * evidence-of-light plane has been since 0049 — except this one is
+ * computed, not authored. Covers the visible patch (x -3.2..2.2,
+ * z -0.45..4.5) at whisper opacity.
+ */
+function FloorBounce() {
+  const bounce = useLoader(
+    TextureLoader,
+    assetPath("/textures/gi/gi-floor.png"),
+  );
+  useMemo(() => {
+    bounce.colorSpace = SRGBColorSpace;
+  }, [bounce]);
+  return (
+    <mesh
+      position={[-0.5, 0.0015, 2.025]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <planeGeometry args={[5.4, 4.95]} />
+      <meshBasicMaterial
+        map={bounce}
+        blending={AdditiveBlending}
+        transparent
+        opacity={0.22}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
 function WindowPatch() {
   const geometry = useMemo(() => {
     const { window: win, rightWall } = ROOM;
@@ -140,6 +177,7 @@ function CornerShading() {
 export function OffscreenWorld() {
   return (
     <group position={fromWorkbench([0, 0, 0])}>
+      <FloorBounce />
       <WindowPatch />
       <CornerShading />
     </group>
