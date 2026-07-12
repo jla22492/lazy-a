@@ -377,6 +377,19 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     implies: "the floor beyond the frame, where things keep rolling",
   },
   {
+    name: "AbandonedHook",
+    zone: "edgeOfFrame",
+    story:
+      "aged brass, high on the rear wall, holding nothing — something " +
+      "used to hang from it and nobody remembers what",
+    identity: "the room predates its current arrangement",
+    unresolved: "taking an empty hook down is a job that will never rank",
+    arrived: "before the studio did",
+    implies:
+      "previous tenants, previous lives of this room, and the thing that " +
+      "once hung here",
+  },
+  {
     name: "ShippingTubes",
     zone: "edgeOfFrame",
     story:

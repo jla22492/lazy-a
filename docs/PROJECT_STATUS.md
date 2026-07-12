@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0056 — Sprint 03 Orientation (Sprint 03, order 1 of 15)
+WORK ORDER 0057 — The Wall's Old Lives (Sprint 03, order 2 of 15)
 
 ---
 
@@ -113,6 +113,8 @@ WORK ORDER 0056 — Sprint 03 Orientation (Sprint 03, order 1 of 15)
 - Internal review #2 held (after 0053): the notebook stack named the sprint's biggest success ("this person found a system that works — that's personality"); the plant declared finished; the wastebasket approved as cause-not-effect; new lock recorded (age creates disagreement, chaos does not) and the Edit's bar raised: if removing an object would not change the truth the room tells, remove it; Sprint 03 territory named and deferred (the wall's upward migration — hooks, screw holes, vents, paint mismatch; things that exist without being readable)
 - The second edit (docs/progress/0054.png): the dropped sheet removed — the crumpled miss explains the behavior better, and one piece of evidence is stronger than three; the pinned cluster aged rather than messed — one note curls off the wall at its bottom edge (and finally casts a paper's shadow), one photo overlaps its neighbor because moving the older pin was never worth it, and the outlier's failed corner is re-taped with tape newer than the photo — every item less synchronized, none of them random
 - CREATIVE SPRINT 02 COMPLETE (docs/progress/0055.png + 0055.mp4): the tenth implementation work order closed the sprint — final still and an 8-second motion review captured, CHANGELOG updated with the sprint milestone (the person appeared without appearing), and the Sprint 02 Review posted to the Creative Director thread with before/after stills and the film; per the sprint termination rule, implementation stops completely and waits for Jonathan's creative review — no 11th work order
+- SPRINT 02 APPROVED by Jonathan; CREATIVE SPRINT 03 AUTHORIZED — The Room Becomes a Place (docs/SPRINT_03.md, 15 work orders 0056–0070): not a creative studio but Lazy A's, revealed through the life that produces the work; three new locks (discovered never decorated; warmth from accumulated life; wonder-beyond-frame) and raised autonomy (reviews after 0060/0065/0070 only)
+- The wall's old lives (docs/progress/0057.png): the upward campaign begins — high on the rear wall, where nothing had ever happened, the room's previous arrangements surface: two vertical pairs of screw holes with dust drifting beneath them (a shelf's brackets, taken down years ago — the picture ledge below is its successor), a repair patched and repainted in slightly the wrong white with the hard edge a roller leaves against old paint, and an aged brass hook holding nothing — something used to hang from it and nobody remembers what; none of it is meant to be read
 
 ---
 
@@ -124,7 +126,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0057 — The wall's old lives (the upward campaign begins).
+WORK ORDER 0058 — The building's systems (upward II).
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

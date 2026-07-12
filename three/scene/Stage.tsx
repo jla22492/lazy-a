@@ -17,6 +17,7 @@ import { Infrastructure } from "@/components/room/Infrastructure";
 import { OffscreenWorld } from "@/components/room/OffscreenWorld";
 import { PeripheralRoomDressing } from "@/components/room/PeripheralRoomDressing";
 import { ReferenceWallDressing } from "@/components/room/ReferenceWallDressing";
+import { UpperWall } from "@/components/room/UpperWall";
 import { Workbench } from "@/components/room/Workbench";
 import { WorkbenchDressing } from "@/components/room/WorkbenchDressing";
 import { WorkspaceZones } from "@/components/room/WorkspaceZones";
@@ -87,6 +88,7 @@ export function Stage() {
         <Workbench />
         <WorkbenchDressing />
         <ReferenceWallDressing />
+        <UpperWall />
         <PeripheralRoomDressing />
         <EdgeOfFrameDressing />
         <Infrastructure />

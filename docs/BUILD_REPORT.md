@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0056 — Sprint 03 Orientation (Creative Sprint 03, order 1 of 15)
+WORK ORDER 0057 — The Wall's Old Lives (Creative Sprint 03, order 2 of 15)
 
 ## Version
 
@@ -10,12 +10,13 @@ v0.1
 
 ## Summary
 
-- Sprint 03's brief is in version control: docs/SPRINT_03.md — The Room Becomes a Place. Not a creative studio; Lazy A's creative studio, revealed through the life that produces the work, never through "filmmaker objects." Jonathan's notes are recorded as emotional corrections, not a checklist.
-- Three new Creative Locks recorded (the room is discovered, never decorated; warmth comes from accumulated life, not visual styling; the visitor should wonder what exists beyond the frame more often than what exists inside it), with the reaffirmed set noted alongside.
-- The sprint's arc is planned in three acts: the building (the unexplored upward direction — the walls' old lives, the building's systems, the ceiling — closing with the right-side rebalance and the chair's "just stood up" moment); Lazy A's specificity (personal marks without authored words, routes of habit, the window's world, the freshest layer of time); and the deserving room (corrections, a fidelity pass on the weakest close-ups, the third edit, final light audit).
-- Process change honored: internal reviews only after 0060, 0065, and 0070, each answering the four honest questions; interruptions only for genuine drift.
-- No visitor-facing change in this order, by design.
-- Verification: no code changed; documentation builds into the Studio on push.
+- The upward campaign begins: the band of wall above the dressing — where nothing had ever happened — now carries the room's previous arrangements (docs/progress/0057.png):
+- Screw holes: two vertical pairs high on the rear wall's left, each with a dust shadow drifting beneath — a shelf's bracket holes from an arrangement nobody remembers. The picture ledge below reads as its successor: the room has rearranged itself before, and will again.
+- The repair: a patched rectangle high on the right, repainted in slightly the wrong white, with the faint hard edge a roller leaves against old paint. Fixed properly, matched imperfectly, forgotten.
+- The abandoned hook: aged brass, high and off-center, holding nothing. Something used to hang from it; nobody remembers what. It arrived before the studio did — the first object in the manifest whose "arrived" answer predates the person.
+- All three sit above the eye's natural path and none is meant to be read: they are the unreadable information the second internal review asked for — information that dissolves into atmosphere.
+- The plaster system gained screwHoles and repairs as first-class parameters; the hook is the first geometry of components/room/UpperWall.tsx, the upward campaign's home.
+- Verification: type-check and production build pass; 0057.png reviewed in the upper-band crop.
 
 ## Decisions Required
 
@@ -23,4 +24,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0057 — The wall's old lives.
+WORK ORDER 0058 — The building's systems.

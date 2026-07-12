@@ -325,6 +325,16 @@ export interface PlasterParams {
    * held something and was pulled away — the wall remembers the habit.
    */
   residue?: ReadonlyArray<{ u: number; v: number }>;
+  /**
+   * Old screw holes (WORK ORDER 0057): deeper than pin holes, with a dust
+   * shadow beneath — something mounted was taken down years ago.
+   */
+  screwHoles?: ReadonlyArray<{ u: number; v: number }>;
+  /**
+   * Repairs (WORK ORDER 0057): a patched rectangle repainted in slightly
+   * the wrong white — fixed properly, matched imperfectly, forgotten.
+   */
+  repairs?: ReadonlyArray<{ u: number; v: number; w: number; h: number }>;
 }
 
 /**
@@ -376,6 +386,37 @@ export function plasterTexture(params: PlasterParams): CanvasTexture {
       const w = 8 + random() * 30;
       context.fillRect(x, y, w, 1.5 + random() * 2);
     }
+  }
+
+  /* Repairs: patched and repainted in slightly the wrong white. */
+  for (const repair of params.repairs ?? []) {
+    const rw = repair.w * size;
+    const rh = repair.h * size;
+    const rx = repair.u * size - rw / 2;
+    const ry = (1 - repair.v) * size - rh / 2;
+    /* A touch cooler and brighter than the aged wall around it. */
+    context.fillStyle = "rgba(242, 243, 244, 0.16)";
+    context.fillRect(rx, ry, rw, rh);
+    /* The faint hard edge a roller leaves against old paint. */
+    context.strokeStyle = "rgba(210, 208, 200, 0.18)";
+    context.lineWidth = 1;
+    context.strokeRect(rx, ry, rw, rh);
+  }
+
+  /* Screw holes: deeper than pins, each with a dust shadow beneath. */
+  for (const hole of params.screwHoles ?? []) {
+    const x = hole.u * size;
+    const y = (1 - hole.v) * size;
+    context.fillStyle = "rgba(38, 32, 25, 0.65)";
+    context.fillRect(x - 1.5, y - 1.5, 3.5, 3.5);
+    context.fillStyle = "rgba(255, 252, 244, 0.14)";
+    context.fillRect(x - 1.5, y + 2, 3.5, 1.5);
+    /* Dust drift below the hole. */
+    const streak = context.createLinearGradient(0, y + 3, 0, y + 22);
+    streak.addColorStop(0, "rgba(70, 62, 52, 0.05)");
+    streak.addColorStop(1, "rgba(70, 62, 52, 0)");
+    context.fillStyle = streak;
+    context.fillRect(x - 2, y + 3, 4.5, 19);
   }
 
   /* Ghosts of prints that used to hang here (canvas y runs opposite V). */

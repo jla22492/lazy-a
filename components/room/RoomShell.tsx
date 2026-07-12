@@ -186,6 +186,16 @@ export function RoomShell() {
       /* One that came down inside the cluster's territory. */
       { u: 0.323, v: 0.633, w: 0.034, h: 0.083 },
     ],
+    /* The upward campaign (0057): a shelf's bracket holes from an
+       arrangement nobody remembers, and a repair painted in slightly
+       the wrong white. */
+    screwHoles: [
+      { u: 0.1136, v: 0.883 },
+      { u: 0.1136, v: 0.85 },
+      { u: 0.2727, v: 0.883 },
+      { u: 0.2727, v: 0.85 },
+    ],
+    repairs: [{ u: 0.852, v: 0.8125, w: 0.068, h: 0.1 }],
     residue: [
       /* Above the test prints: the tape-and-prop habit, remembered. */
       { u: 0.478, v: 0.455 },
