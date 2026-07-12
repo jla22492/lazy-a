@@ -1,5 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { SRGBColorSpace, TextureLoader } from "three";
+import { useLoader } from "@react-three/fiber";
+
+import { assetPath } from "@/lib/assetPath";
 import { frostedPaneTexture, plaster, plasterNormal } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
@@ -171,6 +177,16 @@ export function RoomShell() {
   /* One quiet plaster for every painted surface (WORK ORDER 0042): broad
      tonal clouds at the threshold of noticing — the walls never perform. */
   const wallPlaster = plaster({ seed: 427, base: wall.color, age: 0.35 });
+  /* Baked indirect light for the rear wall (0096 spike); reuses the
+     wall's own UVs. */
+  const rearBounce = useLoader(
+    TextureLoader,
+    assetPath("/textures/gi/gi-rearwall.png"),
+  );
+  useMemo(() => {
+    rearBounce.channel = 0;
+    rearBounce.colorSpace = SRGBColorSpace;
+  }, [rearBounce]);
   /* The rear wall alone carries the ghosts of habit (WORK ORDER 0050):
      lighter patches where prints used to hang — one beside the hero print
      (whose off-center position quietly answers to its predecessor's spot),
@@ -236,7 +252,18 @@ export function RoomShell() {
         receiveShadow
       >
         <planeGeometry args={[REAR_WIDTH, wall.height]} />
-        <meshStandardMaterial map={rearPlaster} normalMap={plasterNormal(427)} roughness={0.94} />
+        {/* Baked indirect light (0096 spike): the bounce the live
+            renderer cannot transport — floor-warm rising into the
+            plaster, the bench's shadowed band — frozen from a Blender
+            twin of the shell; the SUN stays live, so the breath
+            survives. */}
+        <meshStandardMaterial
+          map={rearPlaster}
+          normalMap={plasterNormal(427)}
+          lightMap={rearBounce}
+          lightMapIntensity={0.55}
+          roughness={0.94}
+        />
       </mesh>
       {LEFT_PANELS.filter(({ rect }) => rect[2] > 0 && rect[3] > 0).map(
         ({ key, rect: [centerZ, centerY, width, height] }) => (

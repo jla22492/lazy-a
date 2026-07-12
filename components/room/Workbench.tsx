@@ -1,5 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { useLoader } from "@react-three/fiber";
+import { SRGBColorSpace, TextureLoader } from "three";
+
+import { assetPath } from "@/lib/assetPath";
 import { talliedWood, wood, woodNormal } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
@@ -25,6 +31,16 @@ const LEG_POSITIONS: ReadonlyArray<[number, number, number]> = [
  * derived from the workspace zone language, not painted arbitrarily.
  */
 export function Workbench() {
+  /* Baked indirect light for the top (0096 spike): the window-side
+     brightening and the shadowed rear band the live sun cannot bounce. */
+  const topBounce = useLoader(
+    TextureLoader,
+    assetPath("/textures/gi/gi-benchtop.png"),
+  );
+  useMemo(() => {
+    topBounce.channel = 0;
+    topBounce.colorSpace = SRGBColorSpace;
+  }, [topBounce]);
   /* Wear in UV space: u spans the top's width (x), v its depth (z).
      The active zone wears most; the mug's resting spot keeps its rings. */
   const topTexture = wood({
@@ -86,6 +102,8 @@ export function Workbench() {
           attach="material-2"
           map={topTexture}
           normalMap={woodNormal(benchWood.seed)}
+          lightMap={topBounce}
+          lightMapIntensity={0.5}
           roughness={0.72}
         />
         <meshStandardMaterial attach="material-3" map={legTexture} roughness={0.8} />
