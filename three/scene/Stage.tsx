@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Canvas, type RootState } from "@react-three/fiber";
 import { AgXToneMapping } from "three";
 
+import { AttentionNavigation } from "@/components/site/AttentionNavigation";
 import { Arrival } from "@/components/camera/Arrival";
 import { AttentionSensor } from "@/components/camera/AttentionSensor";
 import { CameraRig } from "@/components/camera/CameraRig";
@@ -102,6 +103,7 @@ export function Stage() {
         <WorkspaceZones />
         <CameraRig />
         <Arrival />
+        <AttentionNavigation />
         <FirstStep />
         <FirstLook />
         <AttentionSensor />
