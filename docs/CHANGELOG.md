@@ -37,4 +37,6 @@
 
 - The visitor sits down: the walk to the bench now ends in the maker's own chair-height view of the work — a body lowers, the seat takes its weight, the eyes land on the notes a beat later, all inside four measured seconds. The room wasn't abandoned; it was vacated for you. Today's work fills the frame, and one of the prints on it is quietly playing.
 
+- The notebook answered: rest your eyes on it and JOURNAL appears; choose it and the head tilts down while a written paragraph about Lazy A rises out of the closed cover — on the page itself, under the same light, behind the same pencil. The charger by the bench's edge says CONTACT (the phone left with its owner), and the prints propped against the wall say FILMS. The objects were always the evidence; now they are the answers. (The journal's words are placeholders awaiting their author.)
+
 Record experience changes here, not just technical ones.

@@ -14,7 +14,7 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-WORK ORDER 0089 — The Seated Arrival, first pass (Sprint 05A, item 4 of 6 — COMPLETE)
+WORK ORDER 0090 — The Destination Remap & the Placeholder Journal (Sprint 05A, item 5 of 6 — COMPLETE)
 
 ---
 
@@ -149,6 +149,7 @@ WORK ORDER 0089 — The Seated Arrival, first pass (Sprint 05A, item 4 of 6 — 
 - CREATIVE SPRINT 04 COMPLETE (docs/progress/0085.png + 0085.mp4): the fifteenth order closed the sprint — the product film captured end to end (the approach, the settle, the dust, the lean into FILMS; the interface's HTML layer lives in the full-page stills, as canvas films cannot see it), CHANGELOG updated (the website arrived), and the Sprint 04 Review posted with before/after, the film, and the honest gaps; implementation stops completely per the termination rule — no Work Order 0086 until Jonathan reviews
 - SPRINT 04 APPROVED by Jonathan; CREATIVE SPRINT 05 AUTHORIZED directly by him — The Six-Second Homepage (docs/SPRINT_05.md, the ruling document; it wins over older locks where they conflict): the 4s/5s/6s acceptance clock, the destination remap (JOURNAL = the notebook, CONTACT = the phone charger, FILMS = the wall photographs), and two constitution amendments to be executed this sprint (the perspective sits; the impossible is no longer deferred); the Creative Director is out of the loop for the sprint and audits the artifact trail afterward
 - The room went public (0086, docs/progress/0086.png + 0086-phone.png): https://jla22492.github.io/lazy-a/ serves the actual experience — the existing studio-pages CI already static-exported the room page, and this order proved it: the live site captured headlessly at the deployed URL matches the local reference frame (0085.png) and holds the responsive stance at a phone viewport; every future push is live about a minute later
+- The destinations moved to Jonathan's objects (0090, docs/progress/0090.png + 0090-films.png + 0090-contact.png + 0090-live-journal.png + 0090-dwell-contact.png): JOURNAL = the notebook (choosing it turns the head down and a placeholder paragraph about Lazy A illuminates ON the closed cover — texture-level, lit and occluded by the pencil, rising with the lean's own ease; words flagged UNAUTHORED, THE_NOTEBOOK.md still governs the voice), CONTACT = the phone charger (attention on its cable's reachable stretch; renamed from WORK), FILMS = the wall photographs (the rear band's propped test prints, the wall photographs the seated frame holds); captions re-placed on measured clear wall via a new projection probe; behavioral verification by scripted real pointer — flyby/rest/release PASS for all three, locally and on the LIVE deploy; the journal's dwell sphere was found shadowing the charger's line of sight and fixed; the archived FirstStep click trigger retired (clicks belong to conversations), parking the archived notebook pickup with it
 - The perspective sits (0089, docs/progress/0089.png + 0089-arrival.mp4 + 0089-approach-frames.png): the SPRINT_05 amendment executed — the arrival is now a ~2s walk from the door's side that lowers into the maker's working position as the last step lands, the seat taking the weight with a damped compression, the gaze landing on the work a beat after the body; measured frame-by-frame from the recording at ~3.1 seconds first-step-to-settle, inside Jonathan's 4-second criterion; the settled composition is new — today's work fills the frame at seated eye height (1.18m over STANDING_POSITIONS.working) and the room's height lives in the approach; verified on the live deploy; the old attention destinations sit outside the seated frame, dormant until 0090 remaps them (by design); the maker's chair staging under the amended absence story is flagged for Jonathan in the build report
 - The impossible pipeline is proven (0088, docs/progress/0088.png + 0088-print-zoom.png + 0088-motion.mp4 + 0088-motion-frames.png): the considered print's picture is now a VIDEO — Jonathan's placeholder clip conformed to the print's 3:2 stock with a lab border, playing muted on a loop as a texture under the room's own daylight and AgX tone mapping; proven three ways (dev canvas film frame-diff 48 vs static floor 3; production build max diff 84/3s; the LIVE deployed URL max diff 95/3s in a real browser); the Sprint 02 lock — real-time room, offline impossible, entering as video textures — is no longer a theory; content is placeholder and unauthored, and the ~5s timed reveal belongs to 05B
 - The real logo arrived (0087, docs/progress/0087.png): Jonathan's letterpress lockup — the lazy-A brand mark asleep under its zzz, LAZY A, PRODUCTIONS — replaced the placeholder text wordmark under the unchanged 0073 restraint ruling (top-left, small, no animation, orientation not branding); the artwork was re-inked in the type system's primary on a transparent ground so it floats over the plaster at the same step of contrast the text held; verified live at the deployed URL
@@ -157,13 +158,13 @@ WORK ORDER 0089 — The Seated Arrival, first pass (Sprint 05A, item 4 of 6 — 
 
 ## In Progress
 
-Creative Sprint 05, phase 05A — The Six-Second Homepage (work orders 0086–0091, directed by Jonathan personally). Complete: 0086 (live deploy), 0087 (the real logo), 0088 (video-texture spike), 0089 (seated arrival). Remaining: 0090 destination remap + placeholder journal, 0091 screen-capture pipeline. Full stop after 0091 for Jonathan's review; no 05B work before it.
+Creative Sprint 05, phase 05A — The Six-Second Homepage (work orders 0086–0091, directed by Jonathan personally). Complete: 0086 (live deploy), 0087 (the real logo), 0088 (video-texture spike), 0089 (seated arrival), 0090 (destination remap + placeholder journal). Remaining: 0091 screen-capture pipeline (its capture/probe/verify scripts already exist; the review film closes it). Full stop after 0091 for Jonathan's review; no 05B work before it.
 
 ---
 
 ## Next Recommended Work Order
 
-WORK ORDER 0090 — the destination remap: JOURNAL to the notebook, CONTACT to the phone charger, FILMS to the wall photographs, with placeholder journal text ON the notebook page.
+WORK ORDER 0091 — the screen-capture pipeline's review film: at least one Playwright-produced film showing the HTML layer and the canvas together.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -177,7 +178,7 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 - The ceiling underside is bounce-lit only (no direct sun, physically correct) and reads very dark if ever seen; acceptable while it stays out of frame, revisit when a lighting or camera-movement order exposes it.
 - GSAP and Leva are installed but unused until animation and debug work begins.
 - Dev mode occasionally logs a hydration-mismatch warning (`isolation: isolate` on body) and counts it as "1 issue" in the Next dev badge. It is injected by Next's own dev-tools overlay, is intermittent, and cannot occur in production builds; no app code is involved (we are on the latest Next).
-- The archived notebook pickup interaction (0027, temporary press-and-hold gesture) still functions; since 0037 the pencil rests across the notebook's cover, so triggering the pickup leaves the pencil floating. Flagged for creative direction rather than silently changed — the pipeline is completed research and its gesture will be re-evaluated when interaction work resumes.
+- The archived notebook pickup interaction (0027) is parked as of 0090: its readiness required the FirstStep walk to set the visitor's position, and FirstStep's temporary click/Space trigger is retired (clicks belong to conversations). Both survive as research; the pickup's pencil-floating issue is moot until interaction work resumes.
 
 ---
 
