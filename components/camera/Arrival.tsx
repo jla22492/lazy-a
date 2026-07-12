@@ -91,14 +91,19 @@ export function Arrival() {
   const poses = useMemo(() => {
     const seated = new Vector3(...STAGE.camera.position);
     const endGaze = new Vector3(...STAGE.camera.lookAt);
-    /* The frame survives the viewport (0079): at a narrow viewport the
-       body simply settles further from the bench — seated, the chair
-       drawn in less — chosen once at arrival. At 16:9 and wider,
-       nothing changes. */
+    /* The frame survives the viewport (0079, recomposed for the seat at
+       0094): at a narrow viewport the body settles further back AND the
+       seat slides toward the hero's axis, so the portrait slice holds
+       what matters — the playing print above, today's work below — with
+       the notebook still in reach. The studio's note leaves the resting
+       crop on a phone; it still reads during the walk. Chosen once at
+       arrival; at 16:9 and wider, nothing changes. */
     if (typeof window !== "undefined") {
       const aspect = window.innerWidth / Math.max(window.innerHeight, 1);
-      const extraBack = Math.min(Math.max(1.1 * (1.5 - aspect), 0), 0.9);
-      seated.z += extraBack;
+      const narrowness = Math.min(Math.max(1.5 - aspect, 0), 1.05);
+      seated.z += Math.min(1.1 * narrowness, 0.9);
+      seated.x += 0.24 * narrowness;
+      endGaze.x += 0.38 * narrowness;
     }
     /* The body stops to sit a step behind the seat, standing. */
     const preSeat = new Vector3(
