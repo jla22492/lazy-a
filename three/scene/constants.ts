@@ -59,13 +59,13 @@ export const ROOM = {
     /** Just behind the workbench's back edge, as a real bench sits. */
     z: -0.45,
     /**
-     * RECOMPOSITION (WORK ORDER 0071, Jonathan's revision order): the room
-     * grew — both corners now fall outside the locked frame, so the wall
-     * continues past the browser's edges and the composition reads as a
-     * crop from a larger place, never a stage. Asymmetric, as real rooms
-     * are.
+     * RECOMPOSITION (WORK ORDER 0071, amended by Jonathan mid-checkpoint):
+     * only the LEFT side opens — the left corner falls outside the frame
+     * and the wall continues past the browser's left edge, while the
+     * right side keeps its original architecture: the wall, the corner,
+     * and the window's sliver of daylight exactly as they were.
      */
-    spanX: [-3.2, 3.0] as const,
+    spanX: [-3.2, 2.2] as const,
   },
   leftWall: {
     /** Beyond the frame's left edge since 0071. */
@@ -75,11 +75,11 @@ export const ROOM = {
   },
   /**
    * Right wall (WORK ORDER 0012): closes the room on the side the daylight
-   * enters from. Beyond the frame's right edge since 0071 — the daylight's
-   * architecture is now entirely off-screen.
+   * enters from. Kept exactly as built, per Jonathan's 0071 amendment —
+   * the right corner and the window's sliver stay in frame.
    */
   rightWall: {
-    x: 3.0,
+    x: 2.2,
     spanZ: [-0.45, 6] as const,
   },
   /**
@@ -94,11 +94,11 @@ export const ROOM = {
     sill: 0.9,
     head: 2.0,
     /**
-     * 0071: the window now lives wholly outside the frame on the enlarged
-     * right wall — the source is never seen at all; what remains inside
-     * the frame is its light, entering the floor from beyond the crop.
+     * R-0013: positioned so only a ~9cm sliver of glass enters the locked
+     * frame's corner — restored by Jonathan's 0071 amendment (the right
+     * side keeps its original architecture).
      */
-    spanZ: [0.9, 1.8] as const,
+    spanZ: [0.55, 1.45] as const,
     /** Wall thickness: the reveal depth of the opening. */
     reveal: 0.1,
     /** Frosted daylight glass; quiet warm white. */

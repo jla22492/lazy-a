@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0072 — The Arrival (Sprint 04, order 2 of 15)
+WORK ORDER 0072 — The Arrival (Sprint 04, order 2 of 15; follows Jonathan's R-0071 amendment — left side opened, right side restored)
 
 ---
 
@@ -166,7 +166,7 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The world origin (0,0,0) is the exact center of the workbench — permanent.
 🔒 The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 🔒 The camera's gaze rests on the work surface, not the horizon.
-🔒 The opening view is a person who walked in and naturally stopped: normal lens (fov 35), eye height, slightly left of the bench axis, gaze settled just above the work — and neither wall corner in frame: the browser is a crop from a larger room, never a stage. (0071 — recomposed under Jonathan's revision order, superseding R-0007; APPROVED by Creative Direction at the checkpoint.)
+🔒 The opening view is a person who walked in and naturally stopped: normal lens (fov 35), eye height, slightly left of the bench axis, gaze settled just above the work. The LEFT side runs open past the frame (its corner never seen — the room continues); the RIGHT side keeps its original architecture: the wall, the corner, and the window's sliver of daylight. (R-0071 — recomposed under Jonathan's revision order and amended per his direction mid-checkpoint, superseding R-0007.)
 🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
 🔒 The room is a complete permanent shell: rear wall, left wall with the entrance doorway behind the camera, right wall with a frosted window (the implied light source, never a view), ceiling, baseboards. Identity enters in layers: architecture → permanent identity → active workspace → impossible moments.
 🔒 The room's history is told by light before it is told by objects.

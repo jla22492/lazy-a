@@ -17,9 +17,9 @@
  */
 export const SHIPPING_TUBES = {
   /** Against the right wall below the window — right where the frame cuts. */
-  /** 0071: against the enlarged right wall, wholly beyond the frame —
-      the room keeps its deliveries; the visitor keeps wondering. */
-  corner: { x: 2.87, z: 0.78 },
+  /** Restored with the right wall (0071 amendment): against it, where
+      the frame cuts. */
+  corner: { x: 2.07, z: 0.78 },
   color: "#a89680",
   /**
    * 0061 (review #1 ruling): one tube, not two — a single tube cut by
@@ -42,9 +42,8 @@ export const SHIPPING_TUBES = {
  */
 export const POWER_RUN = {
   strip: {
-    /** 0071: at the enlarged wall's base, beyond the frame — power is
-        real and unseen. */
-    at: { x: 2.7, z: 0.88 },
+    /** Restored with the right wall (0071 amendment). */
+    at: { x: 1.86, z: 0.82 },
     width: 0.26,
     height: 0.038,
     depth: 0.052,
@@ -60,11 +59,9 @@ export const POWER_RUN = {
   cable: {
     thickness: 0.009,
     color: "#31302e",
-    /* The visible slack now ENTERS the frame from past its right edge
-       (0071) — the clearest sentence the crop speaks. */
     segments: [
-      { from: { x: 2.55, z: 0.8 }, to: { x: 1.35, z: 0.52 } },
-      { from: { x: 1.35, z: 0.52 }, to: { x: 0.92, z: 0.33 } },
+      { from: { x: 1.8, z: 0.84 }, to: { x: 1.32, z: 0.56 } },
+      { from: { x: 1.32, z: 0.56 }, to: { x: 0.92, z: 0.33 } },
     ],
   },
 } as const;

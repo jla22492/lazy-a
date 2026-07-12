@@ -176,57 +176,57 @@ export function RoomShell() {
      (whose off-center position quietly answers to its predecessor's spot),
      one behind the pinned cluster — and the pin holes that outlived their
      pins. UVs derive from the wall's true span (x -2.2..2.2, y 0..2.4). */
-  /* UVs derive from the wall's enlarged span (0071): u = (x+3.2)/6.2.
-     Every mark keeps its physical position; only its UV moved. */
+  /* UVs derive from the wall's asymmetric span (0071 amendment):
+     u = (x+3.2)/5.4. Every mark keeps its physical position. */
   const rearPlaster = plaster({
     seed: 427,
     base: wall.color,
     age: 0.35,
     ghosts: [
       /* The hero print's predecessor: smaller, hung left of today's spot. */
-      { u: 0.5129, v: 0.65, w: 0.0581, h: 0.208 },
+      { u: 0.5889, v: 0.65, w: 0.0667, h: 0.208 },
       /* One that came down inside the cluster's territory. */
-      { u: 0.3903, v: 0.633, w: 0.0242, h: 0.083 },
+      { u: 0.4481, v: 0.633, w: 0.0278, h: 0.083 },
     ],
     /* The upward campaign (0057): a shelf's bracket holes from an
        arrangement nobody remembers, and a repair painted in slightly
        the wrong white. */
     screwHoles: [
       /* A lone screw hole (0062), unrelated to the shelf's pairs. */
-      { u: 0.839, v: 0.625 },
-      { u: 0.2419, v: 0.883 },
-      { u: 0.2419, v: 0.85 },
-      { u: 0.3548, v: 0.883 },
-      { u: 0.3548, v: 0.85 },
+      { u: 0.9633, v: 0.625 },
+      { u: 0.2778, v: 0.883 },
+      { u: 0.2778, v: 0.85 },
+      { u: 0.4074, v: 0.883 },
+      { u: 0.4074, v: 0.85 },
     ],
-    repairs: [{ u: 0.7659, v: 0.8125, w: 0.0484, h: 0.1 }],
+    repairs: [{ u: 0.8794, v: 0.8125, w: 0.0556, h: 0.1 }],
     /* The vent's breath (0058): dust drifted onto the paint above it. */
     stains: [
-      { u: 0.8323, v: 0.945, w: 0.071, h: 0.06 },
+      { u: 0.9556, v: 0.945, w: 0.0815, h: 0.06 },
       /* The polish (0062): hip-height, where someone has brushed past
          the bench's end toward the bookcase for years. */
-      { u: 0.3548, v: 0.44, w: 0.0497, h: 0.13 },
+      { u: 0.4074, v: 0.44, w: 0.057, h: 0.13 },
     ],
     /* The wall as a record (0062): accidents from different decades,
        different causes, different people — nothing connected. */
-    touchUps: [{ u: 0.2096, v: 0.458, r: 0.0099 }],
-    cracks: [{ u: 0.7177, v: 0.94, length: 0.12 }],
+    touchUps: [{ u: 0.2406, v: 0.458, r: 0.0114 }],
+    cracks: [{ u: 0.824, v: 0.94, length: 0.12 }],
     residue: [
       /* Above the test prints: the tape-and-prop habit, remembered. */
-      { u: 0.5005, v: 0.455 },
-      { u: 0.5183, v: 0.462 },
-      { u: 0.5424, v: 0.45 },
+      { u: 0.5747, v: 0.455 },
+      { u: 0.595, v: 0.462 },
+      { u: 0.6227, v: 0.45 },
     ],
     pinHoles: [
       /* The lone nail hole (0062): one decision, one decade, unexplained. */
-      { u: 0.6694, v: 0.717 },
-      { u: 0.3635, v: 0.7 },
-      { u: 0.3813, v: 0.64 },
-      { u: 0.4111, v: 0.72 },
-      { u: 0.4012, v: 0.61 },
-      { u: 0.3714, v: 0.585 },
-      { u: 0.4842, v: 0.755 },
-      { u: 0.5431, v: 0.755 },
+      { u: 0.7686, v: 0.717 },
+      { u: 0.4174, v: 0.7 },
+      { u: 0.4378, v: 0.64 },
+      { u: 0.472, v: 0.72 },
+      { u: 0.4606, v: 0.61 },
+      { u: 0.4264, v: 0.585 },
+      { u: 0.5559, v: 0.755 },
+      { u: 0.6235, v: 0.755 },
     ],
   });
   return (
