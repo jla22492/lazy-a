@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0060 — Right-Side Rebalance & the Chair's Moment (Creative Sprint 03, order 5 of 15)
+WORK ORDER 0061 — The Person's Marks (Creative Sprint 03, order 6 of 15)
 
 ## Version
 
@@ -10,17 +10,16 @@ v0.1
 
 ## Summary
 
-- Act I closes (docs/progress/0060.png):
-- The chair's moment: it now stands a body-width behind the bench, half-turned the way a sitter turns when they rise and walk toward the door behind the camera. Interrupted a moment ago, not abandoned across the room. The work cloth keeps its home over the slat — the second job survives the move. Its manifest answers rewrote themselves: "someone just stood up; the room is mid-breath."
-- The right side finally weighs what it should: the shipping tubes slid deeper into the frame's cut (mostly outside now), the power strip and charger block tucked nearer the wall, and the supply cable's slack shortened. Subtraction of weight, not of objects.
-- With 0057–0059's upward campaign plus this rebalance, Act I (the building) is complete: the room now continues upward, breathes through a grille, complies with a code, remembers older arrangements, and holds a chair still warm.
-- Verification: type-check and production build pass; 0060.png reviewed at full frame against 0055 (one capture retry — same early-kill race as 0058; the retry loop now waits longer).
-- Internal review #1 posted to the Creative Director with the four honest answers.
+- Review #1's rulings executed, then Act II's first pattern (docs/progress/0061.png):
+- Removed: the second shipping tube (one tube cut by the frame is a stronger sentence), the fallen film canister (the pair had become an argument), and the award (it told "creative," which the room already tells — it revealed no new truth). The manifest holds 32 pieces.
+- The tallies: the bench's front edge — now its own face material, so the marks live on the edge alone — carries three small five-bar gates in graphite near the working position. One bar at a time, over months; the last gate stops at three, because whatever it counts isn't done. A pattern, not a biography: the person keeps score of something only they know, and the marks are deliberately unreadable as content. At frame distance they are almost invisible, which review #1 ratified as exactly the sprint's register.
+- New lock recorded (habits reveal identity better than possessions), along with the review's calibrations and the sprint's real question: if I arrived thirty seconds earlier, what would I have interrupted?
+- Verification: type-check and production build pass; 0061.png reviewed at full frame and in bench-edge crop.
 
 ## Decisions Required
 
-None (review #1's questions answered in the thread).
+None.
 
 ## Ready for
 
-Internal review #1, then WORK ORDER 0061 — the person's marks.
+WORK ORDER 0062 — Routes of habit: the wall's accidents and the floor's paths.

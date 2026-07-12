@@ -222,29 +222,18 @@ function LooseSheets() {
   );
 }
 
-/** Two 35mm film canisters — one standing, one fallen and unminded. */
+/** One 35mm film canister, emptied from a pocket mid-task. */
 function FilmCanisters() {
-  const { radius, height, color, standing, fallen } = FILM_CANISTERS;
+  const { radius, height, color, standing } = FILM_CANISTERS;
   return (
-    <>
-      <mesh
-        position={[standing.x, SURFACE + height / 2, standing.z]}
-        castShadow
-        receiveShadow
-      >
-        <cylinderGeometry args={[radius, radius, height, 16]} />
-        <meshStandardMaterial color={color} roughness={0.55} />
-      </mesh>
-      <mesh
-        position={[fallen.x, SURFACE + radius, fallen.z]}
-        rotation={[Math.PI / 2, 0, fallen.yaw]}
-        castShadow
-        receiveShadow
-      >
-        <cylinderGeometry args={[radius, radius, height, 16]} />
-        <meshStandardMaterial color={color} roughness={0.55} />
-      </mesh>
-    </>
+    <mesh
+      position={[standing.x, SURFACE + height / 2, standing.z]}
+      castShadow
+      receiveShadow
+    >
+      <cylinderGeometry args={[radius, radius, height, 16]} />
+      <meshStandardMaterial color={color} roughness={0.55} />
+    </mesh>
   );
 }
 

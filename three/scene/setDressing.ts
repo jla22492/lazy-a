@@ -204,8 +204,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
   {
     name: "FilmCanisters",
     zone: "workbench",
-    story:
-      "emptied from a jacket pocket mid-task; one fell over and nobody minded",
+    story: "emptied from a jacket pocket mid-task, set down without looking",
     identity: "Lazy A still shoots film — patience is a value",
     unresolved: "waiting to be developed — patience, not neglect",
     arrived: "last weekend, back from a shoot",
@@ -221,6 +220,19 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     unresolved: "the next frame check could come at any moment",
     arrived: "years ago as a tool; an hour ago on this spot",
     implies: "everything it has photographed, and the frame checked an hour ago",
+  },
+  {
+    name: "Tallies",
+    zone: "workbench",
+    story:
+      "three small five-bar gates in graphite on the bench's front edge, " +
+      "near the working position — counting something only they know",
+    identity: "a pattern, not a biography: the person keeps score of " +
+      "something, and has for a while",
+    unresolved: "the last gate has three bars; whatever it counts isn't done",
+    arrived: "one bar at a time, over months",
+    implies: "the thing being counted — takes, days, drafts — and every " +
+      "bar that came before the frame arrived",
   },
   {
     name: "HeroPrint",
@@ -262,17 +274,6 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     unresolved: "everything on it is between temporary and permanent",
     arrived: "years ago; what leans on it changes seasonally",
     implies: "the rotation of work that auditions here season by season",
-  },
-  {
-    name: "Award",
-    zone: "referenceWall",
-    story:
-      "at the ledge's end, turned mostly away — it lives here, but it " +
-      "isn't allowed to look at everyone",
-    identity: "recognition happened; it is not performed",
-    unresolved: "never put away because putting it away would also be a statement",
-    arrived: "two years ago, placed once and deliberately never adjusted",
-    implies: "a night someone dressed up, and the ambivalence about mentioning it",
   },
   {
     name: "StickyNotes",
@@ -431,7 +432,7 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     name: "ShippingTubes",
     zone: "edgeOfFrame",
     story:
-      "print tubes leaning against the right wall where deliveries get " +
+      "one print tube leaning against the right wall where deliveries get " +
       "parked — half-cut by the frame's edge, never composed for it",
     identity: "work arrives and leaves this room; it has an outside",
     unresolved: "opening them is a task that keeps losing to the current work",

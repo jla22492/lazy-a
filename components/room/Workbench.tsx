@@ -1,6 +1,6 @@
 "use client";
 
-import { wood } from "@/three/materials/procedural";
+import { talliedWood, wood } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -59,6 +59,16 @@ export function Workbench() {
     grain: benchWood.grain,
     age: 0.3,
   });
+  /* The front edge face carries the person's tallies (0061) — small
+     graphite gates near the working position, counting something only
+     they know. Box faces get separate materials so the marks live on
+     the edge alone. */
+  const edgeTexture = talliedWood({
+    seed: benchWood.seed + 2,
+    base: benchWood.base,
+    grain: benchWood.grain,
+    age: 0.6,
+  });
   return (
     <group position={fromWorkbench([0, 0, 0])}>
       <mesh
@@ -67,7 +77,13 @@ export function Workbench() {
         receiveShadow
       >
         <boxGeometry args={[top.width, top.thickness, top.depth]} />
-        <meshStandardMaterial map={topTexture} roughness={0.72} />
+        {/* Face order: +x, -x, +y (top), -y, +z (front edge), -z. */}
+        <meshStandardMaterial attach="material-0" map={legTexture} roughness={0.75} />
+        <meshStandardMaterial attach="material-1" map={legTexture} roughness={0.75} />
+        <meshStandardMaterial attach="material-2" map={topTexture} roughness={0.72} />
+        <meshStandardMaterial attach="material-3" map={legTexture} roughness={0.8} />
+        <meshStandardMaterial attach="material-4" map={edgeTexture} roughness={0.74} />
+        <meshStandardMaterial attach="material-5" map={legTexture} roughness={0.75} />
       </mesh>
       {LEG_POSITIONS.map((position) => (
         <mesh

@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0060 — Right-Side Rebalance & the Chair's Moment (Sprint 03, order 5 of 15)
+WORK ORDER 0061 — The Person's Marks (Sprint 03, order 6 of 15)
 
 ---
 
@@ -118,6 +118,8 @@ WORK ORDER 0060 — Right-Side Rebalance & the Chair's Moment (Sprint 03, order 
 - The building's systems (docs/progress/0058.png): the room is a tenant — a return-air grille high on the rear wall (aged metal a shade duller than the outlets, five slats, dust breathed onto the paint above it year after year; it implies ducts, other rooms on the same air, a building exhaling) and a smoke detector a hand below the ceiling line, white-on-white the way real ones are — code-required, ignored for years, discoverable rather than readable
 - The ceiling joined the room (docs/progress/0059.png): the ceiling plane is invisible from the locked composition, so it descends into frame instead — a bare bulb on a fabric cord hangs over the bench, off because the daylight is doing its job, its cord rising past the top edge of the frame to a ceiling the visitor never sees (the frame cuts it; the room continues upward); and the wall-ceiling junction gained the soft occlusion real corners gather, evidence of the lid above the frame
 - Right-side rebalance & the chair's moment (docs/progress/0060.png): the chair moved to a body-width behind the bench, half-turned the way a sitter turns when they rise and walk toward the door — interrupted a moment ago, not abandoned across the room (the work cloth keeps its home on its back); the shipping tubes slid deeper into the frame's cut and the power strip tucked nearer the wall — the right side finally weighs what it should
+- Internal review #1 held (after 0060): threshold crossed — "the room is beginning to stop feeling staged and start feeling inherited"; the smoke detector's near-invisibility ratified as Sprint 03's calibration (the most believable objects are almost invisible); new lock recorded (habits reveal identity better than possessions); all three removal candidates ruled OUT (second tube, fallen canister, the award — it told "creative," which the room already tells); the wall directed to accumulate accidents across decades; Act II caution: author patterns, never character; the sprint's real question named — if I arrived thirty seconds earlier, what would I have interrupted?
+- The person's marks (docs/progress/0061.png): the three ruled removals executed, and the bench's front edge — given its own face material — now carries three small five-bar gates in graphite near the working position, one bar at a time over months, the last gate unfinished at three: the person keeps score of something only they know; believable at a glance, deliberately unreadable as content, and almost invisible at frame distance, per the sprint's calibration
 
 ---
 
@@ -129,7 +131,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0061 — The person's marks, following internal review #1.
+WORK ORDER 0062 — Routes of habit: the wall's accidents and the floor's paths.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -200,3 +202,4 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The room is discovered, never decorated. (Sprint 03.)
 🔒 Warmth comes from accumulated life, not visual styling. (Sprint 03.)
 🔒 The visitor should wonder what exists beyond the frame more often than what exists inside it. (Sprint 03.)
+🔒 Habits reveal identity better than possessions. Anyone can own a camera; only one person consistently leaves their pencil exactly where it naturally rolls. (Named at Sprint 03's first internal review, with two calibrations: the most believable objects are almost invisible, and every addition must make the room more singular, not more detailed. The sprint's question: if I arrived thirty seconds earlier, what would I have interrupted?)

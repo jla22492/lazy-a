@@ -103,18 +103,8 @@ export const PICTURE_LEDGE = {
     lean: 0.18,
     yaw: -0.06,
   },
-  /**
-   * A small award at the ledge's right end, turned mostly away — it lives
-   * here, but it isn't allowed to look at everyone.
-   */
-  award: {
-    width: 0.06,
-    height: 0.14,
-    depth: 0.06,
-    color: "#6d675c",
-    x: -1.24,
-    yaw: 1.2,
-  },
+  /** 0061 (review #1 ruling): the award was removed — it told "creative,"
+      which the room already tells; it revealed no new truth. */
 } as const;
 
 /**

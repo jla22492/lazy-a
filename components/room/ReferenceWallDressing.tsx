@@ -91,7 +91,7 @@ function PinnedCluster() {
 
 /** The picture ledge and what currently leans on it. */
 function PictureLedge() {
-  const { center, length, depth, thickness, color, framed, unframed, award } =
+  const { center, length, depth, thickness, color, framed, unframed } =
     PICTURE_LEDGE;
   const surfaceY = center.y + thickness / 2;
   return (
@@ -149,16 +149,6 @@ function PictureLedge() {
           map={paper({ seed: 445, base: unframed.color, fiber: 0.3, handled: 0.25 })}
           roughness={0.7}
         />
-      </mesh>
-      {/* The award, turned mostly away. */}
-      <mesh
-        position={[award.x, surfaceY + award.height / 2, WALL_Z + depth / 2]}
-        rotation={[0, award.yaw, 0]}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[award.width, award.height, award.depth]} />
-        <meshStandardMaterial color={award.color} />
       </mesh>
     </>
   );

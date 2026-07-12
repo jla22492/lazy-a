@@ -145,9 +145,8 @@ export const FILM_CANISTERS = {
   radius: 0.0155,
   height: 0.05,
   color: "#2f2f2f",
+  /** 0061 (review #1 ruling): one canister; the pair was an argument. */
   standing: { x: 0.52, z: 0.26 },
-  /** The second one fell over and nobody minded. */
-  fallen: { x: 0.6, z: 0.31, yaw: 1.1 },
 } as const;
 
 /** Temporary zone: the camera set down after checking a frame. */

@@ -19,9 +19,12 @@ export const SHIPPING_TUBES = {
   /** Against the right wall below the window — right where the frame cuts. */
   corner: { x: 2.07, z: 0.78 },
   color: "#a89680",
+  /**
+   * 0061 (review #1 ruling): one tube, not two — a single tube cut by
+   * the frame is a stronger sentence.
+   */
   tubes: [
     { length: 0.95, radius: 0.042, lean: 0.16, yaw: 2.6, offset: { x: 0, z: 0 } },
-    { length: 0.78, radius: 0.036, lean: 0.2, yaw: 2.2, offset: { x: -0.06, z: 0.1 } },
   ],
   /**
    * The Edit (0044): the fallen third tube was removed — the bottom-right

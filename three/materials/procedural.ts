@@ -685,6 +685,57 @@ export function cornerFalloffTexture(): CanvasTexture {
  * the window, unexplained. The world continues past the glass.
  */
 /**
+ * The bench's front-edge face (WORK ORDER 0061): the same worked wood,
+ * plus the person's tallies — small five-bar gates in graphite near the
+ * working position, counting something only they know. A pattern, not a
+ * biography: the marks are believable at a glance and deliberately
+ * unreadable as content.
+ */
+export function talliedWoodTexture(params: WoodParams): CanvasTexture {
+  const base = woodTexture(params);
+  const context = (base.image as HTMLCanvasElement).getContext("2d");
+  if (!context) return base;
+  const size = (base.image as HTMLCanvasElement).width;
+  const random = seededRandom(params.seed + 977);
+  /* Three gate clusters right of center (the working side), mid-face. */
+  const clusters = [
+    { u: 0.6, count: 5 },
+    { u: 0.645, count: 5 },
+    { u: 0.685, count: 3 },
+  ];
+  for (const cluster of clusters) {
+    const cx = cluster.u * size;
+    const cy = 0.52 * size;
+    const barHeight = 0.16 * size;
+    for (let bar = 0; bar < Math.min(cluster.count, 4); bar++) {
+      const x = cx + bar * 7 + (random() - 0.5) * 2;
+      context.strokeStyle = `rgba(52, 48, 44, ${0.5 + random() * 0.2})`;
+      context.lineWidth = 1.6;
+      context.beginPath();
+      context.moveTo(x, cy - barHeight / 2 + (random() - 0.5) * 3);
+      context.lineTo(x + (random() - 0.5) * 3, cy + barHeight / 2);
+      context.stroke();
+    }
+    if (cluster.count >= 5) {
+      context.strokeStyle = "rgba(52, 48, 44, 0.55)";
+      context.lineWidth = 1.6;
+      context.beginPath();
+      context.moveTo(cx - 4, cy + barHeight / 2 - 2);
+      context.lineTo(cx + 25, cy - barHeight / 2 + 2);
+      context.stroke();
+    }
+  }
+  base.needsUpdate = true;
+  return base;
+}
+
+export function talliedWood(params: WoodParams): CanvasTexture {
+  return cached(`talliedWood:${JSON.stringify(params)}`, () =>
+    talliedWoodTexture(params),
+  );
+}
+
+/**
  * Top-down alpha falloff (WORK ORDER 0059): opaque at V=1 fading down —
  * the soft occlusion where wall meets ceiling, laid along the junction.
  */
