@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0090 — The Destination Remap & the Placeholder Journal (Creative Sprint 05A, item 5 of 6)
+WORK ORDER 0091 — The Screen-Capture Pipeline (Creative Sprint 05A, item 6 of 6 — SPRINT 05A COMPLETE)
 
 ## Version
 
@@ -10,55 +10,37 @@ v0.1
 
 ## Summary
 
-- Jonathan's destination rulings executed, superseding the 0075
-  placeholders: JOURNAL is the notebook on the desk, CONTACT is the phone
-  charger (the phone left with its owner — contact), FILMS is the
-  photographs propped against the wall. All three live inside the seated
-  composition. Two sensible reconciliations, per the brief's own
-  instruction: FILMS anchors on the rear band's propped test prints (the
-  wall photographs the seated frame actually holds — the pinned cluster
-  sits above the resting view), and CONTACT's attention center rides the
-  charger's cable where it rises over the bench's rear edge (the
-  charger's most reachable stretch from the seated frame).
-- THE JOURNAL'S WORDS ARE ON THE PAGE (docs/progress/0090.png, live at
-  0090-live-journal.png): choosing JOURNAL turns the head down to the
-  notebook — a real look, not a glance (per-destination gaze pull, new) —
-  and a written paragraph about Lazy A illuminates on the notebook
-  itself: texture-level (a canvas texture on the cover's own surface),
-  lit and tone-mapped with the room, correctly occluded by the pencil
-  lying across it, rising with the same ease as the lean (the 0081
-  one-gesture pattern, via three/interface/journal.ts). A closed notebook
-  quietly showing its words is the room refusing, once more, to behave.
-  THE WORDS ARE PLACEHOLDER — plausible, not authored; flagged in code
-  and here; docs/THE_NOTEBOOK.md still governs the notebook's voice.
-- FILMS and CONTACT keep the editorial caption grammar (0076/0082/0084);
-  their captions were re-placed on measured clear wall using a new
-  projection probe (scripts/probe-projection.mjs) after the leaned
-  viewpoints collided with the pencil jar (0078's lesson, made
-  quantitative). FILMS keeps its three unwritten gallery frames.
-- Behavioral verification, not just captures: a scripted real pointer
-  (scripts/verify-dwell.mjs) exercises the visitor's actual code path —
-  flyby never triggers, rest reveals the label, release fades it — PASS
-  for all three destinations locally AND against the live deployed URL.
-  One interaction defect found and fixed en route: the journal's dwell
-  sphere shadowed the charger's line of sight at the seated angle and
-  stole its dwell via the depth rule; the sphere now matches the page.
-- The archived FirstStep click/Space trigger is retired (it walked the
-  camera through the old standing research path on any click — clicking
-  belongs to conversations now). The walk survives as research behind
-  the dev-only ?autostep parameter; retiring it also parks the archived
-  notebook pickup, whose readiness depended on that walk.
-- Captures were produced with the Playwright compositor pipeline
-  (scripts/capture.mjs) built ahead of order 0091, because Chrome's
-  --screenshot races the canvas and cannot see scheduled HTML. 0091
-  completes the pipeline with its review film.
+- The gap Sprint 04 closed its review on is closed: review films can now
+  see what visitors see. The canvas ?record pipeline films only the
+  WebGL layer; the new pipeline drives a real installed Chrome through
+  Playwright and records the COMPOSITED page — canvas and HTML together —
+  so the wordmark, the attention labels, the editorial captions, and the
+  illuminated journal all exist in motion for the first time.
+- The pipeline is three small scripts. scripts/capture.mjs: stills and
+  passive films of any URL (used to verify 0090). scripts/film-review.mjs:
+  the review film — a scripted pointer performs the actual visit while
+  recording. scripts/verify-dwell.mjs: behavioral verification of the
+  attention grammar with a real pointer (flyby / rest / release).
+  scripts/probe-projection.mjs: measures world-to-screen projection from
+  leaned viewpoints so caption placement is quantitative.
+- The deliverable film exists: docs/progress/0091.mp4 (26s, frames at
+  0091-frames.png), recorded against THE LIVE DEPLOYED URL — the seated
+  arrival with the wordmark riding the walk, the rest on the notebook,
+  JOURNAL's paragraph illuminating on the page, the release, FILMS with
+  its caption and three unwritten gallery frames, CONTACT at the
+  charger's cable. Every HTML beat the 0085 product film could not show
+  is in this one.
+- Environment facts recorded: Playwright uses the installed Chrome
+  (channel: "chrome") because the bundled Chromium lacks h264 for the
+  video texture, and films must run in a real browser because headless
+  SwiftShader does not advance video playback (0088's finding).
 
 ## Decisions Required
 
-None new. (The journal's words and the CONTACT caption's eventual
-content remain unauthored by design; the maker's chair staging question
-from 0089 stands.)
+None.
 
 ## Ready for
 
-WORK ORDER 0091 — the screen-capture pipeline's review film.
+Jonathan's review of Sprint 05A. Implementation stops completely per the
+sprint termination rule — no Work Order 0092 and no 05B work until he
+reviews.

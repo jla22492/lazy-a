@@ -39,4 +39,6 @@
 
 - The notebook answered: rest your eyes on it and JOURNAL appears; choose it and the head tilts down while a written paragraph about Lazy A rises out of the closed cover — on the page itself, under the same light, behind the same pencil. The charger by the bench's edge says CONTACT (the phone left with its owner), and the prints propped against the wall say FILMS. The objects were always the evidence; now they are the answers. (The journal's words are placeholders awaiting their author.)
 
+- The films finally show the whole website: a real browser now performs the visit — walks in, sits down, rests, chooses, reads — and records everything a visitor's eyes receive, the room and the words above it together. The first such film was shot on the live site itself. Sprint 05A closed with it: the room is public, wears its real name, plays a moving picture, seats its visitor in four seconds, and answers with the maker's own objects.
+
 Record experience changes here, not just technical ones.
