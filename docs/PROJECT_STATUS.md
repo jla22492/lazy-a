@@ -14,7 +14,7 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-WORK ORDER 0087 — The Real Logo (Sprint 05A, item 2 of 6 — COMPLETE)
+WORK ORDER 0088 — The Video-Texture Spike (Sprint 05A, item 3 of 6 — COMPLETE)
 
 ---
 
@@ -149,19 +149,20 @@ WORK ORDER 0087 — The Real Logo (Sprint 05A, item 2 of 6 — COMPLETE)
 - CREATIVE SPRINT 04 COMPLETE (docs/progress/0085.png + 0085.mp4): the fifteenth order closed the sprint — the product film captured end to end (the approach, the settle, the dust, the lean into FILMS; the interface's HTML layer lives in the full-page stills, as canvas films cannot see it), CHANGELOG updated (the website arrived), and the Sprint 04 Review posted with before/after, the film, and the honest gaps; implementation stops completely per the termination rule — no Work Order 0086 until Jonathan reviews
 - SPRINT 04 APPROVED by Jonathan; CREATIVE SPRINT 05 AUTHORIZED directly by him — The Six-Second Homepage (docs/SPRINT_05.md, the ruling document; it wins over older locks where they conflict): the 4s/5s/6s acceptance clock, the destination remap (JOURNAL = the notebook, CONTACT = the phone charger, FILMS = the wall photographs), and two constitution amendments to be executed this sprint (the perspective sits; the impossible is no longer deferred); the Creative Director is out of the loop for the sprint and audits the artifact trail afterward
 - The room went public (0086, docs/progress/0086.png + 0086-phone.png): https://jla22492.github.io/lazy-a/ serves the actual experience — the existing studio-pages CI already static-exported the room page, and this order proved it: the live site captured headlessly at the deployed URL matches the local reference frame (0085.png) and holds the responsive stance at a phone viewport; every future push is live about a minute later
+- The impossible pipeline is proven (0088, docs/progress/0088.png + 0088-print-zoom.png + 0088-motion.mp4 + 0088-motion-frames.png): the considered print's picture is now a VIDEO — Jonathan's placeholder clip conformed to the print's 3:2 stock with a lab border, playing muted on a loop as a texture under the room's own daylight and AgX tone mapping; proven three ways (dev canvas film frame-diff 48 vs static floor 3; production build max diff 84/3s; the LIVE deployed URL max diff 95/3s in a real browser); the Sprint 02 lock — real-time room, offline impossible, entering as video textures — is no longer a theory; content is placeholder and unauthored, and the ~5s timed reveal belongs to 05B
 - The real logo arrived (0087, docs/progress/0087.png): Jonathan's letterpress lockup — the lazy-A brand mark asleep under its zzz, LAZY A, PRODUCTIONS — replaced the placeholder text wordmark under the unchanged 0073 restraint ruling (top-left, small, no animation, orientation not branding); the artwork was re-inked in the type system's primary on a transparent ground so it floats over the plaster at the same step of contrast the text held; verified live at the deployed URL
 
 ---
 
 ## In Progress
 
-Creative Sprint 05, phase 05A — The Six-Second Homepage (work orders 0086–0091, directed by Jonathan personally). Complete: 0086 (live deploy), 0087 (the real logo). Remaining: 0088 video-texture spike, 0089 seated arrival, 0090 destination remap + placeholder journal, 0091 screen-capture pipeline. Full stop after 0091 for Jonathan's review; no 05B work before it.
+Creative Sprint 05, phase 05A — The Six-Second Homepage (work orders 0086–0091, directed by Jonathan personally). Complete: 0086 (live deploy), 0087 (the real logo), 0088 (video-texture spike). Remaining: 0089 seated arrival, 0090 destination remap + placeholder journal, 0091 screen-capture pipeline. Full stop after 0091 for Jonathan's review; no 05B work before it.
 
 ---
 
 ## Next Recommended Work Order
 
-WORK ORDER 0088 — the video-texture spike: Jonathan's placeholder video playing as a texture on a print inside the real-time room.
+WORK ORDER 0089 — the seated arrival, first pass: ~2s approach ending at the bench's working position at seated eye height, tuned against the 4-second criterion.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

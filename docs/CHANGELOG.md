@@ -33,4 +33,6 @@
 
 - The name became the mark: Jonathan's letterpress logo — the lazy A asleep on its side — now says "you're in the right place" from the same quiet corner the text wordmark held, at the same step of contrast, and then lets the room speak.
 
+- A picture learned to move: the print lying on the notes — the one taken down mid-judgment — now carries a moving image on its stock, lit by the same window, toned by the same eye, bordered like any print from the lab. The room is rendered live; the impossible arrives from elsewhere. The pipeline the whole idea rests on is real now, waiting only for its authored moment.
+
 Record experience changes here, not just technical ones.
