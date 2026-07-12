@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0094 — The Phone Composition (Sprint 05B, order 3)
+WORK ORDER 0095 — Relief (Sprint 05B, order 4)
 
 ## Version
 
@@ -10,20 +10,29 @@ v0.1
 
 ## Summary
 
-- Portrait stopped merely surviving and got designed. Before: the narrow
-  slice landed on empty wall with the hero cut at the edge and nothing to
-  anchor the eye (docs/progress/0094-before.png). Now: at a narrow
-  viewport the seat slides toward the hero's axis as it settles back —
-  chosen once at arrival, the 0079 grammar — so the phone frame holds
-  exactly what matters: the playing hero print filling the upper
-  two-thirds, today's work below it, the notebook and the charger's
-  cable in reach (docs/progress/0094.png, captured from the LIVE
-  deploy at 375x812).
-- The trade, made consciously and documented: the studio's letterpress
-  note leaves the phone's RESTING crop (it still reads during the
-  arrival walk). The desktop 16:9 frame is pixel-identical to 0092's
-  (verified by region diff, 0.01 mean).
-- Perf gate re-run on live after the push: 59.9fps median, 1.17MB.
+- The single biggest "this is a rendering" tell — optical flatness — is
+  addressed at the surfaces the seated camera actually lives on. The
+  procedural material system grew a relief layer (heightToNormal +
+  woodNormal / plasterNormal / paperNormal in three/materials/
+  procedural.ts): height fields generated in the same seeded language as
+  the color layers, converted to tangent-space normals, riding UNDER the
+  history layer so the scars, rings, and halos survive.
+- Wired where it counts: the bench top and tallied front edge (grain and
+  plank seams now catch the window's raking light — docs/progress/
+  0095-before-after.png), every plaster wall (undulation and trowel arcs
+  at the threshold of noticing, awaiting raking light to speak), the
+  chair's wood, the picture ledge.
+- Bevels where geometry allowed: the chair's seat and the picture ledge
+  became rounded boxes — edges that behave like wood handled for years.
+  DEFERRED HONESTLY: the bench top keeps its six-face construction (each
+  face carries different history — tallies on the edge, wear on top), so
+  it cannot take a single rounded geometry without rebuilding that
+  system; its edge softening waits for the GI pass to justify it.
+- Gates on the live deploy: 59.9fps median, 1.17MB transfer. The 4/5/6
+  clock re-measured: one cold-CDN outlier (4.41s settle on the first hit
+  after deploy), then 3.71/3.81/3.61s across three runs — the clock
+  holds; first-visit cold-cache latency noted as a possible 05B-later
+  preload optimization.
 
 ## Decisions Required
 
@@ -31,4 +40,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0095 — normal maps and bevels.
+WORK ORDER 0096 — the baked-GI spike.
