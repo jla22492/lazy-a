@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0074 — The Patience Reward (Creative Sprint 04, order 4 of 15)
+WORK ORDER 0075 — Attention: Navigation's First Gesture (Creative Sprint 04, order 5 of 15; includes R-0072, Jonathan's approach direction)
 
 ## Version
 
@@ -10,15 +10,15 @@ v0.1
 
 ## Summary
 
-- Dust in the light (docs/progress/0074.mp4): the Creative Director's 0072 suggestion, made physical — a few dozen motes drift down the window's shaft of daylight. They live in the true light volume (the prism from the window opening along the sun's real direction toward the 0049 floor patch), fall at dust speeds, and each carries its own slow wander so no two agree. Deterministic (seeded) so captures repeat; driven by the room clock like every motion since 0016.
-- The lock it fulfills, recorded at 0072: the room should reward patience, never require it. Two seconds of visiting never shows the dust; thirty seconds does; it demands nothing. This is the room's second living behavior, eleven work-order generations after its first breath.
-- Visitor-visible within ten seconds? Deliberately borderline: it begins existing immediately and becomes noticeable exactly when the visitor slows down — which is the point, and the lock's own arithmetic.
-- Verification: type-check passes; the film's frame-diff shows the motes moving through the shaft; the still confirms they never read as noise at a glance.
+- R-0072 first, per Jonathan's mid-sprint direction: the arrival is now an APPROACH — the POV of a body walking ~1.7m to the workbench from the door's side, with weight: mass in the acceleration, a step-rhythm bob and sway fading in and out (the 0020 research), momentum past the stop with a damped settle (0021), the gaze landing after the feet. His movement question was answered honestly: the earlier films were deliberate stills-in-time, plus one real recorder-sync bug, fixed. The dust was re-homed a meter into the shaft so it never reads against the bright pane, and the opening gaze keeps the bounce-lit ceiling to a thin honest edge.
+- Then 0075 proper, built to the Creative Director's full specification: the interface may respond to attention; the room never responds to hover. When the pointer rests on a destination for 0.45 seconds, a quiet label appears — FILMS at the hero print, JOURNAL at the notebook pile, WORK at the camera (operational placeholders; the words await authorship). One label always; opacity over 90ms; no motion; labels name the destination, never the object; the room remains unchanged in every way.
+- Verified live in a real browser: rest reveals the right label alone; release fades it; a 150ms flyby never triggers. The dwell/hysteresis grammar is the notebook pipeline's completed research, reborn as the interface's foundation — nothing we built was wasted.
+- Two new locks recorded (the hover-lock rewrite; objects are not navigation — they are evidence that navigation belongs there).
 
 ## Decisions Required
 
-The tagline question (posed in the thread): "understanding what Lazy A is" within the first breath needs words — whose authorship is yours and Jonathan's.
+None pending — the hybrid scroll mechanism's concrete form remains open with the Creative Director for the orders ahead.
 
 ## Ready for
 
-WORK ORDER 0075 — Communication and navigation, gated on that ruling.
+WORK ORDER 0076 — the destinations answer.
