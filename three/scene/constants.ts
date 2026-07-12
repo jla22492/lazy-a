@@ -9,6 +9,13 @@ import { fromWorkbench } from "@/three/scene/world";
 export const EYE_HEIGHT = 1.6;
 
 /**
+ * Seated working eye height in meters (SPRINT_05 amendment: the
+ * perspective sits). Measured real-world proportion: an adult seated at
+ * a standard 45cm chair carries their eyes 1.15–1.22m above the floor.
+ */
+export const SEATED_EYE_HEIGHT = 1.18;
+
+/**
  * Workbench blockout dimensions, in meters.
  * Proportions follow a standard full-size workbench; the blockout exists to
  * establish scale and spatial hierarchy, not detail.
@@ -163,24 +170,26 @@ export const STAGE = {
     color: "#8f867a",
   },
   /**
-   * The opening composition, RECOMPOSED (WORK ORDER 0071, superseding
-   * R-0007 under Jonathan's revision order): a photographer standing in
-   * the room, not a renderer preserving geometry. Someone who walked in
-   * and naturally stopped — a step closer and nearer the bench's axis
-   * than before, with the gaze settled just above the work. At this
-   * stance neither wall corner enters the frame: the room continues past
-   * every edge, and the frame's bottom cuts the chair's rear legs the
-   * way a crop from a larger place would.
+   * The settled composition, SEATED (WORK ORDER 0089, executing the
+   * SPRINT_05 amendment "the perspective sits"; supersedes the 0071
+   * standing recomposition as the resting frame — the standing
+   * composition survives inside the arrival as the walk it settles
+   * from). The visitor arrives INTO the maker's working position at the
+   * bench: eyes over STANDING_POSITIONS.working at seated work height,
+   * the gaze resting on the work surface itself, a hair right of the
+   * body's own axis the way a right-handed worker's attention sits. The
+   * frame holds today's work and the rear band's propped prints; the
+   * room's height lives in the approach, not the rest.
    */
   camera: {
     /** Normal lens (~50mm equivalent), not wide. */
     fov: 35,
     near: 0.1,
     far: 200,
-    /** A step in from the old stance, still left of the bench's axis. */
-    position: fromWorkbench([-0.45, EYE_HEIGHT, 4.0]),
-    /** The gaze settles on the work's airspace — prints, papers, hands. */
-    lookAt: fromWorkbench([0.05, 0.92, 0]),
+    /** Eyes over the bench's working position (0019), seated. */
+    position: fromWorkbench([0.05, SEATED_EYE_HEIGHT, 0.625]),
+    /** The gaze rests on the work surface, biased to the dominant hand. */
+    lookAt: fromWorkbench([0.12, 0.9, -0.2]),
   },
 } as const;
 
