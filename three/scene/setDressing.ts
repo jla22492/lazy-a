@@ -448,6 +448,18 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "the camera, and the evenings this room works through",
   },
   {
+    name: "DustInTheLight",
+    zone: "edgeOfFrame",
+    story:
+      "a few dozen motes drifting down the window's shaft of daylight — " +
+      "two seconds never shows them; thirty seconds does",
+    identity: "the room rewards patience and demands nothing",
+    unresolved: "always falling, never finished",
+    arrived: "with the light, every morning",
+    implies: "still air, an old building, and time passing whether or not " +
+      "anyone watches",
+  },
+  {
     name: "Vent",
     zone: "edgeOfFrame",
     story:

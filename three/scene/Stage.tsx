@@ -13,6 +13,7 @@ import { FirstLook } from "@/components/camera/FirstLook";
 import { FirstStep } from "@/components/camera/FirstStep";
 import { Notebook } from "@/components/room/Notebook";
 import { RoomShell } from "@/components/room/RoomShell";
+import { DustMotes } from "@/components/room/DustMotes";
 import { EdgeOfFrameDressing } from "@/components/room/EdgeOfFrameDressing";
 import { FloorWear } from "@/components/room/FloorWear";
 import { Infrastructure } from "@/components/room/Infrastructure";
@@ -95,6 +96,7 @@ export function Stage() {
         <EdgeOfFrameDressing />
         <Infrastructure />
         <OffscreenWorld />
+        <DustMotes />
         <FloorWear />
         <Notebook />
         <WorkspaceZones />
