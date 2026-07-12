@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0067 — Fidelity Pass (Creative Sprint 03, order 12 of 15)
+WORK ORDER 0068 — The Third Edit (Creative Sprint 03, order 13 of 15)
 
 ## Version
 
@@ -10,12 +10,11 @@ v0.1
 
 ## Summary
 
-- The three weakest close-ups, strengthened within stage fidelity (docs/progress/0067.png):
-- The crumpled miss: now two intersecting irregular solids (an icosahedron and a dodecahedron at disagreeing scales and rotations) — the union silhouette breaks the single-polyhedron tell that made it the room's weakest object in close crop.
-- The lamp's shade: widened and shortened, given a brass neck where it meets the arm, and made double-sided so its interior reads. A shade now, not a horn.
-- The plant's leaves: edge resolution raised a register; the ovals stop faceting at frame distance.
-- Nothing else touched — fidelity spending stays proportionate to what the locked composition can see, and the offline-render pipeline remains the eventual home of true close-up work.
-- Verification: type-check and production build pass; 0067.png reviewed in lamp and crumple crops.
+- Every manifest piece stood trial against review #2's bar: would the room become less true without this? (docs/progress/0068.png)
+- One failed: the picture ledge's unframed print. It repeated the leaning board's truth — work waiting its turn — at smaller scale, two meters away. Removed; the framed still now stands alone on the ledge, slightly resettled.
+- Everything else holds a truth of its own. The audit's notable survivals, for the record: the two sticky notes (two is a routine; one would be an accident), the single film canister beside the camera (shot versus shooting — different tenses of the same craft), and the bench's book stack alongside the bookcase and notebook pile (consulted-today versus the library versus the archive — three different relationships with reading).
+- The room is lean. Forcing further removals would have been performance, not editing — and editing is the room's highest craft precisely because it stops.
+- Verification: type-check and production build pass; 0068.png reviewed at full frame.
 
 ## Decisions Required
 
@@ -23,4 +22,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0068 — The third edit.
+WORK ORDER 0069 — Final light & composition tuning.
