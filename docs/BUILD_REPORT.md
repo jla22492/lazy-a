@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0069 — Final Light & Composition Audit (Creative Sprint 03, order 14 of 15)
+WORK ORDER 0070 — Final Polish & Sprint Review (Creative Sprint 03, order 15 of 15 — SPRINT COMPLETE)
 
 ## Version
 
@@ -10,17 +10,18 @@ v0.1
 
 ## Summary
 
-- An audit, not a tune (docs/progress/0069.png):
-- Composition, measured: the frame's left/right luminance delta narrowed from -7.1 at the sprint's start (0055) to -5.5 now, and the floor band sits nearly even at +2.6. Jonathan's "right side too heavy" note is quantifiably resolved; the residual asymmetry belongs to the backlit right wall, which is design, not weight.
-- Shadows: every Sprint 03 caster (pendant, lamp, plant leaves, bin, crumple, clip, chair in its new spot) grounds with a contact shadow at the 4096-map resolution established in 0043.
-- Evidence of light: the window patch, corner fades, junction strip, and pane presence were re-verified by amplified diff — each still lands exactly where its geometry computes.
-- The conclusion of the audit is the work: nothing warranted a change, so nothing was changed. Touching the light now would be decorating. If I notice the lighting, it's too much — and I don't.
-- Verification: type-check and production build pass; luminance measurements recorded above.
+- The sprint's closing order: verification, review assets, documentation, the full stop.
+- Review assets: docs/progress/0070.png (the room as Sprint 03 leaves it) and docs/progress/0070.mp4 (8 seconds at rest — the daylight's breath remains the only motion, and the room now answers both of the sprint's questions in stillness: what was interrupted thirty seconds ago, and what resumes thirty seconds after we leave).
+- CHANGELOG gained the sprint milestone: the room became a place — remembered by its interruptions, strengthened by subtraction.
+- PROJECT_STATUS records the sprint complete, with the deferred territory named (composition/timing/revelation/restraint; content authorship; the impossible).
+- The Sprint 03 Review posted to the Creative Director thread with before (0055) / after (0070) stills, the resting film, and an honest artistic assessment of where the room still falls short.
+- Termination honored: exactly 15 work orders (0056–0070), each committed and pushed. No Work Order 0071 until Jonathan reviews Sprint 03.
+- Verification: type-check and production build pass; both captures reviewed; the film's transport encoding round-trips byte-identically (SHA-256 verified).
 
 ## Decisions Required
 
-None.
+None — the sprint review is Jonathan's to make.
 
 ## Ready for
 
-WORK ORDER 0070 — Polish, review assets, and the Creative Sprint Review.
+Jonathan's creative review of Sprint 03.

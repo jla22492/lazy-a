@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0069 — Final Light & Composition Audit (Sprint 03, order 14 of 15)
+WORK ORDER 0070 — Final Polish & Sprint Review (Sprint 03, order 15 of 15 — SPRINT COMPLETE)
 
 ---
 
@@ -129,18 +129,19 @@ WORK ORDER 0069 — Final Light & Composition Audit (Sprint 03, order 14 of 15)
 - Fidelity pass (docs/progress/0067.png): the three weakest close-ups strengthened within stage fidelity — the crumpled miss is now two intersecting irregular solids whose union silhouette breaks the single-polyhedron tell; the lamp's shade widened and shortened with a brass neck and a visible interior (a shade, not a horn); and the plant's leaf edges smoothed a register
 - The third edit (docs/progress/0068.png): every manifest piece audited against "would the room become less true without this?" — one failed: the picture ledge's unframed print, which repeated the leaning board's truth ("work waits its turn") at smaller scale, was removed, and the framed still stands alone on the ledge; everything else holds a truth of its own — the room is lean, and forcing further removals would have been performance, not editing
 - Final light & composition audit (docs/progress/0069.png): quantitative this time — the frame's left/right luminance delta narrowed from -7.1 at the sprint's start to -5.5 (the floor band nearly even at +2.6): the right side measurably weighs what it should; every Sprint 03 caster grounds with a contact shadow; every evidence-of-light plane still lands where its geometry computes; and no tune was warranted — the audit's conclusion is that touching the light now would be decorating, so nothing was touched
+- CREATIVE SPRINT 03 COMPLETE (docs/progress/0070.png + 0070.mp4): the fifteenth work order closed the sprint — final still and an 8-second resting film captured, CHANGELOG updated (the room became a place), and the Sprint 03 Review posted to the Creative Director thread with before/after stills, the film, and an honest artistic assessment of where the room still falls short; implementation stops completely per the termination rule — no Work Order 0071 until Jonathan reviews
 
 ---
 
 ## In Progress
 
-Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
+Nothing — Creative Sprint 03 is complete. Implementation is stopped, awaiting Jonathan's review.
 
 ---
 
 ## Next Recommended Work Order
 
-WORK ORDER 0070 — Polish, review assets, and the Sprint 03 Review — then a full stop for Jonathan's review.
+None until Jonathan reviews Sprint 03 and authorizes what follows. (Named-but-deferred territory: composition, timing, revelation, and restraint — the "never seen a website feel like this" register the Creative Director asked me to notice but not chase; the authorship of content — the hero print's image, the notes' words — remains with Jonathan and the Creative Director; and the impossible still waits for a room that deserves it, which this one now may.)
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
