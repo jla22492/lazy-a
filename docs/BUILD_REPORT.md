@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0077 — One Cloth (Creative Sprint 04, order 7 of 15)
+WORK ORDER 0078 — The Conversations Settle (Creative Sprint 04, order 8 of 15)
 
 ## Version
 
@@ -10,10 +10,11 @@ v0.1
 
 ## Summary
 
-- The interface's entire typographic surface — the wordmark, the attention labels, the conversation captions — now reads from a single type system (components/site/type.ts): one family, one tracking (the system's signature), one three-step ink ramp. The Creative Director's "cut from the same typographic system" note, made structural rather than stylistic.
-- Visitor-visible: the three surfaces now agree exactly — the small color and weight disagreements between wordmark, label, and caption inks are gone.
-- When typography is properly authored (a real face, a real scale), that day is one edit in one file.
-- Verification: type-check and production build pass; the three surfaces render from the shared tokens.
+- JOURNAL and WORK verified from their actual leaned viewpoints (docs/progress/0078-journal.png, 0078-work.png):
+- WORK: the caption typesets on the open wall right of the sticky notes — clean air, correct adjacency to the camera it captions.
+- JOURNAL: the first anchor collided with the desk lamp from the leaned view (a placement that was fine from the resting stance — leans change what overlaps what). Moved to the clear wall directly above the notebook pile, where it now reads as a true gallery caption for its subject.
+- Every conversation now lands in clean air from its own viewpoint — captions were placed against the leaned geometry, not the resting one.
+- Verification: type-check and production build pass; both conversations photographed via the ?talk capture aid.
 
 ## Decisions Required
 
@@ -21,4 +22,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0078 — the remaining conversations settle.
+WORK ORDER 0079 — the frame survives the viewport.
