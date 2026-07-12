@@ -8,13 +8,13 @@ v0.1
 
 ## Current Sprint
 
-Creative Sprint 02 — Reveal the Person (docs/SPRINT_02.md; exactly 10 implementation work orders 0046–0055, then a Creative Sprint Review and a full stop for Jonathan's review. Sprint 01 — Dress the Room, 0036–0045 — approved by Jonathan. Prior phases: Architecture locked at 0014, Presence closed at 0015, Behavior closed at the Creative Reset with the notebook pipeline archived as completed research.)
+Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 implementation work orders 0056–0070 with internal reviews after 0060/0065/0070, then a Creative Sprint Review and a full stop for Jonathan's review. Sprints 01 — Dress the Room — and 02 — Reveal the Person — both approved by Jonathan. Prior phases: Architecture locked at 0014, Presence closed at 0015, Behavior closed at the Creative Reset with the notebook pipeline archived as completed research.)
 
 ---
 
 ## Current Work Order
 
-WORK ORDER 0055 — Final Polish & Sprint Review (Sprint 02, order 10 of 10 — SPRINT COMPLETE)
+WORK ORDER 0056 — Sprint 03 Orientation (Sprint 03, order 1 of 15)
 
 ---
 
@@ -118,13 +118,13 @@ WORK ORDER 0055 — Final Polish & Sprint Review (Sprint 02, order 10 of 10 — 
 
 ## In Progress
 
-Nothing — Creative Sprint 02 is complete. Implementation is stopped, awaiting Jonathan's review.
+Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ---
 
 ## Next Recommended Work Order
 
-None until Jonathan reviews Sprint 02 and authorizes Creative Sprint 03. (Queued Sprint 03 territory, named by the Creative Director: the wall's upward migration — hooks, old screw holes, a smoke detector, a vent, faint paint mismatch — things that have existed longer than the current arrangement and aren't meant to be read; the room connecting to the building; and, beyond that, identity content and the first perceptual surprise.)
+WORK ORDER 0057 — The wall's old lives (the upward campaign begins).
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -192,3 +192,6 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 Surprise is the reward for believing the room is real. (Sprint 02.)
 🔒 Nothing in the room is self-contained. Every object belongs to a larger system — the mug to a sink, the chair to a body, the cable to a computer, the power to the building, the window to another world. The browser belongs to none of them. (Named at Sprint 02's first internal review, with the ruling that authored light planes are evidence of light, never lighting: every shadow has an unseen source, every patch an architectural explanation.)
 🔒 Age creates disagreement. Chaos does not. Objects don't become more random over time — they become less synchronized. (Named at Sprint 02's second internal review, with the Edit's bar: if removing an object would not change the truth the room tells, remove it.)
+🔒 The room is discovered, never decorated. (Sprint 03.)
+🔒 Warmth comes from accumulated life, not visual styling. (Sprint 03.)
+🔒 The visitor should wonder what exists beyond the frame more often than what exists inside it. (Sprint 03.)
