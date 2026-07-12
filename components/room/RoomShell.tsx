@@ -200,7 +200,7 @@ export function RoomShell() {
     repairs: [{ u: 0.852, v: 0.8125, w: 0.068, h: 0.1 }],
     /* The vent's breath (0058): dust drifted onto the paint above it. */
     stains: [
-      { u: 0.898, v: 0.945, w: 0.1, h: 0.06 },
+      { u: 0.9455, v: 0.945, w: 0.1, h: 0.06 },
       /* The polish (0062): hip-height, where someone has brushed past
          the bench's end toward the bookcase for years. */
       { u: 0.2727, v: 0.44, w: 0.07, h: 0.13 },

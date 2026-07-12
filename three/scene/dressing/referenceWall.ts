@@ -57,14 +57,14 @@ export const PINNED_CLUSTER = {
    */
   items: [
     /* 4x6" photo, landscape. */
-    { w: 0.152, h: 0.102, x: -1.05, y: 1.66, roll: 0.13, kind: "photo" },
+    { w: 0.152, h: 0.102, x: -1.04, y: 1.665, roll: 0.17, kind: "photo" },
     /* 5x7" photo, portrait, overlapping the landscape's corner because
        nobody wanted to move the older pin. */
     { w: 0.127, h: 0.178, x: -0.97, y: 1.61, roll: -0.06, kind: "photo" },
     /* A5 note, curling off the wall at its bottom edge. */
     { w: 0.148, h: 0.21, x: -0.68, y: 1.68, roll: 0.16, kind: "paper", curl: 0.14 },
     /* A torn strip of paper — a phrase someone keeps. */
-    { w: 0.19, h: 0.05, x: -0.72, y: 1.47, roll: 0.03, kind: "paper" },
+    { w: 0.19, h: 0.05, x: -0.715, y: 1.465, roll: -0.09, kind: "paper" },
     /* The slipped one: its second pin gave months ago. Nobody minds. */
     { w: 0.102, h: 0.152, x: -0.55, y: 1.35, roll: -0.38, kind: "photo" },
     /* The outlier: pinned alone, far from the conversation — its failed

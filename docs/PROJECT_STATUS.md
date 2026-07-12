@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0064 — Five Minutes Ago (Sprint 03, order 9 of 15)
+WORK ORDER 0065 — Cohesion Pass (Sprint 03, order 10 of 15)
 
 ---
 
@@ -123,6 +123,7 @@ WORK ORDER 0064 — Five Minutes Ago (Sprint 03, order 9 of 15)
 - Routes of habit (docs/progress/0062.png): the wall became a record instead of a composition — five unconnected accidents from different decades (a paint touch-up from a warmer can, a lone nail hole, a lone screw hole unrelated to the shelf's pairs, a hairline crack wandering down from the ceiling line, and a hip-height polish where someone has brushed past the bench's end for years); and the floor now remembers the person's movement — a faint grime-polish along the walk from the doorway behind the camera to the bench, and a worn patch where the body always stands, both derived from the room's true geometry (the doorway's direction, STANDING_POSITIONS.working)
 - The window's world deepened (docs/progress/0063.png): the frosted pane gained a sky (brighter at the top, ground-bounce at the bottom, even through frost), a fainter horizontal member meeting the vertical presence — a railing's corner, maybe; the room never says — and two old rain streaks in the frosting; and the same vertical something that darkens the pane now interrupts the light it lets in, a soft shadow crossing the floor's window patch: one story, two surfaces, all of it outside the browser
 - Five minutes ago (docs/progress/0064.png): the sprint's question answered in objects — the third test print came down from the wall and lies flat, half onto today's working papers (the act the visitor interrupted: comparing a print against the notes; mid-decision — it goes back up, or it doesn't); the mug sits four centimeters off its usual spot with the morning's ring showing beside it (last sip, minutes ago); and the tape roll's torn tab still stands off the roll — the freshest layer of time the room has ever carried
+- Cohesion pass (docs/progress/0065.png): the vent moved from a polite distance to an awkward nine centimeters off the corner, its dust stain following — ducts go where ducts go; nobody composed this — and the pinned cluster shed its last manners (the landscape photo and the torn strip disagree a few degrees harder); Act II closes with the room's layers of time running continuously from decades (the wall's accidents) to minutes (the considered print)
 
 ---
 
@@ -134,7 +135,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0065 — Cohesion pass, then internal review #2.
+WORK ORDER 0066 — Review #2 corrections.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

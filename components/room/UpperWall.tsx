@@ -23,7 +23,11 @@ const HOOK = {
  * the paint above it. The building breathes through the room.
  */
 const VENT = {
-  at: { x: 1.75, y: 2.18 },
+  /**
+   * 0065: moved from a polite distance to an awkward nine centimeters
+   * off the corner — ducts go where ducts go; nobody composed this.
+   */
+  at: { x: 1.96, y: 2.18 },
   width: 0.3,
   height: 0.16,
   depth: 0.014,
