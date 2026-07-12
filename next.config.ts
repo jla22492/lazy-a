@@ -12,7 +12,10 @@ const nextConfig: NextConfig = staticExport
       output: "export",
       basePath: "/lazy-a",
       trailingSlash: true,
+      /* Plain-URL assets (video textures) prepend this themselves via
+         lib/assetPath — the framework only rewrites imports and links. */
+      env: { NEXT_PUBLIC_BASE_PATH: "/lazy-a" },
     }
-  : {};
+  : { env: { NEXT_PUBLIC_BASE_PATH: "" } };
 
 export default nextConfig;

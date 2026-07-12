@@ -1,5 +1,10 @@
 "use client";
 
+import { Suspense } from "react";
+
+import { useVideoTexture } from "@react-three/drei";
+
+import { assetPath } from "@/lib/assetPath";
 import { ceramic, paper } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import {
@@ -151,6 +156,51 @@ function TapeRoll() {
   );
 }
 
+/**
+ * The considered print's image area (WORK ORDER 0088 — the video-texture
+ * spike). The room is rendered in real time; the impossible is rendered
+ * offline and enters as a video texture (Sprint 02 lock). This is the
+ * first proof of that pipeline: the print's picture is a video, playing
+ * on the same lit, tone-mapped stock as everything else in the room —
+ * a standard material under the same daylight, AgX applied by the
+ * renderer, the paper's border showing around the image the way a lab
+ * print holds one. PLACEHOLDER CONTENT (Jonathan's clip) until the
+ * impossible moment is authored; the timed reveal belongs to 05B.
+ */
+const CONSIDERED_PRINT_FILM = {
+  src: "/videos/considered-print-placeholder.mp4",
+  /** The stock shows a border around the image, as a lab print does. */
+  border: 0.004,
+  /** Matches the stock beneath it: fresh gloss (0066). */
+  roughness: 0.42,
+} as const;
+
+function ConsideredPrintFilm() {
+  const { width, height, thickness } = CONSIDERED_PRINT;
+  const texture = useVideoTexture(assetPath(CONSIDERED_PRINT_FILM.src), {
+    muted: true,
+    loop: true,
+    start: true,
+  });
+  return (
+    <mesh
+      position={[0, thickness / 2 + 0.0002, 0]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <planeGeometry
+        args={[
+          width - CONSIDERED_PRINT_FILM.border * 2,
+          height - CONSIDERED_PRINT_FILM.border * 2,
+        ]}
+      />
+      <meshStandardMaterial
+        map={texture}
+        roughness={CONSIDERED_PRINT_FILM.roughness}
+      />
+    </mesh>
+  );
+}
+
 /** The print taken down minutes ago, lying half onto today's papers. */
 function ConsideredPrint() {
   const { at, width, height, thickness, yaw, color } = CONSIDERED_PRINT;
@@ -167,6 +217,10 @@ function ConsideredPrint() {
         map={paper({ seed: 641, base: color, fiber: 0.2, handled: 0.15 })}
         roughness={0.42}
       />
+      {/* Until the video is ready, the print is simply its paper. */}
+      <Suspense fallback={null}>
+        <ConsideredPrintFilm />
+      </Suspense>
     </mesh>
   );
 }
