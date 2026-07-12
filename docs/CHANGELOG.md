@@ -31,4 +31,6 @@
 
 - The room went public: anyone, on any device, can now walk in — https://jla22492.github.io/lazy-a/ serves the experience itself, and what a phone shows is the same room at a tighter crop. The website stopped being a rehearsal.
 
+- The name became the mark: Jonathan's letterpress logo — the lazy A asleep on its side — now says "you're in the right place" from the same quiet corner the text wordmark held, at the same step of contrast, and then lets the room speak.
+
 Record experience changes here, not just technical ones.
