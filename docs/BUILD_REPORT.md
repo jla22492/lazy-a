@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0083 — The Motion Language (Creative Sprint 04, order 13 of 15)
+WORK ORDER 0084 — The Fourth Edit (Creative Sprint 04, order 14 of 15)
 
 ## Version
 
@@ -10,15 +10,15 @@ v0.1
 
 ## Summary
 
-- Every duration and ease the interface uses now lives in one file (components/site/motion.ts), named for meaning rather than mechanics: answer (90ms — "oh," never "look"), materialize (240ms), the sibling stagger (70ms), the lean (0.9s, one ease of mass), dwell (0.45s), release (0.22s).
-- The room's motion stays on the room clock where it has always lived; this file is the website's motion. The two share one philosophy, now written down: nothing announces, nothing bounces, everything settles.
-- Like the type system (0077), this makes the eventual authored motion pass a one-file edit, and makes the current rhythm auditable at a glance.
-- Verification: type-check and production build pass; all interface consumers read from the tokens.
+- The interface stood at the room's own bar: would anything become less true without it — and is anything the same blank twice?
+- One violation found and fixed: the three conversations' unwritten lines shared one rhythm. Each destination now carries its own — FILMS speaks in two confident lines, JOURNAL in three wordy ones, WORK in two short — the placeholder-diversity principle from Sprint 03's walls, applied to the website's typography.
+- Nothing else failed. The WORK destination stays for now: the mid-review left the information-architecture ruling open, and removing a door the Creative Director hasn't judged would be editing above my authority.
+- Verification: type-check and production build pass.
 
 ## Decisions Required
 
-None.
+None (the destination-trio ruling remains with the Creative Director at the sprint review).
 
 ## Ready for
 
-WORK ORDER 0084 — the fourth edit.
+WORK ORDER 0085 — the sprint's close.
