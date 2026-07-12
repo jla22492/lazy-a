@@ -6,6 +6,7 @@ import { Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import { Vector3 } from "three";
 
+import { MOTION } from "@/components/site/motion";
 import { TYPE } from "@/components/site/type";
 import { setQuietLevel } from "@/three/interface/quiet";
 
@@ -79,12 +80,12 @@ const DESTINATIONS: readonly Destination[] = [
 ];
 
 /** Rest, not flyby. */
-const DWELL_SECONDS = 0.45;
-const RELEASE_SECONDS = 0.22;
+const DWELL_SECONDS = MOTION.dwellSeconds;
+const RELEASE_SECONDS = MOTION.releaseSeconds;
 const DECAY_RATE = 2.2;
 
 /** The lean: one ease of mass, there and back. */
-const LEAN_SECONDS = 0.9;
+const LEAN_SECONDS = MOTION.lean.durationSeconds;
 
 const LABEL_STYLE: React.CSSProperties = {
   fontFamily: TYPE.family,
@@ -96,7 +97,7 @@ const LABEL_STYLE: React.CSSProperties = {
   userSelect: "none",
   pointerEvents: "none",
   transform: "translate(-50%, 0)",
-  transition: "opacity 90ms linear",
+  transition: `opacity ${MOTION.answer.durationMs}ms ${MOTION.answer.ease}`,
 };
 
 function easeInOutCubic(t: number): number {
@@ -171,7 +172,7 @@ function Caption({ destination }: { destination: Destination }) {
                 background: "#b3ab9c",
                 opacity: 0.42,
                 border: "1px solid rgba(138, 131, 117, 0.45)",
-                transitionDelay: `${120 + index * 70}ms`,
+                transitionDelay: `${120 + index * MOTION.siblingDelayMs}ms`,
               }}
             />
           ))}
@@ -350,7 +351,7 @@ export function AttentionNavigation() {
           zIndexRange={[6, 6]}
           style={{
             opacity: conversation === destination.id ? 1 : 0,
-            transition: "opacity 240ms linear",
+            transition: `opacity ${MOTION.materialize.durationMs}ms ${MOTION.materialize.ease}`,
             pointerEvents: "none",
           }}
         >
