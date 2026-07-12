@@ -83,25 +83,20 @@ export const PICTURE_LEDGE = {
   depth: 0.075,
   thickness: 0.018,
   color: "#7a6a55",
-  /** A framed still, leaning. */
+  /**
+   * A framed still, leaning. The third edit (0068) removed the unframed
+   * print that overlapped it — it repeated the leaning board's truth
+   * ("work waits its turn") at smaller scale, and the room is not less
+   * true without it. One piece of evidence is stronger than two.
+   */
   framed: {
     width: 0.24,
     height: 0.3,
     depth: 0.015,
     frameColor: "#46413c",
-    x: -1.72,
-    lean: 0.12,
-    yaw: 0.04,
-  },
-  /** An unframed print leaning against and overlapping the framed one. */
-  unframed: {
-    width: 0.18,
-    height: 0.24,
-    thickness: 0.0015,
-    color: "#ddd6c6",
-    x: -1.52,
-    lean: 0.18,
-    yaw: -0.06,
+    x: -1.66,
+    lean: 0.13,
+    yaw: 0.07,
   },
   /** 0061 (review #1 ruling): the award was removed — it told "creative,"
       which the room already tells; it revealed no new truth. */

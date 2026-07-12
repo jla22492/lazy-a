@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0067 — Fidelity Pass (Sprint 03, order 12 of 15)
+WORK ORDER 0068 — The Third Edit (Sprint 03, order 13 of 15)
 
 ---
 
@@ -127,6 +127,7 @@ WORK ORDER 0067 — Fidelity Pass (Sprint 03, order 12 of 15)
 - Internal review #2 held (after 0065): direction unchanged, execution refined — two new locks (a room is remembered by its interruptions, not its possessions; editing is the room's highest craft — Lazy A's design language, discovered by three sprints of subtraction); the placeholder surfaces diagnosed as repeating one blankness; the route wear ruled out (authored, where the standing wear is discovered); a second question added: what will happen here thirty seconds after I leave?
 - Review #2 corrections (docs/progress/0066.png): the walked-route overlay removed (the standing wear stays); the tallies reduced to two gates (one complete, one unfinished); and the placeholders diversified through physical history, never content — the oldest pinned photo is sun-faded, its neighbor's corner never flattened, the slipped photo is glossier stock, the torn strip is kraft, one sticky note has faded a season further, one test print arrived under a binder clip and the other's corner is bent, the considered print is lab-fresh gloss, the leaning board is kraft-backed, and the hero print became heavier stock whose thickness reads at the edge while its blankness stays untouched — never the same blank twice
 - Fidelity pass (docs/progress/0067.png): the three weakest close-ups strengthened within stage fidelity — the crumpled miss is now two intersecting irregular solids whose union silhouette breaks the single-polyhedron tell; the lamp's shade widened and shortened with a brass neck and a visible interior (a shade, not a horn); and the plant's leaf edges smoothed a register
+- The third edit (docs/progress/0068.png): every manifest piece audited against "would the room become less true without this?" — one failed: the picture ledge's unframed print, which repeated the leaning board's truth ("work waits its turn") at smaller scale, was removed, and the framed still stands alone on the ledge; everything else holds a truth of its own — the room is lean, and forcing further removals would have been performance, not editing
 
 ---
 
@@ -138,7 +139,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0068 — The third edit.
+WORK ORDER 0069 — Final light & composition tuning.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

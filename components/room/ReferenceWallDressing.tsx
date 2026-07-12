@@ -111,8 +111,7 @@ function PinnedCluster() {
 
 /** The picture ledge and what currently leans on it. */
 function PictureLedge() {
-  const { center, length, depth, thickness, color, framed, unframed } =
-    PICTURE_LEDGE;
+  const { center, length, depth, thickness, color, framed } = PICTURE_LEDGE;
   const surfaceY = center.y + thickness / 2;
   return (
     <>
@@ -148,28 +147,8 @@ function PictureLedge() {
           roughness={0.65}
         />
       </mesh>
-      {/* Unframed print leaning over the framed one's corner. */}
-      <mesh
-        position={[
-          unframed.x,
-          surfaceY + (unframed.height / 2) * Math.cos(unframed.lean),
-          WALL_Z +
-            depth -
-            0.005 -
-            (unframed.height / 2) * Math.sin(unframed.lean),
-        ]}
-        rotation={[-unframed.lean, unframed.yaw, 0]}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry
-          args={[unframed.width, unframed.height, unframed.thickness]}
-        />
-        <meshStandardMaterial
-          map={paper({ seed: 445, base: unframed.color, fiber: 0.3, handled: 0.25 })}
-          roughness={0.7}
-        />
-      </mesh>
+      {/* The unframed print that overlapped the framed one was edited out
+          at 0068 — it repeated the leaning board's truth. */}
     </>
   );
 }
