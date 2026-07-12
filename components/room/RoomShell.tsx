@@ -196,6 +196,8 @@ export function RoomShell() {
       { u: 0.2727, v: 0.85 },
     ],
     repairs: [{ u: 0.852, v: 0.8125, w: 0.068, h: 0.1 }],
+    /* The vent's breath (0058): dust drifted onto the paint above it. */
+    stains: [{ u: 0.898, v: 0.945, w: 0.1, h: 0.06 }],
     residue: [
       /* Above the test prints: the tape-and-prop habit, remembered. */
       { u: 0.478, v: 0.455 },

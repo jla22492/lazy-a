@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0057 — The Wall's Old Lives (Sprint 03, order 2 of 15)
+WORK ORDER 0058 — The Building's Systems (Sprint 03, order 3 of 15)
 
 ---
 
@@ -115,6 +115,7 @@ WORK ORDER 0057 — The Wall's Old Lives (Sprint 03, order 2 of 15)
 - CREATIVE SPRINT 02 COMPLETE (docs/progress/0055.png + 0055.mp4): the tenth implementation work order closed the sprint — final still and an 8-second motion review captured, CHANGELOG updated with the sprint milestone (the person appeared without appearing), and the Sprint 02 Review posted to the Creative Director thread with before/after stills and the film; per the sprint termination rule, implementation stops completely and waits for Jonathan's creative review — no 11th work order
 - SPRINT 02 APPROVED by Jonathan; CREATIVE SPRINT 03 AUTHORIZED — The Room Becomes a Place (docs/SPRINT_03.md, 15 work orders 0056–0070): not a creative studio but Lazy A's, revealed through the life that produces the work; three new locks (discovered never decorated; warmth from accumulated life; wonder-beyond-frame) and raised autonomy (reviews after 0060/0065/0070 only)
 - The wall's old lives (docs/progress/0057.png): the upward campaign begins — high on the rear wall, where nothing had ever happened, the room's previous arrangements surface: two vertical pairs of screw holes with dust drifting beneath them (a shelf's brackets, taken down years ago — the picture ledge below is its successor), a repair patched and repainted in slightly the wrong white with the hard edge a roller leaves against old paint, and an aged brass hook holding nothing — something used to hang from it and nobody remembers what; none of it is meant to be read
+- The building's systems (docs/progress/0058.png): the room is a tenant — a return-air grille high on the rear wall (aged metal a shade duller than the outlets, five slats, dust breathed onto the paint above it year after year; it implies ducts, other rooms on the same air, a building exhaling) and a smoke detector a hand below the ceiling line, white-on-white the way real ones are — code-required, ignored for years, discoverable rather than readable
 
 ---
 
@@ -126,7 +127,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0058 — The building's systems (upward II).
+WORK ORDER 0059 — The ceiling joins the room (upward III).
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

@@ -335,6 +335,11 @@ export interface PlasterParams {
    * the wrong white — fixed properly, matched imperfectly, forgotten.
    */
   repairs?: ReadonlyArray<{ u: number; v: number; w: number; h: number }>;
+  /**
+   * Stains (WORK ORDER 0058): soft darker drifts — the dust a vent
+   * breathes onto the paint around it, year after year.
+   */
+  stains?: ReadonlyArray<{ u: number; v: number; w: number; h: number }>;
 }
 
 /**
@@ -386,6 +391,22 @@ export function plasterTexture(params: PlasterParams): CanvasTexture {
       const w = 8 + random() * 30;
       context.fillRect(x, y, w, 1.5 + random() * 2);
     }
+  }
+
+  /* Stains: the dust a vent breathes onto its wall. */
+  for (const stain of params.stains ?? []) {
+    const sw = stain.w * size;
+    const sh = stain.h * size;
+    const sx = stain.u * size - sw / 2;
+    const sy = (1 - stain.v) * size - sh / 2;
+    const gradient = context.createRadialGradient(
+      sx + sw / 2, sy + sh / 2, 1,
+      sx + sw / 2, sy + sh / 2, Math.max(sw, sh) / 2,
+    );
+    gradient.addColorStop(0, "rgba(60, 54, 44, 0.05)");
+    gradient.addColorStop(1, "rgba(60, 54, 44, 0)");
+    context.fillStyle = gradient;
+    context.fillRect(sx, sy, sw, sh);
   }
 
   /* Repairs: patched and repainted in slightly the wrong white. */

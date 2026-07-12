@@ -390,6 +390,31 @@ export const SET_MANIFEST: readonly SetPiece[] = [
       "once hung here",
   },
   {
+    name: "Vent",
+    zone: "edgeOfFrame",
+    story:
+      "a return-air grille high on the rear wall, metal a shade duller " +
+      "than the outlets, dust drifted onto the paint above it year after " +
+      "year",
+    identity: "the building breathes through the room; Lazy A is a tenant",
+    unresolved: "permanent resident: it belongs to the building, not the studio",
+    arrived: "with the building, decades ago",
+    implies: "ducts behind the walls, other rooms on the same air, a whole " +
+      "building exhaling",
+  },
+  {
+    name: "SmokeDetector",
+    zone: "edgeOfFrame",
+    story:
+      "wall-mounted a hand below the ceiling line, code-required, " +
+      "ignored for years",
+    identity: "the building insures itself; the room complies",
+    unresolved: "its battery will chirp one day, and not today",
+    arrived: "at the last inspection, whenever that was",
+    implies: "inspectors, regulations, a landlord's clipboard — the " +
+      "bureaucracy a creative room lives inside",
+  },
+  {
     name: "ShippingTubes",
     zone: "edgeOfFrame",
     story:
