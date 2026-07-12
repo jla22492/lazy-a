@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0081 — Consequence (Creative Sprint 04, order 11 of 15)
+WORK ORDER 0082 — The Work Appears (Creative Sprint 04, order 12 of 15)
 
 ## Version
 
@@ -10,16 +10,14 @@ v0.1
 
 ## Summary
 
-- The mid-review's one consistent miss, built: click FILMS → lean in → the room becomes quieter → the work appears.
-- During a conversation, the daylight's breath softens toward 40% of itself and the dust slows toward half pace — riding the exact ease of the lean, one gesture with two effects, easing fully back when the conversation ends. The living behaviors read a shared quiet level (three/interface/quiet.ts) that the conversation drives.
-- Framed deliberately, and recorded in the code's own comments: the room does not perform for the visitor — it quiets for the WORK, the way a host lowers the music when the guest of honor speaks. This consciously evolves the original non-negotiable ("the room never acknowledges the visitor"): the room acknowledges the work. Flagging the evolution here, in the open, rather than quietly reinterpreting a founding rule.
-- Sub-perceptual by design: nobody will point at it, and the conversation will feel different in a way they can't name — which has been the room's whole method since the first breath.
-- Verification: type-check and production build pass; the lean, responsive stance, and quiet level verified composing correctly in a live browser.
+- The FILMS conversation matured into the first project experience (docs/progress/0082-films.png): three unwritten frames — small prints awaiting their films — materialize a beat after the caption, staggered seventy milliseconds apart. Paper tone, hairline edges, physical-history styling: editorial, never UI. The content remains deliberately unauthored; the layout is ready to receive it.
+- The mid-review's sequence now exists end to end: click FILMS → the body leans → the room quiets → the work appears.
+- Verification: type-check and production build pass; the conversation photographed via ?talk=films.
 
 ## Decisions Required
 
-None (the non-negotiable's evolution is noted for the Creative Director's eyes at the sprint review).
+None.
 
 ## Ready for
 
-WORK ORDER 0082 — the work appears.
+WORK ORDER 0083 — the motion language, codified.
