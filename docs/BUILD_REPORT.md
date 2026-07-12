@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0095 — Relief (Sprint 05B, order 4)
+WORK ORDER 0096 + 0097 — The Baked Light (Sprint 05B, orders 5–6: spike, then the full bake)
 
 ## Version
 
@@ -10,29 +10,27 @@ v0.1
 
 ## Summary
 
-- The single biggest "this is a rendering" tell — optical flatness — is
-  addressed at the surfaces the seated camera actually lives on. The
-  procedural material system grew a relief layer (heightToNormal +
-  woodNormal / plasterNormal / paperNormal in three/materials/
-  procedural.ts): height fields generated in the same seeded language as
-  the color layers, converted to tangent-space normals, riding UNDER the
-  history layer so the scars, rings, and halos survive.
-- Wired where it counts: the bench top and tallied front edge (grain and
-  plank seams now catch the window's raking light — docs/progress/
-  0095-before-after.png), every plaster wall (undulation and trowel arcs
-  at the threshold of noticing, awaiting raking light to speak), the
-  chair's wood, the picture ledge.
-- Bevels where geometry allowed: the chair's seat and the picture ledge
-  became rounded boxes — edges that behave like wood handled for years.
-  DEFERRED HONESTLY: the bench top keeps its six-face construction (each
-  face carries different history — tallies on the edge, wear on top), so
-  it cannot take a single rounded geometry without rebuilding that
-  system; its edge softening waits for the GI pass to justify it.
-- Gates on the live deploy: 59.9fps median, 1.17MB transfer. The 4/5/6
-  clock re-measured: one cold-CDN outlier (4.41s settle on the first hit
-  after deploy), then 3.71/3.81/3.61s across three runs — the clock
-  holds; first-visit cold-cache latency noted as a possible 05B-later
-  preload optimization.
+- The spike (0096) proved the riskiest pipeline of the realism plan
+  end-to-end: a headless Blender twin of the room's static shell
+  (scripts/bake-gi-spike.py — dimensions hand-synced from constants.ts,
+  sun matched to the Daylight rig, the window as an emissive pane) bakes
+  DIFFUSE INDIRECT light only, so the real-time sun keeps breathing and
+  only its bounced light is frozen. Two receivers first: the rear wall
+  and the bench top, composited as lightmaps over the surfaces' own UVs.
+- The full bake (0097) extended it where the camera lives: the floor's
+  visible patch joined as a third receiver — with the bench and the
+  re-staged chair as true occluders — and enters the room as an ADDITIVE
+  evidence-of-light plane, the 0049 grammar with the guesswork replaced
+  by computed light. Orientation verified empirically (the bakes needed
+  a mirror and a flip into three's UV space).
+- Restraint held: measured region deltas are +1 to +2.6 luminance —
+  warm floor-light rising into the plaster, the window-side brightening,
+  contact darkening — all below the threshold of noticing, which is the
+  room's register. The whole bake ships as three 256px PNGs, ~115KB.
+- Gates: 59.9fps median, 2.40MB dev transfer (1.2MB live). Bounded
+  scope, per Jonathan's own budget rule: the right/left walls and
+  ceiling were NOT baked — they live outside the resting frame and the
+  spend belongs where the camera does.
 
 ## Decisions Required
 
@@ -40,4 +38,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0096 — the baked-GI spike.
+WORK ORDER 0098 — the five tells.
