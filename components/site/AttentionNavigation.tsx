@@ -41,6 +41,8 @@ interface Destination {
   caption: [number, number, number];
   /** How far the body leans for this conversation, meters. */
   intimacy: number;
+  /** The first project experience (0082): unwritten gallery frames. */
+  gallery?: boolean;
 }
 
 const DESTINATIONS: readonly Destination[] = [
@@ -52,6 +54,7 @@ const DESTINATIONS: readonly Destination[] = [
     anchor: [0.55, 1.06, -0.42],
     caption: [1.06, 1.52, -0.42],
     intimacy: 0.2,
+    gallery: true,
   },
   {
     id: "journal",
@@ -154,6 +157,26 @@ function Caption({ destination }: { destination: Destination }) {
           }}
         />
       ))}
+      {destination.gallery && (
+        /* The work appears (0082): three unwritten frames — small prints
+           awaiting their films, each materializing a beat after the last.
+           Physical-history styling, not UI: paper tone, hairline edge. */
+        <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+          {[0, 1, 2].map((index) => (
+            <div
+              key={index}
+              style={{
+                width: "58px",
+                height: "39px",
+                background: "#b3ab9c",
+                opacity: 0.42,
+                border: "1px solid rgba(138, 131, 117, 0.45)",
+                transitionDelay: `${120 + index * 70}ms`,
+              }}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

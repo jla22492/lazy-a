@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0081 — Consequence (Sprint 04, order 11 of 15)
+WORK ORDER 0082 — The Work Appears (Sprint 04, order 12 of 15)
 
 ---
 
@@ -143,6 +143,7 @@ WORK ORDER 0081 — Consequence (Sprint 04, order 11 of 15)
 - Responsive stance (0079): a narrow viewport no longer amputates the bench — the body simply stands further back, chosen once at arrival the way a person picks where to stand for the room they walked into (up to 0.9m at phone portrait; nothing changes at 16:9 and wider; resizing mid-visit does not move a standing body); verified at 375x812 — the working center, hero print, chair, and pendant all hold, and the crop-from-a-larger-place grammar makes portrait feel like a tighter crop of the same room rather than a broken layout
 - Sprint 04 mid-review held (after 0080): threshold crossed — "evaluating the product, not the room"; new lock recorded (the room has graduated from subject to medium; never sacred; work organizes around experiences now); the one consistent miss named: consequence — click FILMS, lean in, the room becomes quieter, the work appears
 - Consequence (0081): the room quiets for the work — during a conversation the daylight's breath softens toward 40% and the dust slows toward half pace, riding the exact ease of the lean (one gesture, two effects), and easing back when the conversation ends; framed deliberately: the room does not perform for the visitor — it quiets for the WORK, the way a host lowers the music when the guest of honor speaks (a conscious evolution of "the room never acknowledges the visitor": it acknowledges the work); verified composing correctly with the responsive stance and the lean
+- The work appears (0082, docs/progress/0082-films.png): the FILMS conversation matured into the first project experience — three unwritten frames, small prints awaiting their films, materialize a beat after the caption (staggered 70ms each; physical-history styling — paper tone, hairline edge — never UI); the sequence the mid-review asked for now exists end to end: click, lean, the room quiets, the work appears
 
 ---
 
