@@ -24,9 +24,9 @@ const [width, height] = (
 
 /** Screen positions of the destinations in the settled seated frame. */
 const REST = {
-  journal: [994, 638],
-  films: [609, 481],
-  contact: [1105, 553],
+  journal: [988, 646],
+  films: [609, 468],
+  contact: [1099, 540],
 };
 /** Empty desk, for ending conversations with a click away. */
 const AWAY = [200, 620];
@@ -43,8 +43,10 @@ const context = await browser.newContext({
 const page = await context.newPage();
 await page.goto(url, { waitUntil: "load" });
 
-/* The arrival: walk, sit, settle (~4s), plus a breath. */
-await page.waitForTimeout(5200);
+/* The arrival: walk, sit, settle (~4s) — then the magic window
+   (WO 0092, Jonathan's ruling): the settled frame rests untouched for
+   a full 15 seconds while the hero print plays, before any visiting. */
+await page.waitForTimeout(4000 + 15000);
 
 async function visit(name, holdMs) {
   const [x, y] = REST[name];

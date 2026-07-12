@@ -12,9 +12,9 @@ const url = process.argv[2] ?? "http://localhost:3000/";
 const outPrefix = process.argv[3] ?? "";
 
 const TARGETS = [
-  { id: "journal", label: "JOURNAL", screen: [994, 638] },
-  { id: "contact", label: "CONTACT", screen: [1105, 553] },
-  { id: "films", label: "FILMS", screen: [609, 481] },
+  { id: "journal", label: "JOURNAL", screen: [988, 646] },
+  { id: "contact", label: "CONTACT", screen: [1099, 540] },
+  { id: "films", label: "FILMS", screen: [609, 468] },
 ];
 
 const browser = await chromium.launch({

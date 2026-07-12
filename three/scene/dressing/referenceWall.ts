@@ -33,7 +33,7 @@ export const HERO_PRINT = {
    * standing viewer; the maker took it down and re-hung it a step
    * lower, above the pencil jar, where it can be judged from the chair.
    */
-  center: { x: 0.55, y: 1.3 },
+  center: { x: 0.55, y: 1.27 },
   /** Hung by hand: a hair off level. */
   roll: 0.012,
   color: "#9c9284",

@@ -10,10 +10,11 @@ export const EYE_HEIGHT = 1.6;
 
 /**
  * Seated working eye height in meters (SPRINT_05 amendment: the
- * perspective sits). Measured real-world proportion: an adult seated at
- * a standard 45cm chair carries their eyes 1.15–1.22m above the floor.
+ * perspective sits; raised at WO 0092 under Jonathan's ruling — the
+ * eyes must sit clearly ABOVE the desk, 35cm over the 0.9m work
+ * surface, an upright adult on a standard chair rather than a slouch).
  */
-export const SEATED_EYE_HEIGHT = 1.18;
+export const SEATED_EYE_HEIGHT = 1.25;
 
 /**
  * Workbench blockout dimensions, in meters.
@@ -187,9 +188,11 @@ export const STAGE = {
     far: 200,
     /** Seated at the bench, a chair's depth back from its edge. */
     position: fromWorkbench([0.05, SEATED_EYE_HEIGHT, 1.15]),
-    /** Level regard: the wall and the work share the frame, the studio's
-        note holding the left edge and the hero print the right. */
-    lookAt: fromWorkbench([0.02, 1.15, -0.45]),
+    /** The regard tips a few degrees down (WO 0092, Jonathan's ruling):
+        eyes above the desk means the desktop reads as a SURFACE below
+        you, not an edge-on sliver — while the wall, the hero, and the
+        studio's note still hold the upper frame. */
+    lookAt: fromWorkbench([0.02, 1.13, -0.45]),
   },
 } as const;
 
