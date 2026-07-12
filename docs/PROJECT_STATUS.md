@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0059 — The Ceiling Joins the Room (Sprint 03, order 4 of 15)
+WORK ORDER 0060 — Right-Side Rebalance & the Chair's Moment (Sprint 03, order 5 of 15)
 
 ---
 
@@ -117,6 +117,7 @@ WORK ORDER 0059 — The Ceiling Joins the Room (Sprint 03, order 4 of 15)
 - The wall's old lives (docs/progress/0057.png): the upward campaign begins — high on the rear wall, where nothing had ever happened, the room's previous arrangements surface: two vertical pairs of screw holes with dust drifting beneath them (a shelf's brackets, taken down years ago — the picture ledge below is its successor), a repair patched and repainted in slightly the wrong white with the hard edge a roller leaves against old paint, and an aged brass hook holding nothing — something used to hang from it and nobody remembers what; none of it is meant to be read
 - The building's systems (docs/progress/0058.png): the room is a tenant — a return-air grille high on the rear wall (aged metal a shade duller than the outlets, five slats, dust breathed onto the paint above it year after year; it implies ducts, other rooms on the same air, a building exhaling) and a smoke detector a hand below the ceiling line, white-on-white the way real ones are — code-required, ignored for years, discoverable rather than readable
 - The ceiling joined the room (docs/progress/0059.png): the ceiling plane is invisible from the locked composition, so it descends into frame instead — a bare bulb on a fabric cord hangs over the bench, off because the daylight is doing its job, its cord rising past the top edge of the frame to a ceiling the visitor never sees (the frame cuts it; the room continues upward); and the wall-ceiling junction gained the soft occlusion real corners gather, evidence of the lid above the frame
+- Right-side rebalance & the chair's moment (docs/progress/0060.png): the chair moved to a body-width behind the bench, half-turned the way a sitter turns when they rise and walk toward the door — interrupted a moment ago, not abandoned across the room (the work cloth keeps its home on its back); the shipping tubes slid deeper into the frame's cut and the power strip tucked nearer the wall — the right side finally weighs what it should
 
 ---
 
@@ -128,7 +129,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0060 — Right-side rebalance & the chair's moment, then internal review #1.
+WORK ORDER 0061 — The person's marks, following internal review #1.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

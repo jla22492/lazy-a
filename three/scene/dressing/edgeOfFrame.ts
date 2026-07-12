@@ -17,7 +17,7 @@
  */
 export const SHIPPING_TUBES = {
   /** Against the right wall below the window — right where the frame cuts. */
-  corner: { x: 2.05, z: 0.74 },
+  corner: { x: 2.07, z: 0.78 },
   color: "#a89680",
   tubes: [
     { length: 0.95, radius: 0.042, lean: 0.16, yaw: 2.6, offset: { x: 0, z: 0 } },
@@ -37,7 +37,8 @@ export const SHIPPING_TUBES = {
  */
 export const POWER_RUN = {
   strip: {
-    at: { x: 1.78, z: 0.78 },
+    /** 0060: tucked nearer the wall — present, not weighty. */
+    at: { x: 1.86, z: 0.82 },
     width: 0.26,
     height: 0.038,
     depth: 0.052,
@@ -54,8 +55,8 @@ export const POWER_RUN = {
     thickness: 0.009,
     color: "#31302e",
     segments: [
-      { from: { x: 1.72, z: 0.8 }, to: { x: 1.3, z: 0.55 } },
-      { from: { x: 1.3, z: 0.55 }, to: { x: 0.92, z: 0.33 } },
+      { from: { x: 1.8, z: 0.84 }, to: { x: 1.32, z: 0.56 } },
+      { from: { x: 1.32, z: 0.56 }, to: { x: 0.92, z: 0.33 } },
     ],
   },
 } as const;

@@ -290,12 +290,13 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     name: "Chair",
     zone: "peripheralRoom",
     story:
-      "pushed aside out of the working lane — its owner works standing — " +
-      "and it never came back; along the way it picked up a second job " +
-      "as the place the work cloth lives",
-    identity: "work here happens standing; even the furniture gets repurposed",
-    unresolved: "it has a job now; pushing it in would make the cloth homeless",
-    arrived: "years ago with the bench; pushed aside months ago and stayed",
+      "a body-width back from the bench, half-turned the way a sitter " +
+      "turns when they rise and walk toward the door — interrupted a " +
+      "moment ago, not abandoned; the work cloth still lives over its back",
+    identity: "someone just stood up; the room is mid-breath",
+    unresolved: "its sitter is coming straight back, and the cloth has " +
+      "nowhere else to live",
+    arrived: "years ago with the bench; pushed back minutes ago",
     implies: "the person who just stood up, and the standing work they prefer",
   },
   {

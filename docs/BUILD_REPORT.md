@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0059 — The Ceiling Joins the Room (Creative Sprint 03, order 4 of 15)
+WORK ORDER 0060 — Right-Side Rebalance & the Chair's Moment (Creative Sprint 03, order 5 of 15)
 
 ## Version
 
@@ -10,16 +10,17 @@ v0.1
 
 ## Summary
 
-- The ceiling plane is invisible from the locked composition — verified against the frame geometry — so instead of showing it, the room lets it reach down (docs/progress/0059.png):
-- The pendant: a bare bulb on a fabric cord over the bench, off (the daylight is doing its job; the bulb belongs to the nights). Its cord rises past the frame's top edge to a ceiling the visitor never sees — the frame cuts it, and the top of the browser stops being the top of the world. Its small shadow lands on the rear wall: evidence of light with an unseen source above.
-- The junction: a soft occlusion strip where the walls meet the ceiling — the darkness real rooms gather at the lid, which the renderer cannot compute. The upward band now ends the way real walls end, instead of dissolving into nothing.
-- The upward campaign is complete across its three registers: previous lives (hook, bracket holes), maintenance (the repair), the building's present (vent, detector), and now the room's own vertical continuation (pendant, junction). The visitor's eye can travel up and find history instead of void.
-- Verification: type-check and production build pass; 0059.png reviewed at full frame.
+- Act I closes (docs/progress/0060.png):
+- The chair's moment: it now stands a body-width behind the bench, half-turned the way a sitter turns when they rise and walk toward the door behind the camera. Interrupted a moment ago, not abandoned across the room. The work cloth keeps its home over the slat — the second job survives the move. Its manifest answers rewrote themselves: "someone just stood up; the room is mid-breath."
+- The right side finally weighs what it should: the shipping tubes slid deeper into the frame's cut (mostly outside now), the power strip and charger block tucked nearer the wall, and the supply cable's slack shortened. Subtraction of weight, not of objects.
+- With 0057–0059's upward campaign plus this rebalance, Act I (the building) is complete: the room now continues upward, breathes through a grille, complies with a code, remembers older arrangements, and holds a chair still warm.
+- Verification: type-check and production build pass; 0060.png reviewed at full frame against 0055 (one capture retry — same early-kill race as 0058; the retry loop now waits longer).
+- Internal review #1 posted to the Creative Director with the four honest answers.
 
 ## Decisions Required
 
-None.
+None (review #1's questions answered in the thread).
 
 ## Ready for
 
-WORK ORDER 0060 — Right-side rebalance and the chair's moment, then internal review #1.
+Internal review #1, then WORK ORDER 0061 — the person's marks.

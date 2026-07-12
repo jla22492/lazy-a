@@ -16,15 +16,15 @@
  */
 export const CHAIR = {
   /**
-   * The Edit (0044): the chair is evidence, not furniture. Its owner works
-   * standing — the chair was pushed aside out of the working lane and
-   * never came back, and it picked up a second job along the way: the
-   * work cloth lives over its back. A chair with a job doesn't ask to be
-   * sat in.
+   * Sprint 03 (0060): the chair implies someone who JUST stood up — it
+   * sits a body-width back from the bench, half-turned the way a sitter
+   * turns when they rise and walk toward the door. Not abandoned across
+   * the room; interrupted a moment ago. The work cloth still lives over
+   * its back (its second job survives the move).
    */
-  at: { x: 0.66, z: 1.18 },
-  /** Turned well away from square — abandoned mid-move, not arranged. */
-  yaw: -0.72,
+  at: { x: 0.5, z: 0.98 },
+  /** Half-turned toward the door behind the camera. */
+  yaw: -0.45,
   seat: { width: 0.45, depth: 0.42, height: 0.45, thickness: 0.04 },
   /** A worn leather pad on a wooden chair — color split arrives later. */
   pad: { thickness: 0.018, inset: 0.03 },
