@@ -16,15 +16,16 @@
  */
 export const CHAIR = {
   /**
-   * Sprint 03 (0060): the chair implies someone who JUST stood up — it
-   * sits a body-width back from the bench, half-turned the way a sitter
-   * turns when they rise and walk toward the door. Not abandoned across
-   * the room; interrupted a moment ago. The work cloth still lives over
-   * its back (its second job survives the move).
+   * RECOMPOSED (0071): absence, never hospitality. The chair stands where
+   * a rising body leaves it — pushed back from the working position,
+   * still facing the bench, barely askew, its back three-quarters to the
+   * visitor. Nothing about it invites; everything about it says someone
+   * was here seconds ago. The frame's bottom edge cuts its rear legs:
+   * the crop of a larger room. The cloth keeps its home on the back.
    */
-  at: { x: 0.5, z: 0.98 },
-  /** Half-turned toward the door behind the camera. */
-  yaw: -0.45,
+  at: { x: 0.42, z: 0.95 },
+  /** Facing the bench as its sitter left it, a few degrees askew. */
+  yaw: 0.18,
   seat: { width: 0.45, depth: 0.42, height: 0.45, thickness: 0.04 },
   /** A worn leather pad on a wooden chair — color split arrives later. */
   pad: { thickness: 0.018, inset: 0.03 },
@@ -230,7 +231,9 @@ export const WASTEBASKET = {
  * the room did not arrange itself for the camera.
  */
 export const ROLLED_PENCIL = {
-  at: { x: -0.95, z: 1.12 },
+  /** 0071: the frame's bottom edge moved with the recomposition — the
+      pencil rolled to where the new crop cuts it. */
+  at: { x: -0.75, z: 0.88 },
   length: 0.175,
   radius: 0.0037,
   yaw: 1.35,

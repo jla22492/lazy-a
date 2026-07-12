@@ -85,7 +85,8 @@ export interface CableRun {
 export const PHONE_CHARGER = {
   /** The wall-wart block plugged into the strip's far socket. */
   block: {
-    at: { x: 1.82, z: 0.87 },
+    /** 0071: with the strip beyond the frame's right edge. */
+    at: { x: 2.66, z: 0.9 },
     width: 0.035,
     height: 0.028,
     depth: 0.035,
@@ -118,6 +119,6 @@ export const CABLE = {
   ] as readonly CableRun[],
   /** The strip's run to the right-wall outlet, hugging the seam. */
   stripRuns: [
-    { from: { x: 1.9, z: 0.84 }, to: { x: 2.15, z: 0.88 } },
+    { from: { x: 2.74, z: 0.88 }, to: { x: 2.95, z: 0.89 } },
   ] as readonly CableRun[],
 } as const;

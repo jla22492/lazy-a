@@ -221,9 +221,9 @@ export function UpperWall() {
       {/* The junction where wall meets ceiling — occlusion the renderer
           can't compute, evidence of the lid the frame never sees. */}
       <mesh
-        position={[0, ROOM.wall.height - 0.05, wallZ + 0.0015]}
+        position={[-0.1, ROOM.wall.height - 0.05, wallZ + 0.0015]}
       >
-        <planeGeometry args={[4.4, 0.1]} />
+        <planeGeometry args={[6.2, 0.1]} />
         <meshBasicMaterial
           map={ceilingFalloffTexture()}
           color="#1a1611"

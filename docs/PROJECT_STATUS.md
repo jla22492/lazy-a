@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0070 — Final Polish & Sprint Review (Sprint 03, order 15 of 15 — SPRINT COMPLETE)
+WORK ORDER 0071 — Recompose the Room (Sprint 04, order 1 of 15 — AT CHECKPOINT, awaiting Creative Direction approval)
 
 ---
 
@@ -135,7 +135,7 @@ WORK ORDER 0070 — Final Polish & Sprint Review (Sprint 03, order 15 of 15 — 
 
 ## In Progress
 
-Nothing — Creative Sprint 03 is complete. Implementation is stopped, awaiting Jonathan's review.
+Creative Sprint 04 — The Website Arrives (work orders 0071–0085). 0071 is at its mandatory checkpoint: composition posted for Creative Direction approval; homepage work does not begin until approved.
 
 ---
 
@@ -166,7 +166,7 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 The world origin (0,0,0) is the exact center of the workbench — permanent.
 🔒 The workbench is the room's center of gravity; blockout uses primitive geometry and flat neutral color only.
 🔒 The camera's gaze rests on the work surface, not the horizon.
-🔒 The opening view is a person who took two quiet steps in and stopped slightly left of the workbench: subtle three-quarter angle, normal lens (fov 35), eye height. (R-0007 — approved by the Creative Director)
+🔒 The opening view is a person who walked in and naturally stopped: normal lens (fov 35), eye height, slightly left of the bench axis, gaze settled just above the work — and neither wall corner in frame: the browser is a crop from a larger room, never a stage. (0071 — recomposed under Jonathan's revision order, superseding R-0007; pending Creative Direction approval at the 0071 checkpoint.)
 🟡 The notebook lives on the workbench, off-center and askew — used daily, never displayed. (Placement in review until additional objects exist.)
 🔒 The room is a complete permanent shell: rear wall, left wall with the entrance doorway behind the camera, right wall with a frosted window (the implied light source, never a view), ceiling, baseboards. Identity enters in layers: architecture → permanent identity → active workspace → impossible moments.
 🔒 The room's history is told by light before it is told by objects.

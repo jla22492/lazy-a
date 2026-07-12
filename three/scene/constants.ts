@@ -58,22 +58,28 @@ export const ROOM = {
   rearWall: {
     /** Just behind the workbench's back edge, as a real bench sits. */
     z: -0.45,
-    /** Corner to corner between the side walls. */
-    spanX: [-2.2, 2.2] as const,
+    /**
+     * RECOMPOSITION (WORK ORDER 0071, Jonathan's revision order): the room
+     * grew — both corners now fall outside the locked frame, so the wall
+     * continues past the browser's edges and the composition reads as a
+     * crop from a larger place, never a stage. Asymmetric, as real rooms
+     * are.
+     */
+    spanX: [-3.2, 3.0] as const,
   },
   leftWall: {
-    /** Comfortable working clearance from the bench's left end. */
-    x: -2.2,
+    /** Beyond the frame's left edge since 0071. */
+    x: -3.2,
     /** From the rear-wall corner to well behind the camera. */
     spanZ: [-0.45, 6] as const,
   },
   /**
    * Right wall (WORK ORDER 0012): closes the room on the side the daylight
-   * enters from. Its inner face is backlit and reads darkest, as real
-   * window walls do.
+   * enters from. Beyond the frame's right edge since 0071 — the daylight's
+   * architecture is now entirely off-screen.
    */
   rightWall: {
-    x: 2.2,
+    x: 3.0,
     spanZ: [-0.45, 6] as const,
   },
   /**
@@ -88,11 +94,11 @@ export const ROOM = {
     sill: 0.9,
     head: 2.0,
     /**
-     * R-0013: positioned so only a ~9cm sliver of glass enters the locked
-     * frame's corner — the daylight reads as explained without the window
-     * ever becoming a compositional element.
+     * 0071: the window now lives wholly outside the frame on the enlarged
+     * right wall — the source is never seen at all; what remains inside
+     * the frame is its light, entering the floor from beyond the crop.
      */
-    spanZ: [0.55, 1.45] as const,
+    spanZ: [0.9, 1.8] as const,
     /** Wall thickness: the reveal depth of the opening. */
     reveal: 0.1,
     /** Frosted daylight glass; quiet warm white. */
@@ -157,23 +163,24 @@ export const STAGE = {
     color: "#8f867a",
   },
   /**
-   * The opening composition (WORK ORDER 0007, revised R-0007): someone who
-   * entered, took two quiet steps in, and naturally stopped slightly LEFT
-   * of the workbench. Study C's three-quarter naturalness with Study E's
-   * longer lens. The leftward offset is the farthest the viewer can stand
-   * left at this lens and distance without the frame's upper-right corner
-   * rising above the rear wall (the room has no right wall); a mirrored
-   * offset would reveal the void.
+   * The opening composition, RECOMPOSED (WORK ORDER 0071, superseding
+   * R-0007 under Jonathan's revision order): a photographer standing in
+   * the room, not a renderer preserving geometry. Someone who walked in
+   * and naturally stopped — a step closer and nearer the bench's axis
+   * than before, with the gaze settled just above the work. At this
+   * stance neither wall corner enters the frame: the room continues past
+   * every edge, and the frame's bottom cuts the chair's rear legs the
+   * way a crop from a larger place would.
    */
   camera: {
     /** Normal lens (~50mm equivalent), not wide. */
     fov: 35,
     near: 0.1,
     far: 200,
-    /** Left of the bench axis, at eye height; distance matches 0007 (4.47m to the gaze). */
-    position: fromWorkbench([-0.55, EYE_HEIGHT, 4.377]),
-    /** A person's gaze rests on the work surface, not the horizon. */
-    lookAt: fromWorkbench([0, WORKBENCH.surfaceHeight, 0]),
+    /** A step in from the old stance, still left of the bench's axis. */
+    position: fromWorkbench([-0.45, EYE_HEIGHT, 4.0]),
+    /** The gaze settles on the work's airspace — prints, papers, hands. */
+    lookAt: fromWorkbench([0.05, 0.92, 0]),
   },
 } as const;
 
