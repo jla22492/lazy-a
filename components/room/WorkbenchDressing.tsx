@@ -25,7 +25,7 @@ function TestPrints() {
   return (
     <>
       {prints.map((print, index) => (
-        <mesh
+        <group
           key={`${print.x},${print.z}`}
           position={[
             print.x,
@@ -33,20 +33,28 @@ function TestPrints() {
             print.z - (print.height / 2) * Math.sin(print.lean),
           ]}
           rotation={[-print.lean, print.yaw, 0]}
-          castShadow
-          receiveShadow
         >
-          <boxGeometry args={[print.width, print.height, thickness]} />
-          <meshStandardMaterial
-            map={paper({
-              seed: 371 + index,
-              base: print.color,
-              fiber: 0.35,
-              handled: 0.25,
-            })}
-            roughness={0.62}
-          />
-        </mesh>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[print.width, print.height, thickness]} />
+            <meshStandardMaterial
+              map={paper({
+                seed: 371 + index,
+                base: print.color,
+                fiber: 0.35,
+                handled: 0.25,
+                bentCorner: index === 1,
+              })}
+              roughness={index === 0 ? 0.5 : 0.66}
+            />
+          </mesh>
+          {index === 0 && (
+            /* The binder clip that carried it here (0066). */
+            <mesh position={[0.01, print.height / 2 - 0.008, 0.002]} castShadow>
+              <boxGeometry args={[0.024, 0.016, 0.006]} />
+              <meshStandardMaterial color="#2e2c2a" roughness={0.4} metalness={0.5} />
+            </mesh>
+          )}
+        </group>
       ))}
     </>
   );
@@ -154,9 +162,10 @@ function ConsideredPrint() {
       receiveShadow
     >
       <boxGeometry args={[width, thickness, height]} />
+      {/* Glossier stock than the wall prints (0066): fresh from the lab. */}
       <meshStandardMaterial
-        map={paper({ seed: 641, base: color, fiber: 0.35, handled: 0.3 })}
-        roughness={0.62}
+        map={paper({ seed: 641, base: color, fiber: 0.2, handled: 0.15 })}
+        roughness={0.42}
       />
     </mesh>
   );

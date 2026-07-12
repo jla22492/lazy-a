@@ -382,9 +382,10 @@ function LeaningBoard() {
       receiveShadow
     >
       <boxGeometry args={[width, height, thickness]} />
+      {/* Kraft-backed board (0066): warmer, heavier fiber than the prints. */}
       <meshStandardMaterial
-        map={paper({ seed: 467, base: color, fiber: 0.25, handled: 0.3 })}
-        roughness={0.68}
+        map={paper({ seed: 467, base: "#b0a184", fiber: 0.55, handled: 0.3 })}
+        roughness={0.75}
       />
     </mesh>
   );

@@ -16,36 +16,11 @@ const WEAR_COLOR = "#2a241d";
 
 export function FloorWear() {
   const working = STANDING_POSITIONS.working;
-  /* The walked line enters from the bottom-left of frame (the doorway is
-     behind the camera in the left wall) and lands at the working spot. */
-  const path = {
-    from: { x: -1.5, z: 1.35 },
-    to: { x: working.at[0], z: working.at[1] },
-  };
-  const dx = path.to.x - path.from.x;
-  const dz = path.to.z - path.from.z;
-  const length = Math.hypot(dx, dz) + 0.6;
-  const heading = Math.atan2(dx, dz);
+  /* Review #2 (0066): the walked-route overlay was removed — it felt
+     authored ("I intentionally simulated walking") where the standing
+     wear feels discovered. Trust the standing wear. */
   return (
     <group position={fromWorkbench([0, 0, 0])}>
-      {/* The route. */}
-      <mesh
-        position={[
-          (path.from.x + path.to.x) / 2,
-          0.0008,
-          (path.from.z + path.to.z) / 2,
-        ]}
-        rotation={[-Math.PI / 2, 0, heading]}
-      >
-        <planeGeometry args={[0.5, length]} />
-        <meshBasicMaterial
-          map={featheredQuadTexture(0.5)}
-          color={WEAR_COLOR}
-          transparent
-          opacity={0.04}
-          depthWrite={false}
-        />
-      </mesh>
       {/* Where the body always stands. */}
       <mesh
         position={[working.at[0], 0.0012, working.at[1]]}

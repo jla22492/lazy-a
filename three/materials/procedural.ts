@@ -208,6 +208,10 @@ export interface PaperParams {
   fiber: number;
   /** 0..1 — handling: edge darkening, faint creases. */
   handled?: number;
+  /** 0..1 — sun-fade: the tone washes toward white, unevenly (0066). */
+  faded?: number;
+  /** A corner that was bent and never flattened (0066). */
+  bentCorner?: boolean;
   size?: number;
 }
 
@@ -250,6 +254,34 @@ export function paperTexture(params: PaperParams): CanvasTexture {
     gradient.addColorStop(1, `rgba(${shift}, ${shift}, ${shift}, 0)`);
     context.fillStyle = gradient;
     context.fillRect(0, 0, size, size);
+  }
+
+  /* Sun-fade: washed toward white, more at the top (0066). */
+  if (params.faded) {
+    const fade = context.createLinearGradient(0, 0, 0, size);
+    fade.addColorStop(0, `rgba(255, 253, 246, ${0.28 * params.faded})`);
+    fade.addColorStop(1, `rgba(255, 253, 246, ${0.12 * params.faded})`);
+    context.fillStyle = fade;
+    context.fillRect(0, 0, size, size);
+  }
+
+  /* A bent corner that never flattened: a diagonal crease of shadow and
+     a thin catch-light where the paper lifts (0066). */
+  if (params.bentCorner) {
+    const c = size * 0.18;
+    context.fillStyle = "rgba(60, 50, 40, 0.13)";
+    context.beginPath();
+    context.moveTo(size - c, 0);
+    context.lineTo(size, 0);
+    context.lineTo(size, c);
+    context.closePath();
+    context.fill();
+    context.strokeStyle = "rgba(255, 253, 246, 0.35)";
+    context.lineWidth = 1.4;
+    context.beginPath();
+    context.moveTo(size - c, 0);
+    context.lineTo(size, c);
+    context.stroke();
   }
 
   /* Handling: darkened edges, one or two faint creases. */
@@ -745,10 +777,10 @@ export function talliedWoodTexture(params: WoodParams): CanvasTexture {
   const size = (base.image as HTMLCanvasElement).width;
   const random = seededRandom(params.seed + 977);
   /* Three gate clusters right of center (the working side), mid-face. */
+  /* Two gates (0066): one complete, one unfinished — enough pattern. */
   const clusters = [
     { u: 0.6, count: 5 },
-    { u: 0.645, count: 5 },
-    { u: 0.685, count: 3 },
+    { u: 0.65, count: 3 },
   ];
   for (const cluster of clusters) {
     const cx = cluster.u * size;

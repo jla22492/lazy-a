@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0065 — Cohesion Pass (Sprint 03, order 10 of 15)
+WORK ORDER 0066 — Review #2 Corrections (Sprint 03, order 11 of 15)
 
 ---
 
@@ -124,6 +124,8 @@ WORK ORDER 0065 — Cohesion Pass (Sprint 03, order 10 of 15)
 - The window's world deepened (docs/progress/0063.png): the frosted pane gained a sky (brighter at the top, ground-bounce at the bottom, even through frost), a fainter horizontal member meeting the vertical presence — a railing's corner, maybe; the room never says — and two old rain streaks in the frosting; and the same vertical something that darkens the pane now interrupts the light it lets in, a soft shadow crossing the floor's window patch: one story, two surfaces, all of it outside the browser
 - Five minutes ago (docs/progress/0064.png): the sprint's question answered in objects — the third test print came down from the wall and lies flat, half onto today's working papers (the act the visitor interrupted: comparing a print against the notes; mid-decision — it goes back up, or it doesn't); the mug sits four centimeters off its usual spot with the morning's ring showing beside it (last sip, minutes ago); and the tape roll's torn tab still stands off the roll — the freshest layer of time the room has ever carried
 - Cohesion pass (docs/progress/0065.png): the vent moved from a polite distance to an awkward nine centimeters off the corner, its dust stain following — ducts go where ducts go; nobody composed this — and the pinned cluster shed its last manners (the landscape photo and the torn strip disagree a few degrees harder); Act II closes with the room's layers of time running continuously from decades (the wall's accidents) to minutes (the considered print)
+- Internal review #2 held (after 0065): direction unchanged, execution refined — two new locks (a room is remembered by its interruptions, not its possessions; editing is the room's highest craft — Lazy A's design language, discovered by three sprints of subtraction); the placeholder surfaces diagnosed as repeating one blankness; the route wear ruled out (authored, where the standing wear is discovered); a second question added: what will happen here thirty seconds after I leave?
+- Review #2 corrections (docs/progress/0066.png): the walked-route overlay removed (the standing wear stays); the tallies reduced to two gates (one complete, one unfinished); and the placeholders diversified through physical history, never content — the oldest pinned photo is sun-faded, its neighbor's corner never flattened, the slipped photo is glossier stock, the torn strip is kraft, one sticky note has faded a season further, one test print arrived under a binder clip and the other's corner is bent, the considered print is lab-fresh gloss, the leaning board is kraft-backed, and the hero print became heavier stock whose thickness reads at the edge while its blankness stays untouched — never the same blank twice
 
 ---
 
@@ -135,7 +137,7 @@ Creative Sprint 03 — The Room Becomes a Place (work orders 0056–0070).
 
 ## Next Recommended Work Order
 
-WORK ORDER 0066 — Review #2 corrections.
+WORK ORDER 0067 — Fidelity pass: the weakest close-ups.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -207,3 +209,5 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 Warmth comes from accumulated life, not visual styling. (Sprint 03.)
 🔒 The visitor should wonder what exists beyond the frame more often than what exists inside it. (Sprint 03.)
 🔒 Habits reveal identity better than possessions. Anyone can own a camera; only one person consistently leaves their pencil exactly where it naturally rolls. (Named at Sprint 03's first internal review, with two calibrations: the most believable objects are almost invisible, and every addition must make the room more singular, not more detailed. The sprint's question: if I arrived thirty seconds earlier, what would I have interrupted?)
+🔒 A room is remembered by its interruptions, not its possessions. The mug isn't interesting; the mug four centimeters from where it usually sits is. (Named at Sprint 03's second internal review, with the companion question: what will happen here thirty seconds after I leave?)
+🔒 Editing is the room's highest craft. Everything that has succeeded across three sprints succeeded by subtraction — this is Lazy A's design language, discovered, not decided. (Named at Sprint 03's second internal review.)

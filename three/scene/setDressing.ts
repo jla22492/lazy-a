@@ -414,9 +414,9 @@ export const SET_MANIFEST: readonly SetPiece[] = [
     name: "FloorRoutes",
     zone: "peripheralRoom",
     story:
-      "a faint grime-polish along the walk from the doorway to the bench, " +
-      "and a worn patch where the body always stands — the same route, " +
-      "years of it",
+      "a worn patch where the body always stands at the bench — years of " +
+      "the same stance (the walked-route overlay was edited out: it felt " +
+      "authored where this feels discovered)",
     identity: "the person's movement is a habit the floor remembers",
     unresolved: "still being walked, daily",
     arrived: "gradually; nobody decided it",

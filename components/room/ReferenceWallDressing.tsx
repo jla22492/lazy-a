@@ -24,10 +24,12 @@ function HeroPrint() {
       castShadow
       receiveShadow
     >
-      <boxGeometry args={[width, height, thickness]} />
+      {/* Heavier stock than everything around it (0066) — the thickness
+          reads at the edge; the blankness stays untouched. */}
+      <boxGeometry args={[width, height, thickness * 2.2]} />
       <meshStandardMaterial
         map={paper({ seed: 411, base: color, fiber: 0.3, handled: 0.15 })}
-        roughness={0.6}
+        roughness={0.68}
       />
     </mesh>
   );
@@ -58,13 +60,31 @@ function PinnedCluster() {
               receiveShadow
             >
               <boxGeometry args={[item.w, item.h, thickness]} />
+              {/* Physical history varies per item (0066): the oldest photo
+                  is sun-faded, its neighbor's corner never flattened, the
+                  slipped one is glossier stock — never the same blank
+                  twice. */}
               <meshStandardMaterial
                 map={paper(
                   item.kind === "photo"
-                    ? { seed: 421 + index, base: photoColor, fiber: 0.12, handled: 0.3 }
-                    : { seed: 431 + index, base: paperColor, fiber: 0.45, handled: 0.35 },
+                    ? {
+                        seed: 421 + index,
+                        base: photoColor,
+                        fiber: 0.12,
+                        handled: 0.3,
+                        faded: index === 0 ? 0.8 : 0,
+                        bentCorner: index === 1,
+                      }
+                    : {
+                        seed: 431 + index,
+                        base: index === 3 ? "#cbbd9d" : paperColor,
+                        fiber: index === 3 ? 0.7 : 0.45,
+                        handled: 0.35,
+                      },
                 )}
-                roughness={item.kind === "photo" ? 0.5 : 0.85}
+                roughness={
+                  item.kind === "photo" ? (index === 4 ? 0.38 : 0.55) : 0.85
+                }
               />
             </mesh>
             {"freshTape" in item && item.freshTape && (
@@ -159,7 +179,7 @@ function StickyNotes() {
   const { size, thickness, color, items } = STICKY_NOTES;
   return (
     <>
-      {items.map((item) => (
+      {items.map((item, index) => (
         <mesh
           key={`${item.x},${item.y}`}
           position={[item.x, item.y, WALL_Z + WALL_GAP + thickness / 2]}
@@ -167,8 +187,14 @@ function StickyNotes() {
           receiveShadow
         >
           <boxGeometry args={[size, size, thickness]} />
+          {/* The older note has faded a season further (0066). */}
           <meshStandardMaterial
-            map={paper({ seed: 451, base: color, fiber: 0.2 })}
+            map={paper({
+              seed: 451 + index,
+              base: color,
+              fiber: 0.2,
+              faded: index === 0 ? 0.6 : 0,
+            })}
             roughness={0.9}
           />
         </mesh>
