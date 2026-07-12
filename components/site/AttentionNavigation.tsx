@@ -7,6 +7,7 @@ import { useFrame } from "@react-three/fiber";
 import { Vector3 } from "three";
 
 import { TYPE } from "@/components/site/type";
+import { setQuietLevel } from "@/three/interface/quiet";
 
 /**
  * Attention & Conversation (WORK ORDERS 0075 + 0076) — the interface.
@@ -279,6 +280,9 @@ export function AttentionNavigation() {
     }
     const pose = basePose.current;
     const eased = easeInOutCubic(leanT.current);
+    /* Consequence (0081): the room quiets exactly as far as the body
+       leans — one gesture, two effects. */
+    setQuietLevel(eased);
     /* Lean target persists through the ease-back even after target clears. */
     if (target) lastTarget.current = target;
     const leanTo = lastTarget.current;

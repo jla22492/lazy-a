@@ -6,6 +6,7 @@ import type { DirectionalLight } from "three";
 
 import type { RoomBehavior } from "@/three/animation/presence";
 import { useRoomBehavior } from "@/three/hooks/useRoomBehavior";
+import { BREATH_SOFTENING, getQuietLevel } from "@/three/interface/quiet";
 import { DAYLIGHT } from "@/three/scene/constants";
 
 const { sun, bounce, breath } = DAYLIGHT;
@@ -32,10 +33,14 @@ export function Daylight() {
       enabled: true,
       onRoomTick: (clock) => {
         if (!sunRef.current) return;
+        /* The room quiets for the work (0081): during a conversation the
+           breath softens — the host lowering the music. */
+        const soften = 1 - BREATH_SOFTENING * getQuietLevel();
         const sway =
           1 +
-          breath.driftAmplitude * Math.sin(clock.drift * FULL_CYCLE) +
-          breath.breathAmplitude * Math.sin(clock.breath * FULL_CYCLE);
+          soften *
+            (breath.driftAmplitude * Math.sin(clock.drift * FULL_CYCLE) +
+              breath.breathAmplitude * Math.sin(clock.breath * FULL_CYCLE));
         sunRef.current.intensity = sun.intensity * sway;
       },
     }),

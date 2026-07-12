@@ -12,6 +12,7 @@ import {
 
 import type { RoomBehavior } from "@/three/animation/presence";
 import { useRoomBehavior } from "@/three/hooks/useRoomBehavior";
+import { DUST_SLOWING, getQuietLevel } from "@/three/interface/quiet";
 import { seededRandom } from "@/three/materials/procedural";
 import { DAYLIGHT, ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
@@ -77,8 +78,13 @@ export function DustMotes() {
         const attribute = system.geometry.getAttribute(
           "position",
         ) as BufferAttribute;
+        /* The dust slows while the work speaks (0081). */
+        const pace = 1 - DUST_SLOWING * getQuietLevel();
         system.motes.forEach((mote, index) => {
-          mote.position.addScaledVector(system.sun, FALL_SPEED * clock.delta);
+          mote.position.addScaledVector(
+            system.sun,
+            FALL_SPEED * pace * clock.delta,
+          );
           /* A slow personal wander — no two motes agree. */
           const wander = Math.sin(
             clock.elapsed * mote.rate + mote.phase,

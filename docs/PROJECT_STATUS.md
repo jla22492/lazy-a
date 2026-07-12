@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0080 — Sprint 04 Mid-Review (Sprint 04, order 10 of 15)
+WORK ORDER 0081 — Consequence (Sprint 04, order 11 of 15)
 
 ---
 
@@ -141,6 +141,8 @@ WORK ORDER 0080 — Sprint 04 Mid-Review (Sprint 04, order 10 of 15)
 - One cloth (0077): the interface's entire typographic surface — wordmark, attention labels, conversation captions — now reads from a single type system (components/site/type.ts): one family, one tracking (the system's signature), one ink ramp; the Creative Director's "cut from the same typographic system" note, made structural; when typography is properly authored, that day is one edit
 - The conversations settle (0078, docs/progress/0078-journal.png + 0078-work.png): JOURNAL and WORK verified from their leaned viewpoints — WORK typesets on the open wall right of the notes; JOURNAL's first anchor collided with the lamp from the leaned view and moved to the clear wall directly above its pile, where it reads as a true gallery caption for its subject
 - Responsive stance (0079): a narrow viewport no longer amputates the bench — the body simply stands further back, chosen once at arrival the way a person picks where to stand for the room they walked into (up to 0.9m at phone portrait; nothing changes at 16:9 and wider; resizing mid-visit does not move a standing body); verified at 375x812 — the working center, hero print, chair, and pendant all hold, and the crop-from-a-larger-place grammar makes portrait feel like a tighter crop of the same room rather than a broken layout
+- Sprint 04 mid-review held (after 0080): threshold crossed — "evaluating the product, not the room"; new lock recorded (the room has graduated from subject to medium; never sacred; work organizes around experiences now); the one consistent miss named: consequence — click FILMS, lean in, the room becomes quieter, the work appears
+- Consequence (0081): the room quiets for the work — during a conversation the daylight's breath softens toward 40% and the dust slows toward half pace, riding the exact ease of the lean (one gesture, two effects), and easing back when the conversation ends; framed deliberately: the room does not perform for the visitor — it quiets for the WORK, the way a host lowers the music when the guest of honor speaks (a conscious evolution of "the room never acknowledges the visitor": it acknowledges the work); verified composing correctly with the responsive stance and the lean
 
 ---
 
@@ -236,3 +238,4 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 Objects are not navigation. They are evidence that navigation belongs there. Labels name the destination, never the object — the notebook has always represented Journal; we are not turning it into a button. (The 0075 ruling.)
 🔒 Content should appear to belong in the room even when it is technically HTML. Editorial layout, never UI: almost typeset, like a gallery caption — the room remains dominant; the content is simply allowed to exist. (The Conversation ruling, 0076.)
 🔒 Navigation changes attention before it changes location. Clicking a destination is paying closer attention, and the room respectfully gives it space — a subtle lean, content materializing, everything else politely receding; the room remains the host, the work becomes the guest of honor. (The Conversation ruling, 0076; roadmap: Attention → Conversation → Rooms.)
+🔒 The room has graduated from subject to medium. It is no longer the project; it is the language the project speaks — and it must never become sacred: the stage exists for the work, and it is resilient enough to support bold work. Stop asking how to improve the room; start asking how the room improves the work. (The Sprint 04 mid-review, with the organizing shift: work is organized around experiences now — conversations, project experiences, impossible moments, typography, motion, sound — never around dressing.)
