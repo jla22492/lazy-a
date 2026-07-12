@@ -14,7 +14,7 @@ Creative Sprint 03 — The Room Becomes a Place (docs/SPRINT_03.md; exactly 15 i
 
 ## Current Work Order
 
-WORK ORDER 0084 — The Fourth Edit (Sprint 04, order 14 of 15)
+WORK ORDER 0085 — Final Polish & Sprint Review (Sprint 04, order 15 of 15 — SPRINT COMPLETE)
 
 ---
 
@@ -146,6 +146,7 @@ WORK ORDER 0084 — The Fourth Edit (Sprint 04, order 14 of 15)
 - The work appears (0082, docs/progress/0082-films.png): the FILMS conversation matured into the first project experience — three unwritten frames, small prints awaiting their films, materialize a beat after the caption (staggered 70ms each; physical-history styling — paper tone, hairline edge — never UI); the sequence the mid-review asked for now exists end to end: click, lean, the room quiets, the work appears
 - The motion language codified (0083): every duration and ease the interface uses now lives in one file (components/site/motion.ts), named for what it means — answer (90ms), materialize (240ms), sibling stagger (70ms), the lean (0.9s), dwell (0.45s), release (0.22s) — the rhythm auditable, the eventual authored motion pass a one-file edit, exactly like the type system
 - The fourth edit (0084): the interface audited at the room's own bar — one violation found and fixed: the three captions' unwritten lines shared one rhythm (the same blank three times), and each destination now carries its own (FILMS two confident lines, JOURNAL three wordy ones, WORK two short) — never the same blank twice, applied to the interface itself; nothing else failed the truth bar; the WORK destination stays pending the information-architecture ruling the mid-review left open
+- CREATIVE SPRINT 04 COMPLETE (docs/progress/0085.png + 0085.mp4): the fifteenth order closed the sprint — the product film captured end to end (the approach, the settle, the dust, the lean into FILMS; the interface's HTML layer lives in the full-page stills, as canvas films cannot see it), CHANGELOG updated (the website arrived), and the Sprint 04 Review posted with before/after, the film, and the honest gaps; implementation stops completely per the termination rule — no Work Order 0086 until Jonathan reviews
 
 ---
 

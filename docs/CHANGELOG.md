@@ -27,4 +27,6 @@
 
 - The room became a place: it now continues upward past the frame (a pendant's cord the browser cuts, a vent that breathes dust, a detector nobody reads, holes from a shelf nobody remembers), remembers decades in its walls and minutes on its bench — a print taken down mid-judgment, a mug four centimeters off its morning ring, a torn tape tab still standing. The chair is still warm. The person keeps score in graphite on the bench's edge, always buys the same notebook, and just left. The room is remembered by its interruptions — and everything that made it stronger this sprint was subtraction.
 
+- The website arrived: the room grew past the browser's left edge and a body now walks you to the workbench on every visit — with weight, with a settle, with eyes that land after the feet. LAZY A says its name once, quietly, and never again. Rest your attention on the hero print and FILMS answers; click, and you lean in while the room holds its breath and three unwritten frames wait for their films. The room has graduated from subject to medium: it is no longer the project — it is the language the project speaks.
+
 Record experience changes here, not just technical ones.
