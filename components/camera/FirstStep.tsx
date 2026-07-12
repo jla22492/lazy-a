@@ -16,10 +16,13 @@ const PENDING = -1;
  * The visitor's first action (WORK ORDER 0020): one quiet step from
  * ARRIVAL to WORKING. It happens once.
  *
- * TEMPORARY TRIGGER — this is a behavior review, not an interaction
- * model: click/tap anywhere or press Space. A ?autostep=<seconds> URL
- * parameter fires the step automatically for headless motion capture
- * (development only).
+ * TRIGGER RETIRED (WORK ORDER 0090): the temporary click/Space trigger
+ * is gone — clicking is the interface's gesture now (conversations,
+ * 0076), and the seated arrival (0089) owns the camera's journey. The
+ * walk survives as research, reachable only through the dev-only
+ * ?autostep=<seconds> parameter for motion capture. Retiring the
+ * trigger also parks the archived notebook pickup (its readiness
+ * required this walk to set the visitor's position).
  */
 export function FirstStep() {
   const camera = useThree((state) => state.camera);
@@ -57,12 +60,6 @@ export function FirstStep() {
       visitorState.moving = true;
     };
 
-    const onKey = (event: KeyboardEvent) => {
-      if (event.code === "Space") takeStep();
-    };
-    window.addEventListener("pointerdown", takeStep);
-    window.addEventListener("keydown", onKey);
-
     let autoTimer: number | undefined;
     if (process.env.NODE_ENV !== "production") {
       const auto = new URLSearchParams(window.location.search).get("autostep");
@@ -70,8 +67,6 @@ export function FirstStep() {
     }
 
     return () => {
-      window.removeEventListener("pointerdown", takeStep);
-      window.removeEventListener("keydown", onKey);
       if (autoTimer) window.clearTimeout(autoTimer);
     };
   }, []);

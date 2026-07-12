@@ -2,8 +2,20 @@
 
 import { useEffect, useMemo, useRef } from "react";
 
-import { useThree } from "@react-three/fiber";
-import { Vector3, type Group } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import {
+  CanvasTexture,
+  SRGBColorSpace,
+  Vector3,
+  type Group,
+  type MeshStandardMaterial,
+} from "three";
+
+import {
+  getJournalLevel,
+  JOURNAL_GLOW,
+  JOURNAL_PLACEHOLDER,
+} from "@/three/interface/journal";
 
 import {
   requestInteraction,
@@ -505,7 +517,88 @@ export function Notebook() {
           />
           <meshStandardMaterial color={NOTEBOOK.color} />
         </mesh>
+        <JournalWords />
       </group>
     </group>
+  );
+}
+
+/** Inset of the written block from the cover's edges. */
+const WORDS_MARGIN = 0.008;
+/** Canvas resolution for the written page (matches the cover's aspect). */
+const WORDS_CANVAS = { width: 512, height: 726 } as const;
+
+/**
+ * The journal's words (WORK ORDER 0090) — the focused object IS the
+ * content. When the JOURNAL conversation opens, a written paragraph
+ * about Lazy A illuminates ON the notebook, rising out of the closed
+ * cover exactly as far as the body leans (the interface writes the
+ * level; see three/interface/journal.ts). Texture-level, not overlay:
+ * the words live on the cover's own surface, lit and tone-mapped with
+ * the room, correctly occluded by the pencil lying across it — and a
+ * closed notebook quietly showing its words is the room refusing, once
+ * again, to behave exactly how you expect.
+ *
+ * PLACEHOLDER TEXT, flagged for authorship (docs/THE_NOTEBOOK.md still
+ * governs the notebook's true voice).
+ */
+function JournalWords() {
+  const materialRef = useRef<MeshStandardMaterial>(null);
+  const texture = useMemo(() => {
+    if (typeof document === "undefined") return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = WORDS_CANVAS.width;
+    canvas.height = WORDS_CANVAS.height;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#efe8d8";
+    context.font = 'italic 28px Georgia, "Iowan Old Style", serif';
+    context.textBaseline = "top";
+    /* The block sits low on the page, under the pencil's diagonal. */
+    const lineHeight = 44;
+    const top = canvas.height * 0.52;
+    JOURNAL_PLACEHOLDER.forEach((line, index) => {
+      context.fillText(line, 40, top + index * lineHeight);
+    });
+    const created = new CanvasTexture(canvas);
+    created.colorSpace = SRGBColorSpace;
+    created.anisotropy = 4;
+    return created;
+  }, []);
+
+  /* The words rise with the lean, and rest invisible. */
+  useFrame(() => {
+    const material = materialRef.current;
+    if (!material) return;
+    const level = getJournalLevel();
+    material.opacity = level;
+    material.emissiveIntensity = level * JOURNAL_GLOW;
+    material.visible = level > 0.001;
+  });
+
+  if (!texture) return null;
+  return (
+    <mesh
+      position={[NOTEBOOK.width / 2, COVER_THICKNESS / 2 + 0.0003, 0]}
+      rotation-x={-Math.PI / 2}
+    >
+      <planeGeometry
+        args={[
+          NOTEBOOK.width - WORDS_MARGIN * 2,
+          NOTEBOOK.length - WORDS_MARGIN * 2,
+        ]}
+      />
+      <meshStandardMaterial
+        ref={materialRef}
+        map={texture}
+        transparent
+        visible={false}
+        emissive={"#f0e9da"}
+        emissiveMap={texture}
+        emissiveIntensity={0}
+        depthWrite={false}
+      />
+    </mesh>
   );
 }

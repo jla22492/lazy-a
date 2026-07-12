@@ -8,6 +8,7 @@ import { Vector3 } from "three";
 
 import { MOTION } from "@/components/site/motion";
 import { TYPE } from "@/components/site/type";
+import { setJournalLevel } from "@/three/interface/journal";
 import { setQuietLevel } from "@/three/interface/quiet";
 
 /**
@@ -30,7 +31,7 @@ import { setQuietLevel } from "@/three/interface/quiet";
 
 interface Destination {
   id: string;
-  /** Placeholder destination name — authorship pending. */
+  /** Destination name (Jonathan's SPRINT_05 rulings). */
   label: string;
   /** World-space attention center. */
   center: [number, number, number];
@@ -38,10 +39,15 @@ interface Destination {
   radius: number;
   /** Where the label anchors, world space. */
   anchor: [number, number, number];
-  /** Where the caption typesets itself during conversation. */
-  caption: [number, number, number];
+  /** Where the caption typesets itself during conversation.
+      JOURNAL has none: its content illuminates ON the notebook. */
+  caption?: [number, number, number];
   /** How far the body leans for this conversation, meters. */
   intimacy: number;
+  /** How far the gaze turns toward the object (0..1) — a person
+      shifting attention at their own desk. Reading the notebook needs
+      a real look down; the wall needs barely a glance. */
+  gazePull: number;
   /** The first project experience (0082): unwritten gallery frames. */
   gallery?: boolean;
   /** Each destination's unwritten lines carry their own rhythm (0084):
@@ -49,40 +55,66 @@ interface Destination {
   lineWidths: readonly number[];
 }
 
+/**
+ * The destinations, REMAPPED (WORK ORDER 0090, Jonathan's SPRINT_05
+ * rulings, superseding the 0075 placeholders): JOURNAL is the notebook
+ * on the desk, CONTACT is the phone charger (the phone left with its
+ * owner — contact), FILMS is the photographs propped against the wall.
+ * All three live inside the seated composition (0089). The sprint brief
+ * asked for the wall photographs reconciled sensibly with the actual
+ * wall objects: from the seated frame those are the rear band's propped
+ * test prints; the pinned cluster sits above the resting frame. CONTACT
+ * anchors on the charger's visible cable run — the part of the charger
+ * the seated frame actually holds.
+ */
 const DESTINATIONS: readonly Destination[] = [
   {
     id: "films",
     label: "FILMS",
-    center: [0.55, 1.52, -0.44],
-    radius: 0.38,
-    anchor: [0.55, 1.06, -0.42],
-    caption: [1.06, 1.52, -0.42],
-    intimacy: 0.2,
+    /* The propped test prints, both of them — one attention center. */
+    center: [-0.02, 0.99, -0.37],
+    radius: 0.2,
+    anchor: [-0.02, 1.12, -0.42],
+    /* Clear wall between the prints and the pencil jar — placed by
+       measured projection from the leaned viewpoint (0078 discipline,
+       made quantitative: scripts/probe-projection.mjs). */
+    caption: [0.3, 1.1, -0.44],
+    intimacy: 0.18,
+    gazePull: 0.3,
     gallery: true,
     lineWidths: [118, 88],
   },
   {
     id: "journal",
     label: "JOURNAL",
-    center: [-1.43, 0.98, -0.28],
-    radius: 0.17,
-    anchor: [-1.43, 1.13, -0.26],
-    /* Clear wall left of the pile — the first anchor collided with the
-       lamp from the leaned viewpoint (0078). */
-    caption: [-1.82, 1.08, -0.26],
-    intimacy: 0.16,
-    /* The journal will be the wordiest destination. */
-    lineWidths: [104, 96, 84],
+    /* The notebook itself, on the desk. At the seated frame's shallow
+       angle a larger sphere shadows the charger's line of sight and
+       steals its dwell (depth rule) — 0.10 still covers the page. */
+    center: [0.35, 0.91, 0.12],
+    radius: 0.1,
+    anchor: [0.35, 0.97, 0.0],
+    /* No caption: the journal's words illuminate ON the page. */
+    intimacy: 0.14,
+    /* Reading is a real look down — the page must fill the regard. */
+    gazePull: 0.85,
+    lineWidths: [],
   },
   {
-    id: "work",
-    label: "WORK",
-    center: [0.78, 0.95, 0.04],
-    radius: 0.13,
-    anchor: [0.78, 1.08, 0.06],
-    caption: [1.14, 1.02, 0.06],
+    id: "contact",
+    label: "CONTACT",
+    /* The charger's cable where it rises over the bench's rear edge —
+       the most comfortably reachable stretch in the seated frame
+       (measured: scripts/probe-projection.mjs). */
+    center: [0.63, 0.9, -0.35],
+    radius: 0.16,
+    anchor: [0.63, 0.98, -0.38],
+    /* Clear wall right of the pencil jar, measured from the leaned
+       viewpoint (scripts/probe-projection.mjs). */
+    caption: [0.7, 1.06, -0.44],
     intimacy: 0.15,
-    lineWidths: [96, 72],
+    gazePull: 0.45,
+    /* Contact will be the briefest destination. */
+    lineWidths: [64, 88],
   },
 ];
 
@@ -317,6 +349,9 @@ export function AttentionNavigation() {
     /* Lean target persists through the ease-back even after target clears. */
     if (target) lastTarget.current = target;
     const leanTo = lastTarget.current;
+    /* The journal's words rise on the page with the same motion (0090):
+       one gesture, every effect. */
+    setJournalLevel(leanTo?.id === "journal" ? eased : 0);
     if (!leanTo) return;
     const toward = leanTo.centerV
       .clone()
@@ -327,7 +362,7 @@ export function AttentionNavigation() {
     camera.position.copy(pose.position).addScaledVector(toward, eased);
     const gazePoint = pose.gaze
       .clone()
-      .lerp(leanTo.centerV, eased * 0.3);
+      .lerp(leanTo.centerV, eased * leanTo.gazePull);
     camera.lookAt(gazePoint);
   });
 
@@ -351,20 +386,22 @@ export function AttentionNavigation() {
           {destination.label}
         </Html>
       ))}
-      {centers.map((destination) => (
-        <Html
-          key={`caption-${destination.id}`}
-          position={destination.caption}
-          zIndexRange={[6, 6]}
-          style={{
-            opacity: conversation === destination.id ? 1 : 0,
-            transition: `opacity ${MOTION.materialize.durationMs}ms ${MOTION.materialize.ease}`,
-            pointerEvents: "none",
-          }}
-        >
-          <Caption destination={destination} />
-        </Html>
-      ))}
+      {centers
+        .filter((destination) => destination.caption)
+        .map((destination) => (
+          <Html
+            key={`caption-${destination.id}`}
+            position={destination.caption}
+            zIndexRange={[6, 6]}
+            style={{
+              opacity: conversation === destination.id ? 1 : 0,
+              transition: `opacity ${MOTION.materialize.durationMs}ms ${MOTION.materialize.ease}`,
+              pointerEvents: "none",
+            }}
+          >
+            <Caption destination={destination} />
+          </Html>
+        ))}
     </>
   );
 }
