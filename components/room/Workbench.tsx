@@ -6,7 +6,7 @@ import { useLoader } from "@react-three/fiber";
 import { SRGBColorSpace, TextureLoader } from "three";
 
 import { assetPath } from "@/lib/assetPath";
-import { talliedWood, touchedRoughness, wood, woodNormal } from "@/three/materials/procedural";
+import { photoUpgradedNormal, talliedWood, touchedRoughness, wood, woodNormal } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
 
@@ -101,7 +101,7 @@ export function Workbench() {
         <meshStandardMaterial
           attach="material-2"
           map={topTexture}
-          normalMap={woodNormal(benchWood.seed)}
+          normalMap={photoUpgradedNormal("oak-normal", woodNormal(benchWood.seed))}
           lightMap={topBounce}
           lightMapIntensity={0.5}
           /* 0099: hands polish where they live — the wear spots carry a

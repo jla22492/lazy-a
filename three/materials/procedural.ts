@@ -88,16 +88,42 @@ export interface WoodParams {
  */
 export function woodTexture(params: WoodParams): CanvasTexture {
   const size = params.size ?? 1024;
-  const random = seededRandom(params.seed);
   const context = makeCanvas(size, size);
+  const texture = drawWood(context, params, null);
+  if (typeof window !== "undefined") {
+    requestSurfacePhoto("oak", () => {
+      drawWood(context, params, surfaceImages.get("oak") ?? null);
+      texture.needsUpdate = true;
+    });
+  }
+  return texture;
+}
+
+function drawWood(
+  context: CanvasRenderingContext2D,
+  params: WoodParams,
+  photo: HTMLImageElement | null,
+): CanvasTexture {
+  const size = params.size ?? 1024;
+  const random = seededRandom(params.seed);
   const base = rgb(params.base);
   const grain = rgb(params.grain);
 
   context.fillStyle = style(base, 1);
   context.fillRect(0, 0, size, size);
+  if (photo) {
+    /* Photographed oak (0105), tinted to the room's own stain — the
+       synthetic planks and grain retire; the wear stays. */
+    context.drawImage(photo, 0, 0, size, size);
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = style(base, 1);
+    context.fillRect(0, 0, size, size);
+    context.globalCompositeOperation = "source-over";
+  }
 
-  /* Plank bands across V — subtle tonal disagreement between boards. */
-  const plankCount = 5 + Math.floor(random() * 3);
+  /* Plank bands across V — subtle tonal disagreement between boards.
+     (Synthetic grain retires when the photograph is present.) */
+  const plankCount = photo ? 0 : 5 + Math.floor(random() * 3);
   const plankHeight = size / plankCount;
   for (let plank = 0; plank < plankCount; plank++) {
     const shift = (random() - 0.5) * 22;
@@ -111,7 +137,7 @@ export function woodTexture(params: WoodParams): CanvasTexture {
   }
 
   /* Grain: long horizontal streaks, wavering slightly. */
-  const streaks = 260;
+  const streaks = photo ? 0 : 260;
   for (let index = 0; index < streaks; index++) {
     const y = random() * size;
     const length = size * (0.2 + random() * 0.8);
@@ -217,6 +243,39 @@ export interface PaperParams {
   /** Which scanned stock underlies the sheet (0101). */
   stock?: PaperStock;
   size?: number;
+}
+
+/** Photographic surfaces (WORK ORDER 0105): any neutralized CC0 scan,
+    fetched after the settle, redrawn under the history layers. */
+const surfaceImages = new Map<string, HTMLImageElement>();
+const surfaceWaiters = new Map<string, Array<() => void>>();
+
+export function requestSurfacePhoto(name: string, onReady: () => void): void {
+  const loaded = surfaceImages.get(name);
+  if (loaded) {
+    onReady();
+    return;
+  }
+  const waiters = surfaceWaiters.get(name);
+  if (waiters) {
+    waiters.push(onReady);
+    return;
+  }
+  surfaceWaiters.set(name, [onReady]);
+  whenRoomIsSettled(() => {
+    const image = new Image();
+    image.onload = () => {
+      surfaceImages.set(name, image);
+      for (const waiter of surfaceWaiters.get(name) ?? []) waiter();
+      surfaceWaiters.delete(name);
+    };
+    const prefix = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+    image.src = `${prefix}/textures/surface/${name}.jpg`;
+  });
+}
+
+export function surfacePhoto(name: string): HTMLImageElement | null {
+  return surfaceImages.get(name) ?? null;
 }
 
 /** The photographic stocks (WORK ORDER 0101): scanned paper, CC0
@@ -456,12 +515,42 @@ export interface PlasterParams {
  */
 export function plasterTexture(params: PlasterParams): CanvasTexture {
   const size = params.size ?? 1024;
-  const random = seededRandom(params.seed);
   const context = makeCanvas(size, size);
+  const texture = drawPlaster(context, params, null);
+  if (typeof window !== "undefined") {
+    requestSurfacePhoto("plaster", () => {
+      drawPlaster(context, params, surfaceImages.get("plaster") ?? null);
+      texture.needsUpdate = true;
+    });
+  }
+  return texture;
+}
+
+function drawPlaster(
+  context: CanvasRenderingContext2D,
+  params: PlasterParams,
+  photo: HTMLImageElement | null,
+): CanvasTexture {
+  const size = params.size ?? 1024;
+  const random = seededRandom(params.seed);
   const base = rgb(params.base);
 
   context.fillStyle = style(base, 1);
   context.fillRect(0, 0, size, size);
+  if (photo) {
+    /* Tiled: the wall's UV spans metres — the scan's stipple must stay
+       at true plaster scale, a whisper under the paint. */
+    const tile = size / 4;
+    for (let ty = 0; ty < 4; ty++) {
+      for (let tx = 0; tx < 4; tx++) {
+        context.drawImage(photo, tx * tile, ty * tile, tile, tile);
+      }
+    }
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = style(base, 1);
+    context.fillRect(0, 0, size, size);
+    context.globalCompositeOperation = "source-over";
+  }
 
   /* Broad tonal clouds — the wall was painted by a person. */
   for (let index = 0; index < 9; index++) {
@@ -631,12 +720,36 @@ export function plasterTexture(params: PlasterParams): CanvasTexture {
  */
 export function concreteTexture(seed: number, base: string): CanvasTexture {
   const size = 1024;
-  const random = seededRandom(seed);
   const context = makeCanvas(size, size);
+  const texture = drawConcrete(context, seed, base, null);
+  if (typeof window !== "undefined") {
+    requestSurfacePhoto("concrete", () => {
+      drawConcrete(context, seed, base, surfaceImages.get("concrete") ?? null);
+      texture.needsUpdate = true;
+    });
+  }
+  return texture;
+}
+
+function drawConcrete(
+  context: CanvasRenderingContext2D,
+  seed: number,
+  base: string,
+  photo: HTMLImageElement | null,
+): CanvasTexture {
+  const size = 1024;
+  const random = seededRandom(seed);
   const baseColor = rgb(base);
 
   context.fillStyle = style(baseColor, 1);
   context.fillRect(0, 0, size, size);
+  if (photo) {
+    context.drawImage(photo, 0, 0, size, size);
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = style(baseColor, 1);
+    context.fillRect(0, 0, size, size);
+    context.globalCompositeOperation = "source-over";
+  }
 
   /* Broad moisture/wear stains. */
   for (let index = 0; index < 7; index++) {
@@ -1208,5 +1321,31 @@ export function touchedRoughness(
     texture.wrapS = RepeatWrapping;
     texture.wrapT = RepeatWrapping;
     return texture;
+  });
+}
+
+
+/**
+ * A normal map that upgrades itself (WORK ORDER 0105): begins as the
+ * procedural relief, swaps to the photographed surface's true normal
+ * once the room has settled.
+ */
+export function photoUpgradedNormal(
+  name: string,
+  fallback: CanvasTexture,
+): CanvasTexture {
+  return cached(`photoNormal:${name}`, () => {
+    if (typeof window !== "undefined") {
+      whenRoomIsSettled(() => {
+        const image = new Image();
+        image.onload = () => {
+          (fallback as { image: unknown }).image = image;
+          fallback.needsUpdate = true;
+        };
+        const prefix = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+        image.src = `${prefix}/textures/surface/${name}.jpg`;
+      });
+    }
+    return fallback;
   });
 }
