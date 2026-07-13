@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0102 — The Prop Pass (Sprint 05C, order 3)
+WORK ORDER 0103 — Surgical Reflections & the Sprint Close (Sprint 05C, order 4 of 4 — SPRINT 05C COMPLETE)
 
 ## Version
 
@@ -10,31 +10,32 @@ v0.1
 
 ## Summary
 
-- Judged in the settled frame first: only two props still told — the
-  lamp's cone-primitive shade and the pencil jar's plain cylinder. Both
-  rebuilt as lathe profiles: the shade is spun metal now (dome shoulder,
-  flare, rolled lip, a visible interior with its dark socket), the jar
-  is thrown ceramic (foot, belly taper, rolled rim, the dark of an
-  interior) — docs/progress/0102-zoom.png.
-- The sourced-model route was MEASURED and declined, not skipped: a
-  matching CC0 desk lamp exists (Polyhaven desk_lamp_arm_01, Jonathan's
-  download approval), but its texture package would cost several MB on
-  the cold visit — the same clock we just defended. Procedural lathe
-  geometry delivers the frame-distance read at zero transfer. Sourced
-  photographic props remain a later option behind a preload strategy.
-- Deliberately untouched, with reasons: the desk IS the wear system
-  (rebuilding destroys four sprints of recorded history), the plant is
-  locked finished, the camera was rebuilt at 0098, the mug (0098 rim +
-  interior) sits outside the resting frame.
-- The clock gained robustness headroom after 0102's live distribution
-  showed occasional 4.0–4.1s samples under network variance: arrival
-  beats trimmed to 0.2/1.9/0.5 — live settle now 3.11–3.41s across four
-  runs. Full battery PASS.
+- The reflections landed the way the 0099 finding demanded: a generated
+  environment handed DIRECTLY to the shiny few — the mug and jar's
+  glaze, the camera's metal, the lamp's enamel, the hero's gloss —
+  through a subscription module (three/lighting/reflections.ts).
+  scene.environment is never set. Measured surgically: the wall moved
+  -0.1 luminance (the authored light untouched) while the jar's glaze
+  woke +34.6 and the hero's coated stock +33.4 — a print catching the
+  room, not a room being washed.
+- The magic beat was re-tuned to Jonathan's clock after the faster
+  arrival pulled it early: the hero now waits a longer breath (1.5s)
+  and begins at a measured 4.0–4.2s on the live site.
+- SPRINT 05C CLOSED. Final live battery: settle 3.4–3.5s, magic
+  4.0–4.2s, answer 0.67s, 59.9fps median, 1.36MB transfer, dwell
+  flyby/rest/release PASS for all three destinations. The review film —
+  the deep opening, the walk, the standing settle, the 15-second magic
+  window under the afternoon lattice, all three head-turn visits — was
+  shot on the live deployed site (docs/progress/0103-review.mp4; stills
+  at 0103-live.png and 0103-phone.png).
 
 ## Decisions Required
 
-None.
+None — the sprint review is Jonathan's. (Standing items: the hero's
+real footage and the journal's authored words remain the ceiling; the
+sourced-model prop route waits behind a preload strategy; the seat
+choreography survives in git history if ever recalled.)
 
 ## Ready for
 
-WORK ORDER 0103 — surgical IBL and the sprint close.
+Jonathan's review of Sprint 05C. Implementation stops completely.
