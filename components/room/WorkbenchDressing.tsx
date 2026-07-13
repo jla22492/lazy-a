@@ -2,7 +2,7 @@
 
 import { RoundedBox } from "@react-three/drei";
 
-import { ceramic, paper } from "@/three/materials/procedural";
+import { ceramic, paper, paperNormal } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
 import {
   BOOK_STACK,
@@ -171,7 +171,8 @@ function ConsideredPrint() {
       <boxGeometry args={[width, thickness, height]} />
       {/* Glossier stock than the wall prints (0066): fresh from the lab. */}
       <meshStandardMaterial
-        map={paper({ seed: 641, base: color, fiber: 0.2, handled: 0.15 })}
+        map={paper({ seed: 641, base: color, fiber: 0.2, handled: 0.15, stock: "smooth" })}
+        normalMap={paperNormal(641)}
         roughness={0.42}
       />
     </mesh>
@@ -268,6 +269,7 @@ function LooseSheets() {
               fiber: 0.3,
               handled: 0.2,
             })}
+            normalMap={paperNormal(375)}
             roughness={0.9}
           />
         </mesh>

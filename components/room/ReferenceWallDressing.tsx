@@ -177,6 +177,7 @@ function PinnedCluster() {
                       ? {
                           seed: 421 + index,
                           base: photoColor,
+                          stock: "smooth",
                           fiber: 0.12,
                           handled: 0.3,
                           faded: index === 0 ? 0.8 : 0,

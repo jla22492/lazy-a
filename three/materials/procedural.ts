@@ -212,18 +212,77 @@ export interface PaperParams {
   faded?: number;
   /** A corner that was bent and never flattened (0066). */
   bentCorner?: boolean;
+  /** Which scanned stock underlies the sheet (0101). */
+  stock?: PaperStock;
   size?: number;
 }
 
-/** Paper you could almost feel: fiber noise, tone drift, handled edges. */
+/** The photographic stocks (WORK ORDER 0101): scanned paper, CC0
+    (ambientCG), neutralized offline so any base tone can tint it. */
+export type PaperStock = "fiber" | "smooth" | "kraft";
+
+const stockImages = new Map<PaperStock, HTMLImageElement>();
+const stockWaiters = new Map<PaperStock, Array<() => void>>();
+
+function requestStock(stock: PaperStock, onReady: () => void): void {
+  const loaded = stockImages.get(stock);
+  if (loaded) {
+    onReady();
+    return;
+  }
+  const waiters = stockWaiters.get(stock);
+  if (waiters) {
+    waiters.push(onReady);
+    return;
+  }
+  stockWaiters.set(stock, [onReady]);
+  const image = new Image();
+  image.onload = () => {
+    stockImages.set(stock, image);
+    for (const waiter of stockWaiters.get(stock) ?? []) waiter();
+    stockWaiters.delete(stock);
+  };
+  const prefix = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  image.src = `${prefix}/textures/paper/${stock}.jpg`;
+}
+
+/** Paper you could almost feel — since 0101 built on a PHOTOGRAPH of
+    paper (progressively: procedural first paint, re-drawn with the
+    scanned stock the moment it loads), with the history layers on top. */
 export function paperTexture(params: PaperParams): CanvasTexture {
   const size = params.size ?? 512;
-  const random = seededRandom(params.seed);
   const context = makeCanvas(size, size);
+  const texture = drawPaper(context, params, null);
+  const stock = params.stock ?? "fiber";
+  if (typeof window !== "undefined") {
+    requestStock(stock, () => {
+      drawPaper(context, params, stockImages.get(stock) ?? null);
+      texture.needsUpdate = true;
+    });
+  }
+  return texture;
+}
+
+function drawPaper(
+  context: CanvasRenderingContext2D,
+  params: PaperParams,
+  photo: HTMLImageElement | null,
+): CanvasTexture {
+  const size = params.size ?? 512;
+  const random = seededRandom(params.seed);
   const base = rgb(params.base);
 
   context.fillStyle = style(base, 1);
   context.fillRect(0, 0, size, size);
+  if (photo) {
+    /* The scanned stock, tinted by the sheet's own tone: multiply keeps
+       the photographic grain while the base color stays authored. */
+    context.drawImage(photo, 0, 0, size, size);
+    context.globalCompositeOperation = "multiply";
+    context.fillStyle = style(base, 1);
+    context.fillRect(0, 0, size, size);
+    context.globalCompositeOperation = "source-over";
+  }
 
   /* Fiber: short faint strokes in every direction. */
   const fibers = Math.floor(1400 * params.fiber);
@@ -1075,14 +1134,27 @@ export function plasterNormal(seed: number, strength = 1.1): CanvasTexture {
   });
 }
 
-/** Paper tooth: the finest surface a raking light can find. */
-export function paperNormal(seed: number, strength = 0.7): CanvasTexture {
+/** Paper tooth AND wave: fine grain plus the broad, barely-there
+    undulation of a real sheet — what raking light actually finds. */
+export function paperNormal(seed: number, strength = 0.9): CanvasTexture {
   return cached(`paperNormal:${seed}:${strength}`, () => {
     const size = 256;
     const context = makeCanvas(size, size);
     const random = seededRandom(seed);
     context.fillStyle = "rgb(128,128,128)";
     context.fillRect(0, 0, size, size);
+    /* The wave: a few broad soft swells, no sheet lies truly flat. */
+    for (let i = 0; i < 5; i++) {
+      const x = random() * size;
+      const y = random() * size;
+      const r = size * (0.25 + random() * 0.35);
+      const tone = 118 + random() * 20;
+      const g = context.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(${tone},${tone},${tone},0.5)`);
+      g.addColorStop(1, "rgba(128,128,128,0)");
+      context.fillStyle = g;
+      context.fillRect(0, 0, size, size);
+    }
     for (let i = 0; i < 5200; i++) {
       const tone = 116 + random() * 24;
       context.fillStyle = `rgba(${tone},${tone},${tone},0.5)`;
