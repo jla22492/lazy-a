@@ -40,6 +40,7 @@ const beats = await page.evaluate(
       let settleAt = null;
       let stillFrames = 0;
       let magicAt = null;
+      let heroMovedStreak = 0;
       const sample = () => {
         const c = document.querySelector("canvas");
         if (!c) return null;
@@ -72,8 +73,11 @@ const beats = await page.evaluate(
             } else {
               stillFrames = 0;
             }
-          } else if (magicAt === null && heroMoved) {
-            magicAt = now;
+          } else if (magicAt === null) {
+            /* Sustained motion only: the poster image's one-frame
+               pop-in must not count as the magic. */
+            heroMovedStreak = heroMoved ? heroMovedStreak + 1 : 0;
+            if (heroMovedStreak >= 3) magicAt = now - 0.2;
           }
         }
         prevWall = s.wall;

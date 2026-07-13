@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0103 — Surgical Reflections & the Sprint Close (Sprint 05C, order 4 of 4 — SPRINT 05C COMPLETE)
+WORK ORDER 0107 — The Pre-Rendered Room Spike & the Sprint Close (Sprint 05D, order 4 of 4 — SPRINT 05D COMPLETE)
 
 ## Version
 
@@ -10,32 +10,41 @@ v0.1
 
 ## Summary
 
-- The reflections landed the way the 0099 finding demanded: a generated
-  environment handed DIRECTLY to the shiny few — the mug and jar's
-  glaze, the camera's metal, the lamp's enamel, the hero's gloss —
-  through a subscription module (three/lighting/reflections.ts).
-  scene.environment is never set. Measured surgically: the wall moved
-  -0.1 luminance (the authored light untouched) while the jar's glaze
-  woke +34.6 and the hero's coated stock +33.4 — a print catching the
-  room, not a room being washed.
-- The magic beat was re-tuned to Jonathan's clock after the faster
-  arrival pulled it early: the hero now waits a longer breath (1.5s)
-  and begins at a measured 4.0–4.2s on the live site.
-- SPRINT 05C CLOSED. Final live battery: settle 3.4–3.5s, magic
-  4.0–4.2s, answer 0.67s, 59.9fps median, 1.36MB transfer, dwell
-  flyby/rest/release PASS for all three destinations. The review film —
-  the deep opening, the walk, the standing settle, the 15-second magic
-  window under the afternoon lattice, all three head-turn visits — was
-  shot on the live deployed site (docs/progress/0103-review.mp4; stills
-  at 0103-live.png and 0103-phone.png).
+- The endgame pipeline is proven end to end: a Cycles equirectangular
+  panorama rendered headlessly from the settled eye (scripts/
+  render-pano-spike.py, the Blender twin grown a camera), streamed like
+  every heavy asset, mapped onto a rotation-only sphere, with the LIVE
+  layers — the playing hero, the logo note, the pinned wall, the
+  notebook and its words, the interface — composited on top (?pano dev
+  mode; docs/progress/0107-pano-composite.png + 0107-pano-equirect.jpg).
+  The interaction grammar never noticed the swap: dwell targets are
+  world coordinates, indifferent to whether the pixels behind them are
+  live or baked. QUALITY IS EXPLICITLY DEFERRED — the spike's twin is
+  boxes and its exposure crude; making the panorama beautiful is the
+  next sprint's art pass, now a known-safe road.
+- Sprint 05D delivered the "real objects" mandate as far as one sprint
+  honestly can: the loading strategy (0104 — heavy things stream during
+  the magic window; the perf gate now guards a pre-settle budget), REAL
+  SURFACES (0105 — the desk is photographed oak with its wear intact,
+  the walls photographic plaster, the floor real concrete), and the
+  prop-streaming pipeline (0106 — proven with a genuine photogrammetry
+  lamp that was then DECLINED on curation: wrong color, wrong mount,
+  wrong aim for the manifest's lamp; a real object telling the wrong
+  story loses to an authored one telling the truth).
+- The measurement instrument was corrected during close-out: the magic
+  detector was tripping on the poster image's one-frame pop-in;
+  sustained motion is now required. Final live battery: settle
+  3.10–3.51s, magic 4.21–4.51s, answer 0.68s, 59.9fps, pre-settle
+  1.36MB, dwell PASS ×3. Review film re-shot on the live site
+  (docs/progress/0107-review.mp4).
 
 ## Decisions Required
 
-None — the sprint review is Jonathan's. (Standing items: the hero's
-real footage and the journal's authored words remain the ceiling; the
-sourced-model prop route waits behind a preload strategy; the seat
-choreography survives in git history if ever recalled.)
+Curation of scanned props is a taste gate only Jonathan can hold: the
+pipeline will stream any CC0 scan, but each object must match the
+manifest's story (the lamp is dark-green, weighted, aimed at last
+night's work). Candidates should be picked with eyes, not APIs.
 
 ## Ready for
 
-Jonathan's review of Sprint 05C. Implementation stops completely.
+Jonathan's review of Sprint 05D. Implementation stops completely.
