@@ -6,6 +6,8 @@ import { SRGBColorSpace, TextureLoader } from "three";
 import { useLoader } from "@react-three/fiber";
 
 import { assetPath } from "@/lib/assetPath";
+import { DoubleSide } from "three";
+
 import { frostedPaneTexture, plaster, plasterNormal } from "@/three/materials/procedural";
 import { ROOM } from "@/three/scene/constants";
 import { fromWorkbench } from "@/three/scene/world";
@@ -318,14 +320,23 @@ export function RoomShell() {
       ))}
       {RIGHT_PANELS.filter(({ rect }) => rect[2] > 0 && rect[3] > 0).map(
         ({ key, rect: [centerZ, centerY, width, height] }) => (
+          /* Since 0100 the right wall OCCLUDES the low sun: only the
+             window opening admits it, so the wall's light is a true
+             window-shaped patch, muntin grid and all. */
           <mesh
             key={key}
             position={[rightWall.x, centerY, centerZ]}
             rotation-y={FACING_LEFT}
+            castShadow
             receiveShadow
           >
             <planeGeometry args={[width, height]} />
-            <meshStandardMaterial map={wallPlaster} normalMap={plasterNormal(427)} roughness={0.94} />
+            <meshStandardMaterial
+              map={wallPlaster}
+              normalMap={plasterNormal(427)}
+              roughness={0.94}
+              shadowSide={DoubleSide}
+            />
           </mesh>
         ),
       )}
@@ -335,6 +346,38 @@ export function RoomShell() {
           one soft vertical band near its rear edge: something stands
           outside the window, unexplained — the world continues past the
           glass. */}
+      {/* Glazing bars (WORK ORDER 0100, the late-afternoon ruling): the
+          window gained its muntins so the low sun casts a TRUE grid —
+          the raking lattice on the wall is real shadow, never a decal.
+          Painted the trim's white; a hand's width of bar. */}
+      {[1 / 3, 2 / 3].map((f) => (
+        <mesh
+          key={`muntin-h-${f}`}
+          position={[
+            rightWall.x + win.reveal / 2,
+            win.sill + (win.head - win.sill) * f,
+            WINDOW_CENTER_Z,
+          ]}
+          castShadow
+        >
+          <boxGeometry args={[0.02, 0.028, WINDOW_WIDTH]} />
+          <meshStandardMaterial color={baseboard.color} roughness={0.55} />
+        </mesh>
+      ))}
+      {[1 / 3, 2 / 3].map((f) => (
+        <mesh
+          key={`muntin-v-${f}`}
+          position={[
+            rightWall.x + win.reveal / 2,
+            (win.sill + win.head) / 2,
+            win.spanZ[0] + WINDOW_WIDTH * f,
+          ]}
+          castShadow
+        >
+          <boxGeometry args={[0.02, win.head - win.sill, 0.028]} />
+          <meshStandardMaterial color={baseboard.color} roughness={0.55} />
+        </mesh>
+      ))}
       <mesh
         position={[
           rightWall.x + win.reveal,

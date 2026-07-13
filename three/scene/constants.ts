@@ -201,11 +201,16 @@ export const STAGE = {
  */
 export const DAYLIGHT = {
   sun: {
-    /** Slightly warm white; unremarkable midday light. */
-    color: "#fff2e2",
-    intensity: 1.7,
-    /** High and to the right, outside the frame, angled into the room. */
-    position: [4, 5, 2.5] as [number, number, number],
+    /**
+     * LATE AFTERNOON (WORK ORDER 0100, Jonathan's ruling — the light
+     * stopped being unremarkable): a low amber sun raking through the
+     * window, strong enough to carve warm patches and long shadows.
+     * Supersedes the Sprint-01 "no mood" daylight.
+     */
+    color: "#ffd9a4",
+    intensity: 2.4,
+    /** Low and to the right — ~20 degrees of elevation, entering long. */
+    position: [6.5, 1.0, 5.2] as [number, number, number],
     shadow: {
       /**
        * Truthful shadows for a furnished room (WORK ORDER 0043): the set
@@ -229,16 +234,17 @@ export const DAYLIGHT = {
     },
   },
   bounce: {
-    /** Barely-cool sky component of the fill. */
-    skyColor: "#e7ebee",
+    /** Cooler shadow fill: late-afternoon shade goes blue. */
+    skyColor: "#dce4ee",
     /**
      * Light returned from the warm floor and plaster — since the floor
      * became concrete and the bench wood (WORK ORDER 0043), the return
      * warms a step and drops slightly, so the sun models the new
      * materials instead of the fill flattening them.
      */
-    groundColor: "#a89882",
-    intensity: 0.44,
+    groundColor: "#a8927a",
+    /* Dimmer fill (0100): late afternoon lets the shadows deepen. */
+    intensity: 0.32,
   },
   /**
    * The first breath (WORK ORDER 0018): daylight sways imperceptibly, the

@@ -84,20 +84,20 @@ bench_top.name = "benchtop"
 bench_top.scale = (1.8, 0.75, 1)
 bench_top.data.materials.append(wood)
 
-# The sun: three position (4, 5, 2.5) aimed at the origin.
-bpy.ops.object.light_add(type="SUN", location=(4, -2.5, 5))
+# The sun: LATE AFTERNOON (0100) — three position (5, 2.1, 3), low and warm.
+bpy.ops.object.light_add(type="SUN", location=(6.5, -5.2, 1.0))
 sun = bpy.context.active_object
-direction = Vector((0, 0, 0)) - Vector((4, -2.5, 5))
+direction = Vector((0, 0, 0)) - Vector((6.5, -5.2, 1.0))
 sun.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
-sun.data.energy = 4.0
-sun.data.color = (1.0, 0.949, 0.886)
-sun.data.angle = 0.06
+sun.data.energy = 5.5
+sun.data.color = (1.0, 0.85, 0.64)
+sun.data.angle = 0.05
 
 # A faint world sky so the bounce never goes dead (the hemisphere's job).
 world = bpy.data.worlds.new("sky")
 scene.world = world
 world.use_nodes = True
-world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.25
+world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.18
 world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.906, 0.922, 0.933, 1)
 
 
