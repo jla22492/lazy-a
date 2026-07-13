@@ -15,6 +15,11 @@ import {
 } from "@/three/scene/dressing/infrastructure";
 import { Vector2 } from "three";
 
+import {
+  REFLECTION_INTENSITY,
+  useReflections,
+} from "@/three/lighting/reflections";
+
 import { fromWorkbench } from "@/three/scene/world";
 
 const REAR_Z = ROOM.rearWall.z;
@@ -49,6 +54,7 @@ function OutletPlate({ outlet }: { outlet: Outlet }) {
  * the active zone from last night. Off — the daylight is doing its job.
  */
 function DeskLamp() {
+  const reflections = useReflections();
   const { at, base, arm1, arm2, head, enamel, joint } = DESK_LAMP;
   const surface = WORKBENCH.surfaceHeight;
   /* Arm 1 rises from the base at a lean; arm 2 folds forward and down.
@@ -121,7 +127,7 @@ function DeskLamp() {
               26,
             ]}
           />
-          <meshStandardMaterial color={enamel} roughness={0.45} side={2} />
+          <meshStandardMaterial color={enamel} roughness={0.45} side={2} envMap={reflections ?? undefined} envMapIntensity={REFLECTION_INTENSITY.ceramic} />
         </mesh>
         {/* The bulb's dark socket up inside the shade. */}
         <mesh position={[0, -head.depth * 0.15, 0]}>

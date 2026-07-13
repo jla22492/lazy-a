@@ -4,6 +4,10 @@ import { RoundedBox } from "@react-three/drei";
 import { DoubleSide, Vector2 } from "three";
 
 import { ceramic, paper, paperNormal } from "@/three/materials/procedural";
+import {
+  REFLECTION_INTENSITY,
+  useReflections,
+} from "@/three/lighting/reflections";
 import { WORKBENCH } from "@/three/scene/constants";
 import {
   BOOK_STACK,
@@ -95,6 +99,7 @@ function BookStack() {
 /** The pencil jar and its leaning residents. */
 function PencilJar() {
   const { at, radius, height, color, sticks, stickRadius } = PENCIL_JAR;
+  const reflections = useReflections();
   return (
     <group position={[at.x, SURFACE, at.z]}>
       {/* 0102: a thrown jar, not a cylinder — foot, belly taper, rolled
@@ -119,6 +124,8 @@ function PencilJar() {
           map={ceramic(435, color)}
           roughness={0.42}
           side={DoubleSide}
+          envMap={reflections ?? undefined}
+          envMapIntensity={REFLECTION_INTENSITY.ceramic}
         />
       </mesh>
       <mesh position={[0, height * 0.96, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -204,11 +211,12 @@ function ConsideredPrint() {
 /** The mug that went cold, handle turned away. */
 function Mug() {
   const { at, radius, height, handleYaw, color } = MUG;
+  const reflections = useReflections();
   return (
     <group position={[at.x, SURFACE, at.z]} rotation={[0, handleYaw, 0]}>
       <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[radius, radius * 0.94, height, 24]} />
-        <meshStandardMaterial map={ceramic(437, color)} roughness={0.35} />
+        <meshStandardMaterial map={ceramic(437, color)} roughness={0.35} envMap={reflections ?? undefined} envMapIntensity={REFLECTION_INTENSITY.ceramic} />
       </mesh>
       {/* 0098: a rolled rim and the dark of an interior — a mug, not a
           cylinder. The last coffee's level line lives just inside. */}
@@ -222,7 +230,7 @@ function Mug() {
       </mesh>
       <mesh position={[radius + 0.012, height * 0.55, 0]} castShadow>
         <torusGeometry args={[0.02, 0.006, 8, 16]} />
-        <meshStandardMaterial map={ceramic(437, color)} roughness={0.35} />
+        <meshStandardMaterial map={ceramic(437, color)} roughness={0.35} envMap={reflections ?? undefined} envMapIntensity={REFLECTION_INTENSITY.ceramic} />
       </mesh>
     </group>
   );
@@ -318,6 +326,7 @@ function FilmCanisters() {
 /** The camera set down after checking a frame, lens toward the wall. */
 function Camera() {
   const { at, body, lens, prism, yaw, bodyColor, lensColor } = CAMERA;
+  const reflections = useReflections();
   return (
     /* Rebuilt at 0098 (the five tells): a camera body, not a black box —
        rounded housing, leatherette band, a lens with a hood ring and a
@@ -352,7 +361,7 @@ function Camera() {
         castShadow
       >
         <cylinderGeometry args={[lens.radius, lens.radius * 0.92, lens.length, 28]} />
-        <meshStandardMaterial color={lensColor} roughness={0.38} metalness={0.45} />
+        <meshStandardMaterial color={lensColor} roughness={0.38} metalness={0.45} envMap={reflections ?? undefined} envMapIntensity={REFLECTION_INTENSITY.metal} />
       </mesh>
       <mesh
         position={[0, body.height / 2, body.depth / 2 + lens.length - 0.003]}
@@ -366,7 +375,7 @@ function Camera() {
         rotation={[Math.PI / 2, 0, 0]}
       >
         <cylinderGeometry args={[lens.radius * 0.62, lens.radius * 0.62, 0.004, 24]} />
-        <meshStandardMaterial color="#0d0d10" roughness={0.15} metalness={0.6} />
+        <meshStandardMaterial color="#0d0d10" roughness={0.15} metalness={0.6} envMap={reflections ?? undefined} envMapIntensity={REFLECTION_INTENSITY.metal} />
       </mesh>
       {/* Prism hump, softened. */}
       <RoundedBox

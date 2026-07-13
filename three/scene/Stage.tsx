@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+import { PMREMGenerator } from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { useThree } from "@react-three/fiber";
+
+import { provideReflections } from "@/three/lighting/reflections";
+
 
 import { Canvas, type RootState } from "@react-three/fiber";
 import { AgXToneMapping } from "three";
@@ -45,6 +51,25 @@ function isCaptureRun(): boolean {
   return params.has("shot") || params.has("record");
 }
 
+/**
+ * Generates the reflection environment ONCE and hands it to the
+ * reflections module (0103). scene.environment is deliberately never
+ * set — the 0099 finding stands: a global environment relights the
+ * room. Only subscribed shiny materials ever see this texture.
+ */
+function ReflectionSource() {
+  const gl = useThree((state) => state.gl);
+  useEffect(() => {
+    const pmrem = new PMREMGenerator(gl);
+    const environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    provideReflections(environment);
+    return () => {
+      pmrem.dispose();
+    };
+  }, [gl]);
+  return null;
+}
+
 /** The film stage: neutral void, base lighting, bare floor, the workbench, a human camera. */
 export function Stage() {
   /* Camera studies (WORK ORDER 0006): ?study=<id> previews an alternative
@@ -86,6 +111,7 @@ export function Stage() {
         }}
       >
         <color attach="background" args={[STAGE.backgroundColor]} />
+        <ReflectionSource />
         <RoomClockDriver />
         <Daylight />
         <Floor />

@@ -9,6 +9,10 @@ import { SRGBColorSpace } from "three";
 import logoNote from "@/public/brand/logo-note.png";
 import { assetPath } from "@/lib/assetPath";
 import { paper, wood, woodNormal } from "@/three/materials/procedural";
+import {
+  REFLECTION_INTENSITY,
+  useReflections,
+} from "@/three/lighting/reflections";
 import { ROOM } from "@/three/scene/constants";
 import {
   HERO_PRINT,
@@ -42,6 +46,7 @@ const HERO_FILM = {
 
 function HeroFilm() {
   const { width, height, thickness } = HERO_PRINT;
+  const reflections = useReflections();
   const texture = useVideoTexture(assetPath(HERO_FILM.src), {
     muted: true,
     loop: true,
@@ -64,7 +69,7 @@ function HeroFilm() {
       <planeGeometry
         args={[width - HERO_FILM.border * 2, height - HERO_FILM.border * 2]}
       />
-      <meshStandardMaterial map={texture} roughness={HERO_FILM.roughness} />
+      <meshStandardMaterial map={texture} roughness={HERO_FILM.roughness} envMap={reflections ?? undefined} envMapIntensity={REFLECTION_INTENSITY.gloss} />
     </mesh>
   );
 }
