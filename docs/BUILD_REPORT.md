@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0101 — Photographic Paper (Sprint 05C, order 2)
+WORK ORDER 0102 — The Prop Pass (Sprint 05C, order 3)
 
 ## Version
 
@@ -10,21 +10,26 @@ v0.1
 
 ## Summary
 
-- Every sheet in the room is now built on a PHOTOGRAPH of paper: three
-  CC0 scans (ambientCG — fiber, smooth print stock, kraft; Jonathan's
-  download approval) neutralized offline so any authored base tone can
-  tint them, loaded progressively (procedural first paint, re-drawn
-  with the scan the moment it arrives — 85KB total), with the entire
-  history system (tone drift, sun-fade, bent corners, handling) layered
-  on top. Verified numerically: the paper canvases' sampled means drop
-  exactly as the multiply predicts.
-- Real paper is quiet at face level — what raking light actually finds
-  is TOOTH and WAVE, so paperNormal gained broad barely-there swells
-  and now rides the desk's sheets and the considered print. Under the
-  0100 afternoon rake the papers finally read as material, not
-  polygons (docs/progress/0101.png).
-- Live battery: settle 3.61s, magic 4.21s, answer 0.67s, 59.9fps,
-  1.36MB, all PASS.
+- Judged in the settled frame first: only two props still told — the
+  lamp's cone-primitive shade and the pencil jar's plain cylinder. Both
+  rebuilt as lathe profiles: the shade is spun metal now (dome shoulder,
+  flare, rolled lip, a visible interior with its dark socket), the jar
+  is thrown ceramic (foot, belly taper, rolled rim, the dark of an
+  interior) — docs/progress/0102-zoom.png.
+- The sourced-model route was MEASURED and declined, not skipped: a
+  matching CC0 desk lamp exists (Polyhaven desk_lamp_arm_01, Jonathan's
+  download approval), but its texture package would cost several MB on
+  the cold visit — the same clock we just defended. Procedural lathe
+  geometry delivers the frame-distance read at zero transfer. Sourced
+  photographic props remain a later option behind a preload strategy.
+- Deliberately untouched, with reasons: the desk IS the wear system
+  (rebuilding destroys four sprints of recorded history), the plant is
+  locked finished, the camera was rebuilt at 0098, the mug (0098 rim +
+  interior) sits outside the resting frame.
+- The clock gained robustness headroom after 0102's live distribution
+  showed occasional 4.0–4.1s samples under network variance: arrival
+  beats trimmed to 0.2/1.9/0.5 — live settle now 3.11–3.41s across four
+  runs. Full battery PASS.
 
 ## Decisions Required
 
@@ -32,4 +37,4 @@ None.
 
 ## Ready for
 
-WORK ORDER 0102 — the Blender prop pass.
+WORK ORDER 0103 — surgical IBL and the sprint close.
