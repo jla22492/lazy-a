@@ -2,7 +2,7 @@
 
 ## Work Order
 
-R-0092 (second revision) — The Higher Rest (Jonathan's ruling with his reference frame)
+WORK ORDER 0100 — Late Afternoon (Sprint 05C, order 1: the light ruling)
 
 ## Version
 
@@ -10,41 +10,29 @@ v0.1
 
 ## Summary
 
-- The settled composition is no longer the low seat: the camera now
-  rests at the higher vantage the walk reaches at ~2s — a person
-  STANDING over their work, Jonathan's reference composition. The
-  desktop reads as a broad surface below with the prints and papers
-  legible at an angle; the hero exactly fills the frame's top; the
-  sit-down push is gone from the choreography entirely.
-- The arrival now opens DEEP in the room (z 4.9, the doorway's side),
-  so the full render — plant, bookcase, leaning board, bench, the
-  re-staged chair, the playing hero, pendant, vent, window — introduces
-  itself before the walk (docs/progress/R-0092-2-opening.png).
-- Choosing JOURNAL became what the ruling wanted: a real head-DROP from
-  the standing regard onto the page (gaze pull 1.0) — the biggest turn
-  in the grammar — and the paragraph now centers and reads
-  (docs/progress/R-0092-2-journal.png).
-- The clock was defended while the walk grew: three timing nips
-  (opening beat 0.25s, walk 2.15s, settle 0.55s) hold the measured live
-  settle at 3.51–3.81s, magic at 4.4–4.7s, answer at 0.67s. Full live
-  battery passes: 59.9fps, 1.28MB, dwell flyby/rest/release ×3. The
-  review film re-shot on the live site with the 15s window
-  (docs/progress/R-0092-2-review.mp4).
-- Operational: the canvas ?record pipeline no longer captures the
-  arrival reliably under the heavier startup (SwiftShader drops its
-  early frames) — Playwright film mode is now the measurement and
-  review path. Sixteen macOS sync-duplicate files ("<name> 2.*", dated
-  Jul 10, one of them an ancient Stage.tsx copy that broke typecheck)
-  were quarantined out of the repo to the session scratchpad, not
-  deleted.
+- Jonathan's ruling executed: the daylight stopped being unremarkable.
+  The sun dropped to ~8 degrees of golden-hour elevation, warmed to
+  amber, and strengthened; the fill cooled and dimmed so shadow zones go
+  quietly blue; the GI bounce was re-baked for the new sun.
+- The signature of his reference frame is real, not painted: the window
+  gained its glazing bars (two verticals, two horizontals — the first
+  shell revision since 0014, demanded by the light), and the right wall
+  now OCCLUDES the sun, so the glowing lattice raking across the rear
+  wall is a true window-shaped shadow pattern. Three azimuth iterations
+  graded against the reference landed the patch where his frame has it:
+  half-catching the hero print, muntin bars crossing its edge, the desk
+  in warm shade with a soft pool (docs/progress/0100.png; the JOURNAL
+  drop under the new light at 0100-journal.png).
+- Interface legibility re-verified in the new contrast (CONTACT's
+  caption reads in the shadow zone). Full live battery: settle
+  3.61–3.71s, magic 4.2–4.3s, answer 0.68s, 59.9fps, 1.59MB, dwell ×3.
+- Supersedes the Sprint-01 "daylight is unremarkable" lock — recorded
+  as Jonathan's direct ruling with his reference frame as the spec.
 
 ## Decisions Required
 
-None new. (SEATED_EYE_HEIGHT and the sit choreography survive in git
-history if the seat ever returns; the "perspective sits" lock is
-superseded by this ruling — recorded in PROJECT_STATUS.)
+None.
 
 ## Ready for
 
-Jonathan's review, and his decisions on the strategy questions answered
-in-session (IBL, the path to "real objects").
+WORK ORDER 0101 — the photographic paper family.
