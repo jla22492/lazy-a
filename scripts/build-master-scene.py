@@ -31,7 +31,17 @@ bpy.ops.import_scene.gltf(filepath=glb_path)
 # render. EMPTY until picks arrive — the machinery is verified with
 # a dry run (see docs/progress/0110-dryrun.jpg).
 # ---------------------------------------------------------------
-PICKS = []
+PICKS = [
+    # Jonathan's approvals (R-0111). (path, three-pos, yaw, height, hide_hint)
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/ceramic_vase_02/ceramic_vase_02_1k.gltf",
+     (0.42, 0.9, -0.2), 0.4, 0.11, None),
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/book_encyclopedia_set_01/book_encyclopedia_set_01_1k.gltf",
+     (-0.62, 0.9, -0.24), 0.15, 0.235, None),
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/dining_chair_02/dining_chair_02_1k.gltf",
+     (0.95, 0.0, 0.78), 0.55, 0.85, None),
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/Camera_01/Camera_01_1k.gltf",
+     (0.78, 0.9, 0.04), 2.7, 0.12, None),
+]
 
 
 def place_scan(path, three_pos, yaw, height, hide_hint=None):
@@ -77,9 +87,9 @@ for obj in list(bpy.data.objects):
         bpy.data.objects.remove(obj, do_unlink=True)
 
 # The afternoon sun (0100): three (6.5, 1.0, 5.2) -> blender (6.5, -5.2, 1.0).
-bpy.ops.object.light_add(type="SUN", location=(6.5, -5.2, 1.0))
+bpy.ops.object.light_add(type="SUN", location=(6.5, -4.5, 1.15))
 sun = bpy.context.active_object
-direction = Vector((0, 0, 0)) - Vector((6.5, -5.2, 1.0))
+direction = Vector((0, 0, 0)) - Vector((6.5, -4.5, 1.15))
 sun.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 sun.data.energy = 5.5
 sun.data.color = (1.0, 0.85, 0.64)
@@ -110,11 +120,18 @@ for obj in bpy.data.objects:
                     found_pane = True
 print("PANE:", found_pane)
 
+# R-0109: the warm room light on, somewhere off-screen deep in the room.
+bpy.ops.object.light_add(type="POINT", location=(-2.2, 5.6, 2.1))
+warm = bpy.context.active_object
+warm.data.energy = 60.0
+warm.data.color = (1.0, 0.85, 0.69)
+warm.data.shadow_soft_size = 0.6
+
 # Cool late-afternoon world.
 world = bpy.data.worlds.new("sky")
 scene.world = world
 world.use_nodes = True
-world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.18
+world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.24
 world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.86, 0.9, 0.95, 1)
 
 # The settled eye (R-0092): three (0.05, 1.6, 1.45) -> blender (0.05, -1.45, 1.6).

@@ -50,6 +50,16 @@ export function Daylight() {
 
   return (
     <>
+      {/* R-0109 (Jonathan's notes): a warm room light is on somewhere
+          in the off-screen depth of the room — the shadowed side never
+          goes cold or unreadable. No shadows: it is felt, not seen. */}
+      <pointLight
+        color="#ffd9b0"
+        intensity={9}
+        distance={14}
+        decay={2}
+        position={[-2.2, 2.1, 5.6]}
+      />
       <directionalLight
         ref={sunRef}
         castShadow

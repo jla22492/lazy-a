@@ -210,7 +210,10 @@ export const DAYLIGHT = {
     color: "#ffd9a4",
     intensity: 2.4,
     /** Low and to the right — ~20 degrees of elevation, entering long. */
-    position: [6.5, 1.0, 5.2] as [number, number, number],
+    /* R-0109 (Jonathan's lighting notes): steeper than golden-hour so
+       the patch reads window-shaped — the old 8-degree throw ran a
+       diagonal to the ceiling line and read "roofless". */
+    position: [6.5, 1.15, 4.5] as [number, number, number],
     shadow: {
       /**
        * Truthful shadows for a furnished room (WORK ORDER 0043): the set
@@ -242,9 +245,10 @@ export const DAYLIGHT = {
      * warms a step and drops slightly, so the sun models the new
      * materials instead of the fill flattening them.
      */
-    groundColor: "#a8927a",
-    /* Dimmer fill (0100): late afternoon lets the shadows deepen. */
-    intensity: 0.32,
+    groundColor: "#b39a7c",
+    /* R-0109: the shadows warmed and lifted — the room reads as if a
+       warm light is on somewhere off-screen; nothing is hard to see. */
+    intensity: 0.42,
   },
   /**
    * The first breath (WORK ORDER 0018): daylight sways imperceptibly, the

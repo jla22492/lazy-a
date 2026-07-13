@@ -85,9 +85,9 @@ bench_top.scale = (1.8, 0.75, 1)
 bench_top.data.materials.append(wood)
 
 # The sun: LATE AFTERNOON (0100) — three position (5, 2.1, 3), low and warm.
-bpy.ops.object.light_add(type="SUN", location=(6.5, -5.2, 1.0))
+bpy.ops.object.light_add(type="SUN", location=(6.5, -4.5, 1.15))
 sun = bpy.context.active_object
-direction = Vector((0, 0, 0)) - Vector((6.5, -5.2, 1.0))
+direction = Vector((0, 0, 0)) - Vector((6.5, -4.5, 1.15))
 sun.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
 sun.data.energy = 5.5
 sun.data.color = (1.0, 0.85, 0.64)

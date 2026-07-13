@@ -449,13 +449,23 @@ export function RoomShell() {
           <meshStandardMaterial color={baseboard.color} roughness={0.55} />
         </mesh>
       ))}
+      {/* R-0109 (Jonathan's notes): the ceiling now OCCLUDES the sun —
+          the low light was slipping over the right wall's top and
+          laying a roofless diagonal across the rear wall. A lid is a
+          lid. */}
       <mesh
         position={[REAR_CENTER_X, wall.height, LEFT_CENTER_Z]}
         rotation-x={FACING_DOWN}
+        castShadow
         receiveShadow
       >
         <planeGeometry args={[REAR_WIDTH, LEFT_LENGTH]} />
-        <meshStandardMaterial map={wallPlaster} normalMap={plasterNormal(427)} roughness={0.96} />
+        <meshStandardMaterial
+          map={wallPlaster}
+          normalMap={plasterNormal(427)}
+          roughness={0.96}
+          shadowSide={DoubleSide}
+        />
       </mesh>
     </group>
   );

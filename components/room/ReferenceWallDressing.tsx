@@ -65,7 +65,9 @@ function HeroFilm() {
     void texture.image.play();
   });
   return (
-    <mesh position={[0, 0, thickness * 1.1 + 0.0004]}>
+    /* R-0109 (Jonathan's notes): the room's light falls on the film the
+       way it falls on everything — the lattice crosses the moving image. */
+    <mesh position={[0, 0, thickness * 1.1 + 0.0004]} receiveShadow>
       <planeGeometry
         args={[width - HERO_FILM.border * 2, height - HERO_FILM.border * 2]}
       />
