@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { CatmullRomCurve3, Vector3 } from "three";
+import { Box3, CatmullRomCurve3, Vector2, Vector3 } from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { Group } from "three";
 
 import { ROOM, WORKBENCH } from "@/three/scene/constants";
 import {
@@ -13,8 +15,9 @@ import {
   PHONE_CHARGER,
   type Outlet,
 } from "@/three/scene/dressing/infrastructure";
-import { Vector2 } from "three";
 
+import { assetPath } from "@/lib/assetPath";
+import { whenRoomIsSettled } from "@/lib/deferredAssets";
 import {
   REFLECTION_INTENSITY,
   useReflections,
@@ -53,8 +56,49 @@ function OutletPlate({ outlet }: { outlet: Outlet }) {
  * The desk lamp: base on the bench, two enamel arms, a spun shade aimed at
  * the active zone from last night. Off — the daylight is doing its job.
  */
+/**
+ * The scanned lamp (WORK ORDER 0106): a photogrammetry desk lamp
+ * (Polyhaven desk_lamp_arm_01, CC0 — Jonathan's download approval),
+ * streamed after the settle. Until it arrives, the procedural lamp
+ * stands in; the swap is silent, during the magic window. Scaled from
+ * its true bounds and turned so the head keeps last night's aim at the
+ * active zone — the story survives the upgrade.
+ */
+const SCANNED_LAMP_HEIGHT = 0.48;
+
+function ScannedDeskLamp({ onReady }: { onReady: () => void }) {
+  const [scene, setScene] = useState<Group | null>(null);
+  useEffect(() => {
+    whenRoomIsSettled(() => {
+      new GLTFLoader().load(
+        assetPath("/models/desk-lamp/desk_lamp_arm_01_1k.gltf"),
+        (gltf) => {
+          const root = gltf.scene;
+          const bounds = new Box3().setFromObject(root);
+          const sizeV = bounds.getSize(new Vector3());
+          const scale = SCANNED_LAMP_HEIGHT / sizeV.y;
+          root.scale.setScalar(scale);
+          root.position.y = -bounds.min.y * scale;
+          root.traverse((object) => {
+            const mesh = object as { isMesh?: boolean; castShadow?: boolean; receiveShadow?: boolean };
+            if (mesh.isMesh) {
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+            }
+          });
+          setScene(root);
+          onReady();
+        },
+      );
+    });
+  }, [onReady]);
+  if (!scene) return null;
+  return <primitive object={scene} rotation-y={2.35} />;
+}
+
 function DeskLamp() {
   const reflections = useReflections();
+  const [scanReady, setScanReady] = useState(false);
   const { at, base, arm1, arm2, head, enamel, joint } = DESK_LAMP;
   const surface = WORKBENCH.surfaceHeight;
   /* Arm 1 rises from the base at a lean; arm 2 folds forward and down.
@@ -64,6 +108,15 @@ function DeskLamp() {
   const a1TopZ = Math.cos(arm1.yaw) * Math.sin(arm1.pitch) * arm1.length;
   return (
     <group position={[at.x, surface, at.z]}>
+      {/* The scanned swap is DISABLED pending curation (0106): the
+          pipeline works — the Polyhaven scan streamed and swapped
+          silently — but the asset itself is a red clamp-mount aimed
+          wrong: it contradicts the manifest's dark-green weighted lamp
+          and its story. A real object that tells the wrong story loses
+          to an authored one that tells the truth. Re-enable with a
+          curated scan: <ScannedDeskLamp onReady={...} /> and
+          visible={!scanReady}. */}
+      <group visible={!scanReady && true}>
       {/* Weighted base. */}
       <mesh position={[0, base.height / 2, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[base.radius, base.radius, base.height, 20]} />
@@ -141,7 +194,9 @@ function DeskLamp() {
           <meshStandardMaterial color={joint} roughness={0.4} metalness={0.3} />
         </mesh>
       </group>
-      {/* The cord drops off the bench's rear edge into the gap. */}
+      </group>
+      {/* The cord drops off the bench's rear edge into the gap —
+          it serves both lamps; the scan has none of its own. */}
       <mesh
         position={[0.02, -(surface / 2) + 0.01, -0.13]}
         rotation={[0.12, 0, 0]}
