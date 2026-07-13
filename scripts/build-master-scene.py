@@ -21,6 +21,50 @@ for obj in list(bpy.data.objects):
 
 bpy.ops.import_scene.gltf(filepath=glb_path)
 
+# ---------------------------------------------------------------
+# CURATED SCANS (WORK ORDER 0110): Jonathan's picks land here.
+# Each entry: (gltf_or_glb_path, three-space position [x, y, z],
+# yaw radians, target real-world height in metres, replaces_hint).
+# Placement converts three -> blender space and floor-sits the scan.
+# The authored object it replaces should be hidden via replaces_hint
+# (a substring of the imported object's name) once verified in a
+# render. EMPTY until picks arrive — the machinery is verified with
+# a dry run (see docs/progress/0110-dryrun.jpg).
+# ---------------------------------------------------------------
+PICKS = []
+
+
+def place_scan(path, three_pos, yaw, height, hide_hint=None):
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=path)
+    imported = [o for o in bpy.data.objects if o not in before]
+    roots = [o for o in imported if o.parent not in imported]
+    from mathutils import Vector as V
+    bounds_min = V((1e9, 1e9, 1e9))
+    bounds_max = V((-1e9, -1e9, -1e9))
+    for o in imported:
+        if o.type != "MESH":
+            continue
+        for corner in o.bound_box:
+            world = o.matrix_world @ V(corner)
+            bounds_min = V(map(min, bounds_min, world))
+            bounds_max = V(map(max, bounds_max, world))
+    size = bounds_max - bounds_min
+    scale = height / max(size.z, 1e-6)
+    bx, by, bz = three_pos[0], -three_pos[2], three_pos[1]
+    for root in roots:
+        root.scale = tuple(v * scale for v in root.scale)
+        root.rotation_euler.z += yaw
+        root.location = (bx, by, bz - bounds_min.z * scale)
+    if hide_hint:
+        for o in bpy.data.objects:
+            if hide_hint in o.name and o not in imported:
+                o.hide_render = True
+
+
+for pick in PICKS:
+    place_scan(*pick)
+
 scene = bpy.context.scene
 scene.render.engine = "CYCLES"
 scene.cycles.samples = 192
