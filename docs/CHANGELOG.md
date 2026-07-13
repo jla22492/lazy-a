@@ -41,6 +41,8 @@
 
 - The films finally show the whole website: a real browser now performs the visit — walks in, sits down, rests, chooses, reads — and records everything a visitor's eyes receive, the room and the words above it together. The first such film was shot on the live site itself. Sprint 05A closed with it: the room is public, wears its real name, plays a moving picture, seats its visitor in four seconds, and answers with the maker's own objects.
 
+- The room learned to hold light like a photograph: the bench's grain now catches the window, the walls undulate like troweled plaster, baked bounce warms the plaster and pools under the furniture, the camera on the desk became a camera and the mug a mug — and the visitor sits down with their eyes properly above the work, given fifteen untouched seconds while the big print plays. Every second of it is measured on the live site, every push gated at sixty frames. The impossible now has a stage worth believing.
+
 - The homepage found its true shape under Jonathan's own direction: you see the whole room first, walk in, and sit — and the big print on the wall starts to move, unasked, while your eyes are level with it. The name is a letterpress note pinned above the lamp, not a website corner. The maker's chair stands aside exactly as they left it. And when you choose JOURNAL or CONTACT, nothing travels — your head simply turns, the way it would at your own desk.
 
 Record experience changes here, not just technical ones.
