@@ -46,7 +46,7 @@ const beats = await page.evaluate(
         if (!c) return null;
         g.drawImage(c, 0, 0, 320, 180);
         const wall = g.getImageData(70, 40, 50, 30).data;
-        const hero = g.getImageData(220, 20, 70, 90).data;
+        const hero = g.getImageData(232, 30, 46, 72).data; /* film interior only — the streamed wall upgrades must not read as magic */
         return { wall, hero };
       };
       const diff = (a, b) => {
