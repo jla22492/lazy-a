@@ -41,6 +41,9 @@ PICKS = [
      (0.95, 0.0, 0.78), 0.55, 0.85, None),
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/Camera_01/Camera_01_1k.gltf",
      (0.78, 0.9, 0.04), 2.7, 0.12, None),
+    # R-0111: the plant — Jonathan's pick (photoscanned, broader).
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/potted_plant_02/potted_plant_02_1k.gltf",
+     (-1.95, 0.0, 0.12), 0.3, 0.85, ("near", (-1.95, 0.0, 0.12), 0.45)),
 ]
 
 
@@ -67,9 +70,18 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
         root.rotation_euler.z += yaw
         root.location = (bx, by, bz - bounds_min.z * scale)
     if hide_hint:
-        for o in bpy.data.objects:
-            if hide_hint in o.name and o not in imported:
-                o.hide_render = True
+        if isinstance(hide_hint, tuple) and hide_hint[0] == "near":
+            _, tp, radius = hide_hint
+            cx, cy, cz = tp[0], -tp[2], tp[1]
+            for o in bpy.data.objects:
+                if o.type == "MESH" and o not in imported:
+                    loc = o.matrix_world.translation
+                    if ((loc.x - cx) ** 2 + (loc.y - cy) ** 2) ** 0.5 < radius:
+                        o.hide_render = True
+        else:
+            for o in bpy.data.objects:
+                if hide_hint in o.name and o not in imported:
+                    o.hide_render = True
 
 
 for pick in PICKS:
@@ -80,6 +92,10 @@ scene.render.engine = "CYCLES"
 scene.cycles.samples = 192
 scene.cycles.use_denoising = True
 scene.view_settings.view_transform = "AgX"
+# R-0111 (Jonathan: "desk still dark"): three levers, same light source —
+# a gentle exposure lift, and a soft warm bounce card over the desk (the
+# room light's light returned by the ceiling, in effect).
+scene.view_settings.exposure = 0.4
 
 # The browser's lights import as approximations — replace with the rig.
 for obj in list(bpy.data.objects):
@@ -126,6 +142,14 @@ warm = bpy.context.active_object
 warm.data.energy = 60.0
 warm.data.color = (1.0, 0.85, 0.69)
 warm.data.shadow_soft_size = 0.6
+
+# R-0111: soft warm fill washing the desktop — broad, dim, sourceless.
+bpy.ops.object.light_add(type="AREA", location=(0.0, -0.4, 2.3))
+fill = bpy.context.active_object
+fill.data.energy = 28.0
+fill.data.color = (1.0, 0.88, 0.74)
+fill.data.size = 2.6
+fill.rotation_euler = (0.2, 0, 0)
 
 # Cool late-afternoon world.
 world = bpy.data.worlds.new("sky")
