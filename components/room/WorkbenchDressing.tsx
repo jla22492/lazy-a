@@ -1,6 +1,7 @@
 "use client";
 
 import { RoundedBox } from "@react-three/drei";
+import { DoubleSide, Vector2 } from "three";
 
 import { ceramic, paper, paperNormal } from "@/three/materials/procedural";
 import { WORKBENCH } from "@/three/scene/constants";
@@ -96,12 +97,33 @@ function PencilJar() {
   const { at, radius, height, color, sticks, stickRadius } = PENCIL_JAR;
   return (
     <group position={[at.x, SURFACE, at.z]}>
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[radius, radius * 0.92, height, 20]} />
+      {/* 0102: a thrown jar, not a cylinder — foot, belly taper, rolled
+          rim, and the dark of an interior. */}
+      <mesh castShadow receiveShadow>
+        <latheGeometry
+          args={[
+            [
+              new Vector2(radius * 0.72, 0.002),
+              new Vector2(radius * 0.88, 0.006),
+              new Vector2(radius * 0.94, height * 0.25),
+              new Vector2(radius, height * 0.72),
+              new Vector2(radius * 0.985, height * 0.94),
+              new Vector2(radius * 1.02, height * 0.985),
+              new Vector2(radius * 0.99, height),
+              new Vector2(radius * 0.9, height * 0.985),
+            ],
+            28,
+          ]}
+        />
         <meshStandardMaterial
           map={ceramic(435, color)}
           roughness={0.42}
+          side={DoubleSide}
         />
+      </mesh>
+      <mesh position={[0, height * 0.96, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[radius * 0.9, 24]} />
+        <meshStandardMaterial color="#3a352e" roughness={0.8} />
       </mesh>
       {sticks.map((stick) => (
         <mesh

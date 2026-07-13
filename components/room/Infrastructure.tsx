@@ -13,6 +13,8 @@ import {
   PHONE_CHARGER,
   type Outlet,
 } from "@/three/scene/dressing/infrastructure";
+import { Vector2 } from "three";
+
 import { fromWorkbench } from "@/three/scene/world";
 
 const REAR_Z = ROOM.rearWall.z;
@@ -101,9 +103,30 @@ function DeskLamp() {
         ]}
         rotation={[0.3, 0, -2.75]}
       >
+        {/* 0102: a spun-metal shade, not a cone — dome shoulder, flare,
+            rolled lip, the profile a metal spinner actually leaves. */}
         <mesh castShadow>
-          <coneGeometry args={[head.radius, head.depth, 20, 1, true]} />
+          <latheGeometry
+            args={[
+              [
+                new Vector2(head.neck.radius * 1.1, head.depth * 0.5),
+                new Vector2(head.radius * 0.35, head.depth * 0.42),
+                new Vector2(head.radius * 0.62, head.depth * 0.22),
+                new Vector2(head.radius * 0.82, -head.depth * 0.05),
+                new Vector2(head.radius * 0.96, -head.depth * 0.38),
+                new Vector2(head.radius, -head.depth * 0.5),
+                new Vector2(head.radius * 1.03, -head.depth * 0.52),
+                new Vector2(head.radius * 1.02, -head.depth * 0.46),
+              ],
+              26,
+            ]}
+          />
           <meshStandardMaterial color={enamel} roughness={0.45} side={2} />
+        </mesh>
+        {/* The bulb's dark socket up inside the shade. */}
+        <mesh position={[0, -head.depth * 0.15, 0]}>
+          <cylinderGeometry args={[0.014, 0.016, 0.03, 12]} />
+          <meshStandardMaterial color="#26241f" roughness={0.6} />
         </mesh>
         <mesh position={[0, head.depth / 2 + head.neck.length / 2, 0]} castShadow>
           <cylinderGeometry
