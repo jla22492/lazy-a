@@ -38,7 +38,7 @@ PICKS = [
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/book_encyclopedia_set_01/book_encyclopedia_set_01_1k.gltf",
      (-0.62, 0.9, -0.24), 0.15, 0.235, None),
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/dining_chair_02/dining_chair_02_1k.gltf",
-     (0.95, 0.0, 0.78), 0.55, 0.85, None),
+     (0.95, 0.0, 0.78), 0.55, 0.85, ("near", (0.95, 0.0, 0.78), 0.5)),
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/Camera_01/Camera_01_1k.gltf",
      (0.78, 0.9, 0.04), 2.7, 0.12, None),
     # R-0111: the plant — Jonathan's pick (photoscanned, broader).
@@ -95,7 +95,7 @@ scene.view_settings.view_transform = "AgX"
 # R-0111 (Jonathan: "desk still dark"): three levers, same light source —
 # a gentle exposure lift, and a soft warm bounce card over the desk (the
 # room light's light returned by the ceiling, in effect).
-scene.view_settings.exposure = 0.4
+scene.view_settings.exposure = 0.25  # R-0113: half a step darker, per Jonathan
 
 # The browser's lights import as approximations — replace with the rig.
 for obj in list(bpy.data.objects):
@@ -146,7 +146,7 @@ warm.data.shadow_soft_size = 0.6
 # R-0111: soft warm fill washing the desktop — broad, dim, sourceless.
 bpy.ops.object.light_add(type="AREA", location=(0.0, -0.4, 2.3))
 fill = bpy.context.active_object
-fill.data.energy = 28.0
+fill.data.energy = 23.0
 fill.data.color = (1.0, 0.88, 0.74)
 fill.data.size = 2.6
 fill.rotation_euler = (0.2, 0, 0)
@@ -159,7 +159,19 @@ world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.24
 world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.86, 0.9, 0.95, 1)
 
 # The settled eye (R-0092): three (0.05, 1.6, 1.45) -> blender (0.05, -1.45, 1.6).
-if mode == "pano":
+if mode == "wide":
+    # The full room from the arrival's opening stance (R-0113):
+    # three (-0.6, 1.6, 4.9) -> blender (-0.6, -4.9, 1.6).
+    bpy.ops.object.camera_add(location=(-0.6, -4.9, 1.6))
+    cam = bpy.context.active_object
+    cam.data.lens_unit = "FOV"
+    cam.data.angle = 0.977384
+    aim = Vector((0.05, 0.0, 0.92)) - Vector((-0.6, -4.9, 1.6))
+    cam.rotation_euler = aim.to_track_quat("-Z", "Y").to_euler()
+    scene.render.resolution_x = 1280
+    scene.render.resolution_y = 720
+    out = f"{outdir}/0113-master-wide.jpg"
+elif mode == "pano":
     bpy.ops.object.camera_add(location=(0.05, -1.45, 1.6))
     cam = bpy.context.active_object
     cam.data.type = "PANO"
