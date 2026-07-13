@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0099 — Micro-imperfection & the Sprint Close (Sprint 05B, order 8 of 8 — SPRINT 05B COMPLETE)
+R-0092 (second revision) — The Higher Rest (Jonathan's ruling with his reference frame)
 
 ## Version
 
@@ -10,34 +10,41 @@ v0.1
 
 ## Summary
 
-- Micro-imperfection landed where hands live: the bench top carries a
-  roughness map (touchedRoughness in the procedural system) — the wear
-  spots polish slightly closer to sheen, and fine noise keeps the finish
-  from ever reading uniform. The hero print's playing surface tightened
-  to gloss-stock roughness so it catches the window like printed light.
-- IBL attempted, MEASURED, and reverted — the honest finding: a global
-  generated environment (three's RoomEnvironment via scene.environment)
-  relit the whole room (+28 wall luminance at 0.12 intensity; per-material
-  envMapIntensity gating did not contain it in this three version, wash
-  measured at +60%). The room's light is authored — the daylight rig and
-  the baked bounce own it — so the environment was removed and the
-  authored light verified restored to the decimal (deltas ≤0.2). True
-  speculars await a per-material envMap system; deferred with findings.
-- The clock guarded: the sprint's added startup work drifted the settle
-  to the 4s boundary; normal-map generation halved to 256px (quarter
-  Sobel cost, visually identical from the seat) and the live clock
-  re-measured at 3.81 / 3.81 / 3.91s. Final live battery: 4/5/6 clock
-  PASS, 59.9fps median, 1.28MB transfer, dwell flyby/rest/release PASS
-  for all three destinations. The final review film — arrival, the 15s
-  magic window, all three head-turn visits — was shot on the live site
-  (docs/progress/0099-review.mp4, 40s; phone at 0099-phone.png).
+- The settled composition is no longer the low seat: the camera now
+  rests at the higher vantage the walk reaches at ~2s — a person
+  STANDING over their work, Jonathan's reference composition. The
+  desktop reads as a broad surface below with the prints and papers
+  legible at an angle; the hero exactly fills the frame's top; the
+  sit-down push is gone from the choreography entirely.
+- The arrival now opens DEEP in the room (z 4.9, the doorway's side),
+  so the full render — plant, bookcase, leaning board, bench, the
+  re-staged chair, the playing hero, pendant, vent, window — introduces
+  itself before the walk (docs/progress/R-0092-2-opening.png).
+- Choosing JOURNAL became what the ruling wanted: a real head-DROP from
+  the standing regard onto the page (gaze pull 1.0) — the biggest turn
+  in the grammar — and the paragraph now centers and reads
+  (docs/progress/R-0092-2-journal.png).
+- The clock was defended while the walk grew: three timing nips
+  (opening beat 0.25s, walk 2.15s, settle 0.55s) hold the measured live
+  settle at 3.51–3.81s, magic at 4.4–4.7s, answer at 0.67s. Full live
+  battery passes: 59.9fps, 1.28MB, dwell flyby/rest/release ×3. The
+  review film re-shot on the live site with the 15s window
+  (docs/progress/R-0092-2-review.mp4).
+- Operational: the canvas ?record pipeline no longer captures the
+  arrival reliably under the heavier startup (SwiftShader drops its
+  early frames) — Playwright film mode is now the measurement and
+  review path. Sixteen macOS sync-duplicate files ("<name> 2.*", dated
+  Jul 10, one of them an ancient Stage.tsx copy that broke typecheck)
+  were quarantined out of the repo to the session scratchpad, not
+  deleted.
 
 ## Decisions Required
 
-None — the sprint review is Jonathan's to make. (Open from earlier
-orders, restated for his review: the journal's authored words and their
-page-size budget; specular IBL deferred pending per-material plumbing.)
+None new. (SEATED_EYE_HEIGHT and the sit choreography survive in git
+history if the seat ever returns; the "perspective sits" lock is
+superseded by this ruling — recorded in PROJECT_STATUS.)
 
 ## Ready for
 
-Jonathan's review of Sprint 05B. Implementation stops completely.
+Jonathan's review, and his decisions on the strategy questions answered
+in-session (IBL, the path to "real objects").
