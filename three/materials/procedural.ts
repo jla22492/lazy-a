@@ -16,6 +16,8 @@
 
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from "three";
 
+import { whenRoomIsSettled } from "@/lib/deferredAssets";
+
 /** Deterministic PRNG — captures must render identically on every load. */
 export function seededRandom(seed: number): () => number {
   let state = seed >>> 0;
@@ -236,14 +238,17 @@ function requestStock(stock: PaperStock, onReady: () => void): void {
     return;
   }
   stockWaiters.set(stock, [onReady]);
-  const image = new Image();
-  image.onload = () => {
-    stockImages.set(stock, image);
-    for (const waiter of stockWaiters.get(stock) ?? []) waiter();
-    stockWaiters.delete(stock);
-  };
-  const prefix = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
-  image.src = `${prefix}/textures/paper/${stock}.jpg`;
+  /* Photographic weight waits for the settle (0104). */
+  whenRoomIsSettled(() => {
+    const image = new Image();
+    image.onload = () => {
+      stockImages.set(stock, image);
+      for (const waiter of stockWaiters.get(stock) ?? []) waiter();
+      stockWaiters.delete(stock);
+    };
+    const prefix = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+    image.src = `${prefix}/textures/paper/${stock}.jpg`;
+  });
 }
 
 /** Paper you could almost feel — since 0101 built on a PHOTOGRAPH of

@@ -20,7 +20,10 @@ const flag = (name, fallback) => {
   return i >= 0 ? Number(args[i + 1]) : fallback;
 };
 const FPS_FLOOR = flag("fps", 55);
-const BUDGET_MB = flag("budget-mb", 8);
+/* The clock's guard: what may load BEFORE the settle (0104). */
+const PRESETTLE_BUDGET_MB = flag("budget-mb", 3);
+/* Informational ceiling for everything the room ever streams. */
+const TOTAL_CEILING_MB = flag("total-mb", 20);
 
 const browser = await chromium.launch({
   channel: "chrome",
@@ -40,7 +43,9 @@ page.on("response", async (response) => {
 });
 
 await page.goto(url, { waitUntil: "load" });
-await page.waitForTimeout(5000); // the arrival settles
+await page.waitForTimeout(4000); // the settle deadline
+const preSettle = transferred;
+await page.waitForTimeout(6000); // the magic window streams the rest
 
 const fps = await page.evaluate(
   () =>
@@ -63,9 +68,12 @@ const fps = await page.evaluate(
 
 await browser.close();
 
-const mb = transferred / (1024 * 1024);
+const preMb = preSettle / (1024 * 1024);
+const totalMb = transferred / (1024 * 1024);
 const fpsOk = fps >= FPS_FLOOR;
-const mbOk = mb <= BUDGET_MB;
+const preOk = preMb <= PRESETTLE_BUDGET_MB;
+const totalOk = totalMb <= TOTAL_CEILING_MB;
 console.log(`${fpsOk ? "PASS" : "FAIL"} fps: median ${fps.toFixed(1)} (floor ${FPS_FLOOR})`);
-console.log(`${mbOk ? "PASS" : "FAIL"} transfer: ${mb.toFixed(2)}MB (budget ${BUDGET_MB}MB)`);
-process.exit(fpsOk && mbOk ? 0 : 1);
+console.log(`${preOk ? "PASS" : "FAIL"} pre-settle transfer: ${preMb.toFixed(2)}MB (budget ${PRESETTLE_BUDGET_MB}MB)`);
+console.log(`${totalOk ? "PASS" : "FAIL"} total streamed: ${totalMb.toFixed(2)}MB (ceiling ${TOTAL_CEILING_MB}MB)`);
+process.exit(fpsOk && preOk && totalOk ? 0 : 1);
