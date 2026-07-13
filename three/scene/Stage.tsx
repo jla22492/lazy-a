@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 
-import { PMREMGenerator } from "three";
+import { BackSide, PMREMGenerator, SRGBColorSpace, TextureLoader } from "three";
+import { useLoader } from "@react-three/fiber";
+
+import { assetPath } from "@/lib/assetPath";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { useThree } from "@react-three/fiber";
 
@@ -52,6 +55,34 @@ function isCaptureRun(): boolean {
 }
 
 /**
+ * The pre-rendered room, SPIKE (WORK ORDER 0107): ?pano=1 swaps the
+ * static geometry for a Cycles equirect panorama on a rotation-only
+ * sphere, keeping the LIVE layers — the hero's film, the interface,
+ * the journal — composited on top. The interaction grammar never
+ * cares whether the pixels behind it are live or baked.
+ */
+function PanoRoom() {
+  const texture = useLoader(
+    TextureLoader,
+    assetPath("/textures/pano-spike.jpg"),
+  );
+  useEffect(() => {
+    texture.colorSpace = SRGBColorSpace;
+  }, [texture]);
+  return (
+    <mesh position={[...STAGE.camera.position]} rotation-y={Math.PI}>
+      <sphereGeometry args={[20, 48, 32]} />
+      <meshBasicMaterial map={texture} side={BackSide} />
+    </mesh>
+  );
+}
+
+function isPanoRun(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).has("pano");
+}
+
+/**
  * Generates the reflection environment ONCE and hands it to the
  * reflections module (0103). scene.environment is deliberately never
  * set — the 0099 finding stands: a global environment relights the
@@ -78,8 +109,10 @@ export function Stage() {
   /* Applied after mount so server and client render identically; the
      resize observer then re-measures the pinned canvas. */
   const [captureMode, setCaptureMode] = useState(false);
+  const [pano, setPano] = useState(false);
   useEffect(() => {
     if (isCaptureRun()) setCaptureMode(true);
+    if (isPanoRun()) setPano(true);
   }, []);
   return (
     /* Capture runs pin the canvas to 1280x720 so progress screenshots are
@@ -114,18 +147,24 @@ export function Stage() {
         <ReflectionSource />
         <RoomClockDriver />
         <Daylight />
-        <Floor />
-        <RoomShell />
-        <Workbench />
-        <WorkbenchDressing />
+        {pano ? (
+          <PanoRoom />
+        ) : (
+          <>
+            <Floor />
+            <RoomShell />
+            <Workbench />
+            <WorkbenchDressing />
+            <UpperWall />
+            <PeripheralRoomDressing />
+            <EdgeOfFrameDressing />
+            <Infrastructure />
+            <OffscreenWorld />
+            <FloorWear />
+          </>
+        )}
         <ReferenceWallDressing />
-        <UpperWall />
-        <PeripheralRoomDressing />
-        <EdgeOfFrameDressing />
-        <Infrastructure />
-        <OffscreenWorld />
         <DustMotes />
-        <FloorWear />
         <Notebook />
         <WorkspaceZones />
         <CameraRig />
