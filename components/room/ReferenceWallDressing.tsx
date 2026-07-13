@@ -39,7 +39,7 @@ const HERO_FILM = {
   /** The stock keeps a print's margin around the image. */
   border: 0.008,
   /** A breath between the settle and the first movement. */
-  settleBeatSeconds: 0.6,
+  settleBeatSeconds: 1.5,
   /** 0099: printed light — the pane catches the window like gloss stock. */
   roughness: 0.38,
 } as const;
