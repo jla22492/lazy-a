@@ -92,8 +92,9 @@ const DESTINATIONS: readonly Destination[] = [
     radius: 0.1,
     anchor: [0.35, 0.97, 0.0],
     /* No caption: the journal's words illuminate ON the page. */
-    /* Reading is a real look down — the page must fill the regard. */
-    gazePull: 0.85,
+    /* Reading is a real look down — the page fills the regard (R-0092:
+       the higher rest makes this drop the composition:s biggest turn). */
+    gazePull: 1.0,
     lineWidths: [],
   },
   {

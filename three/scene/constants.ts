@@ -171,28 +171,25 @@ export const STAGE = {
     color: "#8f867a",
   },
   /**
-   * The settled composition, SEATED (R-0089, Jonathan's amendment to
-   * the 0089 first pass): a person sitting at the desk, head level.
-   * The eyes rest a hair below horizontal — what is immediately in a
-   * seated worker's line of sight is the WALL in front of them (the
-   * re-hung hero print, the notes) with the desk held in the frame's
-   * lower third, not a downward stare at the desktop. The downward
-   * look belongs to choosing JOURNAL or CONTACT — a head-turn, later.
-   * The seat sits a step further back than the standing working
-   * position's hip clearance, where a chair actually is.
+   * The settled composition, STANDING AT THE DESK (R-0092, Jonathan's
+   * ruling with his reference frame): the arrival no longer pushes down
+   * into the low seat — it settles at the higher vantage the walk
+   * reaches at ~2s, a person standing over their work. The desktop
+   * reads as a broad surface below (prints readable at an angle, the
+   * reference composition), the wall holds the hero and the notes
+   * above, and choosing JOURNAL is now a REAL head-drop that opens the
+   * page to the eye.
    */
   camera: {
     /** Normal lens (~50mm equivalent), not wide. */
     fov: 35,
     near: 0.1,
     far: 200,
-    /** Seated at the bench, a chair's depth back from its edge. */
-    position: fromWorkbench([0.05, SEATED_EYE_HEIGHT, 1.15]),
-    /** The regard tips a few degrees down (WO 0092, Jonathan's ruling):
-        eyes above the desk means the desktop reads as a SURFACE below
-        you, not an edge-on sliver — while the wall, the hero, and the
-        studio's note still hold the upper frame. */
-    lookAt: fromWorkbench([0.02, 1.13, -0.45]),
+    /** Standing at the bench, a step back from its edge. */
+    position: fromWorkbench([0.05, EYE_HEIGHT, 1.45]),
+    /** The regard drops toward the work: desk-as-surface below, the
+        hero print exactly filling the frame's top. */
+    lookAt: fromWorkbench([0.02, 1.04, -0.45]),
   },
 } as const;
 

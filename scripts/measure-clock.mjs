@@ -18,7 +18,7 @@
 import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "https://jla22492.github.io/lazy-a/";
-const JOURNAL_REST = [988, 646];
+const JOURNAL_REST = [890, 584];
 
 const browser = await chromium.launch({
   channel: "chrome",
