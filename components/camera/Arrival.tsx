@@ -31,13 +31,13 @@ import { EYE_HEIGHT, STAGE } from "@/three/scene/constants";
  * it, the walk waiting for the recorder's true start.
  */
 const OPENING_BEAT_SECONDS = 0.3;
-const WALK_SECONDS = 2.6;
+const WALK_SECONDS = 2.3;
 /** The stop: momentum past the mark, damped out at body rates. */
 const SETTLE_SECONDS = 0.6;
 const GAZE_LAG_SECONDS = 0.3;
 
 /** The opening stance: deep in the room, the doorway's side. */
-const OPENING_POSITION = new Vector3(-0.6, EYE_HEIGHT, 5.2);
+const OPENING_POSITION = new Vector3(-0.6, EYE_HEIGHT, 4.9);
 const OPENING_GAZE = new Vector3(0.05, 0.92, 0);
 /** Step rhythm — a casual indoor pace. */
 const BOB_HZ = 1.75;
