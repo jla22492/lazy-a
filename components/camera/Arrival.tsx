@@ -30,10 +30,10 @@ import { EYE_HEIGHT, STAGE } from "@/three/scene/constants";
  * Capture runs (?shot / ?record) skip it; ?record with ?arrive films
  * it, the walk waiting for the recorder's true start.
  */
-const OPENING_BEAT_SECONDS = 0.3;
-const WALK_SECONDS = 2.3;
+const OPENING_BEAT_SECONDS = 0.25;
+const WALK_SECONDS = 2.15;
 /** The stop: momentum past the mark, damped out at body rates. */
-const SETTLE_SECONDS = 0.6;
+const SETTLE_SECONDS = 0.55;
 const GAZE_LAG_SECONDS = 0.3;
 
 /** The opening stance: deep in the room, the doorway's side. */
