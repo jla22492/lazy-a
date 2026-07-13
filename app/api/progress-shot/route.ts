@@ -2,11 +2,13 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse, type NextRequest } from "next/server";
 
-const FILENAME_PATTERN = /^(R-)?\d{4}[A-Za-z0-9-]*\.(png|mp4|webm)$/;
+const FILENAME_PATTERN = /^(R-)?\d{4}[A-Za-z0-9-]*\.(png|mp4|webm|glb)$/;
 const DATA_PREFIXES = [
   "data:image/png;base64,",
   "data:video/mp4;base64,",
   "data:video/webm;base64,",
+  /* Scene exports for the Blender master scene (WORK ORDER 0108). */
+  "data:model/gltf-binary;base64,",
 ];
 
 /**

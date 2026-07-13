@@ -40,6 +40,48 @@ export function scheduleProgressShot(state: RootState): void {
   if (process.env.NODE_ENV === "production") return;
 
   const params = new URLSearchParams(window.location.search);
+  /* Scene export (WORK ORDER 0108): ?exportscene=1 serializes the live
+     room to GLB — the Blender master scene starts from the REAL scene,
+     never a hand-synced twin. Video-textured surfaces hide for the
+     export (they stay live layers forever). */
+  if (params.has("exportscene")) {
+    window.setTimeout(() => {
+      void (async () => {
+        const { GLTFExporter } = await import(
+          "three/examples/jsm/exporters/GLTFExporter.js"
+        );
+        const hidden: Array<{ visible: boolean; object: { visible: boolean } }> = [];
+        state.scene.traverse((object) => {
+          const mesh = object as {
+            visible: boolean;
+            material?: { map?: { isVideoTexture?: boolean } };
+          };
+          if (mesh.material?.map?.isVideoTexture) {
+            hidden.push({ object: mesh, visible: mesh.visible });
+            mesh.visible = false;
+          }
+        });
+        new GLTFExporter().parse(
+          state.scene,
+          (result) => {
+            for (const entry of hidden) entry.object.visible = entry.visible;
+            const bytes = new Uint8Array(result as ArrayBuffer);
+            let binary = "";
+            const CHUNK = 0x8000;
+            for (let i = 0; i < bytes.length; i += CHUNK) {
+              binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+            }
+            post(
+              "0108-scene.glb",
+              `data:model/gltf-binary;base64,${btoa(binary)}`,
+            );
+          },
+          (error) => console.error("scene export failed", error),
+          { binary: true },
+        );
+      })();
+    }, 4000);
+  }
   const shotName = params.get("shot");
   const recordName = params.get("record");
   if (!shotName && !recordName) return;
