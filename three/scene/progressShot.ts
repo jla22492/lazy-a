@@ -80,7 +80,7 @@ export function scheduleProgressShot(state: RootState): void {
           { binary: true },
         );
       })();
-    }, 4000);
+    }, 12000);
   }
   const shotName = params.get("shot");
   const recordName = params.get("record");

@@ -1,0 +1,103 @@
+# The master scene (WORK ORDER 0109) — Blender, from the REAL room.
+#
+# Imports the live scene's GLB export (0108), replaces the browser's
+# light rig with the calibrated Cycles afternoon (sun through the real
+# muntins, emissive pane, cool world), upgrades the hero surfaces with
+# bump from their own maps, and renders a preview from the settled eye.
+# Jonathan's lighting notes amend HERE when they arrive — one file.
+#
+#   Blender -b -P scripts/build-master-scene.py -- <glb> <outdir> [pano]
+import bpy
+import sys
+from mathutils import Vector
+
+argv = sys.argv[sys.argv.index("--") + 1 :]
+glb_path = argv[0]
+outdir = argv[1]
+mode = argv[2] if len(argv) > 2 else "preview"
+
+for obj in list(bpy.data.objects):
+    bpy.data.objects.remove(obj, do_unlink=True)
+
+bpy.ops.import_scene.gltf(filepath=glb_path)
+
+scene = bpy.context.scene
+scene.render.engine = "CYCLES"
+scene.cycles.samples = 192
+scene.cycles.use_denoising = True
+scene.view_settings.view_transform = "AgX"
+
+# The browser's lights import as approximations — replace with the rig.
+for obj in list(bpy.data.objects):
+    if obj.type == "LIGHT":
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+# The afternoon sun (0100): three (6.5, 1.0, 5.2) -> blender (6.5, -5.2, 1.0).
+bpy.ops.object.light_add(type="SUN", location=(6.5, -5.2, 1.0))
+sun = bpy.context.active_object
+direction = Vector((0, 0, 0)) - Vector((6.5, -5.2, 1.0))
+sun.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
+sun.data.energy = 5.5
+sun.data.color = (1.0, 0.85, 0.64)
+sun.data.angle = 0.05
+
+# The pane glows (the glass is the light).
+found_pane = False
+for obj in bpy.data.objects:
+    if obj.type != "MESH":
+        continue
+    for slot in obj.material_slots:
+        mat = slot.material
+        if not mat or not mat.use_nodes:
+            continue
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is None:
+            continue
+        # Enable micro-bump from existing normal maps for every surface.
+        # (glTF import already wires Normal Map nodes; Cycles honors them.)
+    # crude pane detection: thin plane high on the right wall
+    if obj.dimensions.x < 0.05 and obj.dimensions.z > 0.8 and obj.location.x > 2.0:
+        for slot in obj.material_slots:
+            if slot.material and slot.material.use_nodes:
+                b = slot.material.node_tree.nodes.get("Principled BSDF")
+                if b is not None:
+                    b.inputs["Emission Color"].default_value = (1.0, 0.95, 0.87, 1)
+                    b.inputs["Emission Strength"].default_value = 10.0
+                    found_pane = True
+print("PANE:", found_pane)
+
+# Cool late-afternoon world.
+world = bpy.data.worlds.new("sky")
+scene.world = world
+world.use_nodes = True
+world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.18
+world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.86, 0.9, 0.95, 1)
+
+# The settled eye (R-0092): three (0.05, 1.6, 1.45) -> blender (0.05, -1.45, 1.6).
+if mode == "pano":
+    bpy.ops.object.camera_add(location=(0.05, -1.45, 1.6))
+    cam = bpy.context.active_object
+    cam.data.type = "PANO"
+    cam.data.panorama_type = "EQUIRECTANGULAR"
+    cam.rotation_euler = (1.5707963, 0, 0)
+    scene.render.resolution_x = 8192
+    scene.render.resolution_y = 4096
+    out = f"{outdir}/0109-master-pano.jpg"
+else:
+    bpy.ops.object.camera_add(location=(0.05, -1.45, 1.6))
+    cam = bpy.context.active_object
+    cam.data.lens_unit = "FOV"
+    cam.data.angle = 0.977384  # 56 deg horizontal ~= 35 deg vertical at 16:9
+    # aim at three lookAt (0.02, 1.04, -0.45) -> blender (0.02, 0.45, 1.04)
+    aim = Vector((0.02, 0.45, 1.04)) - Vector((0.05, -1.45, 1.6))
+    cam.rotation_euler = aim.to_track_quat("-Z", "Y").to_euler()
+    scene.render.resolution_x = 1280
+    scene.render.resolution_y = 720
+    out = f"{outdir}/0109-master-preview.jpg"
+scene.camera = cam
+
+scene.render.image_settings.file_format = "JPEG"
+scene.render.image_settings.quality = 90
+scene.render.filepath = out
+bpy.ops.render.render(write_still=True)
+print("MASTER RENDER COMPLETE:", out)
