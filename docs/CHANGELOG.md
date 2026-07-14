@@ -49,4 +49,6 @@
 
 - The homepage found its true shape under Jonathan's own direction: you see the whole room first, walk in, and sit — and the big print on the wall starts to move, unasked, while your eyes are level with it. The name is a letterpress note pinned above the lamp, not a website corner. The maker's chair stands aside exactly as they left it. And when you choose JOURNAL or CONTACT, nothing travels — your head simply turns, the way it would at your own desk.
 
+- The room became a photograph without anyone noticing: as the visitor settles, the world behind the desk quietly becomes an 8K film frame — true bounced light, the maker's own lamp finally turned toward the work, his chair, his mug, his blanket — while everything alive stays alive on top of it: the print keeps playing, the notebook keeps answering, the pencil keeps lying exactly where it rolled. Phones keep the built room; the photograph belongs to the wide view it was taken from. The clock never slipped: settled in under four, the magic at four-and-a-half, an answer in two-thirds of a second.
+
 Record experience changes here, not just technical ones.

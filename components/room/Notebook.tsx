@@ -5,11 +5,14 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
   CanvasTexture,
+  Color,
   SRGBColorSpace,
   Vector3,
   type Group,
+  type MeshBasicMaterial,
   type MeshStandardMaterial,
 } from "three";
+import type { RefObject } from "react";
 
 import {
   getJournalLevel,
@@ -489,6 +492,8 @@ export function Notebook() {
   }, []);
 
   return (
+    <>
+    <ContactShadow target={meshRef} />
     <group
       ref={meshRef}
       position={REST_POSITION}
@@ -497,7 +502,7 @@ export function Notebook() {
       {/* Page block and back cover. */}
       <mesh position={[0, -COVER_THICKNESS / 2, 0]} castShadow receiveShadow>
         <boxGeometry args={[NOTEBOOK.width, BODY_THICKNESS, NOTEBOOK.length]} />
-        <meshStandardMaterial color={NOTEBOOK.color} />
+        <meshStandardMaterial color={PLATE_MATCHED_COVER} />
       </mesh>
       {/* The first page: physically there, never the subject. */}
       <mesh
@@ -515,13 +520,78 @@ export function Notebook() {
           <boxGeometry
             args={[NOTEBOOK.width, COVER_THICKNESS, NOTEBOOK.length]}
           />
-          <meshStandardMaterial color={NOTEBOOK.color} />
+          <meshStandardMaterial color={PLATE_MATCHED_COVER} />
         </mesh>
         <JournalWords />
       </group>
     </group>
+    </>
   );
 }
+
+/** The notebook's grounding (0116): the plate excludes the notebook, so
+ * it also lacks the notebook's shadow — and the live sun's normalBias
+ * eats true grazing-angle shadows of objects this low. Its contact
+ * occlusion is therefore authored, the way the pencil jar's un-sunned
+ * disc already is (WORK ORDER 0050): a soft pool under the resting
+ * spot, present only once the plate is the room, gone by the time the
+ * journal has been lifted. */
+function ContactShadow({ target }: { target: RefObject<Group | null> }) {
+  const materialRef = useRef<MeshBasicMaterial>(null);
+  const texture = useMemo(() => {
+    if (typeof document === "undefined") return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = 128;
+    canvas.height = 128;
+    const g = canvas.getContext("2d");
+    if (!g) return null;
+    const grad = g.createRadialGradient(64, 64, 10, 64, 64, 64);
+    grad.addColorStop(0, "rgba(0,0,0,1)");
+    grad.addColorStop(0.55, "rgba(0,0,0,0.5)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 128, 128);
+    return new CanvasTexture(canvas);
+  }, []);
+  useFrame(() => {
+    const material = materialRef.current;
+    const notebook = target.current;
+    if (!material || !notebook) return;
+    const plateIn = (window as Window & { __panoIn?: boolean }).__panoIn;
+    const lift = Math.max(notebook.position.y - REST_POSITION[1], 0);
+    material.opacity = plateIn ? 0.34 * Math.max(1 - lift / 0.12, 0) : 0;
+  });
+  if (!texture) return null;
+  return (
+    <mesh
+      /* Nudged toward the sun's shadow side (-X, -Z) so the pool reads
+         cast, not painted. A hair above the baked papers. */
+      position={[
+        REST_POSITION[0] - 0.03,
+        REST_POSITION[1] - NOTEBOOK.thickness / 2 + 0.0015,
+        REST_POSITION[2] - 0.02,
+      ]}
+      rotation={[-Math.PI / 2, 0, NOTEBOOK.rotationY]}
+    >
+      <planeGeometry args={[NOTEBOOK.width + 0.12, NOTEBOOK.length + 0.12]} />
+      <meshBasicMaterial
+        ref={materialRef}
+        map={texture}
+        transparent
+        opacity={0}
+        depthWrite={false}
+      />
+    </mesh>
+  );
+}
+
+/** The cover's albedo, graded to sit in the pre-rendered plate (0116).
+ * Cycles bounces the desk's light back up onto the cover; the live
+ * renderer cannot, so the authored #414141 reads roughly half as
+ * bright as the plate's own render of this same notebook. The lift is
+ * compositing — matching the approved 0114 master frame — not a
+ * redesign. */
+const PLATE_MATCHED_COVER = new Color(NOTEBOOK.color).multiplyScalar(2.4);
 
 /** Inset of the written block from the cover's edges. */
 const WORDS_MARGIN = 0.008;

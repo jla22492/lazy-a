@@ -8,8 +8,9 @@
 #
 #   Blender -b -P scripts/build-master-scene.py -- <glb> <outdir> [pano]
 import bpy
+import math
 import sys
-from mathutils import Vector
+from mathutils import Quaternion, Vector
 
 argv = sys.argv[sys.argv.index("--") + 1 :]
 glb_path = argv[0]
@@ -20,6 +21,24 @@ for obj in list(bpy.data.objects):
     bpy.data.objects.remove(obj, do_unlink=True)
 
 bpy.ops.import_scene.gltf(filepath=glb_path)
+
+# ---------------------------------------------------------------
+# THE LIVING LAYER STAYS OUT OF THE PLATE (WORK ORDER 0116): the
+# notebook and its pencil animate in the browser — the visitor lifts
+# the journal. If they were baked, a twin would stay behind on the
+# desk. Hide every mesh of the notebook stack (cover, pages, pencil:
+# all sit above the papers, z > 0.905) at the journal's spot; the
+# loose papers beneath (z ~= 0.901) stay baked.
+# three (0.35, 0.91, 0.12) -> blender (0.35, -0.12, 0.91).
+bpy.context.view_layer.update()
+for o in bpy.data.objects:
+    if o.type != "MESH":
+        continue
+    loc = o.matrix_world.translation
+    horizontal = ((loc.x - 0.35) ** 2 + (loc.y + 0.12) ** 2) ** 0.5
+    if horizontal < 0.13 and loc.z > 0.905 and loc.z < 1.0:
+        o.hide_render = True
+        print("PLATE HIDE (living layer):", o.name)
 
 # ---------------------------------------------------------------
 # CURATED SCANS (WORK ORDER 0110): Jonathan's picks land here.
@@ -35,24 +54,30 @@ SCAN_OBJECTS = set()
 
 PICKS = [
     # Jonathan's approvals (R-0111). (path, three-pos, yaw, height, hide_hint)
+    # NOTE (0116): glTF roots import in QUATERNION rotation mode, so the
+    # old euler yaws never actually applied — every approved render shows
+    # each scan's intrinsic orientation. Yaws below are therefore 0 to
+    # preserve the approved looks; only the lamp (Jonathan: "facing
+    # inwards on the desk") carries a real spin, applied via quaternion.
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/ceramic_vase_02/ceramic_vase_02_1k.gltf",
-     (0.42, 0.9, -0.2), 0.4, 0.11, None),
+     (0.42, 0.9, -0.2), 0.0, 0.11, None),
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/book_encyclopedia_set_01/book_encyclopedia_set_01_1k.gltf",
-     (-0.62, 0.9, -0.24), 0.15, 0.235, None),
+     (-0.62, 0.9, -0.24), 0.0, 0.235, None),
     # R-0114: Jonathan's vintage c.1940 wood office chair.
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/vintage_wood_office_chair_c_1940_gltf/scene.gltf",
-     (0.95, 0.0, 0.78), 0.55, 0.9, ("near", (0.95, 0.0, 0.78), 0.5)),
+     (0.95, 0.0, 0.78), 0.0, 0.9, ("near", (0.95, 0.0, 0.78), 0.5)),
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/Camera_01/Camera_01_1k.gltf",
-     (0.78, 0.9, 0.04), 2.7, 0.12, None),
+     (0.78, 0.9, 0.04), 0.0, 0.12, None),
     # R-0114: Jonathan's coffee mug (Sketchfab, CC-BY — credit pending).
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/coffee_cup/scene.gltf",
-     (-0.55, 0.9, 0.19), 2.4, 0.095, ("near", (-0.55, 0.9, 0.19), 0.09)),
+     (-0.55, 0.9, 0.19), 0.0, 0.095, ("near", (-0.55, 0.9, 0.19), 0.09)),
     # R-0114: Jonathan's desk lamp (Sketchfab, CC-BY — credit pending).
+    # Yaw pi turns the head inward, across the desk (aim lineup verified).
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/lamp2/scene.gltf",
-     (-0.8, 0.9, -0.24), 1.45, 0.45, ("near", (-0.8, 0.9, -0.24), 0.3)),
+     (-0.8, 0.9, -0.24), math.pi, 0.45, ("near", (-0.8, 0.9, -0.24), 0.3)),
     # R-0111: the plant — Jonathan's pick (photoscanned, broader).
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/potted_plant_04/potted_plant_04_1k.gltf",
-     (-1.95, -0.015, 0.12), 0.3, 0.9, ("near", (-1.95, 0.0, 0.12), 0.45)),
+     (-1.95, -0.015, 0.12), 0.0, 0.9, ("near", (-1.95, 0.0, 0.12), 0.45)),
 ]
 
 
@@ -76,9 +101,15 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
     size = bounds_max - bounds_min
     scale = height / max(size.z, 1e-6)
     bx, by, bz = three_pos[0], -three_pos[2], three_pos[1]
+    spin = Quaternion((0.0, 0.0, 1.0), yaw)
     for root in roots:
         root.scale = tuple(v * scale for v in root.scale)
-        root.rotation_euler.z += yaw
+        # glTF roots arrive in QUATERNION mode, where euler edits are
+        # silently ignored — spin in whichever mode the root really uses.
+        if root.rotation_mode == "QUATERNION":
+            root.rotation_quaternion = spin @ root.rotation_quaternion
+        else:
+            root.rotation_euler.z += yaw
         root.location = (bx, by, bz - bounds_min.z * scale)
     if hide_hint:
         if isinstance(hide_hint, tuple) and hide_hint[0] == "near":

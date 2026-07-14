@@ -261,8 +261,11 @@ function Headphones() {
   );
 }
 
-/** The pencil resting across the notebook, stopped halfway through a thought. */
-function Pencil() {
+/** The pencil resting across the notebook, stopped halfway through a
+ * thought. Exported since 0116: the pencil belongs to the journal's
+ * living layer — it is excluded from the pre-rendered plate and keeps
+ * rendering after the room dissolves to the panorama. */
+export function Pencil() {
   const { at, restsOn, length, radius, yaw, color } = PENCIL;
   return (
     <mesh
