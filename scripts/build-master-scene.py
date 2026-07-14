@@ -31,16 +31,28 @@ bpy.ops.import_scene.gltf(filepath=glb_path)
 # render. EMPTY until picks arrive — the machinery is verified with
 # a dry run (see docs/progress/0110-dryrun.jpg).
 # ---------------------------------------------------------------
+SCAN_OBJECTS = set()
+
 PICKS = [
     # Jonathan's approvals (R-0111). (path, three-pos, yaw, height, hide_hint)
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/ceramic_vase_02/ceramic_vase_02_1k.gltf",
      (0.42, 0.9, -0.2), 0.4, 0.11, None),
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/book_encyclopedia_set_01/book_encyclopedia_set_01_1k.gltf",
      (-0.62, 0.9, -0.24), 0.15, 0.235, None),
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/dining_chair_02/dining_chair_02_1k.gltf",
-     (0.95, 0.0, 0.78), 0.55, 0.85, ("near", (0.95, 0.0, 0.78), 0.5)),
+    # R-0114: Jonathan's vintage c.1940 wood office chair.
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/vintage_wood_office_chair_c_1940_gltf/scene.gltf",
+     (0.95, 0.0, 0.78), 0.55, 0.9, ("near", (0.95, 0.0, 0.78), 0.5)),
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/Camera_01/Camera_01_1k.gltf",
      (0.78, 0.9, 0.04), 2.7, 0.12, None),
+    # R-0114: Jonathan's coffee mug (Sketchfab, CC-BY — credit pending).
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/coffee_cup/scene.gltf",
+     (-0.55, 0.9, 0.19), 2.4, 0.095, ("near", (-0.55, 0.9, 0.19), 0.09)),
+    # R-0114: Jonathan's desk lamp (Sketchfab, CC-BY — credit pending).
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/desk_lamp/scene.gltf",
+     (-0.8, 0.9, -0.24), 0.5, 0.45, ("near", (-0.8, 0.9, -0.24), 0.3)),
+    # R-0114: the blanket over the chair's back (the work cloth story).
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/blanket/scene.gltf",
+     (0.95, 0.58, 0.8), 0.55, 0.35, None),
     # R-0111: the plant — Jonathan's pick (photoscanned, broader).
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/potted_plant_02/potted_plant_02_1k.gltf",
      (-1.95, 0.0, 0.12), 0.3, 0.85, ("near", (-1.95, 0.0, 0.12), 0.45)),
@@ -51,6 +63,8 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     imported = [o for o in bpy.data.objects if o not in before]
+    for o in imported:
+        SCAN_OBJECTS.add(o.name)
     roots = [o for o in imported if o.parent not in imported]
     from mathutils import Vector as V
     bounds_min = V((1e9, 1e9, 1e9))
@@ -74,9 +88,11 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
             _, tp, radius = hide_hint
             cx, cy, cz = tp[0], -tp[2], tp[1]
             for o in bpy.data.objects:
-                if o.type == "MESH" and o not in imported:
+                if o.type == "MESH" and o not in imported and o.name not in SCAN_OBJECTS:
                     loc = o.matrix_world.translation
-                    if ((loc.x - cx) ** 2 + (loc.y - cy) ** 2) ** 0.5 < radius:
+                    horizontal = ((loc.x - cx) ** 2 + (loc.y - cy) ** 2) ** 0.5
+                    vertical = abs(loc.z - (cz + height / 2))
+                    if horizontal < radius and vertical < max(height * 0.75, 0.3):
                         o.hide_render = True
         else:
             for o in bpy.data.objects:
@@ -86,6 +102,21 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
 
 for pick in PICKS:
     place_scan(*pick)
+
+# R-0114 (Jonathan: left zone reads malformed): nothing real has a
+# mathematically sharp edge — every authored box in the master scene
+# gains a small bevel; scans keep their own geometry.
+for obj in bpy.data.objects:
+    if obj.type != "MESH" or obj.hide_render:
+        continue
+    dims = obj.dimensions
+    if max(dims) < 0.02 or max(dims) > 8:
+        continue
+    bevel = obj.modifiers.new("edge", "BEVEL")
+    bevel.width = min(0.004, max(dims) * 0.02)
+    bevel.segments = 2
+    bevel.limit_method = "ANGLE"
+    bevel.angle_limit = 1.0
 
 scene = bpy.context.scene
 scene.render.engine = "CYCLES"
