@@ -1,4 +1,20 @@
-# WORK ORDER 0117 — Physical Navigation Refinement
+# WORK ORDER 0117-R — Failed Review Correction
+
+## Review Result
+- [x] Reproduce Jonathan's rejected resting, CONTACT, and JOURNAL views.
+- [x] Trace logo intersection to new live geometry over the depthless pano.
+- [x] Trace desktop/mobile asset inconsistency to the wide-only pano guard and primitive live fallback.
+- [x] Trace CONTACT to a flat text plane rather than an indented material reveal.
+- [x] Trace JOURNAL to an insufficient posture delta without a close reading composition.
+- [x] Trace navigation ambiguity to overlapping spherical hit regions on a compressed diagonal list.
+- [ ] Confirm the intended smoothed lighting master with Jonathan.
+- [ ] Present and receive approval for the corrected render/interaction architecture.
+- [ ] Write failing behavioral and visual gates for every rejected behavior.
+- [ ] Implement the approved correction without new unapproved geometry.
+- [ ] Verify desktop, mobile, all four destinations, lighting continuity, clock, and performance.
+- [ ] Replace this failed-review record with an enumerated completion audit only after visual approval.
+
+## Rejected First-Pass Record
 
 ## Plan
 - [x] Behavioral gate: add a Playwright verifier proving navigation comes from physical desk targets and old floating labels are gone.
@@ -18,3 +34,5 @@
 - `node scripts/measure-clock.mjs http://localhost:3000/` PASS: settle 3.41s; magic 4.72s; physical JOURNAL target 0.08s.
 - `node scripts/perf-gate.mjs http://localhost:3000/` PASS: 59.9fps; pre-settle 1.51MB; total streamed 3.04MB.
 - Captures: `docs/progress/0117-physical-nav-desktop.png`, `docs/progress/0117-physical-nav-phone.png`, `docs/progress/0117-contact-impression.png`, `docs/progress/0117-about-turn-left.png`.
+
+These automated checks passed but did not establish the approved visual result. Jonathan rejected the implementation for logo intersection/wrong-card placement, mixed pano/live fidelity, missing physical CONTACT indentation, insufficient JOURNAL lean, ambiguous navigation targets, pasted CONTACT text, and incorrect lighting finish.

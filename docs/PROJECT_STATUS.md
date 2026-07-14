@@ -14,7 +14,7 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117 COMPLETE — PHYSICAL NAVIGATION REFINEMENT: the website navigation is now one pencil-written production note on the desk, not floating labels. `films`, `journal`, `contact`, and `about` are physical word targets; clicking them turns the visitor's head toward the corresponding room evidence. The Lazy A logo moved off the wall and onto a leaning letterpress identity proof at the desk/wall line. JOURNAL now uses a stronger forward/downward reading posture with more legible notebook text. CONTACT reveals a latent pressure-impression contact line on the production note itself. ABOUT now turns left toward the room-history zone. The hero print's material was softened and foreground props were tuned for photographic coherence. Full battery green: build, physical nav, dwell/candidate, 4/5/6 clock, perf, and progress captures (docs/progress/0117-physical-nav-desktop.png, docs/progress/0117-physical-nav-phone.png, docs/progress/0117-contact-impression.png, docs/progress/0117-about-turn-left.png).
+0117-R IN PROGRESS — FAILED REVIEW CORRECTION: Jonathan rejected the 0117 first pass. The logo was added as new live geometry in the wrong place and intersects the depthless hero-print panorama; the intended existing card was not used. Wide pano, narrow real-time fallback, and live primitive overlays produce inconsistent object fidelity. CONTACT is a flat text plane rather than an indented material reveal. JOURNAL turns the gaze without achieving the approved lean-over reading composition. The four navigation hit spheres overlap on a compressed diagonal note, making selection ambiguous. The CONTACT view exposes pasted text, and the approved smoothed lighting finish is not the one visitors receive. Automated 0117 gates proved coordinates and timing but did not prove the visual requirements. Correction is in diagnosis/design review; no completion claim stands.
 
 ---
 
@@ -170,13 +170,13 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## In Progress
 
-Nothing — WORK ORDER 0117 is complete and verified. Implementation is stopped pending Jonathan's review of the physical-navigation homepage. Standing items: real company content/footage, authored journal words, final CONTACT copy, ABOUT content/colophon, the blanket's drape centering on the chair back, and any future decision about re-rendering the pano so the baked wall no longer contains the old logo position.
+WORK ORDER 0117-R — correcting the rejected physical-navigation implementation. Root causes are confirmed across the pano/live composition boundary, camera choreography, material reveal, and overlapping hit geometry. Implementation is paused at the creative design gate until Jonathan identifies the intended smoothed lighting master and approves the corrected render architecture.
 
 ---
 
 ## Next Recommended Work Order
 
-0118 — Content-and-domain readiness pass, only after Jonathan reviews 0117: replace placeholders with approved company material; author JOURNAL and CONTACT; decide ABOUT's first real content; confirm whether the 8K pano should be re-rendered with the new logo/navigation composition baked cleanly; then prepare www.lazyaproductions.com migration with DNS/hosting routing and post-cutover live gates.
+0117-R must pass Jonathan's visual review before 0118 can begin. After that: content-and-domain readiness, approved company material, authored JOURNAL/CONTACT/ABOUT content, and www.lazyaproductions.com migration.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

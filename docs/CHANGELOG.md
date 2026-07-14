@@ -53,4 +53,6 @@
 
 - The website stopped wearing labels: FILMS, JOURNAL, CONTACT, and ABOUT are now pencil marks on a working production note, written by the person who left the desk. The Lazy A mark leans at the wall as an identity proof; JOURNAL asks the head to dip and read; CONTACT appears as a pressure mark where the visitor just looked; ABOUT turns left into the room's history. Navigation is no longer pasted onto the room — it is something the room was already doing.
 
+- R-0117 failed creative review: the first physical-navigation pass proved click routing but not the experience. New live geometry intersected the photographed room, mobile and desktop belonged to different fidelity states, CONTACT was text rather than material evidence, JOURNAL never reached a readable human lean, and four overlapping targets turned explicit navigation into guesswork. The completion claim was withdrawn and the order reopened.
+
 Record experience changes here, not just technical ones.

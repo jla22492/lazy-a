@@ -4,6 +4,10 @@
 
 WORK ORDER 0117 — Physical Navigation Refinement (executed on Jonathan's "Proceed with execution" after approvals: desk-logo move, hero hierarchy, foreground photographic coherence, pencil-written desk navigation, stronger JOURNAL perspective, CONTACT pressure-impression reveal, ABOUT left-room reveal)
 
+## Review Status
+
+REJECTED BY JONATHAN — 2026-07-14. This report preserves the first-pass implementation record; its prior completion language is superseded by Work Order 0117-R. Rejected behaviors: wrong/new logo card intersecting the hero image, inconsistent photographed-versus-placeholder room states, no physical contact indentation, insufficient JOURNAL lean, ambiguous overlapping navigation targets, pasted CONTACT text, and incorrect lighting finish.
+
 ## Version
 
 v0.1
@@ -97,5 +101,5 @@ v0.1
 
 ## Ready for
 
-Jonathan's review of the physical-navigation homepage and approval of
-the next content/domain work order.
+0117-R corrected-design approval and implementation. Not ready for the
+next content/domain work order.
