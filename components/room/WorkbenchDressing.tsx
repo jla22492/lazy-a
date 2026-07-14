@@ -1,19 +1,15 @@
 "use client";
 
-import { Suspense, useMemo, useRef } from "react";
+import { useMemo } from "react";
 
-import { RoundedBox, useTexture } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { RoundedBox } from "@react-three/drei";
 import {
   CanvasTexture,
   DoubleSide,
-  MeshStandardMaterial,
   SRGBColorSpace,
   Vector2,
 } from "three";
 
-import logoNote from "@/public/brand/logo-note.png";
-import { getContactLevel } from "@/three/interface/contact";
 import { ceramic, paper, paperNormal } from "@/three/materials/procedural";
 import {
   REFLECTION_INTENSITY,
@@ -26,7 +22,6 @@ import {
   CONSIDERED_PRINT,
   FILM_CANISTERS,
   HEADPHONES,
-  LOGO_PROOF,
   LOOSE_SHEETS,
   MUG,
   PENCIL,
@@ -100,31 +95,6 @@ function handwrittenNavTexture(): CanvasTexture {
   context.globalAlpha = 0.34;
   context.font = '34px "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive';
   context.fillText("site pull", 118, 82);
-
-  const texture = new CanvasTexture(canvas);
-  texture.colorSpace = SRGBColorSpace;
-  texture.anisotropy = 4;
-  return texture;
-}
-
-function contactImpressionTexture(): CanvasTexture {
-  const canvas = document.createElement("canvas");
-  canvas.width = 1024;
-  canvas.height = 320;
-  const context = canvas.getContext("2d");
-  if (!context) return new CanvasTexture(canvas);
-
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.font = '500 78px "Helvetica Neue", Arial, sans-serif';
-  context.letterSpacing = "2px";
-  context.textBaseline = "middle";
-  context.fillStyle = "rgba(58, 52, 44, 0.72)";
-  context.filter = "blur(0.45px)";
-  context.fillText("contact@lazyaproductions.com", 52, 142);
-  context.filter = "none";
-  context.strokeStyle = "rgba(238, 230, 211, 0.22)";
-  context.lineWidth = 2;
-  context.strokeText("contact@lazyaproductions.com", 52, 142);
 
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
@@ -347,65 +317,6 @@ export function ProductionNavSheet() {
   );
 }
 
-/** The letterpress identity proof, leaned where mobile can still read Lazy A. */
-export function LogoProof() {
-  const texture = useTexture(logoNote.src, (loaded) => {
-    loaded.colorSpace = SRGBColorSpace;
-  });
-  const { at, width, height, thickness, lean, yaw } = LOGO_PROOF;
-  return (
-    <group
-      position={[
-        at.x,
-        SURFACE + (height / 2) * Math.cos(lean),
-        at.z - (height / 2) * Math.sin(lean),
-      ]}
-      rotation={[-lean, yaw, 0.015]}
-    >
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[width, height, thickness]} />
-        <meshStandardMaterial map={texture} roughness={0.86} />
-      </mesh>
-    </group>
-  );
-}
-
-/** CONTACT: the removed-note pressure trace revealed by the head turn. */
-export function ContactImpression() {
-  const materialRef = useRef<MeshStandardMaterial>(null);
-  const texture = useMemo(
-    () => (typeof document === "undefined" ? null : contactImpressionTexture()),
-    [],
-  );
-  useFrame(() => {
-    const material = materialRef.current;
-    if (!material) return;
-    const level = getContactLevel();
-    material.opacity = level * 0.82;
-  });
-  if (!texture) return null;
-  return (
-    <mesh
-      position={[
-        PRODUCTION_NAV_SHEET.at.x + 0.02,
-        SURFACE + 0.0062,
-        PRODUCTION_NAV_SHEET.at.z + 0.074,
-      ]}
-      rotation={[-Math.PI / 2, 0, PRODUCTION_NAV_SHEET.yaw]}
-    >
-      <planeGeometry args={[0.36, 0.085]} />
-      <meshStandardMaterial
-        ref={materialRef}
-        map={texture}
-        transparent
-        opacity={0}
-        depthWrite={false}
-        roughness={1}
-      />
-    </mesh>
-  );
-}
-
 /** The mug that went cold, handle turned away. */
 function Mug() {
   const { at, radius, height, handleYaw, color } = MUG;
@@ -609,10 +520,6 @@ export function WorkbenchDressing() {
       <TestPrints />
       <ConsideredPrint />
       <ProductionNavSheet />
-      <Suspense fallback={null}>
-        <LogoProof />
-      </Suspense>
-      <ContactImpression />
       <BookStack />
       <PencilJar />
       <TapeRoll />
@@ -631,10 +538,6 @@ export function LivingDeskArtifacts() {
   return (
     <group position={fromWorkbench([0, 0, 0])}>
       <ProductionNavSheet />
-      <Suspense fallback={null}>
-        <LogoProof />
-      </Suspense>
-      <ContactImpression />
     </group>
   );
 }
