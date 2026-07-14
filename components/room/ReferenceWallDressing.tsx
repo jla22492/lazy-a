@@ -1,18 +1,13 @@
 "use client";
 
-import { Suspense, useRef } from "react";
+import { Suspense } from "react";
 
-import { RoundedBox, useTexture, useVideoTexture } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
+import { RoundedBox, useTexture } from "@react-three/drei";
 import { SRGBColorSpace } from "three";
 
+import { HeroFilm } from "@/components/room/HeroFilm";
 import logoNote from "@/public/brand/logo-note.png";
-import { assetPath } from "@/lib/assetPath";
 import { paper, paperNormal, wood, woodNormal } from "@/three/materials/procedural";
-import {
-  REFLECTION_INTENSITY,
-  useReflections,
-} from "@/three/lighting/reflections";
 import { ROOM } from "@/three/scene/constants";
 import {
   HERO_PRINT,
@@ -25,56 +20,6 @@ import { fromWorkbench } from "@/three/scene/world";
 
 /** The rear wall's plaster plane. */
 const WALL_Z = ROOM.rearWall.z;
-
-/**
- * The hero shot (R-0088, Jonathan's ruling — supersedes "the hero print
- * stays blank"): the studio's defining image lives on the big print,
- * and it MOVES. The film waits through the walk — a printed poster like
- * any other — and begins playing a beat after the perspective settles
- * into the chair: the ~5-second moment, unprompted, in plain sight.
- * PLACEHOLDER footage until the moment is authored.
- */
-const HERO_FILM = {
-  src: "/videos/hero-print-placeholder.mp4",
-  /** The stock keeps a print's margin around the image. */
-  border: 0.018,
-  /** A breath between the settle and the first movement. */
-  settleBeatSeconds: 1.8,
-  /** 0099: printed light — the pane catches the window like gloss stock. */
-  roughness: 0.52,
-} as const;
-
-function HeroFilm() {
-  const { width, height, thickness } = HERO_PRINT;
-  const reflections = useReflections();
-  const texture = useVideoTexture(assetPath(HERO_FILM.src), {
-    muted: true,
-    loop: true,
-    start: false,
-  });
-  const beat = useRef(0);
-  const playing = useRef(false);
-  useFrame((_, delta) => {
-    if (playing.current) return;
-    const arrived = (window as Window & { __arrivalDone?: boolean })
-      .__arrivalDone;
-    if (!arrived) return;
-    beat.current += delta;
-    if (beat.current < HERO_FILM.settleBeatSeconds) return;
-    playing.current = true;
-    void texture.image.play();
-  });
-  return (
-    /* R-0109 (Jonathan's notes): the room's light falls on the film the
-       way it falls on everything — the lattice crosses the moving image. */
-    <mesh position={[0, 0, thickness * 1.1 + 0.0004]} receiveShadow>
-      <planeGeometry
-        args={[width - HERO_FILM.border * 2, height - HERO_FILM.border * 2]}
-      />
-      <meshStandardMaterial map={texture} roughness={HERO_FILM.roughness} envMap={reflections ?? undefined} envMapIntensity={REFLECTION_INTENSITY.gloss} />
-    </mesh>
-  );
-}
 
 /** The hero print — large, unframed, its image now a film (R-0088). */
 function HeroPrint() {
