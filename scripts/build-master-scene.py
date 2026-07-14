@@ -48,14 +48,11 @@ PICKS = [
     ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/coffee_cup/scene.gltf",
      (-0.55, 0.9, 0.19), 2.4, 0.095, ("near", (-0.55, 0.9, 0.19), 0.09)),
     # R-0114: Jonathan's desk lamp (Sketchfab, CC-BY — credit pending).
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/desk_lamp/scene.gltf",
-     (-0.8, 0.9, -0.24), 0.5, 0.45, ("near", (-0.8, 0.9, -0.24), 0.3)),
-    # R-0114: the blanket over the chair's back (the work cloth story).
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/blanket/scene.gltf",
-     (0.95, 0.58, 0.8), 0.55, 0.35, None),
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/lamp2/scene.gltf",
+     (-0.8, 0.9, -0.24), 1.45, 0.45, ("near", (-0.8, 0.9, -0.24), 0.3)),
     # R-0111: the plant — Jonathan's pick (photoscanned, broader).
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/potted_plant_02/potted_plant_02_1k.gltf",
-     (-1.95, 0.0, 0.12), 0.3, 0.85, ("near", (-1.95, 0.0, 0.12), 0.45)),
+    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/potted_plant_04/potted_plant_04_1k.gltf",
+     (-1.95, -0.015, 0.12), 0.3, 0.9, ("near", (-1.95, 0.0, 0.12), 0.45)),
 ]
 
 
@@ -103,6 +100,64 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
 for pick in PICKS:
     place_scan(*pick)
 
+# R-0114b: the blanket HANGS (Jonathan's ruling) — a cloth simulation
+# drops a subdivided sheet over the scanned chair's back; it wears the
+# blanket scan's own fabric texture.
+import os
+blanket_tex = None
+tex_dir = "/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/blanket/textures"
+if os.path.isdir(tex_dir):
+    for f in sorted(os.listdir(tex_dir)):
+        if "baseColor" in f or "diffuse" in f.lower() or f.endswith((".jpg", ".png")):
+            blanket_tex = os.path.join(tex_dir, f)
+            break
+bpy.ops.mesh.primitive_plane_add(size=1, location=(1.0, -0.9, 1.02))
+cloth = bpy.context.active_object
+cloth.name = "work_blanket"
+cloth.scale = (0.28, 0.42, 1)
+cloth.rotation_euler.z = 0.55
+bpy.ops.object.transform_apply(scale=True, rotation=True)
+sub = cloth.modifiers.new("sub", "SUBSURF")
+sub.subdivision_type = "SIMPLE"
+sub.levels = 5
+bpy.ops.object.modifier_apply(modifier="sub")
+mod = cloth.modifiers.new("cloth", "CLOTH")
+mod.settings.quality = 8
+mod.settings.mass = 0.25
+mod.collision_settings.collision_quality = 4
+mod.collision_settings.distance_min = 0.004
+for o in bpy.data.objects:
+    if o.type == "MESH" and o.name in SCAN_OBJECTS and abs(o.matrix_world.translation.x - 0.95) < 0.5:
+        o.modifiers.new("col", "COLLISION")
+scene0 = bpy.context.scene
+scene0.frame_start = 1
+scene0.frame_end = 32
+for f in range(1, 33):
+    scene0.frame_set(f)
+bpy.context.view_layer.objects.active = cloth
+bpy.ops.object.modifier_apply(modifier="cloth")
+mat = bpy.data.materials.new("blanket_fabric")
+mat.use_nodes = True
+bsdf = mat.node_tree.nodes["Principled BSDF"]
+bsdf.inputs["Roughness"].default_value = 0.95
+if blanket_tex:
+    tex = mat.node_tree.nodes.new("ShaderNodeTexImage")
+    tex.image = bpy.data.images.load(blanket_tex)
+    mat.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+else:
+    bsdf.inputs["Base Color"].default_value = (0.35, 0.18, 0.16, 1)
+cloth.data.materials.append(mat)
+
+# R-0115: the bookcase closes its open ends — books obey gravity.
+side = bpy.data.materials.new("case_side")
+side.use_nodes = True
+side.node_tree.nodes["Principled BSDF"].inputs["Base Color"].default_value = (0.22, 0.16, 0.11, 1)
+for sx in (-1.45 - 0.4 + 0.009, -1.45 + 0.4 - 0.009):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=(sx, 0.296, 0.46))
+    panel = bpy.context.active_object
+    panel.scale = (0.009, 0.14, 0.46)
+    panel.data.materials.append(side)
+
 # R-0114 (Jonathan: left zone reads malformed): nothing real has a
 # mathematically sharp edge — every authored box in the master scene
 # gains a small bevel; scans keep their own geometry.
@@ -110,7 +165,7 @@ for obj in bpy.data.objects:
     if obj.type != "MESH" or obj.hide_render:
         continue
     dims = obj.dimensions
-    if max(dims) < 0.02 or max(dims) > 8:
+    if max(dims) < 0.02 or max(dims) > 8 or min(dims) < 0.02:
         continue
     bevel = obj.modifiers.new("edge", "BEVEL")
     bevel.width = min(0.004, max(dims) * 0.02)
