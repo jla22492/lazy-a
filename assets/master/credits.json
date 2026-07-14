@@ -1,0 +1,74 @@
+[
+  {
+    "id": "vase",
+    "creator": "James Ray Cock",
+    "source": "https://polyhaven.com/a/ceramic_vase_02",
+    "license": "CC0",
+    "archiveSha256": "normalized Poly Haven API download; no source archive",
+    "entryPointSha256": "1bda047833b68c2c1b190ee53a55b1aa42d30748c84739909b6ca65b2f2d76c9",
+    "entryPoint": "assets/master/scans/ceramic-vase/scene.gltf"
+  },
+  {
+    "id": "books",
+    "creator": "John Malcolm",
+    "source": "https://polyhaven.com/a/book_encyclopedia_set_01",
+    "license": "CC0",
+    "archiveSha256": "normalized Poly Haven API download; no source archive",
+    "entryPointSha256": "89eb80fffd619ebbe5043d632bd8cf25b2d68a3614aee2f356e850c69ae498ba",
+    "entryPoint": "assets/master/scans/encyclopedia-books/scene.gltf"
+  },
+  {
+    "id": "chair",
+    "creator": "Jordan F",
+    "source": "https://sketchfab.com/3d-models/vintage-wood-office-chair-c-1940-3f6dedd2d75b4a81b0a507d8638fdfb5",
+    "license": "Fab Standard License",
+    "archiveSha256": "9cc48b4cec00c42242c8a1904e6f092a7b4e4602b8825f976b812da9993b4786",
+    "entryPointSha256": "353e87c55e063caff6ec5b12241c964594e98b35c50152887ad3bcb93f4f7093",
+    "entryPoint": "assets/master/scans/vintage-office-chair/scene.gltf"
+  },
+  {
+    "id": "camera",
+    "creator": "Rajil Jose Macatangay",
+    "source": "https://polyhaven.com/a/Camera_01",
+    "license": "CC0",
+    "archiveSha256": "normalized Poly Haven API download; no source archive",
+    "entryPointSha256": "9c5ca3104579c84ffcebdee5c6e5e09821fe8d4a5cd9ce95ed32d81507450ee3",
+    "entryPoint": "assets/master/scans/camera/scene.gltf"
+  },
+  {
+    "id": "mug",
+    "creator": "MEDOMAI",
+    "source": "https://sketchfab.com/3d-models/coffee-cup-87fc1f649a434120b0d420f2eec45edc",
+    "license": "CC BY 4.0",
+    "archiveSha256": "ac2ed11daa551c804f8aad01994e59e77dcc1dc7e9b57128dfac639b3be3c58e",
+    "entryPointSha256": "ba46cea5f5c5336a4ce049a29867a12cf7391592bc21a31e3b1c285058e69d01",
+    "entryPoint": "assets/master/scans/coffee-cup/scene.gltf"
+  },
+  {
+    "id": "lamp",
+    "creator": "Unresolved; Fab archive contains no attribution metadata",
+    "source": "https://www.fab.com/",
+    "license": "Fab Standard License",
+    "archiveSha256": "b0c32e845738e9bea768172d54f997174b9142894ce6c482e3508b6e75f8977e",
+    "entryPointSha256": "10784fac4c24db558b73b2fbefaba12ab120c8fe22ccdab4f1000bf7918df6e7",
+    "entryPoint": "assets/master/scans/desk-lamp/scene.gltf"
+  },
+  {
+    "id": "plant",
+    "creator": "James Ray Cock",
+    "source": "https://polyhaven.com/a/potted_plant_04",
+    "license": "CC0",
+    "archiveSha256": "normalized Poly Haven API download; no source archive",
+    "entryPointSha256": "b3a3bc3e97da75844999c4da07b7104b6c023f729a7c045979929b9504184339",
+    "entryPoint": "assets/master/scans/potted-plant/scene.gltf"
+  },
+  {
+    "id": "blanket",
+    "creator": "Sophie",
+    "source": "https://sketchfab.com/3d-models/blanket-ff91bcd9854e453dafc069321396225a",
+    "license": "CC BY 4.0",
+    "archiveSha256": "58bcfbda88941408c07c7f96b4023cbe4d7dd394e0a4ab6b903211a2f3203b5d",
+    "entryPointSha256": "1b0399b421cc5b2e38eea36a14dccc37486e0b267cc093aa3e62c77013ad63fe",
+    "entryPoint": "assets/master/scans/blanket/texture.jpg"
+  }
+]

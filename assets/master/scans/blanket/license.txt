@@ -1,0 +1,11 @@
+Model Information:
+* title:	Blanket
+* source:	https://sketchfab.com/3d-models/blanket-ff91bcd9854e453dafc069321396225a
+* author:	Sophie (https://sketchfab.com/Sofi_EX)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Blanket" (https://sketchfab.com/3d-models/blanket-ff91bcd9854e453dafc069321396225a) by Sophie (https://sketchfab.com/Sofi_EX) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

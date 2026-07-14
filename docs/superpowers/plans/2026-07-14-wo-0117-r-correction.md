@@ -38,7 +38,7 @@
 - Consumes: `docs/progress/0108-scene.glb` plus the seven approved scan roots and blanket texture.
 - Produces: `build/wo-0117-r/master.blend` and a machine-readable inventory with stable ids `vase`, `books`, `chair`, `camera`, `mug`, `lamp`, `plant`, `blanket`.
 
-- [ ] **Step 1: Write the failing asset gate**
+- [x] **Step 1: Write the failing asset gate**
 
   Add a Node script with this required inventory and an existence/non-empty check:
 
@@ -57,17 +57,17 @@
 
   The gate must also reject `/private/tmp`, `~/Downloads`, and absolute user paths in `build-master-scene.py`.
 
-- [ ] **Step 2: Prove the gate fails for the current expired paths**
+- [x] **Step 2: Prove the gate fails for the current expired paths**
 
   Run: `node scripts/verify-master-assets.mjs`
 
   Expected: non-zero with missing durable assets and forbidden `/private/tmp` references.
 
-- [ ] **Step 3: Restore and document the exact approved sources**
+- [x] **Step 3: Restore and document the exact approved sources**
 
   Restore the approved archives without substituting visually similar models. Normalize each extracted entry point to the paths above and record creator, source URL, license, original archive checksum, and normalized entry point in `assets/master/credits.json`. Preserve source texture files beside each model.
 
-- [ ] **Step 4: Make the master builder path-stable**
+- [x] **Step 4: Make the master builder path-stable**
 
   Resolve every asset relative to the repository root, rename imported object roots with the stable ids, and split the script into:
 
@@ -80,7 +80,7 @@
 
   Keep the approved grade values: Cycles 192 samples for finals, denoise on, AgX, exposure `0.25`, sun `5.5`, warm point `60`, desk area `23`, world `0.24`.
 
-- [ ] **Step 5: Re-run the gate and build the persisted master**
+- [x] **Step 5: Re-run the gate and build the persisted master**
 
   Run:
 

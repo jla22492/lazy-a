@@ -6,21 +6,58 @@
 # bump from their own maps, and renders a preview from the settled eye.
 # Jonathan's lighting notes amend HERE when they arrive — one file.
 #
-#   Blender -b -P scripts/build-master-scene.py -- <glb> <outdir> [pano]
+#   Blender -b -P scripts/build-master-scene.py -- <glb> <master.blend>
+#   Blender -b -P scripts/build-master-scene.py -- <glb> <outdir> preview|wide
 import bpy
+import json
 import math
+import os
 import sys
 from mathutils import Quaternion, Vector
 
 argv = sys.argv[sys.argv.index("--") + 1 :]
+if len(argv) < 2:
+    raise SystemExit("Usage: build-master-scene.py -- <glb> <output> [build|preview|wide|pano]")
+
 glb_path = argv[0]
-outdir = argv[1]
-mode = argv[2] if len(argv) > 2 else "preview"
+output_target = argv[1]
+mode = argv[2] if len(argv) > 2 else "build"
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-for obj in list(bpy.data.objects):
-    bpy.data.objects.remove(obj, do_unlink=True)
 
-bpy.ops.import_scene.gltf(filepath=glb_path)
+def asset_path(relative):
+    path = os.path.abspath(os.path.join(REPO_ROOT, relative))
+    if os.path.commonpath((REPO_ROOT, path)) != REPO_ROOT:
+        raise ValueError(f"Master inputs must stay inside the repository: {relative}")
+    if not os.path.isfile(path):
+        raise FileNotFoundError(f"Missing approved master asset: {relative}")
+    return path
+
+
+def build_master(source_glb):
+    for obj in list(bpy.data.objects):
+        bpy.data.objects.remove(obj, do_unlink=True)
+    bpy.ops.import_scene.gltf(filepath=asset_path(source_glb))
+    return bpy.context.scene
+
+
+def configure_grade(scene):
+    scene.render.engine = "CYCLES"
+    scene.cycles.samples = 192
+    scene.cycles.use_denoising = True
+    scene.view_settings.view_transform = "AgX"
+    scene.view_settings.exposure = 0.25
+
+
+def save_master(scene, output):
+    del scene  # save_as_mainfile persists the active Blender scene.
+    destination = os.path.abspath(output)
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    bpy.ops.wm.save_as_mainfile(filepath=destination)
+    print("MASTER BUILD COMPLETE:", destination)
+
+
+scene = build_master(glb_path)
 
 # ---------------------------------------------------------------
 # THE LIVING LAYER STAYS OUT OF THE PLATE (WORK ORDER 0116): the
@@ -51,6 +88,7 @@ for o in bpy.data.objects:
 # a dry run (see docs/progress/0110-dryrun.jpg).
 # ---------------------------------------------------------------
 SCAN_OBJECTS = set()
+MASTER_INVENTORY = {}
 
 PICKS = [
     # Jonathan's approvals (R-0111). (path, three-pos, yaw, height, hide_hint)
@@ -59,29 +97,29 @@ PICKS = [
     # each scan's intrinsic orientation. Yaws below are therefore 0 to
     # preserve the approved looks; only the lamp (Jonathan: "facing
     # inwards on the desk") carries a real spin, applied via quaternion.
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/ceramic_vase_02/ceramic_vase_02_1k.gltf",
+    ("vase", asset_path("assets/master/scans/ceramic-vase/scene.gltf"),
      (0.42, 0.9, -0.2), 0.0, 0.11, None),
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/book_encyclopedia_set_01/book_encyclopedia_set_01_1k.gltf",
+    ("books", asset_path("assets/master/scans/encyclopedia-books/scene.gltf"),
      (-0.62, 0.9, -0.24), 0.0, 0.235, None),
     # R-0114: Jonathan's vintage c.1940 wood office chair.
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/vintage_wood_office_chair_c_1940_gltf/scene.gltf",
+    ("chair", asset_path("assets/master/scans/vintage-office-chair/scene.gltf"),
      (0.95, 0.0, 0.78), 0.0, 0.9, ("near", (0.95, 0.0, 0.78), 0.5)),
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/Camera_01/Camera_01_1k.gltf",
+    ("camera", asset_path("assets/master/scans/camera/scene.gltf"),
      (0.78, 0.9, 0.04), 0.0, 0.12, None),
-    # R-0114: Jonathan's coffee mug (Sketchfab, CC-BY — credit pending).
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/coffee_cup/scene.gltf",
+    # R-0114: Jonathan's coffee mug (MEDOMAI, CC BY 4.0).
+    ("mug", asset_path("assets/master/scans/coffee-cup/scene.gltf"),
      (-0.55, 0.9, 0.19), 0.0, 0.095, ("near", (-0.55, 0.9, 0.19), 0.09)),
-    # R-0114: Jonathan's desk lamp (Sketchfab, CC-BY — credit pending).
+    # R-0114: Jonathan's current Fab desk lamp; archive checksum is recorded.
     # Yaw pi turns the head inward, across the desk (aim lineup verified).
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/lamp2/scene.gltf",
+    ("lamp", asset_path("assets/master/scans/desk-lamp/scene.gltf"),
      (-0.8, 0.9, -0.24), math.pi, 0.45, ("near", (-0.8, 0.9, -0.24), 0.3)),
     # R-0111: the plant — Jonathan's pick (photoscanned, broader).
-    ("/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks/potted_plant_04/potted_plant_04_1k.gltf",
+    ("plant", asset_path("assets/master/scans/potted-plant/scene.gltf"),
      (-1.95, -0.015, 0.12), 0.0, 0.9, ("near", (-1.95, 0.0, 0.12), 0.45)),
 ]
 
 
-def place_scan(path, three_pos, yaw, height, hide_hint=None):
+def place_scan(asset_id, path, three_pos, yaw, height, hide_hint=None):
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     imported = [o for o in bpy.data.objects if o not in before]
@@ -102,7 +140,8 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
     scale = height / max(size.z, 1e-6)
     bx, by, bz = three_pos[0], -three_pos[2], three_pos[1]
     spin = Quaternion((0.0, 0.0, 1.0), yaw)
-    for root in roots:
+    for index, root in enumerate(roots):
+        root.name = f"scan_{asset_id}_{index}"
         root.scale = tuple(v * scale for v in root.scale)
         # glTF roots arrive in QUATERNION mode, where euler edits are
         # silently ignored — spin in whichever mode the root really uses.
@@ -111,6 +150,8 @@ def place_scan(path, three_pos, yaw, height, hide_hint=None):
         else:
             root.rotation_euler.z += yaw
         root.location = (bx, by, bz - bounds_min.z * scale)
+    MASTER_INVENTORY[asset_id] = [root.name for root in roots]
+    print("MASTER ASSET:", asset_id, path)
     if hide_hint:
         if isinstance(hide_hint, tuple) and hide_hint[0] == "near":
             _, tp, radius = hide_hint
@@ -134,17 +175,11 @@ for pick in PICKS:
 # R-0114b: the blanket HANGS (Jonathan's ruling) — a cloth simulation
 # drops a subdivided sheet over the scanned chair's back; it wears the
 # blanket scan's own fabric texture.
-import os
-blanket_tex = None
-tex_dir = "/private/tmp/claude-501/-Users-jonathanadelson-Documents-lazy-a/6f7553c8-0a41-447d-9e33-327573a99b71/scratchpad/picks2/blanket/textures"
-if os.path.isdir(tex_dir):
-    for f in sorted(os.listdir(tex_dir)):
-        if "baseColor" in f or "diffuse" in f.lower() or f.endswith((".jpg", ".png")):
-            blanket_tex = os.path.join(tex_dir, f)
-            break
+blanket_tex = asset_path("assets/master/scans/blanket/texture.jpg")
 bpy.ops.mesh.primitive_plane_add(size=1, location=(1.0, -0.9, 1.02))
 cloth = bpy.context.active_object
-cloth.name = "work_blanket"
+cloth.name = "scan_blanket_0"
+MASTER_INVENTORY["blanket"] = [cloth.name]
 cloth.scale = (0.28, 0.42, 1)
 cloth.rotation_euler.z = 0.55
 bpy.ops.object.transform_apply(scale=True, rotation=True)
@@ -171,12 +206,9 @@ mat = bpy.data.materials.new("blanket_fabric")
 mat.use_nodes = True
 bsdf = mat.node_tree.nodes["Principled BSDF"]
 bsdf.inputs["Roughness"].default_value = 0.95
-if blanket_tex:
-    tex = mat.node_tree.nodes.new("ShaderNodeTexImage")
-    tex.image = bpy.data.images.load(blanket_tex)
-    mat.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
-else:
-    bsdf.inputs["Base Color"].default_value = (0.35, 0.18, 0.16, 1)
+tex = mat.node_tree.nodes.new("ShaderNodeTexImage")
+tex.image = bpy.data.images.load(blanket_tex)
+mat.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
 cloth.data.materials.append(mat)
 
 # R-0115: the bookcase closes its open ends — books obey gravity.
@@ -204,15 +236,10 @@ for obj in bpy.data.objects:
     bevel.limit_method = "ANGLE"
     bevel.angle_limit = 1.0
 
-scene = bpy.context.scene
-scene.render.engine = "CYCLES"
-scene.cycles.samples = 192
-scene.cycles.use_denoising = True
-scene.view_settings.view_transform = "AgX"
+configure_grade(scene)
 # R-0111 (Jonathan: "desk still dark"): three levers, same light source —
 # a gentle exposure lift, and a soft warm bounce card over the desk (the
 # room light's light returned by the ceiling, in effect).
-scene.view_settings.exposure = 0.25  # R-0113: half a step darker, per Jonathan
 
 # The browser's lights import as approximations — replace with the rig.
 for obj in list(bpy.data.objects):
@@ -274,6 +301,14 @@ scene.world = world
 world.use_nodes = True
 world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.24
 world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.86, 0.9, 0.95, 1)
+
+scene["master_asset_inventory"] = json.dumps(MASTER_INVENTORY, sort_keys=True)
+
+if mode == "build":
+    save_master(scene, output_target)
+    raise SystemExit(0)
+
+outdir = output_target
 
 # The settled eye (R-0092): three (0.05, 1.6, 1.45) -> blender (0.05, -1.45, 1.6).
 if mode == "wide":
