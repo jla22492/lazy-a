@@ -14,7 +14,7 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-R-0114 — Jonathan's four downloaded assets placed (mug, brass lamp, vintage 1940 office chair, the blanket back over its chair), the logo enlarged on the wall note, a global bevel pass on every authored box (COMPLETE); lighting approved as perfect; the 8K panorama awaits his go
+R-0115 — the blanket cloth-simulated to hang, the plant alive, the books un-distorted, the bookcase closed; ORDER 4 IS RUNNING: the 8K panorama is rendering, its browser integration (progressive delivery + settle dissolve) is the next work order
 
 ---
 
