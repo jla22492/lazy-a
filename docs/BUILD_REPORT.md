@@ -2,7 +2,7 @@
 
 ## Work Order
 
-WORK ORDER 0116 — Order 4: the pre-rendered room IS the room (Sprint 05E close; executed on Jonathan's "Once the above updates are made, proceed with order-4", after his R-0115 conditions were met)
+WORK ORDER 0117 — Physical Navigation Refinement (executed on Jonathan's "Proceed with execution" after approvals: desk-logo move, hero hierarchy, foreground photographic coherence, pencil-written desk navigation, stronger JOURNAL perspective, CONTACT pressure-impression reveal, ABOUT left-room reveal)
 
 ## Version
 
@@ -10,93 +10,92 @@ v0.1
 
 ## Summary
 
-- THE ROOM IS NOW A PHOTOGRAPH: the 8K Cycles equirectangular panorama
-  (docs/progress/0109-master-pano.jpg, 8192x4096, rendered from the
-  settled eye) mounts by default on a rotation-only sphere. A 2K spike
-  (public/textures/pano-spike.jpg, ~133KB) rides the arrival; the 8K
-  (public/textures/pano-8k.jpg, ~1.1MB) streams through the magic
-  window via whenRoomIsSettled and swaps in place. After the arrival
-  settles, the plate dissolves in over 0.6s and the geometric room
-  unmounts. The living layers never blink: the hero's film, the logo
-  note, the sticky notes, the notebook, its pencil, the dust, the
-  interface all keep rendering over the baked world.
-- ORIENTATION AND GRADE FIXED IN INTEGRATION: the sphere needed a
-  horizontal texture flip plus a +90-degree yaw (Blender's equirect
-  centre is three-space -Z; the sphere's UVs run the opposite hand from
-  inside), and the plate ships display-ready (toneMapped false — the
-  Cycles frame is already AgX; mapping it again muddied it half a stop).
-- JONATHAN'S LAMP CONDITION MET, AND A REAL BUG UNDER IT: glTF scan
-  roots import in QUATERNION rotation mode, so every pick's euler yaw
-  had been silently ignored — all approved renders show intrinsic
-  orientations. place_scan now spins via quaternion; approved picks
-  carry yaw 0 to preserve their approved looks; the lamp carries pi and
-  faces inward across the desk (docs/progress/0116-lamp-inward.jpg,
-  verified before the 8K was committed to).
-- THE LIVING LAYER IS OUT OF THE PLATE: the notebook stack and its
-  pencil are hidden from the Cycles render (five meshes, position-
-  banded above the loose papers), so engaging the journal can never
-  reveal a baked twin beneath the live one. The pencil keeps rendering
-  post-dissolve; the cover's albedo is graded to match the plate's own
-  render of it (measured 65,54,42 against the 0114 master's 60,53,42);
-  a soft authored contact pool grounds it (the sun's normalBias eats
-  true grazing-angle shadows of objects this low — the pencil jar's
-  un-sunned disc set the precedent) and fades as the journal lifts.
-- NARROW VIEWPORTS KEEP THE GEOMETRIC ROOM: the plate exists only from
-  the wide settle eye; the 0094 narrow-viewport seat is displaced, and
-  from there the living layers would shear off the photograph. The
-  dissolve declines below aspect 1.5 — phones get the room they had.
-- MEASURED (local, full battery): settle 3.61s / magic 4.71s /
-  answer 0.67s; fps median 59.9 (floor 55); pre-settle 2.59MB
-  (budget 3MB); total streamed 4.20MB (ceiling 20MB); journal, contact
-  and films all answer at rest (docs/progress/0116-pano-live.jpg).
-  Live-deploy battery re-run after this push — results appended to
-  PROJECT_STATUS if they differ.
+- NAVIGATION IS NOW IN THE ROOM: the HTML/Drei label layer is gone.
+  `films`, `journal`, `contact`, and `about` live as pencil words on
+  one production scratch note on the desk. The visitor clicks physical
+  word targets; the room answers with head turns and material reveals.
+- THE LOGO MOVED TO THE DESK: Jonathan's letterpress mark now sits on a
+  leaning identity proof at the desk/wall line. The old live wall note
+  is blanked so it covers the baked 0116 logo position until a pano
+  re-render is authorized.
+- JOURNAL, CONTACT, ABOUT NOW HAVE PAYOFFS: JOURNAL gets a stronger
+  forward/downward reading posture and more legible page writing;
+  CONTACT fades in a pressure-impression contact line on the production
+  note itself; ABOUT turns left toward the room-history zone.
+- VISUAL HIERARCHY TUNED: the hero print's border/material no longer
+  reads as a flat white poster, and foreground objects were nudged
+  toward the photographed desk composition.
+- MEASURED (local production server): build green; physical nav green;
+  dwell/candidate green; settle 3.41s / magic 4.72s / physical JOURNAL
+  target 0.08s; fps median 59.9; pre-settle transfer 1.51MB; total
+  streamed 3.04MB. Captures: docs/progress/0117-physical-nav-desktop.png,
+  docs/progress/0117-physical-nav-phone.png,
+  docs/progress/0117-contact-impression.png,
+  docs/progress/0117-about-turn-left.png.
 
 ## Files Changed
 
-- three/scene/Stage.tsx — PanoRoom default-mounted: orientation fix,
-  toneMapped false, 8K stream + swap, settle dissolve, narrow-viewport
-  guard, __panoIn signal, pencil kept live, static room unmount
-- components/room/Notebook.tsx — plate-matched cover albedo; authored
-  contact pool (ContactShadow), fading with the journal's lift
-- components/room/WorkbenchDressing.tsx — Pencil exported (living layer)
-- scripts/build-master-scene.py — quaternion-aware pick yaw; living-
-  layer plate hides; lamp yaw pi (inward)
-- public/textures/pano-spike.jpg, pano-8k.jpg — regenerated from the
-  new plate
-- docs/progress/0109-master-pano.jpg — re-rendered (lamp inward, clean
-  papers); 0116-pano-live.jpg, 0116-lamp-inward.jpg — verification
+- components/site/AttentionNavigation.tsx — physical ray targets,
+  conversation state, no visible overlay labels, ABOUT destination,
+  JOURNAL/CONTACT posture tuning, debug globals for behavioral gates
+- components/room/WorkbenchDressing.tsx — production nav sheet, logo
+  proof, contact pressure impression, living-desk artifact exports
+- components/room/Notebook.tsx — larger/brighter JOURNAL placeholder
+  text for the stronger reading posture
+- components/room/ReferenceWallDressing.tsx and
+  three/scene/dressing/referenceWall.ts — wall logo removed/blanked;
+  hero print material softened
+- three/scene/Stage.tsx — living desk artifacts remain over the pano
+- three/scene/dressing/workbench.ts — authored constants for the
+  physical nav sheet and logo proof; camera prop nudges
+- three/interface/contact.ts, three/interface/journal.ts — contact
+  reveal state and journal glow tuning
+- scripts/verify-physical-navigation.mjs, verify-dwell.mjs,
+  measure-clock.mjs, film-review.mjs, perf-gate.mjs — gates updated for
+  physical navigation and clean browser close behavior
+- docs/superpowers/plans/2026-07-14-physical-navigation-refinement.md,
+  tasks/todo.md, docs/progress/0117-*.png — plan and evidence trail
 
 ## Architecture Decisions
 
-- The plate is a skybox, not a scene: zero parallax is guaranteed by
-  the rotation-only settled camera, so live 3D objects stay aligned
-  with their baked surroundings from exactly one eye — which is why
-  the narrow-viewport guard exists rather than a second plate.
-- Anything that animates or answers must live in the browser and be
-  excluded from the plate; anything still may bake. The notebook set
-  the pattern (exclusion + grade-match + authored grounding).
+- Physical navigation is a live 3D artifact, not DOM. The raycaster
+  tests word centers on the production note, and clicks open the same
+  conversation state previously driven by floating labels.
+- The old dwell verifier became a candidate verifier. There is no
+  hover label to time anymore; the gate now proves the physical word
+  is hittable, clears on release, and click opens the correct response.
+- The contact reveal shares the note artifact instead of living as a
+  separate caption. This keeps the magic exactly where the visitor
+  acted and avoids a puzzle-like search.
 
 ## Creative Decisions Implemented
 
-- Jonathan's R-0115 lamp ruling (inward-facing, his lamp_gltf.zip
-  model) — now true in the shipped plate.
-- No new creative decisions: the plate reproduces the approved R-0113/
-  0114 master look; the cover grade and contact pool are compositing
-  fidelity against that approved frame, not redesign.
+- Navigation is one believable production note: pencil, lowercase,
+  slightly hurried, explicit enough for a company site.
+- Logo is a desk/wall identity proof, not a wall placard or chrome.
+- JOURNAL reads through a human head dip and a more legible physical
+  notebook surface.
+- CONTACT appears as a latent pressure impression, not a pasted caption.
+- ABOUT expands the room by turning left toward history.
 
 ## Deferred
 
-- Blanket drape centering on the chair back (open nit from R-0114).
-- CC-BY colophon (mug, lamp, chair, blanket) — lands with the About
-  surface, per Jonathan's approval.
-- Order 5 (pre-rendered arrival clip spike) — NOT authorized; not begun.
+- Actual Lazy A content: hero footage, journal copy, films, final
+  contact information, and ABOUT content are still placeholder/content
+  work.
+- The 0116 8K pano still contains the former wall-logo composition
+  underneath the live blanking note. Re-render only if Jonathan approves
+  an image clean-up order.
+- Domain migration to www.lazyaproductions.com is not executed here.
 
 ## Decisions Required
 
-None.
+- Confirm final CONTACT copy before production domain launch. Current
+  visible contact line is placeholder.
+- Decide whether 0118 should be content migration first or pano
+  clean-up first.
 
 ## Ready for
 
-Jonathan's review of the pre-rendered room on the live site, and the
-order-5 go if the look holds.
+Jonathan's review of the physical-navigation homepage and approval of
+the next content/domain work order.

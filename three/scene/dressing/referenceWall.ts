@@ -68,12 +68,10 @@ export const PINNED_CLUSTER = {
     /* 5x7" photo, portrait, overlapping the landscape's corner because
        nobody wanted to move the older pin. */
     { w: 0.127, h: 0.178, x: -0.97, y: 1.61, roll: -0.06, kind: "photo" },
-    /* A5 note, curling off the wall at its bottom edge — since R-0087
-       it carries the studio's letterpress logo (Jonathan's ruling: the
-       logo is part of the room, on the note above the lamp, never a
-       website overlay), re-pinned a hand lower so the seated frame
-       reads it. */
-    { w: 0.148, h: 0.21, x: -0.68, y: 1.56, roll: 0.16, kind: "paper", curl: 0.14, logo: true },
+    /* A5 note, curling off the wall at its bottom edge. R-0117 moved the
+       letterpress logo to a desk identity proof so mobile still recognizes
+       Lazy A without turning the wall cluster into signage. */
+    { w: 0.148, h: 0.21, x: -0.68, y: 1.56, roll: 0.16, kind: "paper", curl: 0.14 },
     /* A torn strip of paper — a phrase someone keeps. */
     { w: 0.19, h: 0.05, x: -0.715, y: 1.465, roll: -0.09, kind: "paper" },
     /* The slipped one: its second pin gave months ago. Nobody minds. */

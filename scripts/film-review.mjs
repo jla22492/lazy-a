@@ -1,12 +1,10 @@
 /**
  * The review film (WORK ORDER 0091) — what a visitor actually sees.
  *
- * Records the composited page (canvas AND the HTML interface layer —
- * wordmark, labels, captions, the illuminated journal) while a scripted
- * pointer performs the visit: arrive, rest on the notebook, choose
- * JOURNAL, read, release; rest on the prints, choose FILMS; rest on the
- * charger, choose CONTACT. The canvas ?record pipeline cannot see any
- * of the HTML beats — this is the pipeline that can.
+ * Records the composited page while a scripted pointer performs the visit:
+ * arrive, rest on the physical production-note words, choose JOURNAL,
+ * FILMS, CONTACT, and ABOUT. The canvas ?record pipeline cannot see every
+ * browser-level beat — this is the pipeline that can.
  *
  *   node scripts/film-review.mjs <url> <out.webm> [--size 1280x720]
  */
@@ -24,9 +22,10 @@ const [width, height] = (
 
 /** Screen positions of the destinations in the settled seated frame. */
 const REST = {
-  journal: [890, 584],
-  films: [615, 402],
-  contact: [1003, 459],
+  films: [820, 490],
+  journal: [840, 525],
+  contact: [875, 555],
+  about: [940, 545],
 };
 /** Empty desk, for ending conversations with a click away. */
 const AWAY = [200, 620];
@@ -51,8 +50,8 @@ await page.waitForTimeout(4000 + 15000);
 async function visit(name, holdMs) {
   const [x, y] = REST[name];
   await page.mouse.move(x, y, { steps: 20 });
-  /* The dwell: the label appears, and is given a beat to be read. */
-  await page.waitForTimeout(1400);
+  /* A short rest proves the physical ray target is live before clicking. */
+  await page.waitForTimeout(450);
   await page.mouse.click(x, y);
   /* The lean, the content, the reading. */
   await page.waitForTimeout(holdMs);
@@ -65,6 +64,7 @@ async function visit(name, holdMs) {
 await visit("journal", 3600);
 await visit("films", 2800);
 await visit("contact", 2400);
+await visit("about", 2600);
 
 /* A final beat of rest. */
 await page.waitForTimeout(1200);

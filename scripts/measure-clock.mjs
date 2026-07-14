@@ -5,20 +5,20 @@
  *
  *   ≤4s  the arrival settles into the seated working position
  *   ~5s  the hero print begins to move, unprompted
- *   ≤6s  a destination answers attention (rest → label)
+ *   ≤6s  a destination answers attention through the physical note target
  *
  *   node scripts/measure-clock.mjs [url]
  *
  * Method: page time zero is navigation commit. The settle is detected
  * by a static wall region ceasing to change; the magic by the hero
  * region beginning to change AFTER the settle; the answer by resting
- * the pointer on the notebook at 6s-minus-dwell and timing the label.
+ * the pointer on the physical JOURNAL word and timing the ray target.
  */
 
 import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "https://jla22492.github.io/lazy-a/";
-const JOURNAL_REST = [890, 584];
+const JOURNAL_REST = [840, 525];
 
 const browser = await chromium.launch({
   channel: "chrome",
@@ -90,19 +90,14 @@ const beats = await page.evaluate(
     }),
 );
 
-/* The answer: rest on the notebook, time the label's appearance. */
+/* The answer: rest on the physical JOURNAL word, time the ray target. */
 await page.mouse.move(200, 300);
 const restStart = Date.now();
 await page.mouse.move(JOURNAL_REST[0], JOURNAL_REST[1], { steps: 5 });
 let answerMs = null;
 for (let i = 0; i < 40; i++) {
-  const visible = await page.evaluate(() => {
-    const nodes = [...document.querySelectorAll("div")].filter(
-      (n) => n.textContent === "JOURNAL" && n.children.length === 0,
-    );
-    return nodes.length && getComputedStyle(nodes[0]).opacity === "1";
-  });
-  if (visible) {
+  const target = await page.evaluate(() => window.__lazyANavCandidate ?? null);
+  if (target === "journal") {
     answerMs = Date.now() - restStart;
     break;
   }
@@ -116,7 +111,7 @@ const answer = answerMs === null ? null : answerMs / 1000;
 const verdicts = [
   ["settle ≤ 4s", settle, settle !== null && settle <= 4],
   ["magic ≈ 5s (4–6s window)", magic, magic !== null && magic >= 4 && magic <= 6],
-  ["answer ≤ 1s of rest", answer, answer !== null && answer <= 1],
+  ["physical JOURNAL target ≤ 1s of rest", answer, answer !== null && answer <= 1],
 ];
 let failed = 0;
 for (const [name, value, ok] of verdicts) {

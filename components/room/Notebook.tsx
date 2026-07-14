@@ -626,11 +626,11 @@ function JournalWords() {
     /* Sized to read from the chair: the head turns down to the page a
        meter away and never travels closer (R-0090) — so the maker
        writes large. */
-    context.font = 'italic 42px Georgia, "Iowan Old Style", serif';
+    context.font = 'italic 50px Georgia, "Iowan Old Style", serif';
     context.textBaseline = "top";
     /* The block sits low on the page, under the pencil's diagonal. */
-    const lineHeight = 56;
-    const top = canvas.height * 0.3;
+    const lineHeight = 66;
+    const top = canvas.height * 0.2;
     JOURNAL_PLACEHOLDER.forEach((line, index) => {
       context.fillText(line, 32, top + index * lineHeight);
     });

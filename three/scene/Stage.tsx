@@ -41,7 +41,11 @@ import { PeripheralRoomDressing } from "@/components/room/PeripheralRoomDressing
 import { ReferenceWallDressing } from "@/components/room/ReferenceWallDressing";
 import { UpperWall } from "@/components/room/UpperWall";
 import { Workbench } from "@/components/room/Workbench";
-import { Pencil, WorkbenchDressing } from "@/components/room/WorkbenchDressing";
+import {
+  LivingDeskArtifacts,
+  Pencil,
+  WorkbenchDressing,
+} from "@/components/room/WorkbenchDressing";
 import { WorkspaceZones } from "@/components/room/WorkspaceZones";
 import { RoomClockDriver } from "@/three/animation/RoomClockDriver";
 import { Daylight } from "@/three/lighting/Daylight";
@@ -229,7 +233,10 @@ export function Stage() {
              sun's normalBias eats true grazing-angle shadows of low
              objects, so it is authored — the pencil jar's un-sunned
              disc set the precedent). */
-          <Pencil />
+          <>
+            <Pencil />
+            <LivingDeskArtifacts />
+          </>
         ) : (
           <>
             <Floor />

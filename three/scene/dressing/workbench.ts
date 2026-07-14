@@ -59,6 +59,39 @@ export const CONSIDERED_PRINT = {
   color: "#e9e3d6",
 } as const;
 
+/**
+ * Work Order 0117: the website navigation is a production scratch sheet,
+ * not floating UI. Pencil-written words, on one working page, because the
+ * maker was organizing the site/company surfaces when they stepped away.
+ */
+export const PRODUCTION_NAV_SHEET = {
+  at: { x: 0.4, z: -0.08 },
+  width: 0.24,
+  length: 0.17,
+  thickness: 0.0005,
+  yaw: -0.1,
+  color: "#e7dfcf",
+  words: [
+    { id: "films", label: "films", x: -0.062, z: -0.048 },
+    { id: "journal", label: "journal", x: -0.028, z: -0.012 },
+    { id: "contact", label: "contact", x: 0.012, z: 0.025 },
+    { id: "about", label: "about", x: 0.047, z: 0.055 },
+  ],
+} as const;
+
+/**
+ * Jonathan's 0117 logo ruling: a letterpress identity proof leaning at the
+ * desk/wall line, not a placard pinned for the website.
+ */
+export const LOGO_PROOF = {
+  width: 0.148,
+  height: 0.21,
+  thickness: 0.001,
+  at: { x: 0.28, z: -0.375 },
+  lean: 0.42,
+  yaw: -0.08,
+} as const;
+
 /** Rear-left: reference books pulled and never reshelved. */
 export const BOOK_STACK = {
   at: { x: -0.62, z: -0.24 },
@@ -163,7 +196,7 @@ export const FILM_CANISTERS = {
 
 /** Temporary zone: the camera set down after checking a frame. */
 export const CAMERA = {
-  at: { x: 0.78, z: 0.04 },
+  at: { x: 0.84, z: 0.02 },
   body: { width: 0.14, height: 0.09, depth: 0.045 },
   lens: { radius: 0.03, length: 0.05 },
   prism: { width: 0.05, height: 0.025, depth: 0.04 },

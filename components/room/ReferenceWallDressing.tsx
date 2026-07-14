@@ -8,7 +8,7 @@ import { SRGBColorSpace } from "three";
 
 import logoNote from "@/public/brand/logo-note.png";
 import { assetPath } from "@/lib/assetPath";
-import { paper, wood, woodNormal } from "@/three/materials/procedural";
+import { paper, paperNormal, wood, woodNormal } from "@/three/materials/procedural";
 import {
   REFLECTION_INTENSITY,
   useReflections,
@@ -37,11 +37,11 @@ const WALL_Z = ROOM.rearWall.z;
 const HERO_FILM = {
   src: "/videos/hero-print-placeholder.mp4",
   /** The stock keeps a print's margin around the image. */
-  border: 0.008,
+  border: 0.018,
   /** A breath between the settle and the first movement. */
   settleBeatSeconds: 1.8,
   /** 0099: printed light — the pane catches the window like gloss stock. */
-  roughness: 0.38,
+  roughness: 0.52,
 } as const;
 
 function HeroFilm() {
@@ -90,8 +90,9 @@ function HeroPrint() {
           reads at the edge. */}
       <boxGeometry args={[width, height, thickness * 2.2]} />
       <meshStandardMaterial
-        map={paper({ seed: 411, base: color, fiber: 0.3, handled: 0.15 })}
-        roughness={0.68}
+        map={paper({ seed: 411, base: color, fiber: 0.48, handled: 0.34, stock: "fiber" })}
+        normalMap={paperNormal(411, 1.15)}
+        roughness={0.82}
       />
       {/* Until the film is ready, the print is simply its stock. */}
       <Suspense fallback={null}>

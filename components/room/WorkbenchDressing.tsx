@@ -1,8 +1,19 @@
 "use client";
 
-import { RoundedBox } from "@react-three/drei";
-import { DoubleSide, Vector2 } from "three";
+import { Suspense, useMemo, useRef } from "react";
 
+import { RoundedBox, useTexture } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import {
+  CanvasTexture,
+  DoubleSide,
+  MeshStandardMaterial,
+  SRGBColorSpace,
+  Vector2,
+} from "three";
+
+import logoNote from "@/public/brand/logo-note.png";
+import { getContactLevel } from "@/three/interface/contact";
 import { ceramic, paper, paperNormal } from "@/three/materials/procedural";
 import {
   REFLECTION_INTENSITY,
@@ -15,16 +26,111 @@ import {
   CONSIDERED_PRINT,
   FILM_CANISTERS,
   HEADPHONES,
+  LOGO_PROOF,
   LOOSE_SHEETS,
   MUG,
   PENCIL,
   PENCIL_JAR,
+  PRODUCTION_NAV_SHEET,
   TAPE_ROLL,
   TEST_PRINTS,
 } from "@/three/scene/dressing/workbench";
 import { fromWorkbench } from "@/three/scene/world";
 
 const SURFACE = WORKBENCH.surfaceHeight;
+
+function handwrittenNavTexture(): CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 640;
+  const context = canvas.getContext("2d");
+  if (!context) return new CanvasTexture(canvas);
+
+  context.fillStyle = "#e7dfcf";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  /* Paper handling: soft smudges and one old fold, never decoration. */
+  context.globalAlpha = 0.18;
+  context.strokeStyle = "#b9af9d";
+  context.lineWidth = 3;
+  context.beginPath();
+  context.moveTo(92, 58);
+  context.quadraticCurveTo(370, 76, 895, 48);
+  context.stroke();
+  context.globalAlpha = 0.12;
+  context.fillStyle = "#867d6f";
+  context.fillRect(96, 112, 820, 2);
+
+  context.globalAlpha = 1;
+  context.fillStyle = "#25211d";
+  context.strokeStyle = "#25211d";
+  context.lineCap = "round";
+  context.lineJoin = "round";
+  context.font = '600 84px "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive';
+  context.textBaseline = "middle";
+
+  const { width, length, words } = PRODUCTION_NAV_SHEET;
+  for (const word of words) {
+    const x = canvas.width / 2 + (word.x / width) * canvas.width;
+    const y = canvas.height / 2 + (word.z / length) * canvas.height;
+    context.save();
+    context.translate(x, y);
+    context.rotate((word.id === "journal" ? -1.5 : word.id === "contact" ? 1.1 : 0.3) * Math.PI / 180);
+    context.globalAlpha = word.id === "about" ? 0.86 : 0.98;
+    context.fillText(word.label, 0, 0);
+    if (word.id === "films") {
+      context.globalAlpha = 0.45;
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(1, 27);
+      context.quadraticCurveTo(54, 33, 104, 25);
+      context.stroke();
+    }
+    if (word.id === "contact") {
+      context.globalAlpha = 0.35;
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(154, 2);
+      context.lineTo(210, -12);
+      context.stroke();
+    }
+    context.restore();
+  }
+
+  context.globalAlpha = 0.34;
+  context.font = '34px "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive';
+  context.fillText("site pull", 118, 82);
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
+function contactImpressionTexture(): CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1024;
+  canvas.height = 320;
+  const context = canvas.getContext("2d");
+  if (!context) return new CanvasTexture(canvas);
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.font = '500 78px "Helvetica Neue", Arial, sans-serif';
+  context.letterSpacing = "2px";
+  context.textBaseline = "middle";
+  context.fillStyle = "rgba(58, 52, 44, 0.72)";
+  context.filter = "blur(0.45px)";
+  context.fillText("contact@lazyaproductions.com", 52, 142);
+  context.filter = "none";
+  context.strokeStyle = "rgba(238, 230, 211, 0.22)";
+  context.lineWidth = 2;
+  context.strokeText("contact@lazyaproductions.com", 52, 142);
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
 
 /** Test prints leaning from the bench's rear band onto the wall. */
 function TestPrints() {
@@ -203,6 +309,98 @@ function ConsideredPrint() {
         map={paper({ seed: 641, base: color, fiber: 0.2, handled: 0.15, stock: "smooth" })}
         normalMap={paperNormal(641)}
         roughness={0.42}
+      />
+    </mesh>
+  );
+}
+
+/** One working sheet: explicit navigation, but still a maker's note. */
+export function ProductionNavSheet() {
+  const texture = useMemo(
+    () => (typeof document === "undefined" ? null : handwrittenNavTexture()),
+    [],
+  );
+  const { at, width, length, thickness, yaw, color } = PRODUCTION_NAV_SHEET;
+  return (
+    <group position={[at.x, SURFACE + thickness, at.z]} rotation={[0, yaw, 0]}>
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[width, thickness, length]} />
+        <meshStandardMaterial
+          map={paper({ seed: 817, base: color, fiber: 0.34, handled: 0.45 })}
+          normalMap={paperNormal(817)}
+          roughness={0.92}
+        />
+      </mesh>
+      {texture && (
+        <mesh position={[0, thickness / 2 + 0.0006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[width * 0.96, length * 0.92]} />
+          <meshStandardMaterial
+            map={texture}
+            transparent
+            roughness={0.95}
+            polygonOffset
+            polygonOffsetFactor={-2}
+          />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+/** The letterpress identity proof, leaned where mobile can still read Lazy A. */
+export function LogoProof() {
+  const texture = useTexture(logoNote.src, (loaded) => {
+    loaded.colorSpace = SRGBColorSpace;
+  });
+  const { at, width, height, thickness, lean, yaw } = LOGO_PROOF;
+  return (
+    <group
+      position={[
+        at.x,
+        SURFACE + (height / 2) * Math.cos(lean),
+        at.z - (height / 2) * Math.sin(lean),
+      ]}
+      rotation={[-lean, yaw, 0.015]}
+    >
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[width, height, thickness]} />
+        <meshStandardMaterial map={texture} roughness={0.86} />
+      </mesh>
+    </group>
+  );
+}
+
+/** CONTACT: the removed-note pressure trace revealed by the head turn. */
+export function ContactImpression() {
+  const materialRef = useRef<MeshStandardMaterial>(null);
+  const texture = useMemo(
+    () => (typeof document === "undefined" ? null : contactImpressionTexture()),
+    [],
+  );
+  useFrame(() => {
+    const material = materialRef.current;
+    if (!material) return;
+    const level = getContactLevel();
+    material.opacity = level * 0.82;
+  });
+  if (!texture) return null;
+  return (
+    <mesh
+      position={[
+        PRODUCTION_NAV_SHEET.at.x + 0.02,
+        SURFACE + 0.0062,
+        PRODUCTION_NAV_SHEET.at.z + 0.074,
+      ]}
+      rotation={[-Math.PI / 2, 0, PRODUCTION_NAV_SHEET.yaw]}
+    >
+      <planeGeometry args={[0.36, 0.085]} />
+      <meshStandardMaterial
+        ref={materialRef}
+        map={texture}
+        transparent
+        opacity={0}
+        depthWrite={false}
+        roughness={1}
       />
     </mesh>
   );
@@ -410,6 +608,11 @@ export function WorkbenchDressing() {
     <group position={fromWorkbench([0, 0, 0])}>
       <TestPrints />
       <ConsideredPrint />
+      <ProductionNavSheet />
+      <Suspense fallback={null}>
+        <LogoProof />
+      </Suspense>
+      <ContactImpression />
       <BookStack />
       <PencilJar />
       <TapeRoll />
@@ -419,6 +622,19 @@ export function WorkbenchDressing() {
       <LooseSheets />
       <FilmCanisters />
       <Camera />
+    </group>
+  );
+}
+
+/** Living desk artifacts that must remain over the 0116 panorama. */
+export function LivingDeskArtifacts() {
+  return (
+    <group position={fromWorkbench([0, 0, 0])}>
+      <ProductionNavSheet />
+      <Suspense fallback={null}>
+        <LogoProof />
+      </Suspense>
+      <ContactImpression />
     </group>
   );
 }

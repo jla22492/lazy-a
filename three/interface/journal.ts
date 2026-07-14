@@ -23,7 +23,7 @@ export function getJournalLevel(): number {
 }
 
 /** The words' quiet self-light at full illumination (tone-mapped). */
-export const JOURNAL_GLOW = 0.55;
+export const JOURNAL_GLOW = 0.78;
 
 /**
  * The placeholder paragraph — PLAUSIBLE WORDS, NOT AUTHORED WORDS.

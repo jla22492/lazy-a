@@ -14,12 +14,13 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0116 COMPLETE — ORDER 4 SHIPPED: the pre-rendered room IS the room. The 8K Cycles panorama mounts by default on a rotation-only sphere from the settled eye; a 2K spike rides the arrival, the 8K streams through the magic window, and after the settle the plate dissolves in over 0.6s while the geometric room unmounts. The living layers — hero film, logo note, sticky notes, notebook + pencil, dust, interface — keep rendering over the photograph. Jonathan's lamp faces inward in the plate (a quaternion-mode import bug had been silently discarding EVERY pick's yaw; fixed with approved orientations preserved). The notebook and its pencil are excluded from the plate so the live journal never reveals a baked twin; the cover is graded to the plate and an authored contact pool grounds it. Narrow viewports (aspect < 1.5) keep the geometric room — the plate only exists from the wide settle eye. Full battery green (see BUILD_REPORT and docs/progress/0116-pano-live.jpg).
+0117 COMPLETE — PHYSICAL NAVIGATION REFINEMENT: the website navigation is now one pencil-written production note on the desk, not floating labels. `films`, `journal`, `contact`, and `about` are physical word targets; clicking them turns the visitor's head toward the corresponding room evidence. The Lazy A logo moved off the wall and onto a leaning letterpress identity proof at the desk/wall line. JOURNAL now uses a stronger forward/downward reading posture with more legible notebook text. CONTACT reveals a latent pressure-impression contact line on the production note itself. ABOUT now turns left toward the room-history zone. The hero print's material was softened and foreground props were tuned for photographic coherence. Full battery green: build, physical nav, dwell/candidate, 4/5/6 clock, perf, and progress captures (docs/progress/0117-physical-nav-desktop.png, docs/progress/0117-physical-nav-phone.png, docs/progress/0117-contact-impression.png, docs/progress/0117-about-turn-left.png).
 
 ---
 
 ## Completed
 
+- WORK ORDER 0117 — Physical navigation refinement: removed the floating website label layer, moved the logo into the room as a desk/wall identity proof, added the pencil-written production note as explicit navigation, implemented CONTACT as a latent pressure-impression reveal, added ABOUT's leftward room-history turn, and reverified the live 4/5/6 clock at settle 3.41s / magic 4.72s / physical JOURNAL target 0.08s.
 - Repository initialized and connected to GitHub
 - Next.js (App Router) configured with strict TypeScript, Tailwind, ESLint, Prettier
 - React Three Fiber, Drei, GSAP, and Leva installed
@@ -169,13 +170,13 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## In Progress
 
-Nothing — SPRINT 05E IS COMPLETE (0108–0116 plus Jonathan's R-amendments; order 4 shipped and verified). Implementation is stopped per the termination rule, waiting for Jonathan's review of the pre-rendered room on the live site. Standing items: the hero's real footage and the journal's authored words (the content ceiling); the CC-BY colophon (mug, lamp, chair, blanket — lands with the About surface, approved); the blanket's drape centering on the chair back; the CONTACT caption's content; order 5 (the pre-rendered arrival clip spike) awaits authorization.
+Nothing — WORK ORDER 0117 is complete and verified. Implementation is stopped pending Jonathan's review of the physical-navigation homepage. Standing items: real company content/footage, authored journal words, final CONTACT copy, ABOUT content/colophon, the blanket's drape centering on the chair back, and any future decision about re-rendering the pano so the baked wall no longer contains the old logo position.
 
 ---
 
 ## Next Recommended Work Order
 
-None until Jonathan reviews Sprint 05A. (05B, once authorized: the full six-second sequence tuned end to end — the ~5s unprompted reveal on the considered print, head-turn navigation timing, the stranger test against Jonathan's 4/5/6 clock. Open questions for his review: the maker's chair staging under the seated arrival; the journal's authored words; the CONTACT caption's eventual content; whether FILMS' anchor stays on the propped prints or moves when the wall is recomposed for the seated frame.)
+0118 — Content-and-domain readiness pass, only after Jonathan reviews 0117: replace placeholders with approved company material; author JOURNAL and CONTACT; decide ABOUT's first real content; confirm whether the 8K pano should be re-rendered with the new logo/navigation composition baked cleanly; then prepare www.lazyaproductions.com migration with DNS/hosting routing and post-cutover live gates.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
@@ -258,6 +259,10 @@ docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative D
 🔒 Every sprint from now on should make fewer decisions, but better ones. (Named at the 0071 checkpoint.)
 🔒 The room should reward patience, never require it. Two seconds must already explain the website; thirty seconds must reveal something that couldn't be noticed immediately. (Named at the 0072 review.)
 🔒 The room is now in service of navigation — not the other way around. The visitor should remember the website because of the room, never remember the room instead of the website. (Named at the 0073/0074 review.)
+🔒 Navigation is now physical, explicit, and non-puzzling. The visitor reads one production note on the desk — `films`, `journal`, `contact`, `about` — and every word is both a believable maker mark and an immediate website choice. No floating website labels. (R-0117, Jonathan's ruling.)
+🔒 The logo belongs at the desk/wall line as a letterpress identity proof, not on the wall and never as chrome. The wall-logo lock from R-0087 is superseded by R-0117.
+🔒 CONTACT reveals a latent pressure mark where the visitor acted. The reveal may be magical, but it must still feel like evidence already present in the room, not a caption pasted over it. (R-0117.)
+🔒 ABOUT reveals more room by turning left toward history, not by adding a generic section. The room expands through attention before content arrives. (R-0117.)
 🔒 The room is the homepage. The homepage is larger than the room. Scrolling should never feel like leaving the room — sometimes literally, sometimes emotionally, always the same world; the mechanism (room stays visible / camera changes / content overlays / another wall) is deliberately undecided. (The hybrid architecture ruling, made after the white-band capture artifact was honestly disclosed and separated from what it implied.)
 🔒 No tagline, for now. A tagline tells; the room invites. Don't tell people what to think — reward what they notice. If operational placeholder copy is ever absolutely needed, it is orientation ("Creative Production"), never positioning, and it gets deleted later. (The tagline ruling.)
 🔒 The room never responds to hover. The interface may respond to attention. (Supersedes the Experience Bible's "nothing responds to hover," which was always about the room: it must never glow, pulse, brighten, or acknowledge the cursor. The sequence is: eye rests → website notices → website quietly answers → room remains unchanged. Dwell ~0.45s so it feels like "I was already looking there"; ONE label, always, no exceptions; appearance is opacity over at most 100ms — "oh," never "look.")

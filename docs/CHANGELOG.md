@@ -51,4 +51,6 @@
 
 - The room became a photograph without anyone noticing: as the visitor settles, the world behind the desk quietly becomes an 8K film frame — true bounced light, the maker's own lamp finally turned toward the work, his chair, his mug, his blanket — while everything alive stays alive on top of it: the print keeps playing, the notebook keeps answering, the pencil keeps lying exactly where it rolled. Phones keep the built room; the photograph belongs to the wide view it was taken from. The clock never slipped: settled in under four, the magic at four-and-a-half, an answer in two-thirds of a second.
 
+- The website stopped wearing labels: FILMS, JOURNAL, CONTACT, and ABOUT are now pencil marks on a working production note, written by the person who left the desk. The Lazy A mark leans at the wall as an identity proof; JOURNAL asks the head to dip and read; CONTACT appears as a pressure mark where the visitor just looked; ABOUT turns left into the room's history. Navigation is no longer pasted onto the room — it is something the room was already doing.
+
 Record experience changes here, not just technical ones.

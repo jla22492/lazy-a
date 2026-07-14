@@ -30,6 +30,11 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--autoplay-policy=no-user-gesture-required"],
 });
+const closeBrowser = () =>
+  Promise.race([
+    browser.close(),
+    new Promise((resolve) => setTimeout(resolve, 1500)),
+  ]);
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
 let transferred = 0;
@@ -66,8 +71,6 @@ const fps = await page.evaluate(
     }),
 );
 
-await browser.close();
-
 const preMb = preSettle / (1024 * 1024);
 const totalMb = transferred / (1024 * 1024);
 const fpsOk = fps >= FPS_FLOOR;
@@ -76,4 +79,5 @@ const totalOk = totalMb <= TOTAL_CEILING_MB;
 console.log(`${fpsOk ? "PASS" : "FAIL"} fps: median ${fps.toFixed(1)} (floor ${FPS_FLOOR})`);
 console.log(`${preOk ? "PASS" : "FAIL"} pre-settle transfer: ${preMb.toFixed(2)}MB (budget ${PRESETTLE_BUDGET_MB}MB)`);
 console.log(`${totalOk ? "PASS" : "FAIL"} total streamed: ${totalMb.toFixed(2)}MB (ceiling ${TOTAL_CEILING_MB}MB)`);
+await closeBrowser();
 process.exit(fpsOk && preOk && totalOk ? 0 : 1);
