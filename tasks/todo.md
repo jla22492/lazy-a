@@ -9,7 +9,8 @@
 - [x] Trace navigation ambiguity to overlapping spherical hit regions on a compressed diagonal list.
 - [x] Confirm the intended smoothed lighting master with Jonathan: 0114 lighting with current 0116 `lamp2` and object set.
 - [x] Present and receive incremental approval for the corrected render/interaction architecture, including one-shot hero playback independent of navigation.
-- [ ] Receive Jonathan's review approval of the written 0117-R design specification.
+- [x] Receive Jonathan's review approval of the written 0117-R design specification.
+- [ ] Restore every approved scan source to a durable project-owned path and prove the master is reproducible.
 - [ ] Write failing behavioral and visual gates for every rejected behavior.
 - [ ] Implement the approved correction without new unapproved geometry.
 - [ ] Verify desktop, mobile, all four destinations, lighting continuity, clock, and performance.
