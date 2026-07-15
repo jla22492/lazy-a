@@ -17,15 +17,19 @@
 
 - Master asset and saved-blend verification pass for all 12 durable room assets, including the seven supplied replacements at measured size, position, and contact surface.
 - Five-viewport arrival continuity, camera selection, four-corner hero registration, exact foreground silhouettes, final-frame retention, and 310/310 hero lifecycle checks pass.
+- Desktop through phone hydrate without profile mismatches; phone still selects and completes the exact portrait arrival after hydration.
+- The same 310/310 hero matrix passes on deployed GitHub Pages using post-render registration samples; decoded callbacks remain media-coverage evidence and pre-texture arrival states are reported separately.
 - CONTACT exact-copy, physical-indentation, lamp-rise, hold, reverse, and desktop/phone framing gates pass.
 - Normal-speed desktop, tall-desktop, and phone review films were captured and inspected; Jonathan's explicit visual approval remains open.
 
 ## Review
 
 - Runtime/media commit: `b0cf10b`.
+- Review evidence commit: `4fed800`; post-render verifier commit: `1a32124`; hydration fix: `cc6e4a9`.
 - Build: PASS.
 - Clock: settle `3.00s`; magic `4.80s`; physical JOURNAL target `0.08s`.
 - Performance: median `59.9fps`; `2.26MB` pre-settle; `4.56MB` total.
+- Deployed Pages workflow `29411020891`: PASS; live clock `3.50s` / `5.28s` / `0.08s`, dwell PASS x4, hero `310/310`, and performance `59.9fps` / `2.25MB` / `4.54MB`.
 - Review films: `docs/progress/0117-r2-review-desktop.mp4`, `docs/progress/0117-r2-review-tall.mp4`, and `docs/progress/0117-r2-review-phone.mp4`.
 - Approval audit: every implementation item has behavioral and visual evidence; the unchecked Jonathan-approval item prevents a completion claim.
 

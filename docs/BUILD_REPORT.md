@@ -6,6 +6,10 @@ Commit:
 
 `b0cf10b` — runtime, authored media, camera/matte contracts, and behavioral gates
 
+`1a32124` — post-render hero registration/occlusion sampling for networked review
+
+`cc6e4a9` — hydration-stable responsive profile selection and browser gate
+
 Version:
 
 v0.1 — Work Order 0117-R2 review candidate
@@ -31,6 +35,10 @@ Architecture Decisions:
 - Desktop/tall/tablet select the approved wide camera by width; phone selects
   portrait. Both profiles derive pose, target, lens, and arrival endpoint from
   one JSON contract consumed by the exporter and runtime gate.
+- Server output and the first client render share the wide profile; viewport
+  selection runs after hydration and switches phone to portrait before its
+  authored arrival. The five-viewport gate fails on any React hydration error,
+  wrong profile, camera drift, or unstable endpoint pixels.
 - `PlateRoom` publishes projection from decoded `mediaTime * authored fps`, not
   container duration. The ended transition frame remains mounted so the desk
   still cannot introduce a second crop/camera handoff.
@@ -38,6 +46,10 @@ Architecture Decisions:
   256px per-frame RLE silhouette rasterized from evaluated foreground triangles
   supplies concave depth masks without multi-megabyte manifests or full-screen
   mask uploads.
+- The hero gate counts decoded callbacks as media coverage, reports pre-texture
+  arrival states separately, and verifies registration/occlusion only from the
+  final authored/live state after browser render callbacks. Callback scheduling
+  can no longer masquerade as either a visible mismatch or a passing frame.
 - Navigation, CONTACT, and JOURNAL remain physical scene artifacts. No floating
   website labels, CONTACT planes, or primitive/render fallbacks are mounted.
 
@@ -121,7 +133,8 @@ launch planning. This is not `WORK ORDER COMPLETE` until that approval is given.
 - Media parity — PASS: 2 profiles, 12 endpoints, 10 forward/reverse paths, 32
   media files, 22 decoded source relationships, 0 pending.
 - Arrival continuity — PASS at 1280x720, 1316x1329, 1024x768, 768x1024, and
-  375x812; zero camera mismatch and zero endpoint pixel delta.
+  375x812; zero hydration errors, zero camera mismatch, and zero endpoint pixel
+  delta.
 - Hero lifecycle/registration — PASS, 310/310 checks; foreground mask pixel gate
   reports masked p90 `0` and changing unmasked p90 `35`.
 - Physical navigation, camera states, CONTACT reveal, media failure behavior,
@@ -129,6 +142,10 @@ launch planning. This is not `WORK ORDER COMPLETE` until that approval is given.
 - Clock — settle `3.00s`; magic `4.80s`; physical JOURNAL target `0.08s`.
 - Performance — median `59.9fps`; `2.26MB` pre-settle; `4.56MB` total; no
   reverse-arrival preload.
+- Deployed GitHub Pages battery at commit `4fed800` — PASS: workflow
+  `29411020891`; hero lifecycle/registration `310/310` with `0.000px` rendered
+  corner error; settle `3.50s`; magic `5.28s`; JOURNAL `0.08s`; all four dwell
+  targets; median `59.9fps`; `2.25MB` pre-settle; `4.54MB` total.
 - Review films — `docs/progress/0117-r2-review-desktop.mp4`,
   `docs/progress/0117-r2-review-tall.mp4`, and
   `docs/progress/0117-r2-review-phone.mp4`.
