@@ -96,6 +96,21 @@ async function waitForArrival(page, profile) {
   }
 }
 
+async function waitForRestingEndpoint(page, endpoint) {
+  await page.waitForFunction(
+    (id) => {
+      const camera = window.__lazyACameraDebug?.snapshot?.();
+      return (
+        window.__lazyAPlateState?.state === `resting:${id}` &&
+        camera?.phase === "resting" &&
+        camera?.endpoint === id
+      );
+    },
+    endpoint,
+    { timeout: TRANSITION_TIMEOUT_MS },
+  );
+}
+
 async function readNavigationDebug(page) {
   return page.evaluate(() => {
     const debug = window.__lazyANavigationDebug;
@@ -391,6 +406,21 @@ async function verifyRowCenters(page, profile, sheet) {
       continue;
     }
 
+    try {
+      await waitForRestingEndpoint(page, row.id);
+    } catch {
+      const state = await page.evaluate(() => ({
+        plate: window.__lazyAPlateState?.state ?? null,
+        camera: window.__lazyACameraDebug?.snapshot?.() ?? null,
+      }));
+      fail(
+        profile,
+        `${row.id} did not reach its authored resting endpoint: ${JSON.stringify(state)}`,
+      );
+      ok = false;
+      continue;
+    }
+
     await page.mouse.move(0, 0, { steps: 2 });
     await page.keyboard.press("Escape");
     await page.waitForFunction(
@@ -398,7 +428,19 @@ async function verifyRowCenters(page, profile, sheet) {
       null,
       { timeout: TRANSITION_TIMEOUT_MS },
     );
-    await page.waitForTimeout(1_100);
+    try {
+      await waitForRestingEndpoint(page, "desk");
+    } catch {
+      const state = await page.evaluate(() => ({
+        plate: window.__lazyAPlateState?.state ?? null,
+        camera: window.__lazyACameraDebug?.snapshot?.() ?? null,
+      }));
+      fail(
+        profile,
+        `${row.id} did not return to the authored desk endpoint: ${JSON.stringify(state)}`,
+      );
+      ok = false;
+    }
   }
   if (ok)
     pass(profile, "all four physical row centers open only their destination");

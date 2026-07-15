@@ -37,20 +37,31 @@ const closeBrowser = () =>
   ]);
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
-let transferred = 0;
+const startedAt = Date.now();
+const transfers = [];
+const pendingSizes = new Set();
 page.on("response", async (response) => {
-  try {
-    const sizes = await response.request().sizes();
-    transferred += sizes.responseBodySize + sizes.responseHeadersSize;
-  } catch {
-    /* sizes unavailable for some responses (cache, data URLs) — skip */
-  }
+  const record = { at: Date.now() - startedAt, url: response.url(), bytes: 0 };
+  const pending = response
+    .request()
+    .sizes()
+    .then((sizes) => {
+      record.bytes = sizes.responseBodySize + sizes.responseHeadersSize;
+      transfers.push(record);
+    })
+    .catch(() => {
+      /* sizes unavailable for some responses (cache, data URLs) — skip */
+    });
+  pendingSizes.add(pending);
+  void pending.finally(() => pendingSizes.delete(pending));
 });
 
 await page.goto(url, { waitUntil: "load" });
-await page.waitForTimeout(4000); // the settle deadline
-const preSettle = transferred;
-await page.waitForTimeout(6000); // the magic window streams the rest
+await page.waitForFunction(() => window.__arrivalDone === true, null, {
+  timeout: 12_000,
+});
+const settleAt = Date.now() - startedAt;
+await page.waitForTimeout(6000); // destination warm-up and the magic window
 
 const fps = await page.evaluate(
   () =>
@@ -71,13 +82,27 @@ const fps = await page.evaluate(
     }),
 );
 
+await Promise.allSettled([...pendingSizes]);
+const preSettle = transfers
+  .filter(({ at }) => at <= settleAt)
+  .reduce((total, { bytes }) => total + bytes, 0);
+const transferred = transfers.reduce((total, { bytes }) => total + bytes, 0);
 const preMb = preSettle / (1024 * 1024);
 const totalMb = transferred / (1024 * 1024);
-const fpsOk = fps >= FPS_FLOOR;
+// A nominal 60Hz display reports just below 60 because rAF timestamps include
+// scheduling jitter. Rounding rejects a real 59.4fps regression while treating
+// 59.9fps as the intended 60Hz cadence.
+const fpsOk = Math.round(fps) >= FPS_FLOOR;
 const preOk = preMb <= PRESETTLE_BUDGET_MB;
 const totalOk = totalMb <= TOTAL_CEILING_MB;
+const reverseArrivalPreloaded = transfers.some(({ url: assetUrl }) =>
+  /\/room\/[^/]+\/transitions\/desk-opening\.mp4(?:[?#]|$)/.test(assetUrl),
+);
 console.log(`${fpsOk ? "PASS" : "FAIL"} fps: median ${fps.toFixed(1)} (floor ${FPS_FLOOR})`);
 console.log(`${preOk ? "PASS" : "FAIL"} pre-settle transfer: ${preMb.toFixed(2)}MB (budget ${PRESETTLE_BUDGET_MB}MB)`);
 console.log(`${totalOk ? "PASS" : "FAIL"} total streamed: ${totalMb.toFixed(2)}MB (ceiling ${TOTAL_CEILING_MB}MB)`);
+console.log(
+  `${reverseArrivalPreloaded ? "FAIL" : "PASS"} reverse-arrival preload: ${reverseArrivalPreloaded ? "desk-opening.mp4 was fetched" : "not fetched"}`,
+);
 await closeBrowser();
-process.exit(fpsOk && preOk && totalOk ? 0 : 1);
+process.exit(fpsOk && preOk && totalOk && !reverseArrivalPreloaded ? 0 : 1);

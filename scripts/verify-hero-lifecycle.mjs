@@ -10,10 +10,6 @@ import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "http://localhost:3000/";
 const VIEWPORT = { width: 1280, height: 720 };
-const TARGETS = {
-  films: [820, 490],
-  journal: [840, 525],
-};
 const TIME_EPSILON = 0.04;
 
 let failures = 0;
@@ -27,6 +23,14 @@ function check(ok, name, detail) {
 
 function fixed(value) {
   return Number.isFinite(value) ? `${value.toFixed(3)}s` : "unavailable";
+}
+
+function quadCenter(quad) {
+  if (!Array.isArray(quad) || quad.length !== 8) return null;
+  return {
+    x: (quad[0] + quad[2] + quad[4] + quad[6]) / 4,
+    y: (quad[1] + quad[3] + quad[5] + quad[7]) / 4,
+  };
 }
 
 const browser = await chromium.launch({
@@ -136,20 +140,14 @@ function heroSnapshot() {
       const source = record.element.currentSrc || record.element.src || "";
       return source.length > 0;
     });
-    const heroRecords = records.filter((record) => {
-      const source = record.element.currentSrc || record.element.src;
-      return /hero/i.test(source);
-    });
-    const record =
-      heroRecords.length === 1
-        ? heroRecords[0]
-        : records.length === 1
-          ? records[0]
-          : null;
+    const heroRecords = records.filter(
+      (record) => record.element.dataset.lazyAHero === "true",
+    );
+    const record = heroRecords.length === 1 ? heroRecords[0] : null;
     if (!record) {
       return {
         supported: false,
-        reason: `expected one observable hero video; found ${records.length} videos (${heroRecords.length} hero-named)`,
+        reason: `expected one data-lazy-a-hero video; found ${records.length} videos (${heroRecords.length} marked hero)`,
       };
     }
 
@@ -190,21 +188,51 @@ async function waitForHero(predicate, timeout = 12_000) {
 
 async function conversationState() {
   return page.evaluate(() => ({
-    observable: Object.prototype.hasOwnProperty.call(
-      window,
-      "__lazyAConversation",
-    ),
+    observable: Boolean(window.__lazyANavigationDebug),
     value: window.__lazyAConversation ?? null,
     candidate: window.__lazyANavCandidate ?? null,
   }));
 }
 
+async function heroProjectionState() {
+  return page.evaluate(() => ({
+    live: window.__lazyAHeroProjection ?? null,
+    authored: window.__lazyAPlateProjection?.hero ?? null,
+  }));
+}
+
+async function waitForRestingEndpoint(id) {
+  await page.waitForFunction(
+    (endpoint) => {
+      const camera = window.__lazyACameraDebug?.snapshot?.();
+      return (
+        window.__lazyAPlateState?.state === `resting:${endpoint}` &&
+        camera?.phase === "resting" &&
+        camera?.endpoint === endpoint
+      );
+    },
+    id,
+    { timeout: 8_000 },
+  );
+}
+
 async function openDestination(id) {
-  const point = TARGETS[id];
-  await page.mouse.move(point[0], point[1], { steps: 8 });
+  const point = await page.evaluate((destination) => {
+    const debug = window.__lazyANavigationDebug;
+    const row = debug?.sheet.rows.find(({ id: rowId }) => rowId === destination);
+    if (!debug || !row) return null;
+    return debug.projectSheetPoint(
+      row.rect.x + row.rect.width / 2,
+      row.rect.y + row.rect.height / 2,
+    );
+  }, id);
+  if (!point) {
+    return { ok: false, detail: `authored ${id} row is unavailable` };
+  }
+  await page.mouse.move(point.x, point.y, { steps: 8 });
   await page.waitForTimeout(300);
   const beforeClick = await conversationState();
-  await page.mouse.click(point[0], point[1]);
+  await page.mouse.click(point.x, point.y);
   try {
     await page.waitForFunction(
       (expected) => window.__lazyAConversation === expected,
@@ -218,9 +246,21 @@ async function openDestination(id) {
       detail: `candidate=${beforeClick.candidate ?? "null"}; expected ${id}, got ${state.value ?? "null"}`,
     };
   }
+  try {
+    await waitForRestingEndpoint(id);
+  } catch {
+    const state = await page.evaluate(() => ({
+      plate: window.__lazyAPlateState?.state ?? null,
+      camera: window.__lazyACameraDebug?.snapshot?.() ?? null,
+    }));
+    return {
+      ok: false,
+      detail: `${id} did not settle: ${JSON.stringify(state)}`,
+    };
+  }
   return {
     ok: true,
-    detail: `${id} opened at (${point.join(", ")}); candidate=${beforeClick.candidate ?? "null"}`,
+    detail: `${id} opened at (${point.x.toFixed(1)}, ${point.y.toFixed(1)}); candidate=${beforeClick.candidate ?? "null"}`,
   };
 }
 
@@ -249,6 +289,23 @@ try {
         settled.preSettleMaxTime <= TIME_EPSILON,
       "pre-settle currentTime is zero",
       `initial=${fixed(settled.initialTime)} max=${fixed(settled.preSettleMaxTime)}`,
+    );
+    const projection = await heroProjectionState();
+    const liveCenter = quadCenter(projection.live);
+    const authoredCenter = quadCenter(projection.authored);
+    const projectionError =
+      liveCenter && authoredCenter
+        ? Math.hypot(
+            liveCenter.x - authoredCenter.x,
+            liveCenter.y - authoredCenter.y,
+          )
+        : Infinity;
+    check(
+      projectionError <= 0.015,
+      "live hero aligns to authored print",
+      Number.isFinite(projectionError)
+        ? `center error=${projectionError.toFixed(4)}`
+        : "live/authored hero projection diagnostics unavailable",
     );
     check(
       settled.loop === false,
@@ -299,6 +356,12 @@ try {
       `${fixed(beforeOpen.currentTime)} -> ${fixed(afterOpen.currentTime)} paused=${afterOpen.paused}`,
     );
 
+    await page.keyboard.press("Escape");
+    try {
+      await waitForRestingEndpoint("desk");
+    } catch {
+      // The following destination assertion reports the stale state.
+    }
     const journal = await openDestination("journal");
     await page.waitForTimeout(250);
     const afterSwitch = await heroSnapshot();

@@ -161,6 +161,11 @@ async function waitForEndpoint(page, endpoint) {
     endpoint,
     { timeout: TRANSITION_TIMEOUT_MS },
   );
+  await page.waitForFunction(
+    (id) => window.__lazyAPlateState?.state === `resting:${id}`,
+    endpoint,
+    { timeout: TRANSITION_TIMEOUT_MS },
+  );
   return snapshot(page);
 }
 

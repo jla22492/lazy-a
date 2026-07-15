@@ -18,7 +18,6 @@
 import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "https://jla22492.github.io/lazy-a/";
-const JOURNAL_REST = [840, 525];
 
 const browser = await chromium.launch({
   channel: "chrome",
@@ -26,74 +25,60 @@ const browser = await chromium.launch({
   args: ["--autoplay-policy=no-user-gesture-required"],
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+await page.addInitScript(() => {
+  const probe = {
+    startedAt: performance.now(),
+    settleAt: null,
+    magicAt: null,
+  };
+  const nativePlay = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function play() {
+    if (this.dataset.lazyAHero === "true" && probe.magicAt === null) {
+      probe.magicAt = performance.now();
+    }
+    return nativePlay.call(this);
+  };
+  window.__lazyAClockProbe = probe;
+  const observeSettle = () => {
+    if (window.__arrivalDone === true && probe.settleAt === null) {
+      probe.settleAt = performance.now();
+    }
+    requestAnimationFrame(observeSettle);
+  };
+  requestAnimationFrame(observeSettle);
+});
 await page.goto(url, { waitUntil: "commit" });
 
-const beats = await page.evaluate(
+await page.waitForFunction(
   () =>
-    new Promise((resolve) => {
-      const t0 = performance.now();
-      const g = document.createElement("canvas").getContext("2d");
-      g.canvas.width = 320;
-      g.canvas.height = 180;
-      let prevWall = null;
-      let prevHero = null;
-      let settleAt = null;
-      let stillFrames = 0;
-      let magicAt = null;
-      let heroMovedStreak = 0;
-      const sample = () => {
-        const c = document.querySelector("canvas");
-        if (!c) return null;
-        g.drawImage(c, 0, 0, 320, 180);
-        const wall = g.getImageData(70, 40, 50, 30).data;
-        const hero = g.getImageData(232, 30, 46, 72).data; /* film interior only — the streamed wall upgrades must not read as magic */
-        return { wall, hero };
-      };
-      const diff = (a, b) => {
-        if (!a || !b) return Infinity;
-        let max = 0;
-        for (let i = 0; i < a.length; i += 7) {
-          const d = Math.abs(a[i] - b[i]);
-          if (d > max) max = d;
-        }
-        return max;
-      };
-      const tick = setInterval(() => {
-        const s = sample();
-        if (!s) return;
-        const now = (performance.now() - t0) / 1000;
-        const wallMoved = diff(prevWall, s.wall) > 4;
-        const heroMoved = diff(prevHero, s.hero) > 6;
-        if (prevWall) {
-          if (settleAt === null) {
-            /* The settle: the wall stops moving and stays stopped. */
-            if (!wallMoved && now > 1.5) {
-              stillFrames += 1;
-              if (stillFrames >= 4) settleAt = now - 0.4;
-            } else {
-              stillFrames = 0;
-            }
-          } else if (magicAt === null) {
-            /* Sustained motion only: the poster image's one-frame
-               pop-in must not count as the magic. */
-            heroMovedStreak = heroMoved ? heroMovedStreak + 1 : 0;
-            if (heroMovedStreak >= 3) magicAt = now - 0.2;
-          }
-        }
-        prevWall = s.wall;
-        prevHero = s.hero;
-        if ((settleAt !== null && magicAt !== null) || now > 12) {
-          clearInterval(tick);
-          resolve({ settleAt, magicAt });
-        }
-      }, 100);
-    }),
+    window.__lazyAClockProbe?.settleAt !== null &&
+    window.__lazyAClockProbe?.magicAt !== null,
+  null,
+  { timeout: 12_000 },
 );
+const beats = await page.evaluate(() => {
+  const probe = window.__lazyAClockProbe;
+  return {
+    settleAt: (probe.settleAt - probe.startedAt) / 1000,
+    magicAt: (probe.magicAt - probe.startedAt) / 1000,
+  };
+});
 
 /* The answer: rest on the physical JOURNAL word, time the ray target. */
+const journalRest = await page.evaluate(() => {
+  const debug = window.__lazyANavigationDebug;
+  const row = debug?.sheet.rows.find(({ id }) => id === "journal");
+  if (!debug || !row) return null;
+  return debug.projectSheetPoint(
+    row.rect.x + row.rect.width / 2,
+    row.rect.y + row.rect.height / 2,
+  );
+});
 await page.mouse.move(200, 300);
 const restStart = Date.now();
-await page.mouse.move(JOURNAL_REST[0], JOURNAL_REST[1], { steps: 5 });
+if (journalRest) {
+  await page.mouse.move(journalRest.x, journalRest.y, { steps: 5 });
+}
 let answerMs = null;
 for (let i = 0; i < 40; i++) {
   const target = await page.evaluate(() => window.__lazyANavCandidate ?? null);

@@ -11,12 +11,7 @@ import { chromium } from "playwright";
 const url = process.argv[2] ?? "http://localhost:3000/";
 const outPrefix = process.argv[3] ?? "";
 
-const TARGETS = [
-  { id: "journal", screen: [840, 525] },
-  { id: "contact", screen: [875, 555] },
-  { id: "films", screen: [820, 490] },
-  { id: "about", screen: [940, 545] },
-];
+const TARGETS = ["journal", "contact", "films", "about"];
 
 const browser = await chromium.launch({
   channel: "chrome",
@@ -25,21 +20,36 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 await page.goto(url, { waitUntil: "load" });
-/* Let the arrival complete and settle. */
-await page.waitForTimeout(6000);
+await page.waitForFunction(() => window.__arrivalDone === true, null, {
+  timeout: 12_000,
+});
+
+const projectedTargets = await page.evaluate((ids) => {
+  const debug = window.__lazyANavigationDebug;
+  if (!debug) return [];
+  return ids.flatMap((id) => {
+    const row = debug.sheet.rows.find(({ id: rowId }) => rowId === id);
+    if (!row) return [];
+    const screen = debug.projectSheetPoint(
+      row.rect.x + row.rect.width / 2,
+      row.rect.y + row.rect.height / 2,
+    );
+    return [{ id, screen }];
+  });
+}, TARGETS);
 
 const candidate = () => page.evaluate(() => window.__lazyANavCandidate ?? null);
 
 let failures = 0;
-for (const target of TARGETS) {
+for (const target of projectedTargets) {
   /* Flyby first: crossing the object must never trigger. */
   await page.mouse.move(100, 600);
-  await page.mouse.move(target.screen[0], target.screen[1], { steps: 3 });
+  await page.mouse.move(target.screen.x, target.screen.y, { steps: 3 });
   await page.mouse.move(1200, 650, { steps: 3 });
   await page.waitForTimeout(300);
   const flyby = await candidate();
   /* Rest: the physical target engages. */
-  await page.mouse.move(target.screen[0], target.screen[1], { steps: 5 });
+  await page.mouse.move(target.screen.x, target.screen.y, { steps: 5 });
   await page.waitForTimeout(300);
   const rested = await candidate();
   if (outPrefix) {
