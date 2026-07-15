@@ -12,6 +12,8 @@ Commit:
 
 `a1733be` — responsive photographic bootstrap and client-only room boundary
 
+`153f6e5` — deployed-base-path support in the arrival continuity gate
+
 Version:
 
 v0.1 — Work Order 0117-R2 review candidate
@@ -53,6 +55,9 @@ Architecture Decisions:
   arrival states separately, and verifies registration/occlusion only from the
   final authored/live state after browser render callbacks. Callback scheduling
   can no longer masquerade as either a visible mismatch or a passing frame.
+- Browser arrival verification resolves authored media against the target URL's
+  base path, so the same gate exercises local root hosting and deployed
+  `/lazy-a` hosting without rewriting the manifest contract.
 - Navigation, CONTACT, and JOURNAL remain physical scene artifacts. No floating
   website labels, CONTACT planes, or primitive/render fallbacks are mounted.
 
@@ -149,10 +154,13 @@ launch planning. This is not `WORK ORDER COMPLETE` until that approval is given.
   opening sources exist in server HTML; five viewport arrivals pass without
   hydration errors; hero `310/310`; clock `3.12s` / `4.91s` / `0.08s`; dwell
   PASS x4; performance `59.9fps` / `2.26MB` / `4.56MB`.
-- Deployed GitHub Pages battery at commit `4fed800` — PASS: workflow
-  `29411020891`; hero lifecycle/registration `310/310` with `0.000px` rendered
-  corner error; settle `3.50s`; magic `5.28s`; JOURNAL `0.08s`; all four dwell
-  targets; median `59.9fps`; `2.25MB` pre-settle; `4.54MB` total.
+- Deployed GitHub Pages battery at final experience commit `3459bb8` — PASS:
+  workflow `29413979374`; phone portrait arrival selects the correct profile,
+  follows all 71 camera samples with zero camera error, retains a pixel-stable
+  endpoint, and reports no hydration errors; hero lifecycle/registration
+  `310/310` with `0.000px` rendered corner error; settle `3.30s`; magic `5.10s`;
+  JOURNAL `0.08s`; all four dwell targets; median `59.9fps`; `2.25MB`
+  pre-settle; `4.55MB` total.
 - Review films — `docs/progress/0117-r2-review-desktop.mp4`,
   `docs/progress/0117-r2-review-tall.mp4`, and
   `docs/progress/0117-r2-review-phone.mp4`.

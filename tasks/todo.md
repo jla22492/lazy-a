@@ -26,11 +26,16 @@
 ## Review
 
 - Runtime/media commit: `b0cf10b`.
-- Review evidence commit: `4fed800`; post-render verifier commit: `1a32124`; hydration gate: `cc6e4a9`; final responsive bootstrap: `a1733be`.
+- Review evidence commit: `4fed800`; post-render verifier commit: `1a32124`;
+  hydration gate: `cc6e4a9`; final responsive bootstrap: `a1733be`; deployed
+  base-path arrival gate: `153f6e5`.
 - Build: PASS.
 - Clock: settle `3.00s`; magic `4.80s`; physical JOURNAL target `0.08s`.
 - Performance: median `59.9fps`; `2.26MB` pre-settle; `4.56MB` total.
-- Deployed Pages workflow `29411020891`: PASS; live clock `3.50s` / `5.28s` / `0.08s`, dwell PASS x4, hero `310/310`, and performance `59.9fps` / `2.25MB` / `4.54MB`.
+- Deployed Pages final experience workflow `29413979374`: PASS; phone portrait
+  arrival follows all 71 camera samples with zero camera or endpoint-pixel
+  error and no hydration errors; live clock `3.30s` / `5.10s` / `0.08s`, dwell
+  PASS x4, hero `310/310`, and performance `59.9fps` / `2.25MB` / `4.55MB`.
 - Review films: `docs/progress/0117-r2-review-desktop.mp4`, `docs/progress/0117-r2-review-tall.mp4`, and `docs/progress/0117-r2-review-phone.mp4`.
 - Approval audit: every implementation item has behavioral and visual evidence; the unchecked Jonathan-approval item prevents a completion claim.
 
