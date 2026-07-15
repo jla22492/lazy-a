@@ -89,13 +89,12 @@ function LivingPlateLayers({
 export function Stage() {
   const study = activeStudy();
   const [captureMode] = useState(isCaptureRun);
-  const [variant, setVariant] = useState<PlateVariant>("wide");
+  const [variant, setVariant] = useState<PlateVariant>(viewportVariant);
   const [experience, setExperience] =
     useState<PlateExperienceState>(INITIAL_EXPERIENCE);
 
   useEffect(() => {
     const updateVariant = () => setVariant(viewportVariant());
-    updateVariant();
     window.addEventListener("resize", updateVariant);
     return () => window.removeEventListener("resize", updateVariant);
   }, []);
