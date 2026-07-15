@@ -50,7 +50,10 @@ function transitionTarget(state: PlateExperienceState): PlateAsset["id"] {
     "contact",
     "about",
   ] as const) {
-    if (transition.endsWith(endpoint) || transition.includes(`to-${endpoint}`)) {
+    if (
+      transition.endsWith(endpoint) ||
+      transition.includes(`to-${endpoint}`)
+    ) {
       return endpoint;
     }
   }
@@ -86,7 +89,8 @@ export function PlateRoom({
 }: PlateRoomProps) {
   const profile = manifest.profiles[variant];
   const opening = profile.endpoints.opening;
-  const fallbackOpening = FALLBACK_PLATE_MANIFEST.profiles[variant].endpoints.opening;
+  const fallbackOpening =
+    FALLBACK_PLATE_MANIFEST.profiles[variant].endpoints.opening;
   const [current, setCurrent] = useState<PlateAsset>(fallbackOpening);
   const [transition, setTransition] = useState<PlateAsset | null>(null);
   const [status, setStatus] = useState<PlateStatus>("ready");
@@ -196,18 +200,21 @@ export function PlateRoom({
       .catch(() => {
         setStatus("retained");
       });
-    const timer = window.setTimeout(() => {
-      if (runRef.current !== run) return;
-      if (readyTarget) {
-        setCurrent(readyTarget);
-        publishEndpoint(readyTarget);
-        setStatus("ready");
-      } else {
-        setStatus("retained");
-      }
-      if (target === "desk" && state.endpoint === "opening") onDeskSettled();
-      else onTransitionEnded();
-    }, fallbackDuration(state) * 1000);
+    const timer = window.setTimeout(
+      () => {
+        if (runRef.current !== run) return;
+        if (readyTarget) {
+          setCurrent(readyTarget);
+          publishEndpoint(readyTarget);
+          setStatus("ready");
+        } else {
+          setStatus("retained");
+        }
+        if (target === "desk" && state.endpoint === "opening") onDeskSettled();
+        else onTransitionEnded();
+      },
+      fallbackDuration(state) * 1000,
+    );
     return () => {
       window.clearTimeout(timer);
       if (runRef.current === run) runRef.current += 1;
@@ -250,13 +257,14 @@ export function PlateRoom({
     let frame = -1;
     let animationFrame = 0;
     let videoFrame = 0;
-    const publishCurrentFrame = () => {
+    const publishCurrentFrame = (mediaTime = video.currentTime) => {
       const duration = video.duration;
-      const progress = Number.isFinite(duration) && duration > 0
-        ? video.currentTime / duration
-        : 0;
+      const progress =
+        Number.isFinite(duration) && duration > 0 ? mediaTime / duration : 0;
       const nextFrame = Math.min(
-        Math.floor(progress * frames.length),
+        transition.fps
+          ? Math.round(mediaTime * transition.fps)
+          : Math.floor(progress * frames.length),
         frames.length - 1,
       );
       if (nextFrame !== frame) {
@@ -270,8 +278,8 @@ export function PlateRoom({
         animationFrame = requestAnimationFrame(sampleAnimationFrame);
       }
     };
-    const sampleVideoFrame = () => {
-      publishCurrentFrame();
+    const sampleVideoFrame: VideoFrameRequestCallback = (_now, metadata) => {
+      publishCurrentFrame(metadata.mediaTime);
       if (!video.ended) {
         videoFrame = video.requestVideoFrameCallback(sampleVideoFrame);
       }

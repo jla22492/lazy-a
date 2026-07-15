@@ -1,0 +1,27 @@
+{
+  "desktop": {
+    "fov": 35,
+    "position": [0.05, 1.6, 1.45],
+    "target": [0.02, 1.04, -0.45]
+  },
+  "phone": {
+    "referenceViewport": [375, 812],
+    "fov": 35,
+    "position": [0.2991625615763547, 1.6, 2.35],
+    "target": [0.4145073891625616, 1.04, -0.45]
+  },
+  "arrival": {
+    "openingSeconds": 0.2,
+    "walkSeconds": 1.9,
+    "settleSeconds": 0.5,
+    "gazeLagSeconds": 0.3,
+    "bobHz": 1.75,
+    "bobAmplitude": 0.011,
+    "swayAmplitude": 0.0055,
+    "overshoot": 0.012,
+    "settleHz": 1.4
+  },
+  "selection": {
+    "phoneMaxWidth": 767
+  }
+}

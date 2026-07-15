@@ -1,3 +1,5 @@
+import cameraContract from "../assets/master/camera-contract.json" with { type: "json" };
+
 export interface Size {
   width: number;
   height: number;
@@ -10,7 +12,7 @@ export interface Point {
 
 export type PlateVariant = "wide" | "portrait";
 
-export const PHONE_MAX_WIDTH = 767;
+export const PHONE_MAX_WIDTH = cameraContract.selection.phoneMaxWidth;
 
 export function selectPlateVariant(width: number): PlateVariant {
   return width <= PHONE_MAX_WIDTH ? "portrait" : "wide";

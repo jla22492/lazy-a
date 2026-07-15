@@ -1,6 +1,7 @@
 /**
  * Work Order 0117-R behavioral gate: the hero film plays exactly once per
- * page visit, independently of destination navigation.
+ * page visit, independently of destination navigation, and stays registered
+ * to the authored print throughout every photographic camera state.
  *
  * Usage:
  *   node scripts/verify-hero-lifecycle.mjs [url]
@@ -9,11 +10,21 @@
 import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "http://localhost:3000/";
-const VIEWPORT = { width: 1316, height: 1329 };
+const VIEWPORTS = [
+  { name: "desktop", width: 1280, height: 720, profile: "wide" },
+  { name: "tall desktop", width: 1316, height: 1329, profile: "wide" },
+  { name: "tablet landscape", width: 1024, height: 768, profile: "wide" },
+  { name: "tablet portrait", width: 768, height: 1024, profile: "wide" },
+  { name: "phone", width: 375, height: 812, profile: "portrait" },
+];
+const DESTINATIONS = ["films", "journal", "contact", "about"];
 const TIME_EPSILON = 0.04;
+const MAX_CORNER_ERROR_CSS_PX = 1;
+const MIN_FOREGROUND_OCCLUDERS = 10;
 
 let failures = 0;
 let checks = 0;
+let page;
 
 function check(ok, name, detail) {
   checks += 1;
@@ -23,6 +34,10 @@ function check(ok, name, detail) {
 
 function fixed(value) {
   return Number.isFinite(value) ? `${value.toFixed(3)}s` : "unavailable";
+}
+
+function viewportLabel(viewport) {
+  return `${viewport.name} ${viewport.width}x${viewport.height}`;
 }
 
 const browser = await chromium.launch({
@@ -36,92 +51,310 @@ const closeBrowser = () =>
     new Promise((resolve) => setTimeout(resolve, 1_500)),
   ]);
 
-const context = await browser.newContext({ viewport: VIEWPORT });
-const page = await context.newPage();
+async function installPageProbes(expectedProfile) {
+  await page.addInitScript(
+    ({ profile, minimumOccluders }) => {
+      const records = [];
+      const tracked = new WeakMap();
+      const events = [];
 
-await page.addInitScript(() => {
-  const records = [];
-  const tracked = new WeakMap();
-  const events = [];
+      const eventSnapshot = (type, video) => ({
+        type,
+        at: performance.now(),
+        arrivalDone: window.__arrivalDone === true,
+        conversation: window.__lazyAConversation ?? null,
+        currentTime: video.currentTime,
+        duration: video.duration,
+      });
 
-  const eventSnapshot = (type, video) => ({
-    type,
-    at: performance.now(),
-    arrivalDone: window.__arrivalDone === true,
-    conversation: window.__lazyAConversation ?? null,
-    currentTime: video.currentTime,
-    duration: video.duration,
-  });
+      const track = (element) => {
+        if (!(element instanceof HTMLVideoElement)) return null;
+        const existing = tracked.get(element);
+        if (existing) return existing;
 
-  const track = (element) => {
-    if (!(element instanceof HTMLVideoElement)) return null;
-    const existing = tracked.get(element);
-    if (existing) return existing;
+        const record = {
+          element,
+          createdAt: performance.now(),
+          createdBeforeSettle: window.__arrivalDone !== true,
+          initialTime: element.currentTime,
+          preSettleObserved: false,
+          preSettleMaxTime: 0,
+          playCalls: 0,
+          playStarts: 0,
+          endedEvents: 0,
+        };
+        tracked.set(element, record);
+        records.push(record);
 
-    const record = {
-      element,
-      createdAt: performance.now(),
-      createdBeforeSettle: window.__arrivalDone !== true,
-      initialTime: element.currentTime,
-      preSettleObserved: false,
-      preSettleMaxTime: 0,
-      playCalls: 0,
-      playStarts: 0,
-      endedEvents: 0,
-    };
-    tracked.set(element, record);
-    records.push(record);
+        element.addEventListener("play", () => {
+          record.playStarts += 1;
+          events.push(eventSnapshot("play", element));
+        });
+        element.addEventListener("ended", () => {
+          record.endedEvents += 1;
+          events.push(eventSnapshot("ended", element));
+        });
+        return record;
+      };
 
-    element.addEventListener("play", () => {
-      record.playStarts += 1;
-      events.push(eventSnapshot("play", element));
-    });
-    element.addEventListener("ended", () => {
-      record.endedEvents += 1;
-      events.push(eventSnapshot("ended", element));
-    });
-    return record;
-  };
+      const nativeCreateElement = Document.prototype.createElement;
+      Document.prototype.createElement = function createElement(
+        localName,
+        options,
+      ) {
+        const element = nativeCreateElement.call(this, localName, options);
+        track(element);
+        return element;
+      };
 
-  const nativeCreateElement = Document.prototype.createElement;
-  Document.prototype.createElement = function createElement(
-    localName,
-    options,
-  ) {
-    const element = nativeCreateElement.call(this, localName, options);
-    track(element);
-    return element;
-  };
+      const nativePlay = HTMLMediaElement.prototype.play;
+      HTMLMediaElement.prototype.play = function play() {
+        const record = track(this);
+        if (record) {
+          record.playCalls += 1;
+          events.push(eventSnapshot("play-call", this));
+        }
+        return nativePlay.call(this);
+      };
 
-  const nativePlay = HTMLMediaElement.prototype.play;
-  HTMLMediaElement.prototype.play = function play() {
-    const record = track(this);
-    if (record) {
-      record.playCalls += 1;
-      events.push(eventSnapshot("play-call", this));
-    }
-    return nativePlay.call(this);
-  };
+      const sampleBeforeSettle = () => {
+        if (window.__arrivalDone !== true) {
+          for (const record of records) {
+            record.preSettleObserved = true;
+            record.preSettleMaxTime = Math.max(
+              record.preSettleMaxTime,
+              record.element.currentTime,
+            );
+          }
+        }
+        requestAnimationFrame(sampleBeforeSettle);
+      };
+      requestAnimationFrame(sampleBeforeSettle);
 
-  const sampleBeforeSettle = () => {
-    if (window.__arrivalDone !== true) {
-      for (const record of records) {
-        record.preSettleObserved = true;
-        record.preSettleMaxTime = Math.max(
-          record.preSettleMaxTime,
-          record.element.currentTime,
+      Object.defineProperty(window, "__heroLifecycleProbe", {
+        configurable: false,
+        value: { records, events },
+      });
+
+      const values = {
+        authored: null,
+        live: null,
+        occlusion: null,
+      };
+      const samples = [];
+      let activeSegment = "arrival opening -> desk";
+      let sampleId = 0;
+
+      const quadMatches = (left, right) =>
+        Array.isArray(left) &&
+        Array.isArray(right) &&
+        left.length === 8 &&
+        right.length === 8 &&
+        left.every((value, index) => Math.abs(value - right[index]) < 1e-9);
+
+      const expectedCorners = (authored) => {
+        if (!Array.isArray(authored) || authored.length !== 8) return null;
+        const source =
+          profile === "portrait"
+            ? { width: 375, height: 812 }
+            : { width: 1280, height: 720 };
+        const scale = Math.max(
+          innerWidth / source.width,
+          innerHeight / source.height,
         );
-      }
-    }
-    requestAnimationFrame(sampleBeforeSettle);
-  };
-  requestAnimationFrame(sampleBeforeSettle);
+        const offsetX = (innerWidth - source.width * scale) / 2;
+        const offsetY = (innerHeight - source.height * scale) / 2;
+        return authored.map((value, index) => {
+          const horizontal = index % 2 === 0;
+          const pixels = horizontal
+            ? offsetX + value * source.width * scale
+            : offsetY + value * source.height * scale;
+          return pixels / (horizontal ? innerWidth : innerHeight);
+        });
+      };
 
-  Object.defineProperty(window, "__heroLifecycleProbe", {
-    configurable: false,
-    value: { records, events },
-  });
-});
+      const cornerErrors = (live, authored) => {
+        const expected = expectedCorners(authored);
+        if (!Array.isArray(live) || live.length !== 8 || !expected) return null;
+        return [0, 1, 2, 3].map((index) =>
+          Math.hypot(
+            (live[index * 2] - expected[index * 2]) * innerWidth,
+            (live[index * 2 + 1] - expected[index * 2 + 1]) * innerHeight,
+          ),
+        );
+      };
+
+      const maskHasRuns = (mask) => {
+        if (!mask || !Number.isInteger(mask.size) || typeof mask.rle !== "string") {
+          return null;
+        }
+        try {
+          const binary = atob(mask.rle);
+          let offset = 0;
+          let hasRuns = false;
+          for (let y = 0; y < mask.size; y += 1) {
+            if (offset >= binary.length) return null;
+            const runCount = binary.charCodeAt(offset++);
+            hasRuns ||= runCount > 0;
+            offset += runCount * 2;
+          }
+          return offset === binary.length ? hasRuns : null;
+        } catch {
+          return null;
+        }
+      };
+
+      const createSample = (kind, label, decodedFrame = null) => {
+        if (!activeSegment) return;
+        for (const sample of samples) {
+          if (
+            sample.segment === activeSegment &&
+            sample.kind === "decoded" &&
+            !sample.occlusionObserved
+          ) {
+            sample.expired = true;
+          }
+        }
+        const authored = values.authored?.hero;
+        samples.push({
+          id: ++sampleId,
+          segment: activeSegment,
+          kind,
+          label,
+          decodedFrame,
+          authored: Array.isArray(authored) ? [...authored] : null,
+          profile: window.__lazyAPlateState?.profile ?? null,
+          liveObserved: false,
+          occlusionObserved: false,
+          cornerErrors: null,
+          occluders: null,
+          masked: null,
+          expectedMasked: maskHasRuns(values.authored?.heroOcclusionMask),
+          expired: false,
+        });
+      };
+
+      const observeLive = (live) => {
+        const authored = values.authored?.hero;
+        const sample = samples.find(
+          (candidate) =>
+            candidate.segment === activeSegment &&
+            !candidate.liveObserved &&
+            !candidate.expired &&
+            quadMatches(candidate.authored, authored),
+        );
+        if (!sample) return;
+        sample.liveObserved = true;
+        sample.cornerErrors = cornerErrors(live, sample.authored);
+      };
+
+      const observeOcclusion = (occlusion) => {
+        const authored = values.authored?.hero;
+        const sample = samples.find(
+          (candidate) =>
+            candidate.segment === activeSegment &&
+            candidate.liveObserved &&
+            !candidate.occlusionObserved &&
+            !candidate.expired &&
+            quadMatches(candidate.authored, authored),
+        );
+        if (!sample) return;
+        sample.occlusionObserved = true;
+        sample.occluders = occlusion?.polygonCount ?? null;
+        sample.masked = occlusion?.masked ?? null;
+      };
+
+      const publishProperty = (name, key, observer) => {
+        Object.defineProperty(window, name, {
+          configurable: true,
+          get: () => values[key],
+          set: (value) => {
+            values[key] = value;
+            observer?.(value);
+          },
+        });
+      };
+      publishProperty("__lazyAPlateProjection", "authored");
+      publishProperty("__lazyAHeroProjection", "live", observeLive);
+      publishProperty("__lazyAHeroOcclusion", "occlusion", observeOcclusion);
+
+      const nativeVideoFrameCallback =
+        HTMLVideoElement.prototype.requestVideoFrameCallback;
+      if (typeof nativeVideoFrameCallback === "function") {
+        HTMLVideoElement.prototype.requestVideoFrameCallback = function (
+          callback,
+        ) {
+          return nativeVideoFrameCallback.call(this, (now, metadata) => {
+            callback(now, metadata);
+            if (this.closest('[data-room-renderer="plate"]')) {
+              createSample(
+                "decoded",
+                `decoded frame ${metadata.presentedFrames}`,
+                metadata.presentedFrames,
+              );
+            }
+          });
+        };
+      }
+
+      const summarize = (segment) => {
+        const selected = samples.filter((sample) => sample.segment === segment);
+        const errors = selected.flatMap((sample) => sample.cornerErrors ?? []);
+        const occluders = selected
+          .map((sample) => sample.occluders)
+          .filter(Number.isFinite);
+        return {
+          segment,
+          total: selected.length,
+          decoded: selected.filter((sample) => sample.kind === "decoded")
+            .length,
+          points: selected.filter((sample) => sample.kind === "point").length,
+          unresolved: selected.filter(
+            (sample) =>
+              sample.expired ||
+              !sample.liveObserved ||
+              !sample.occlusionObserved,
+          ).length,
+          expired: selected.filter((sample) => sample.expired).length,
+          invalidCorners: selected.filter(
+            (sample) =>
+              !Array.isArray(sample.cornerErrors) ||
+              sample.cornerErrors.length !== 4,
+          ).length,
+          profileMismatches: selected.filter(
+            (sample) => sample.profile !== profile,
+          ).length,
+          maxCornerError: errors.length ? Math.max(...errors) : null,
+          minOccluders: occluders.length ? Math.min(...occluders) : null,
+          occlusionFailures: selected.filter(
+            (sample) =>
+              typeof sample.expectedMasked !== "boolean" ||
+              sample.masked !== sample.expectedMasked ||
+              !Number.isFinite(sample.occluders) ||
+              sample.occluders < minimumOccluders,
+          ).length,
+        };
+      };
+
+      Object.defineProperty(window, "__heroRegistrationProbe", {
+        configurable: false,
+        value: {
+          beginSegment(segment) {
+            activeSegment = segment;
+          },
+          capture(label) {
+            createSample("point", label);
+          },
+          summarize,
+        },
+      });
+    },
+    {
+      profile: expectedProfile,
+      minimumOccluders: MIN_FOREGROUND_OCCLUDERS,
+    },
+  );
+}
 
 function heroSnapshot() {
   return page.evaluate(() => {
@@ -186,32 +419,6 @@ async function conversationState() {
   }));
 }
 
-async function heroProjectionState() {
-  return page.evaluate(() => {
-    const live = window.__lazyAHeroProjection ?? null;
-    const authored = window.__lazyAPlateProjection?.hero ?? null;
-    const profile = window.__lazyAPlateState?.profile ?? "wide";
-    const source = profile === "portrait"
-      ? { width: 375, height: 812 }
-      : { width: 1280, height: 720 };
-    const scale = Math.max(
-      innerWidth / source.width,
-      innerHeight / source.height,
-    );
-    const offsetX = (innerWidth - source.width * scale) / 2;
-    const offsetY = (innerHeight - source.height * scale) / 2;
-    const expected = Array.isArray(authored)
-      ? authored.flatMap((value, index) => {
-          const pixels = index % 2 === 0
-            ? offsetX + value * source.width * scale
-            : offsetY + value * source.height * scale;
-          return [pixels / (index % 2 === 0 ? innerWidth : innerHeight)];
-        })
-      : null;
-    return { live, expected, profile };
-  });
-}
-
 async function waitForRestingEndpoint(id) {
   await page.waitForFunction(
     (endpoint) => {
@@ -227,10 +434,89 @@ async function waitForRestingEndpoint(id) {
   );
 }
 
+async function beginRegistrationSegment(segment) {
+  await page.evaluate(
+    (name) => window.__heroRegistrationProbe.beginSegment(name),
+    segment,
+  );
+}
+
+async function captureRegistrationPoint(label) {
+  await page.evaluate(
+    (name) => window.__heroRegistrationProbe.capture(name),
+    label,
+  );
+}
+
+async function registrationSummary(segment) {
+  return page.evaluate(
+    (name) => window.__heroRegistrationProbe.summarize(name),
+    segment,
+  );
+}
+
+async function waitForRegistrationSummary(segment, requireDecoded) {
+  const deadline = Date.now() + 2_000;
+  let summary = await registrationSummary(segment);
+  while (Date.now() < deadline) {
+    if (
+      summary.total > 0 &&
+      summary.unresolved === 0 &&
+      (!requireDecoded || summary.decoded > 0)
+    ) {
+      return summary;
+    }
+    await page.waitForTimeout(25);
+    summary = await registrationSummary(segment);
+  }
+  return summary;
+}
+
+async function assertRegistrationSegment(viewport, segment, requireDecoded) {
+  const label = viewportLabel(viewport);
+  const summary = await waitForRegistrationSummary(segment, requireDecoded);
+  const coverageDetail =
+    `samples=${summary.total} decoded=${summary.decoded} points=${summary.points} ` +
+    `unresolved=${summary.unresolved} expired=${summary.expired}`;
+  check(
+    summary.total > 0 &&
+      summary.points > 0 &&
+      (!requireDecoded || summary.decoded > 0) &&
+      summary.unresolved === 0,
+    `${label} ${segment} frame coverage`,
+    coverageDetail,
+  );
+  check(
+    summary.profileMismatches === 0,
+    `${label} ${segment} profile selection`,
+    `expected=${viewport.profile} mismatches=${summary.profileMismatches}/${summary.total}`,
+  );
+  check(
+    summary.invalidCorners === 0 &&
+      Number.isFinite(summary.maxCornerError) &&
+      summary.maxCornerError <= MAX_CORNER_ERROR_CSS_PX,
+    `${label} ${segment} four-corner registration`,
+    Number.isFinite(summary.maxCornerError)
+      ? `max=${summary.maxCornerError.toFixed(3)}px limit=${MAX_CORNER_ERROR_CSS_PX}px invalid=${summary.invalidCorners}`
+      : `corner samples unavailable; invalid=${summary.invalidCorners}`,
+  );
+  check(
+    summary.occlusionFailures === 0 &&
+      Number.isFinite(summary.minOccluders) &&
+      summary.minOccluders >= MIN_FOREGROUND_OCCLUDERS,
+    `${label} ${segment} foreground occlusion`,
+    Number.isFinite(summary.minOccluders)
+      ? `min=${summary.minOccluders} required=${MIN_FOREGROUND_OCCLUDERS} failures=${summary.occlusionFailures}`
+      : `occlusion samples unavailable; failures=${summary.occlusionFailures}`,
+  );
+}
+
 async function openDestination(id) {
   const point = await page.evaluate((destination) => {
     const debug = window.__lazyANavigationDebug;
-    const row = debug?.sheet.rows.find(({ id: rowId }) => rowId === destination);
+    const row = debug?.sheet.rows.find(
+      ({ id: rowId }) => rowId === destination,
+    );
     if (!debug || !row) return null;
     return debug.projectSheetPoint(
       row.rect.x + row.rect.width / 2,
@@ -275,55 +561,66 @@ async function openDestination(id) {
   };
 }
 
-try {
-  await page.goto(url, { waitUntil: "load" });
+async function closeDestination(id) {
+  await page.keyboard.press("Escape");
+  try {
+    await waitForRestingEndpoint("desk");
+    await page.waitForFunction(
+      () => window.__lazyAConversation === null,
+      null,
+      { timeout: 2_000 },
+    );
+    return { ok: true, detail: `${id} returned to desk` };
+  } catch {
+    const state = await page.evaluate(() => ({
+      conversation: window.__lazyAConversation ?? null,
+      plate: window.__lazyAPlateState?.state ?? null,
+      camera: window.__lazyACameraDebug?.snapshot?.() ?? null,
+    }));
+    return { ok: false, detail: JSON.stringify(state) };
+  }
+}
 
-  const observed = await waitForHero(() => true);
-  check(
-    observed.supported,
-    "hero video observability",
-    observed.supported ? observed.source : observed.reason,
-  );
+async function runViewport(viewport) {
+  const label = viewportLabel(viewport);
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+  });
+  page = await context.newPage();
+  await installPageProbes(viewport.profile);
 
-  if (observed.supported) {
+  try {
+    await page.goto(url, { waitUntil: "load" });
+
+    const observed = await waitForHero(() => true);
+    check(
+      observed.supported,
+      `${label} hero video observability`,
+      observed.supported ? observed.source : observed.reason,
+    );
+    if (!observed.supported) return;
+
     await page.waitForFunction(() => window.__arrivalDone === true, null, {
       timeout: 12_000,
     });
+    await waitForRestingEndpoint("desk");
     const settled = await heroSnapshot();
     check(
       settled.createdBeforeSettle && settled.preSettleObserved,
-      "pre-settle video observation",
+      `${label} pre-settle video observation`,
       `createdBeforeSettle=${settled.createdBeforeSettle} sampled=${settled.preSettleObserved}`,
     );
     check(
       Math.abs(settled.initialTime) <= TIME_EPSILON &&
         settled.preSettleMaxTime <= TIME_EPSILON,
-      "pre-settle currentTime is zero",
+      `${label} pre-settle currentTime is zero`,
       `initial=${fixed(settled.initialTime)} max=${fixed(settled.preSettleMaxTime)}`,
     );
-    const projection = await heroProjectionState();
-    const cornerErrors =
-      Array.isArray(projection.live) && Array.isArray(projection.expected)
-        ? [0, 1, 2, 3].map((index) =>
-            Math.hypot(
-              (projection.live[index * 2] - projection.expected[index * 2]) * VIEWPORT.width,
-              (projection.live[index * 2 + 1] - projection.expected[index * 2 + 1]) * VIEWPORT.height,
-            ),
-          )
-        : [];
-    const projectionError = cornerErrors.length === 4
-      ? Math.max(...cornerErrors)
-      : Infinity;
-    check(
-      projection.profile === "wide" && projectionError <= 1,
-      "all four live hero corners align to authored print",
-      Number.isFinite(projectionError)
-        ? `profile=${projection.profile} max corner error=${projectionError.toFixed(3)}px`
-        : "live/authored hero projection diagnostics unavailable",
-    );
+    await captureRegistrationPoint("desk endpoint after arrival");
+    await assertRegistrationSegment(viewport, "arrival opening -> desk", true);
     check(
       settled.loop === false,
-      "looping is disabled",
+      `${label} looping is disabled`,
       `loop=${settled.loop}`,
     );
 
@@ -336,13 +633,13 @@ try {
     const firstPlay = afterStart.playEvents[0];
     check(
       afterStart.playCalls === 1 && afterStart.playStarts === 1,
-      "one play start after settle",
+      `${label} one play start after settle`,
       `calls=${afterStart.playCalls} starts=${afterStart.playStarts}`,
     );
     check(
       Boolean(firstPlay?.arrivalDone) &&
         firstPlay.currentTime <= TIME_EPSILON * 2,
-      "play starts from zero after settle",
+      `${label} play starts from zero after settle`,
       firstPlay
         ? `arrivalDone=${firstPlay.arrivalDone} currentTime=${fixed(firstPlay.currentTime)}`
         : `no play event; currentTime=${fixed(started.currentTime)}`,
@@ -351,74 +648,93 @@ try {
     const debug = await conversationState();
     check(
       debug.observable,
-      "destination state observability",
+      `${label} destination state observability`,
       debug.observable
         ? `conversation=${debug.value ?? "null"}`
         : "window.__lazyAConversation is unavailable",
     );
 
-    const beforeOpen = await heroSnapshot();
-    const films = await openDestination("films");
-    await page.waitForTimeout(500);
-    const afterOpen = await heroSnapshot();
-    check(films.ok, "open destination during playback", films.detail);
-    check(
-      films.ok &&
-        afterOpen.currentTime > beforeOpen.currentTime + 0.2 &&
-        !afterOpen.paused,
-      "currentTime advances while destination opens",
-      `${fixed(beforeOpen.currentTime)} -> ${fixed(afterOpen.currentTime)} paused=${afterOpen.paused}`,
-    );
-
-    await page.keyboard.press("Escape");
-    try {
-      await waitForRestingEndpoint("desk");
-    } catch {
-      // The following destination assertion reports the stale state.
-    }
-    const journal = await openDestination("journal");
-    await page.waitForTimeout(250);
-    const afterSwitch = await heroSnapshot();
-    check(journal.ok, "switch destination during playback", journal.detail);
-
-    await page.keyboard.press("Escape");
-    let closed = false;
-    try {
-      await page.waitForFunction(
-        () => window.__lazyAConversation === null,
-        null,
-        { timeout: 2_000 },
+    const playbackSnapshots = [];
+    let allDestinationsOpened = true;
+    let allDeskReturns = true;
+    for (const destination of DESTINATIONS) {
+      const forward = `desk -> ${destination}`;
+      await beginRegistrationSegment(forward);
+      const beforeOpen = await heroSnapshot();
+      const opened = await openDestination(destination);
+      allDestinationsOpened &&= opened.ok;
+      if (opened.ok) {
+        await captureRegistrationPoint(`${destination} endpoint`);
+      }
+      await assertRegistrationSegment(viewport, forward, true);
+      const afterOpen = await heroSnapshot();
+      playbackSnapshots.push(afterOpen);
+      check(
+        opened.ok,
+        `${label} open ${destination} destination`,
+        opened.detail,
       );
-      closed = journal.ok;
-    } catch {
-      closed = false;
+
+      if (destination === "films") {
+        check(
+          opened.ok &&
+            afterOpen.currentTime > beforeOpen.currentTime + 0.2 &&
+            !afterOpen.paused,
+          `${label} currentTime advances while destination opens`,
+          `${fixed(beforeOpen.currentTime)} -> ${fixed(afterOpen.currentTime)} paused=${afterOpen.paused}`,
+        );
+      }
+
+      const reverse = `${destination} -> desk`;
+      await beginRegistrationSegment(reverse);
+      const closed = await closeDestination(destination);
+      allDeskReturns &&= closed.ok;
+      if (closed.ok) {
+        await captureRegistrationPoint(`desk endpoint after ${destination}`);
+      }
+      await assertRegistrationSegment(viewport, reverse, true);
+      const afterClose = await heroSnapshot();
+      playbackSnapshots.push(afterClose);
+      check(closed.ok, `${label} ${destination} desk return`, closed.detail);
+
+      if (destination === "journal") {
+        check(
+          opened.ok,
+          `${label} switch destination during playback`,
+          opened.detail,
+        );
+        check(
+          closed.ok,
+          `${label} close destination during playback`,
+          `conversation=${(await conversationState()).value ?? "null"}`,
+        );
+      }
     }
-    await page.waitForTimeout(250);
-    const afterClose = await heroSnapshot();
-    check(
-      closed,
-      "close destination during playback",
-      `conversation=${(await conversationState()).value ?? "null"}`,
+
+    const monotonicPlayback = playbackSnapshots.every(
+      (snapshot, index) =>
+        index === 0 ||
+        snapshot.currentTime + TIME_EPSILON >=
+          playbackSnapshots[index - 1].currentTime,
+    );
+    const oneShotPlayback = playbackSnapshots.every(
+      (snapshot) => snapshot.playCalls === 1 && snapshot.playStarts === 1,
     );
     check(
-      films.ok &&
-        journal.ok &&
-        closed &&
-        afterSwitch.currentTime + TIME_EPSILON >= afterOpen.currentTime &&
-        afterClose.currentTime + TIME_EPSILON >= afterSwitch.currentTime &&
-        afterSwitch.playStarts === 1 &&
-        afterClose.playStarts === 1 &&
-        afterSwitch.playCalls === 1 &&
-        afterClose.playCalls === 1,
-      "destination close/switch preserves playback",
-      `times=${fixed(afterOpen.currentTime)} -> ${fixed(afterSwitch.currentTime)} -> ${fixed(afterClose.currentTime)} calls=${afterClose.playCalls} starts=${afterClose.playStarts}`,
+      allDestinationsOpened &&
+        allDeskReturns &&
+        monotonicPlayback &&
+        oneShotPlayback,
+      `${label} destination close/switch preserves playback`,
+      `samples=${playbackSnapshots.map((snapshot) => fixed(snapshot.currentTime)).join(" -> ")} calls=${playbackSnapshots.at(-1)?.playCalls} starts=${playbackSnapshots.at(-1)?.playStarts}`,
     );
 
+    const beforeEnd = await heroSnapshot();
     const endedSnapshot = await waitForHero(
       (snapshot) => snapshot.endedEvents >= 1 || snapshot.ended,
       Math.min(
         Math.max(
-          (afterClose.duration - afterClose.currentTime + 2) * 1_000,
+          (beforeEnd.duration - beforeEnd.currentTime + 2) * 1_000,
           4_000,
         ),
         16_000,
@@ -426,7 +742,7 @@ try {
     );
     check(
       endedSnapshot.endedEvents === 1 && endedSnapshot.ended,
-      "hero reaches ended once",
+      `${label} hero reaches ended once`,
       `endedEvents=${endedSnapshot.endedEvents} ended=${endedSnapshot.ended} currentTime=${fixed(endedSnapshot.currentTime)}`,
     );
 
@@ -437,39 +753,38 @@ try {
       Number.isFinite(held.duration) &&
       held.duration > 0 &&
       held.duration - held.currentTime <= 0.15;
+    await beginRegistrationSegment("final hold");
+    await captureRegistrationPoint("held hero final frame");
+    await assertRegistrationSegment(viewport, "final hold", false);
     check(
       endedSnapshot.ended &&
         held.ended &&
         held.paused &&
         atFinalFrame &&
         Math.abs(held.currentTime - finalFrameTime) <= TIME_EPSILON,
-      "ended hero holds final frame",
+      `${label} ended hero holds final frame`,
       `paused=${held.paused} ended=${held.ended} currentTime=${fixed(held.currentTime)} duration=${fixed(held.duration)}`,
     );
     check(
       held.playCalls === 1 && held.playStarts === 1,
-      "final hold does not restart playback",
+      `${label} final hold does not restart playback`,
       `calls=${held.playCalls} starts=${held.playStarts}`,
     );
-  } else {
-    for (const name of [
-      "pre-settle currentTime is zero",
-      "looping is disabled",
-      "one play start after settle",
-      "currentTime advances while destination opens",
-      "hero reaches ended once",
-      "ended hero holds final frame",
-      "destination close/switch preserves playback",
-    ]) {
-      check(false, name, "required hero video observability is unavailable");
-    }
+  } catch (error) {
+    check(
+      false,
+      `${label} gate execution`,
+      error instanceof Error ? error.message : String(error),
+    );
+  } finally {
+    await context.close();
   }
-} catch (error) {
-  check(
-    false,
-    "gate execution",
-    error instanceof Error ? error.message : String(error),
-  );
+}
+
+try {
+  for (const viewport of VIEWPORTS) {
+    await runViewport(viewport);
+  }
 } finally {
   await closeBrowser();
 }

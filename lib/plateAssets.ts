@@ -10,16 +10,8 @@ declare global {
 
 export type PlateVariant = "wide" | "portrait";
 export type PlateEndpointId =
-  | "opening"
-  | "desk"
-  | "films"
-  | "journal"
-  | "contact"
-  | "about";
-export type PlateDestinationId = Exclude<
-  PlateEndpointId,
-  "opening" | "desk"
->;
+  "opening" | "desk" | "films" | "journal" | "contact" | "about";
+export type PlateDestinationId = Exclude<PlateEndpointId, "opening" | "desk">;
 
 export interface PlateExperienceState {
   endpoint: PlateEndpointId;
@@ -39,6 +31,11 @@ export interface PlateProjectionFrame {
   hero:
     | readonly [number, number, number, number, number, number, number, number]
     | null;
+  heroOccluders: readonly (readonly number[])[];
+  heroOcclusionMask?: {
+    size: number;
+    rle: string;
+  };
 }
 
 export interface PlateAsset {
@@ -47,6 +44,7 @@ export interface PlateAsset {
   kind: "image" | "video";
   poster?: string;
   durationSeconds?: number;
+  fps?: number;
   objectPosition?: string;
   projection?: PlateProjectionFrame;
   projectionFrames?: readonly PlateProjectionFrame[];
@@ -138,6 +136,28 @@ function projectionFrame(value: unknown): PlateProjectionFrame | undefined {
   const camera = cameraSample(value.camera);
   if (!camera) return undefined;
   const hero = value.hero;
+  const heroOccluders = Array.isArray(value.heroOccluders)
+    ? value.heroOccluders.map((polygon): number[] => {
+        if (Array.isArray(polygon) && polygon.length === 0) return [];
+        return Array.isArray(polygon) &&
+          polygon.length >= 6 &&
+          polygon.length % 2 === 0 &&
+          polygon.every((item) => typeof item === "number")
+          ? polygon
+          : [];
+      })
+    : [];
+  const rawMask = isRecord(value.heroOcclusionMask)
+    ? value.heroOcclusionMask
+    : undefined;
+  const heroOcclusionMask =
+    rawMask &&
+    typeof rawMask.size === "number" &&
+    rawMask.size > 0 &&
+    typeof rawMask.rle === "string" &&
+    rawMask.rle.length > 0
+      ? { size: rawMask.size, rle: rawMask.rle }
+      : undefined;
   return {
     camera,
     hero:
@@ -147,6 +167,8 @@ function projectionFrame(value: unknown): PlateProjectionFrame | undefined {
         hero.every((item) => typeof item === "number"))
         ? (hero as PlateProjectionFrame["hero"])
         : null,
+    heroOccluders,
+    heroOcclusionMask,
   };
 }
 
@@ -205,6 +227,7 @@ function plateAsset(
         : typeof value.duration === "number"
           ? value.duration
           : undefined,
+    fps: typeof value.fps === "number" ? value.fps : undefined,
     objectPosition: firstString(value.objectPosition),
     projection: projectionFrame(value.projection ?? value.frame),
     projectionFrames:
@@ -246,7 +269,10 @@ export const FALLBACK_PLATE_MANIFEST: PlateManifestAdapter = {
   },
 };
 
-function profileSource(manifest: UnknownRecord, variant: PlateVariant): unknown {
+function profileSource(
+  manifest: UnknownRecord,
+  variant: PlateVariant,
+): unknown {
   const profiles = firstRecord(manifest.profiles, manifest.variants);
   return profiles?.[variant] ?? manifest[variant];
 }
@@ -278,7 +304,11 @@ export function adaptPlateManifest(input: unknown): PlateManifestAdapter {
     const fallback = FALLBACK_PLATE_MANIFEST.profiles[variant];
     const rawProfile = profileSource(exported, variant);
     const profile = isRecord(rawProfile) ? rawProfile : {};
-    const rawEndpoints = firstRecord(profile.endpoints, profile.stills, profile);
+    const rawEndpoints = firstRecord(
+      profile.endpoints,
+      profile.stills,
+      profile,
+    );
     const endpoints = {} as Record<PlateEndpointId, PlateAsset>;
     for (const endpoint of ENDPOINTS) {
       endpoints[endpoint] =

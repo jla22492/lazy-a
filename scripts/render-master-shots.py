@@ -15,6 +15,7 @@ the renderer, and the TypeScript manifest is generated from that JSON.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import math
 import os
@@ -23,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import bpy
+import bmesh
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Matrix, Quaternion, Vector
 
@@ -34,25 +36,56 @@ TYPESCRIPT_PATH = REPO_ROOT / "three" / "scene" / "plateManifest.ts"
 SOURCE_BLEND = "build/wo-0117-r/master.blend"
 
 FPS = 30
-OPENING_SECONDS = 2.6
+CAMERA_CONTRACT = json.loads(
+    (REPO_ROOT / "assets" / "master" / "camera-contract.json").read_text()
+)
+OPENING_BEAT_SECONDS = CAMERA_CONTRACT["arrival"]["openingSeconds"]
+WALK_SECONDS = CAMERA_CONTRACT["arrival"]["walkSeconds"]
+SETTLE_SECONDS = CAMERA_CONTRACT["arrival"]["settleSeconds"]
+GAZE_LAG_SECONDS = CAMERA_CONTRACT["arrival"]["gazeLagSeconds"]
+BOB_HZ = CAMERA_CONTRACT["arrival"]["bobHz"]
+BOB_AMPLITUDE = CAMERA_CONTRACT["arrival"]["bobAmplitude"]
+SWAY_AMPLITUDE = CAMERA_CONTRACT["arrival"]["swayAmplitude"]
+OVERSHOOT = CAMERA_CONTRACT["arrival"]["overshoot"]
+SETTLE_HZ = CAMERA_CONTRACT["arrival"]["settleHz"]
+OPENING_SECONDS = OPENING_BEAT_SECONDS + WALK_SECONDS + SETTLE_SECONDS
 DESTINATION_SECONDS = 0.9
 ENDPOINT_IDS = ("opening", "desk", "films", "journal", "contact", "about")
 DESTINATION_IDS = ("films", "journal", "contact", "about")
 PROFILE_IDS = ("wide", "portrait")
-LENS_FOV = {"wide": 35.0, "portrait": 45.0}
+LENS_FOV = {
+    "wide": float(CAMERA_CONTRACT["desktop"]["fov"]),
+    "portrait": float(CAMERA_CONTRACT["phone"]["fov"]),
+}
 RESOLUTION = {"wide": (1280, 720), "portrait": (375, 812)}
 
 LOGO_OBJECT = "Mesh_33"
 OBSOLETE_PINNED_LOGO = "Mesh_173"
 CONTACT_PAPER = "Mesh_56"
 HERO_OBJECT = "Mesh_170"
-LAMP_ROOT = "scan_lamp_0"
+HERO_OCCLUDER_OBJECTS = (
+    "ceramic_vase_02",
+    "Mesh_38",
+    "Mesh_39",
+    "Mesh_40",
+    "Mesh_41",
+    "Mesh_42",
+    "Mesh_43",
+    "ProductionNavigationSheet",
+    "Camera_01",
+    "Camera_01_strap",
+)
+HERO_OCCLUDER_ROUND_DIGITS = 6
+HERO_OCCLUDER_SIMPLIFY_TOLERANCE = 0.0001
+HERO_OCCLUSION_MASK_SIZE = 256
+LAMP_ROOT = "scan_lamp"
 NAV_SHEET = "ProductionNavigationSheet"
 NAV_PREFIX = "ProductionNavigationRow_"
 NAV_GLYPH_PREFIX = "ProductionNavigationGlyph_"
 JOURNAL_PREFIX = "JournalPlaceholderLine_"
 JOURNAL_PENCIL = "Mesh_53"
 CONTACT_CUTTER = "ContactIndentationCutter"
+CONTACT_RECESS = "ContactIndentationRecess"
 CONTACT_NODE_GROUP = "CONTACT_INDENTATION_GEOMETRY_NODES"
 CONTACT_MODIFIER = "CONTACT_INDENTATION_GEOMETRY_NODES"
 CONTACT_LIGHT = "ContactRakingLight"
@@ -62,20 +95,33 @@ NAV_WIDTH = 0.30
 NAV_HEIGHT = 0.20
 NAV_THICKNESS = 0.0007
 NAV_INCLINE = math.radians(7.0)
+NAV_INCLINE_PORTRAIT = math.radians(34.0)
 NAV_YAW = math.radians(-5.0)
 NAV_CENTER_X = -0.115
+NAV_CENTER_X_PORTRAIT = 0.58
 NAV_CENTER_Y = -0.265
+NAV_CENTER_Y_PORTRAIT = 0.15
 DESK_HEIGHT = 0.9
 HANDWRITING_FONT_PATH = Path("/System/Library/Fonts/Noteworthy.ttc")
-NAV_LABEL_WIDTH = 0.265
+CONTACT_FONT_PATH = Path("/System/Library/Fonts/Supplemental/Arial Narrow.ttf")
+NAV_LABEL_WIDTHS = (0.113, 0.145, 0.155, 0.110)
 CONTACT_PAPER_POSITION = (-0.35, -0.04)
 CONTACT_PAPER_YAW = math.radians(4.5)
+CONTACT_INDENT_DEPTH = 0.00008
+CONTACT_INDENT_VERTEX_INDICES: tuple[int, ...] = ()
+CONTACT_INDENT_TOP_Z = 0.0
 NAV_ROWS = (
     {"id": "films", "label": "FILMS", "rect": {"x": 0.015, "y": 0.018, "width": 0.27, "height": 0.026}},
     {"id": "journal", "label": "JOURNAL", "rect": {"x": 0.015, "y": 0.062, "width": 0.27, "height": 0.026}},
     {"id": "contact", "label": "CONTACT", "rect": {"x": 0.015, "y": 0.106, "width": 0.27, "height": 0.026}},
     {"id": "about", "label": "ABOUT", "rect": {"x": 0.015, "y": 0.150, "width": 0.27, "height": 0.026}},
 )
+CONTACT_COPY = (
+    "Jonathan Adelson",
+    "JonathanAdelson1@gmail.com",
+    "1-310-709-9283",
+)
+CONTACT_COPY_TEXT = "\n".join(CONTACT_COPY)
 
 
 def three_to_blender(value: tuple[float, float, float]) -> Vector:
@@ -95,9 +141,29 @@ def rounded_vector(values) -> list[float]:
     return [rounded(value) for value in values]
 
 
+def rounded_occluder_vector(values) -> list[float]:
+    result = []
+    for value in values:
+        item = round(float(value), HERO_OCCLUDER_ROUND_DIGITS)
+        result.append(0.0 if item == -0.0 else item)
+    return result
+
+
 def smoothstep(value: float) -> float:
     value = max(0.0, min(1.0, value))
     return value * value * (3.0 - 2.0 * value)
+
+
+def ease_in_out_cubic(value: float) -> float:
+    value = max(0.0, min(1.0, value))
+    if value < 0.5:
+        return 4.0 * value ** 3
+    return 1.0 - (-2.0 * value + 2.0) ** 3 / 2.0
+
+
+def cubic_out(value: float) -> float:
+    value = max(0.0, min(1.0, value))
+    return 1.0 - (1.0 - value) ** 3
 
 
 def require_object(name: str, object_type: str | None = None) -> bpy.types.Object:
@@ -120,7 +186,14 @@ def remove_object(obj: bpy.types.Object) -> None:
 
 
 def remove_authored_objects() -> None:
-    exact_names = {NAV_SHEET, CONTACT_CUTTER, CONTACT_LIGHT, CONTACT_BULB, "AuthoredPlateCamera"}
+    exact_names = {
+        NAV_SHEET,
+        CONTACT_CUTTER,
+        CONTACT_RECESS,
+        CONTACT_LIGHT,
+        CONTACT_BULB,
+        "AuthoredPlateCamera",
+    }
     for obj in list(bpy.data.objects):
         if (
             obj.name in exact_names
@@ -157,7 +230,7 @@ def make_principled_material(
 
 def apply_logo_to_existing_card() -> bpy.types.Object:
     card = require_object(LOGO_OBJECT, "MESH")
-    card.location.x = -0.01
+    original_matrix = card.matrix_world.copy()
     bpy.context.view_layer.update()
     logo_path = REPO_ROOT / "public" / "brand" / "logo-note.png"
     if not logo_path.is_file():
@@ -191,6 +264,7 @@ def apply_logo_to_existing_card() -> bpy.types.Object:
     card["lazy_a_logo_geometry_created"] = False
     card["lazy_a_logo_orientation"] = "upright-local-xz"
     card["lazy_a_logo_uv_binding"] = "explicit-uv-map"
+    card["lazy_a_logo_transform_preserved"] = card.matrix_world == original_matrix
     old_logo = bpy.data.objects.get(OBSOLETE_PINNED_LOGO)
     if old_logo is not None and old_logo.type == "MESH":
         blank_paper = make_principled_material(
@@ -230,6 +304,13 @@ def handwriting_font() -> bpy.types.VectorFont:
     return existing or bpy.data.fonts.load(str(HANDWRITING_FONT_PATH))
 
 
+def contact_font() -> bpy.types.VectorFont:
+    if not CONTACT_FONT_PATH.is_file():
+        raise RuntimeError(f"CONTACT font is missing: {CONTACT_FONT_PATH}")
+    existing = bpy.data.fonts.get(CONTACT_FONT_PATH.name)
+    return existing or bpy.data.fonts.load(str(CONTACT_FONT_PATH))
+
+
 def create_text_mesh(
     name: str,
     body: str,
@@ -238,6 +319,7 @@ def create_text_mesh(
     material: bpy.types.Material | None = None,
     align_x: str = "CENTER",
     font: bpy.types.VectorFont | None = None,
+    bevel: bool = True,
 ) -> bpy.types.Object:
     curve = bpy.data.curves.new(f"{name}Curve", "FONT")
     curve.body = body
@@ -247,8 +329,8 @@ def create_text_mesh(
         curve.font = font
     curve.size = size
     curve.extrude = extrude
-    curve.bevel_depth = min(extrude * 0.25, 0.00003)
-    curve.bevel_resolution = 1
+    curve.bevel_depth = min(extrude * 0.25, 0.00003) if bevel else 0.0
+    curve.bevel_resolution = 1 if bevel else 0
     obj = bpy.data.objects.new(name, curve)
     bpy.context.collection.objects.link(obj)
     if material is not None:
@@ -309,9 +391,8 @@ def create_production_sheet() -> tuple[bpy.types.Object, dict[str, list[bpy.type
 
     labels: dict[str, list[bpy.types.Object]] = {}
     row_offsets = (-0.0015, 0.001, -0.0005, 0.0015)
-    glyph_baselines = (-0.00055, 0.0003, -0.00015, 0.00045, -0.00035, 0.0001, 0.0004)
-    glyph_rotations = (-0.012, 0.006, -0.004, 0.009, -0.007, 0.003, 0.008)
-    glyph_scales = (0.98, 1.02, 1.0, 1.015, 0.985, 1.01, 0.995)
+    line_baselines = (-0.00055, 0.0003, -0.00015, 0.00045)
+    line_rotations = (-0.012, 0.006, -0.004, 0.009)
     for index, row in enumerate(NAV_ROWS):
         rect = row["rect"]
         row_y = NAV_HEIGHT / 2.0 - rect["y"] - rect["height"] / 2.0
@@ -324,46 +405,32 @@ def create_production_sheet() -> tuple[bpy.types.Object, dict[str, list[bpy.type
         row_marker["lazy_a_destination"] = row["id"]
         row_marker["lazy_a_marking"] = "graphite"
 
-        row_start = -NAV_WIDTH / 2.0 + rect["x"] + 0.004 + row_offsets[index]
-        cursor_x = row_start
-        row_glyphs: list[bpy.types.Object] = []
-        for glyph_index, character in enumerate(row["label"]):
-            variation = index * 3 + glyph_index
-            pressure = 0.000012 + (variation % 3) * 0.000004
-            glyph = create_text_mesh(
-                f"{NAV_GLYPH_PREFIX}{index + 1}_{glyph_index + 1}_{character}",
-                character,
-                size=0.021,
-                extrude=pressure,
-                material=graphite_materials[variation % len(graphite_materials)],
-                font=font,
-            )
-            glyph.scale.x *= glyph_scales[variation % len(glyph_scales)]
-            glyph.scale.y *= glyph_scales[(variation + 2) % len(glyph_scales)]
-            tracking = (-0.0007, 0.00025, -0.00015, 0.00055, -0.00035)[variation % 5]
-            advance = max(glyph.dimensions.x * glyph.scale.x, 0.0105) + 0.0014 + tracking
-            glyph.parent = sheet
-            glyph.location = (
-                cursor_x + advance / 2.0,
-                row_y + glyph_baselines[variation % len(glyph_baselines)],
-                NAV_THICKNESS / 2.0 + 0.000018,
-            )
-            glyph.rotation_euler = (
-                0.0,
-                0.0,
-                glyph_rotations[variation % len(glyph_rotations)],
-            )
-            glyph["lazy_a_destination"] = row["id"]
-            glyph["lazy_a_marking"] = "graphite-pressure-varied"
-            glyph["lazy_a_font_family"] = "Noteworthy"
-            row_glyphs.append(glyph)
-            cursor_x += advance
-        natural_width = max(cursor_x - row_start - 0.0014, 1e-6)
-        horizontal_factor = NAV_LABEL_WIDTH / natural_width
-        for glyph in row_glyphs:
-            glyph.location.x = row_start + (glyph.location.x - row_start) * horizontal_factor
-            glyph.scale.x *= horizontal_factor
-        labels[row["id"]] = row_glyphs
+        row_start = -NAV_WIDTH / 2.0 + rect["x"] + 0.029 + row_offsets[index]
+        word = create_text_mesh(
+            f"{NAV_GLYPH_PREFIX}{index + 1}_{row['label']}",
+            row["label"],
+            size=0.021,
+            extrude=0.000012 + index * 0.000002,
+            material=graphite_materials[index % len(graphite_materials)],
+            align_x="LEFT",
+            font=font,
+        )
+        normalize_mesh_left_edge(word)
+        if word.dimensions.x > 0:
+            factor = NAV_LABEL_WIDTHS[index] / word.dimensions.x
+            word.scale.x *= factor
+            word.scale.y *= factor
+        word.parent = sheet
+        word.location = (
+            row_start,
+            row_y + line_baselines[index],
+            NAV_THICKNESS / 2.0 + 0.000018,
+        )
+        word.rotation_euler = (0.0, 0.0, line_rotations[index])
+        word["lazy_a_destination"] = row["id"]
+        word["lazy_a_marking"] = "graphite-pressure-varied"
+        word["lazy_a_font_family"] = "Noteworthy"
+        labels[row["id"]] = [word]
     return sheet, labels
 
 
@@ -380,21 +447,23 @@ def position_contact_sheet(sheet: bpy.types.Object) -> None:
 def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
     parts: list[bpy.types.Object] = []
     lines = (
-        ("CONTACT@", 0.190, 0.055),
-        ("LAZYA", 0.145, 0.000),
-        ("PRODUCTIONS.COM", 0.235, -0.055),
+        (CONTACT_COPY[0], 0.155, 0.055),
+        (CONTACT_COPY[1], 0.185, 0.000),
+        (CONTACT_COPY[2], 0.145, -0.055),
     )
+    font = contact_font()
     for index, (body, target_width, local_y) in enumerate(lines):
         part = create_text_mesh(
             f"{CONTACT_CUTTER}_{index + 1}",
             body,
-            0.021,
+            0.030,
             0.00020,
+            font=font,
+            bevel=False,
         )
         if part.dimensions.x > 0:
             factor = target_width / part.dimensions.x
             part.scale.x *= factor
-            part.scale.y *= factor
             # Bake the fitted glyph width before the parts are joined. Leaving
             # this scale live made the joined cutter render much narrower than
             # its authored bounds.
@@ -402,10 +471,10 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
             bpy.context.view_layer.objects.active = part
             bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
             part.select_set(False)
-        # The cutter overlaps only the upper 0.15 mm of Mesh_56. This leaves a
-        # pressure groove instead of punching readable letters through it.
+        # Keep a hidden source mesh for bounds and metadata. The visible copy
+        # is sunk into the paper below so only its beveled face reads.
         part.matrix_world = normalized_surface_matrix(
-            sheet, 0.0, local_y, 0.00005
+            sheet, 0.0, local_y, 0.00008
         ) @ part.matrix_world
         parts.append(part)
 
@@ -419,60 +488,159 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
     cutter.display_type = "WIRE"
     cutter.hide_render = True
     cutter["lazy_a_authored_role"] = "contact-indentation-cutter"
+    mesh = cutter.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.update()
+    top_face = max(
+        (polygon for polygon in sheet.data.polygons if polygon.normal.z > 0.7),
+        key=lambda polygon: polygon.area,
+        default=None,
+    )
+    if top_face is None:
+        raise RuntimeError("CONTACT paper has no upward-facing host surface")
+    sheet["lazy_a_contact_host_material_index"] = top_face.material_index
+    host_material = sheet.data.materials[top_face.material_index]
+    if host_material is None or not host_material.use_nodes:
+        raise RuntimeError("CONTACT paper host material must use nodes")
+    groove_material = host_material.copy()
+    groove_material.name = "ContactPressureGroove"
+    groove_bsdf = groove_material.node_tree.nodes.get("Principled BSDF")
+    if groove_bsdf is None:
+        raise RuntimeError("CONTACT paper host material has no Principled BSDF")
+    base_input = groove_bsdf.inputs["Base Color"]
+    base_link = base_input.links[0] if base_input.is_linked else None
+    reveal_mix = groove_material.node_tree.nodes.new("ShaderNodeMixRGB")
+    reveal_mix.name = "ContactRevealMix"
+    reveal_mix.label = "Paper texture to illuminated indentation"
+    reveal_mix.blend_type = "MIX"
+    reveal_mix.inputs[0].default_value = 0.0
+    reveal_mix.inputs[2].default_value = (0.24, 0.19, 0.14, 1.0)
+    if base_link is not None:
+        source_socket = base_link.from_socket
+        groove_material.node_tree.links.remove(base_link)
+        groove_material.node_tree.links.new(source_socket, reveal_mix.inputs[1])
+    else:
+        reveal_mix.inputs[1].default_value = base_input.default_value
+    groove_material.node_tree.links.new(reveal_mix.outputs["Color"], base_input)
+    groove_index = next(
+        (
+            index
+            for index, material in enumerate(sheet.data.materials)
+            if material == groove_material
+        ),
+        len(sheet.data.materials),
+    )
+    if groove_index == len(sheet.data.materials):
+        sheet.data.materials.append(groove_material)
+    cutter.data.materials.clear()
+    for material in sheet.data.materials:
+        cutter.data.materials.append(material)
+    for polygon in cutter.data.polygons:
+        polygon.material_index = groove_index
+    # Place the cutter by measured overlap, not an assumed font origin. It
+    # crosses Mesh_56's top face by exactly 0.08 mm and stops above the bottom,
+    # leaving a shallow paper-floored pressure indentation.
+    sheet_top = max(Vector(corner).z for corner in sheet.bound_box)
+    sheet_inverse = sheet.matrix_world.inverted()
+    cutter_bottom = min(
+        (sheet_inverse @ (cutter.matrix_world @ vertex.co)).z
+        for vertex in cutter.data.vertices
+    )
+    local_shift = sheet_top - CONTACT_INDENT_DEPTH - cutter_bottom
+    cutter.location += sheet.matrix_world.to_quaternion() @ Vector((0.0, 0.0, local_shift))
+    cutter["lazy_a_contact_indent_depth"] = CONTACT_INDENT_DEPTH
+    bpy.context.view_layer.update()
     return cutter
 
 
-def add_contact_geometry_nodes(sheet: bpy.types.Object, cutter: bpy.types.Object) -> bpy.types.Modifier:
+def author_contact_indentation() -> bpy.types.Object:
+    global CONTACT_INDENT_TOP_Z, CONTACT_INDENT_VERTEX_INDICES
+    sheet = require_object(CONTACT_PAPER, "MESH")
+    position_contact_sheet(sheet)
     for modifier in list(sheet.modifiers):
         if modifier.name.startswith(CONTACT_MODIFIER):
             sheet.modifiers.remove(modifier)
-
-    group = bpy.data.node_groups.new(CONTACT_NODE_GROUP, "GeometryNodeTree")
-    group.interface.new_socket(name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
-    group.interface.new_socket(name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
-    nodes = group.nodes
-    links = group.links
-    group_input = nodes.new("NodeGroupInput")
-    group_output = nodes.new("NodeGroupOutput")
-    object_info = nodes.new("GeometryNodeObjectInfo")
-    object_info.transform_space = "RELATIVE"
-    object_info.inputs["Object"].default_value = cutter
-    realize = nodes.new("GeometryNodeRealizeInstances")
-    boolean = nodes.new("GeometryNodeMeshBoolean")
-    boolean.operation = "DIFFERENCE"
-    links.new(group_input.outputs["Geometry"], boolean.inputs["Mesh 1"])
-    links.new(object_info.outputs["Geometry"], realize.inputs["Geometry"])
-    links.new(realize.outputs["Geometry"], boolean.inputs["Mesh 2"])
-    links.new(boolean.outputs["Mesh"], group_output.inputs["Geometry"])
-
-    modifier = sheet.modifiers.new(CONTACT_MODIFIER, "NODES")
-    modifier.node_group = group
-    sheet["lazy_a_contact_mechanism"] = "geometry-nodes-indentation"
-    sheet["lazy_a_contact_copy"] = "CONTACT@LAZYAPRODUCTIONS.COM"
-    return modifier
-
-
-def author_contact_indentation() -> bpy.types.Object:
-    sheet = require_object(CONTACT_PAPER, "MESH")
-    position_contact_sheet(sheet)
+    base_stats = {
+        "baseVertices": len(sheet.data.vertices),
+        "basePolygons": len(sheet.data.polygons),
+    }
     cutter = create_contact_cutter(sheet)
-    add_contact_geometry_nodes(sheet, cutter)
+    modifier = sheet.modifiers.new(CONTACT_MODIFIER, "BOOLEAN")
+    modifier.operation = "DIFFERENCE"
+    modifier.solver = "EXACT"
+    modifier.material_mode = "TRANSFER"
+    modifier.object = cutter
+    bpy.context.view_layer.objects.active = sheet
+    sheet.select_set(True)
+    bpy.ops.object.modifier_apply(modifier=modifier.name)
+    sheet.select_set(False)
+    # Exact Boolean transfer can leave the newly cut floor/wall loops with
+    # inconsistent winding. Recalculate the finished paper mesh so the latent
+    # grooves shade as paper instead of flashing as bright glyph-shaped faces.
+    mesh = sheet.data
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+    bmesh.ops.recalc_face_normals(bm, faces=list(bm.faces))
+    bm.to_mesh(mesh)
+    bm.free()
+    mesh.update()
+    groove_index = next(
+        (
+            index
+            for index, material in enumerate(sheet.data.materials)
+            if material and material.name == "ContactPressureGroove"
+        ),
+        -1,
+    )
+    groove_polygons = [
+        polygon for polygon in sheet.data.polygons if polygon.material_index == groove_index
+    ]
+    if not groove_polygons:
+        raise RuntimeError("CONTACT Boolean produced no groove-material faces")
+    groove_z = [
+        sheet.data.vertices[vertex_index].co.z
+        for polygon in groove_polygons
+        for vertex_index in polygon.vertices
+    ]
+    CONTACT_INDENT_TOP_Z = max(vertex.co.z for vertex in sheet.data.vertices)
+    CONTACT_INDENT_VERTEX_INDICES = tuple(
+        sorted(
+            {
+                vertex_index
+                for polygon in groove_polygons
+                for vertex_index in polygon.vertices
+                if sheet.data.vertices[vertex_index].co.z
+                < CONTACT_INDENT_TOP_Z - CONTACT_INDENT_DEPTH * 0.5
+            }
+        )
+    )
+    if not CONTACT_INDENT_VERTEX_INDICES:
+        raise RuntimeError("CONTACT Boolean produced no recessed floor vertices")
+    print(
+        "CONTACT GROOVE GEOMETRY:",
+        f"faces={len(groove_polygons)}",
+        f"floorVertices={len(CONTACT_INDENT_VERTEX_INDICES)}",
+        f"z={min(groove_z):.8f}..{max(groove_z):.8f}",
+        f"normals={sorted({tuple(round(value, 3) for value in polygon.normal) for polygon in groove_polygons})[:8]}",
+    )
+    sheet["lazy_a_contact_geometry_stats"] = json.dumps(
+        {
+            **base_stats,
+            "indentedVertices": len(sheet.data.vertices),
+            "indentedPolygons": len(sheet.data.polygons),
+        }
+    )
+    sheet["lazy_a_contact_mechanism"] = "applied-exact-pressure-indentation"
+    sheet["lazy_a_contact_copy"] = CONTACT_COPY_TEXT
     return sheet
 
 
-def evaluated_contact_stats(sheet: bpy.types.Object) -> dict[str, int]:
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    evaluated = sheet.evaluated_get(depsgraph)
-    mesh = evaluated.to_mesh()
-    try:
-        return {
-            "baseVertices": len(sheet.data.vertices),
-            "evaluatedVertices": len(mesh.vertices),
-            "basePolygons": len(sheet.data.polygons),
-            "evaluatedPolygons": len(mesh.polygons),
-        }
-    finally:
-        evaluated.to_mesh_clear()
+def contact_indentation_stats(sheet: bpy.types.Object) -> dict[str, int]:
+    return json.loads(sheet["lazy_a_contact_geometry_stats"])
 
 
 def parent_keep_world(child: bpy.types.Object, parent: bpy.types.Object) -> None:
@@ -498,6 +666,7 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
     bulb.name = CONTACT_BULB
     bulb.scale = (1.0, 0.78, 1.1)
     bulb.data.materials.append(bulb_material)
+    bulb.hide_render = True
     bulb["lazy_a_authored_role"] = "lamp-emissive-bulb"
     parent_keep_world(bulb, lamp)
 
@@ -516,7 +685,7 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
     target = normalized_surface_matrix(contact_sheet, 0.0, 0.0, 0.0).translation
     light.rotation_euler = (target - light.location).to_track_quat("-Z", "Y").to_euler()
     light["lazy_a_authored_role"] = "fixed-transform-raking-light"
-    light["lazy_a_contact_energy"] = 75.0
+    light["lazy_a_contact_energy"] = 45.0
     parent_keep_world(light, lamp)
     return bulb, light
 
@@ -530,6 +699,21 @@ def reveal_level(value: float) -> None:
     bsdf = material.node_tree.nodes.get("Principled BSDF")
     if bsdf is not None:
         bsdf.inputs["Emission Strength"].default_value = 18.0 * value
+    groove_material = bpy.data.materials.get("ContactPressureGroove")
+    reveal_mix = (
+        groove_material.node_tree.nodes.get("ContactRevealMix")
+        if groove_material and groove_material.node_tree
+        else None
+    )
+    paper = require_object(CONTACT_PAPER, "MESH")
+    depth_level = smoothstep(value)
+    for vertex_index in CONTACT_INDENT_VERTEX_INDICES:
+        paper.data.vertices[vertex_index].co.z = (
+            CONTACT_INDENT_TOP_Z - CONTACT_INDENT_DEPTH * depth_level
+        )
+    paper.data.update()
+    if reveal_mix is not None:
+        reveal_mix.inputs[0].default_value = depth_level
 
 
 def unhide_notebook() -> list[bpy.types.Object]:
@@ -611,13 +795,15 @@ def author_physical_scene() -> dict[str, Any]:
     contact_cutter = require_object(CONTACT_CUTTER, "MESH")
     bulb, light = add_lamp_bulb_and_raking_light(contact_sheet)
     lamp_meshes = [
-        obj for obj in (lamp, *lamp.children_recursive) if obj.type == "MESH"
+        obj
+        for obj in (lamp, *lamp.children_recursive)
+        if obj.type == "MESH" and not obj.hide_render
     ]
     notebook = unhide_notebook()
     journal_pencil = reposition_journal_pencil()
     journal_copy = author_journal_copy()
     bpy.context.view_layer.update()
-    contact_stats = evaluated_contact_stats(contact_sheet)
+    contact_stats = contact_indentation_stats(contact_sheet)
     lamp_matrix_after = [rounded(value) for row in lamp.matrix_world for value in row]
     return {
         "card": card,
@@ -648,19 +834,25 @@ def author_physical_scene() -> dict[str, Any]:
 PROFILE_POSES = {
     "wide": {
         "opening": {"position": (-0.6, 1.6, 4.9), "target": (0.05, 0.92, 0.0)},
-        "desk": {"position": (0.05, 1.6, 1.45), "target": (0.02, 1.04, -0.45)},
+        "desk": {
+            "position": tuple(CAMERA_CONTRACT["desktop"]["position"]),
+            "target": tuple(CAMERA_CONTRACT["desktop"]["target"]),
+        },
         "films": {"position": (0.05, 1.6, 1.45), "target": (0.55, 1.27, -0.45)},
         "journal": {"position": (0.31, 1.06, 0.35), "target": (0.35, 0.91, 0.12)},
-        "contact": {"position": (-0.38, 1.32, 1.20), "target": (-0.40, 0.91, 0.0)},
+        "contact": {"position": (-0.45, 1.58, 0.32), "target": (-0.46, 0.91, -0.01)},
         "about": {"position": (0.02, 1.58, 1.45), "target": (-1.28, 1.22, -0.08)},
     },
     "portrait": {
-        "opening": {"position": (-0.04, 1.62, 5.15), "target": (0.18, 0.98, -0.02)},
-        "desk": {"position": (-0.50, 1.82, 1.72), "target": (0.20, 1.10, -0.18)},
+        "opening": {"position": (-0.6, 1.6, 4.9), "target": (0.05, 0.92, 0.0)},
+        "desk": {
+            "position": tuple(CAMERA_CONTRACT["phone"]["position"]),
+            "target": tuple(CAMERA_CONTRACT["phone"]["target"]),
+        },
         "films": {"position": (0.05, 1.70, 1.75), "target": (0.55, 1.27, -0.45)},
         "journal": {"position": (0.30, 1.075, 0.44), "target": (0.30, 0.91, 0.12)},
-        "contact": {"position": (-0.40, 1.70, 1.55), "target": (-0.40, 0.91, -0.02)},
-        "about": {"position": (0.22, 1.58, 2.27), "target": (-1.18, 1.24, -0.08)},
+        "contact": {"position": (-0.40, 2.25, 0.85), "target": (-0.4415, 0.91, -0.02)},
+        "about": {"position": (0.22, 1.58, 2.27), "target": (-1.52, 0.92, -0.08)},
     },
 }
 
@@ -796,6 +988,12 @@ def quad_pixel_width(quad: list[float] | None, width: int) -> float:
     return (max(quad[0::2]) - min(quad[0::2])) * width
 
 
+def quad_pixel_height(quad: list[float] | None, height: int) -> float:
+    if quad is None or len(quad) != 8:
+        return 0.0
+    return (max(quad[1::2]) - min(quad[1::2])) * height
+
+
 def quad_inside_frame(quad: list[float] | None, inset: float = 0.0) -> bool:
     return quad is not None and len(quad) == 8 and all(
         inset <= value <= 1.0 - inset for value in quad
@@ -863,6 +1061,392 @@ def hero_projection(scene: bpy.types.Scene, camera: bpy.types.Object) -> list[fl
     return project_world_points(scene, camera, local_face_points(hero, 1, "min"))
 
 
+def convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    unique = sorted(set(points))
+    if len(unique) <= 2:
+        return unique
+
+    def cross(
+        origin: tuple[float, float],
+        first: tuple[float, float],
+        second: tuple[float, float],
+    ) -> float:
+        return (first[0] - origin[0]) * (second[1] - origin[1]) - (
+            first[1] - origin[1]
+        ) * (second[0] - origin[0])
+
+    lower: list[tuple[float, float]] = []
+    for point in unique:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], point) <= 0.0:
+            lower.pop()
+        lower.append(point)
+    upper: list[tuple[float, float]] = []
+    for point in reversed(unique):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], point) <= 0.0:
+            upper.pop()
+        upper.append(point)
+    return lower[:-1] + upper[:-1]
+
+
+def polygon_area(points: list[tuple[float, float]]) -> float:
+    return sum(
+        first[0] * second[1] - second[0] * first[1]
+        for first, second in zip(points, points[1:] + points[:1])
+    ) / 2.0
+
+
+def clip_convex_polygon(
+    subject: list[tuple[float, float]],
+    clip: list[tuple[float, float]],
+) -> list[tuple[float, float]]:
+    if len(subject) < 3 or len(clip) < 3:
+        return []
+    orientation = 1.0 if polygon_area(clip) >= 0.0 else -1.0
+
+    def edge_cross(
+        start: tuple[float, float],
+        end: tuple[float, float],
+        point: tuple[float, float],
+    ) -> float:
+        return (end[0] - start[0]) * (point[1] - start[1]) - (
+            end[1] - start[1]
+        ) * (point[0] - start[0])
+
+    def inside(
+        point: tuple[float, float],
+        start: tuple[float, float],
+        end: tuple[float, float],
+    ) -> bool:
+        return orientation * edge_cross(start, end, point) >= -1e-10
+
+    def intersection(
+        first: tuple[float, float],
+        second: tuple[float, float],
+        clip_start: tuple[float, float],
+        clip_end: tuple[float, float],
+    ) -> tuple[float, float]:
+        direction = (second[0] - first[0], second[1] - first[1])
+        edge = (clip_end[0] - clip_start[0], clip_end[1] - clip_start[1])
+        denominator = edge[0] * direction[1] - edge[1] * direction[0]
+        if abs(denominator) < 1e-12:
+            return second
+        offset = (first[0] - clip_start[0], first[1] - clip_start[1])
+        amount = -(edge[0] * offset[1] - edge[1] * offset[0]) / denominator
+        return (
+            first[0] + direction[0] * amount,
+            first[1] + direction[1] * amount,
+        )
+
+    output = subject
+    for clip_index, clip_start in enumerate(clip):
+        clip_end = clip[(clip_index + 1) % len(clip)]
+        source = output
+        output = []
+        if not source:
+            break
+        previous = source[-1]
+        previous_inside = inside(previous, clip_start, clip_end)
+        for current in source:
+            current_inside = inside(current, clip_start, clip_end)
+            if current_inside:
+                if not previous_inside:
+                    output.append(
+                        intersection(previous, current, clip_start, clip_end)
+                    )
+                output.append(current)
+            elif previous_inside:
+                output.append(intersection(previous, current, clip_start, clip_end))
+            previous = current
+            previous_inside = current_inside
+    return output
+
+
+def point_segment_distance(
+    point: tuple[float, float],
+    start: tuple[float, float],
+    end: tuple[float, float],
+) -> float:
+    dx = end[0] - start[0]
+    dy = end[1] - start[1]
+    length_squared = dx * dx + dy * dy
+    if length_squared <= 1e-20:
+        return math.dist(point, start)
+    amount = max(
+        0.0,
+        min(1.0, ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / length_squared),
+    )
+    closest = (start[0] + amount * dx, start[1] + amount * dy)
+    return math.dist(point, closest)
+
+
+def simplify_path(
+    points: list[tuple[float, float]],
+    tolerance: float,
+) -> list[tuple[float, float]]:
+    if len(points) <= 2:
+        return points
+    distances = [
+        point_segment_distance(point, points[0], points[-1])
+        for point in points[1:-1]
+    ]
+    maximum = max(distances, default=0.0)
+    if maximum <= tolerance:
+        return [points[0], points[-1]]
+    split = distances.index(maximum) + 1
+    return simplify_path(points[: split + 1], tolerance)[:-1] + simplify_path(
+        points[split:], tolerance
+    )
+
+
+def simplify_closed_polygon(
+    points: list[tuple[float, float]],
+    tolerance: float,
+) -> list[tuple[float, float]]:
+    if len(points) <= 3:
+        return points
+    first_index, second_index = max(
+        (
+            (first, second)
+            for first in range(len(points))
+            for second in range(first + 1, len(points))
+        ),
+        key=lambda pair: math.dist(points[pair[0]], points[pair[1]]),
+    )
+    first_path = points[first_index : second_index + 1]
+    second_path = points[second_index:] + points[: first_index + 1]
+    return (
+        simplify_path(first_path, tolerance)[:-1]
+        + simplify_path(second_path, tolerance)[:-1]
+    )
+
+
+def hero_world_quad() -> list[Vector]:
+    return local_face_points(require_object(HERO_OBJECT, "MESH"), 1, "min")
+
+
+def hero_plane(points: list[Vector]) -> tuple[Vector, Vector]:
+    origin = points[0]
+    for first_index in range(1, len(points)):
+        for second_index in range(first_index + 1, len(points)):
+            normal = (points[first_index] - origin).cross(
+                points[second_index] - origin
+            )
+            if normal.length_squared > 1e-12:
+                return origin, normal.normalized()
+    raise RuntimeError("Hero print quad is degenerate")
+
+
+def hero_occluder_projection(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+) -> list[list[float]]:
+    hero_world = hero_world_quad()
+    hero_screen_values = project_world_points(scene, camera, hero_world)
+    if hero_screen_values is None:
+        return [[] for _ in HERO_OCCLUDER_OBJECTS]
+    hero_screen = list(zip(hero_screen_values[0::2], hero_screen_values[1::2]))
+    viewport = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+    origin, normal = hero_plane(hero_world)
+    camera_side = (camera.matrix_world.translation - origin).dot(normal)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    polygons: list[list[float]] = []
+    for object_name in HERO_OCCLUDER_OBJECTS:
+        obj = require_object(object_name, "MESH")
+        evaluated = obj.evaluated_get(depsgraph)
+        mesh = evaluated.to_mesh()
+        try:
+            projected = []
+            for vertex in mesh.vertices:
+                world = evaluated.matrix_world @ vertex.co
+                if (world - origin).dot(normal) * camera_side < -1e-7:
+                    continue
+                point = world_to_camera_view(scene, camera, world)
+                if point.z > 0.0:
+                    projected.append((point.x, 1.0 - point.y))
+        finally:
+            evaluated.to_mesh_clear()
+        polygon = clip_convex_polygon(convex_hull(projected), hero_screen)
+        polygon = clip_convex_polygon(polygon, viewport)
+        polygon = simplify_closed_polygon(
+            polygon, HERO_OCCLUDER_SIMPLIFY_TOLERANCE
+        )
+        rounded_points = list(
+            zip(
+                rounded_occluder_vector(point[0] for point in polygon),
+                rounded_occluder_vector(point[1] for point in polygon),
+            )
+        )
+        deduplicated = []
+        for point in rounded_points:
+            if not deduplicated or point != deduplicated[-1]:
+                deduplicated.append(point)
+        if len(deduplicated) > 1 and deduplicated[0] == deduplicated[-1]:
+            deduplicated.pop()
+        if len(deduplicated) < 3 or abs(polygon_area(deduplicated)) < 1e-10:
+            polygons.append([])
+        else:
+            polygons.append(
+                [value for point in deduplicated for value in point]
+            )
+    return polygons
+
+
+def clip_world_polygon_to_hero_front(
+    points: list[Vector],
+    origin: Vector,
+    normal: Vector,
+    camera_side: float,
+) -> list[Vector]:
+    if len(points) < 3:
+        return []
+
+    def distance(point: Vector) -> float:
+        return (point - origin).dot(normal) * camera_side
+
+    output: list[Vector] = []
+    previous = points[-1]
+    previous_distance = distance(previous)
+    previous_inside = previous_distance >= -1e-7
+    for current in points:
+        current_distance = distance(current)
+        current_inside = current_distance >= -1e-7
+        if current_inside != previous_inside:
+            denominator = previous_distance - current_distance
+            amount = (
+                previous_distance / denominator
+                if abs(denominator) > 1e-12
+                else 0.0
+            )
+            output.append(previous.lerp(current, amount))
+        if current_inside:
+            output.append(current)
+        previous = current
+        previous_distance = current_distance
+        previous_inside = current_inside
+    return output
+
+
+def rasterize_mask_polygon(
+    mask: bytearray,
+    polygon: list[tuple[float, float]],
+    hero_bounds: tuple[float, float, float, float],
+) -> None:
+    if len(polygon) < 3:
+        return
+    min_x, min_y, max_x, max_y = hero_bounds
+    width = max_x - min_x
+    height = max_y - min_y
+    if width <= 1e-12 or height <= 1e-12:
+        return
+    size = HERO_OCCLUSION_MASK_SIZE
+    local = [
+        ((point[0] - min_x) / width * size, (point[1] - min_y) / height * size)
+        for point in polygon
+    ]
+    first_row = max(0, int(math.floor(min(point[1] for point in local))))
+    last_row = min(size - 1, int(math.ceil(max(point[1] for point in local))))
+    for y in range(first_row, last_row + 1):
+        scan_y = y + 0.5
+        intersections: list[float] = []
+        for first, second in zip(local, local[1:] + local[:1]):
+            if (first[1] <= scan_y < second[1]) or (
+                second[1] <= scan_y < first[1]
+            ):
+                amount = (scan_y - first[1]) / (second[1] - first[1])
+                intersections.append(first[0] + amount * (second[0] - first[0]))
+        intersections.sort()
+        for index in range(0, len(intersections) - 1, 2):
+            start = max(0, int(math.ceil(intersections[index] - 0.5)))
+            end = min(size - 1, int(math.floor(intersections[index + 1] - 0.5)))
+            if start <= end:
+                offset = y * size
+                mask[offset + start : offset + end + 1] = b"\x01" * (
+                    end - start + 1
+                )
+
+
+def encode_mask_runs(mask: bytearray) -> str:
+    size = HERO_OCCLUSION_MASK_SIZE
+    payload = bytearray()
+    for y in range(size):
+        runs: list[tuple[int, int]] = []
+        x = 0
+        while x < size:
+            if mask[y * size + x] == 0:
+                x += 1
+                continue
+            start = x
+            while x + 1 < size and mask[y * size + x + 1] != 0:
+                x += 1
+            runs.append((start, x))
+            x += 1
+        if len(runs) > 255:
+            raise RuntimeError(f"Hero silhouette row {y} exceeds 255 runs")
+        payload.append(len(runs))
+        for start, end in runs:
+            payload.extend((start, end))
+    return base64.b64encode(payload).decode("ascii")
+
+
+def hero_occlusion_mask(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+) -> dict[str, Any]:
+    hero_world = hero_world_quad()
+    hero_screen_values = project_world_points(scene, camera, hero_world)
+    if hero_screen_values is None:
+        return {
+            "size": HERO_OCCLUSION_MASK_SIZE,
+            "rle": encode_mask_runs(bytearray(HERO_OCCLUSION_MASK_SIZE ** 2)),
+        }
+    hero_screen = list(zip(hero_screen_values[0::2], hero_screen_values[1::2]))
+    hero_bounds = (
+        min(point[0] for point in hero_screen),
+        min(point[1] for point in hero_screen),
+        max(point[0] for point in hero_screen),
+        max(point[1] for point in hero_screen),
+    )
+    viewport = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
+    origin, normal = hero_plane(hero_world)
+    camera_side = (camera.matrix_world.translation - origin).dot(normal)
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    mask = bytearray(HERO_OCCLUSION_MASK_SIZE ** 2)
+    for object_name in HERO_OCCLUDER_OBJECTS:
+        obj = require_object(object_name, "MESH")
+        evaluated = obj.evaluated_get(depsgraph)
+        mesh = evaluated.to_mesh()
+        try:
+            mesh.calc_loop_triangles()
+            for triangle in mesh.loop_triangles:
+                world_polygon = [
+                    evaluated.matrix_world @ mesh.vertices[index].co
+                    for index in triangle.vertices
+                ]
+                world_polygon = clip_world_polygon_to_hero_front(
+                    world_polygon, origin, normal, camera_side
+                )
+                if len(world_polygon) < 3:
+                    continue
+                projected = [
+                    world_to_camera_view(scene, camera, point)
+                    for point in world_polygon
+                ]
+                if any(point.z <= 0.0 for point in projected):
+                    continue
+                screen_polygon = [
+                    (point.x, 1.0 - point.y) for point in projected
+                ]
+                screen_polygon = clip_convex_polygon(screen_polygon, hero_screen)
+                screen_polygon = clip_convex_polygon(screen_polygon, viewport)
+                rasterize_mask_polygon(mask, screen_polygon, hero_bounds)
+        finally:
+            evaluated.to_mesh_clear()
+    return {
+        "size": HERO_OCCLUSION_MASK_SIZE,
+        "rle": encode_mask_runs(mask),
+    }
+
+
 def contact_projection(scene: bpy.types.Scene, camera: bpy.types.Object, contact: bpy.types.Object) -> list[float] | None:
     return project_world_points(scene, camera, local_face_points(contact, 2, "max"))
 
@@ -890,13 +1474,101 @@ def navigation_geometry(nav_sheet: bpy.types.Object) -> dict[str, Any]:
     }
 
 
+def set_profile_dressing(authored: dict[str, Any], profile: str) -> None:
+    navigation = authored["navigation"]
+    navigation.location.x = (
+        NAV_CENTER_X_PORTRAIT if profile == "portrait" else NAV_CENTER_X
+    )
+    navigation.location.y = (
+        NAV_CENTER_Y_PORTRAIT if profile == "portrait" else NAV_CENTER_Y
+    )
+    incline = NAV_INCLINE_PORTRAIT if profile == "portrait" else NAV_INCLINE
+    navigation.rotation_euler.x = incline
+    navigation.location.z = (
+        DESK_HEIGHT
+        + math.sin(incline) * NAV_HEIGHT / 2.0
+        + NAV_THICKNESS / 2.0
+    )
+    bpy.context.view_layer.update()
+
+
 def transition_sample(
     profile: str,
     destination: str,
     frame_index: int,
     frame_count: int,
 ) -> tuple[Vector, Quaternion, float]:
-    start_name = "opening" if destination == "desk" else "desk"
+    if destination == "desk":
+        start_pose = PROFILE_POSES[profile]["opening"]
+        end_pose = PROFILE_POSES[profile]["desk"]
+        start = Vector(start_pose["position"])
+        end = Vector(end_pose["position"])
+        start_gaze = Vector(start_pose["target"])
+        end_gaze = Vector(end_pose["target"])
+        forward = end - start
+        forward.y = 0.0
+        forward.normalize()
+        lateral = Vector((-forward.z, 0.0, forward.x))
+        elapsed = frame_index / FPS
+
+        if elapsed < OPENING_BEAT_SECONDS:
+            position_three = start.copy()
+            gaze_three = start_gaze.copy()
+        else:
+            walk_t = min(
+                (elapsed - OPENING_BEAT_SECONDS) / WALK_SECONDS,
+                1.0,
+            )
+            position_three = start.lerp(end, ease_in_out_cubic(walk_t))
+            envelope = math.sin(math.pi * walk_t)
+            stride = elapsed * BOB_HZ * math.tau
+            position_three.y -= (
+                BOB_AMPLITUDE
+                * (0.5 + 0.5 * math.sin(stride))
+                * envelope
+            )
+            position_three += (
+                lateral
+                * SWAY_AMPLITUDE
+                * math.sin(stride / 2.0)
+                * envelope
+            )
+            if walk_t >= 1.0:
+                settle_t = min(
+                    (
+                        elapsed
+                        - OPENING_BEAT_SECONDS
+                        - WALK_SECONDS
+                    )
+                    / SETTLE_SECONDS,
+                    1.0,
+                )
+                decay = math.exp(-3.2 * settle_t)
+                position_three += (
+                    forward
+                    * OVERSHOOT
+                    * math.cos(settle_t * SETTLE_HZ * math.tau)
+                    * decay
+                )
+            gaze_t = cubic_out(
+                elapsed
+                / (
+                    OPENING_BEAT_SECONDS
+                    + WALK_SECONDS
+                    + GAZE_LAG_SECONDS
+                )
+            )
+            gaze_three = start_gaze.lerp(end_gaze, gaze_t)
+
+        if frame_index == frame_count - 1:
+            position_three = end.copy()
+            gaze_three = end_gaze.copy()
+        position = three_to_blender(tuple(position_three))
+        target = three_to_blender(tuple(gaze_three))
+        quaternion = (target - position).to_track_quat("-Z", "Y")
+        return position, quaternion, 0.0
+
+    start_name = "desk"
     start_position, start_quaternion = pose_transform(profile, start_name)
     end_position, end_quaternion = pose_transform(profile, destination)
     raw_t = frame_index / max(frame_count - 1, 1)
@@ -916,12 +1588,6 @@ def transition_sample(
         position = start_position.lerp(end_position, eased)
         quaternion = start_quaternion.slerp(end_quaternion, eased)
 
-    if destination == "desk":
-        envelope = math.sin(math.pi * raw_t)
-        phase = raw_t * OPENING_SECONDS * 1.75 * math.tau
-        position.z -= 0.011 * (0.5 + 0.5 * math.sin(phase)) * envelope
-        position.x += 0.0055 * math.sin(phase / 2.0) * envelope
-
     lamp_level = smoothstep(raw_t) if destination == "contact" else 0.0
     return position, quaternion, lamp_level
 
@@ -935,6 +1601,8 @@ def frame_metadata(
     return {
         "camera": camera_sample(camera, LENS_FOV[profile]),
         "hero": hero_projection(scene, camera),
+        "heroOccluders": hero_occluder_projection(scene, camera),
+        "heroOcclusionMask": hero_occlusion_mask(scene, camera),
         "lampLevel": rounded(lamp_level),
         "revealLevel": rounded(lamp_level),
     }
@@ -959,13 +1627,13 @@ def configure_render(scene: bpy.types.Scene, profile: str, samples: int) -> None
 
 def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: dict[str, Any]) -> dict[str, Any]:
     variants: dict[str, Any] = {}
-    navigation = navigation_geometry(authored["navigation"])
     contact_world = [
         blender_to_three(point)
         for point in local_face_points(authored["contact"], 2, "max")
     ]
 
     for profile in PROFILE_IDS:
+        set_profile_dressing(authored, profile)
         width, height = RESOLUTION[profile]
         scene.render.resolution_x = width
         scene.render.resolution_y = height
@@ -1026,7 +1694,7 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
             authored["navigation"].matrix_world @ Vector((NAV_WIDTH / 2, -NAV_HEIGHT / 2, NAV_THICKNESS / 2)),
             authored["navigation"].matrix_world @ Vector((-NAV_WIDTH / 2, -NAV_HEIGHT / 2, NAV_THICKNESS / 2)),
         ]
-        profile_navigation = dict(navigation)
+        profile_navigation = navigation_geometry(authored["navigation"])
         screen_quads = {}
         label_screen_quads: dict[str, dict[str, list[float] | None]] = {}
         logo_screen_quads: dict[str, list[float] | None] = {}
@@ -1079,7 +1747,7 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 "screenQuads": logo_screen_quads,
             },
             "contact": {
-                "mechanism": "geometry-nodes-indentation",
+                "mechanism": "applied-exact-pressure-indentation",
                 "paperObject": CONTACT_PAPER,
                 "paperWorldQuad": contact_world,
                 "paperScreenQuad": contact_projection(scene, camera, authored["contact"]),
@@ -1094,8 +1762,9 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                     for value in row
                 ],
                 "paperMovedOnce": authored["contactPaperMovedOnce"],
+                "indentDepth": CONTACT_INDENT_DEPTH,
                 "geometryStats": authored["contactStats"],
-                "addressCopy": "CONTACT@LAZYAPRODUCTIONS.COM",
+                "addressCopy": CONTACT_COPY_TEXT,
                 "addressScreenQuads": address_screen_quads,
                 "paperScreenQuads": paper_screen_quads,
                 "lampScreenQuads": lamp_screen_quads,
@@ -1137,6 +1806,8 @@ export interface Rect { x: number; y: number; width: number; height: number }
 export interface ProjectionFrame {
   camera: CameraSample;
   hero: readonly [number, number, number, number, number, number, number, number] | null;
+  heroOccluders: readonly (readonly number[])[];
+  heroOcclusionMask: { size: 256; rle: string };
   lampLevel: number;
   revealLevel: number;
 }
@@ -1189,7 +1860,7 @@ export interface PlateVariant {
     screenQuads: Record<EndpointId, readonly number[] | null>;
   };
   contact: {
-    mechanism: \"geometry-nodes-indentation\";
+    mechanism: \"applied-exact-pressure-indentation\";
     paperObject: string;
     paperWorldQuad: readonly (readonly number[])[];
     paperScreenQuad: readonly number[] | null;
@@ -1200,8 +1871,9 @@ export interface PlateVariant {
     lampTransform: readonly number[];
     paperTransform: readonly number[];
     paperMovedOnce: true;
-    geometryStats: { baseVertices: number; evaluatedVertices: number; basePolygons: number; evaluatedPolygons: number };
-    addressCopy: "CONTACT@LAZYAPRODUCTIONS.COM";
+    indentDepth: 0.00008;
+    geometryStats: { baseVertices: number; indentedVertices: number; basePolygons: number; indentedPolygons: number };
+    addressCopy: string;
     addressScreenQuads: Record<EndpointId, readonly number[] | null>;
     paperScreenQuads: Record<EndpointId, readonly number[] | null>;
     lampScreenQuads: Record<EndpointId, readonly number[] | null>;
@@ -1237,7 +1909,12 @@ export interface PlateManifest {
 def write_manifest(manifest: dict[str, Any]) -> None:
     PUBLIC_ROOT.mkdir(parents=True, exist_ok=True)
     TYPESCRIPT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    serialized = json.dumps(manifest, indent=2, sort_keys=False, ensure_ascii=True)
+    serialized = json.dumps(
+        manifest,
+        separators=(",", ":"),
+        sort_keys=False,
+        ensure_ascii=True,
+    )
     MANIFEST_PATH.write_text(serialized + "\n", encoding="utf-8")
     TYPESCRIPT_PATH.write_text(
         TYPESCRIPT_HEADER
@@ -1329,10 +2006,12 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
     if manifest.get("cameraRotationConversion") != "basis-similarity-with-camera-local-basis":
         issues.append("camera rotation export must use the verified basis-similarity conversion")
     if authored["lampMatrixBefore"] != authored["lampMatrixAfter"]:
-        issues.append("scan_lamp_0 transform changed while authoring CONTACT light")
+        issues.append(f"{LAMP_ROOT} transform changed while authoring CONTACT light")
     card = authored["card"]
     if card.name != LOGO_OBJECT or card.get("lazy_a_logo_geometry_created") is not False:
         issues.append("Lazy A logo must reuse Mesh_33 without new card geometry")
+    if card.get("lazy_a_logo_transform_preserved") is not True:
+        issues.append("Mesh_33 logo card must preserve its master-scene transform")
     if card.get("lazy_a_logo_orientation") != "upright-local-xz" or card.data.uv_layers.active is None:
         issues.append("Mesh_33 logo must use an explicit upright local X/Z UV map")
     logo_material = card.data.materials[0] if card.data.materials else None
@@ -1351,11 +2030,19 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
     if authored.get("navigationFontFamily") != "Noteworthy":
         issues.append("production-sheet lettering must use Noteworthy")
     contact = authored["contact"]
-    node_modifiers = [modifier for modifier in contact.modifiers if modifier.type == "NODES"]
-    if not node_modifiers or contact.get("lazy_a_contact_mechanism") != "geometry-nodes-indentation":
-        issues.append("Mesh_56 must use geometry-nodes indentation")
+    if bpy.data.objects.get(CONTACT_RECESS) is not None:
+        issues.append("CONTACT must not use a visible imprint object over the paper")
+    if contact.modifiers or contact.get("lazy_a_contact_mechanism") != "applied-exact-pressure-indentation":
+        issues.append("Mesh_56 must contain the applied exact indentation without modifier residue")
+    cutter = authored.get("contactCutter")
+    if (
+        cutter is None
+        or abs(float(cutter.get("lazy_a_contact_indent_depth", 0.0)) - CONTACT_INDENT_DEPTH)
+        > 1e-9
+    ):
+        issues.append("CONTACT typography must retain the measured 0.08 mm pressure indentation")
     if len(authored.get("journalCopy", [])) != len(JOURNAL_COPY):
-        issues.append("notebook must carry all eight approved physical placeholder lines")
+        issues.append("notebook must carry every approved physical placeholder line")
     if authored.get("journalPencil", {}).get("lazy_a_repositioned_once") is not True:
         issues.append("existing Mesh_53 pencil must be repositioned once clear of JOURNAL copy")
     if authored.get("journalLayout") != {
@@ -1369,10 +2056,10 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         issues.append("Mesh_56 must be repositioned exactly once before all endpoint sampling")
     contact_stats = authored.get("contactStats", {})
     if (
-        contact_stats.get("evaluatedVertices", 0) <= contact_stats.get("baseVertices", 0)
-        or contact_stats.get("evaluatedPolygons", 0) <= contact_stats.get("basePolygons", 0)
+        contact_stats.get("indentedVertices", 0) <= contact_stats.get("baseVertices", 0)
+        or contact_stats.get("indentedPolygons", 0) <= contact_stats.get("basePolygons", 0)
     ):
-        issues.append("Mesh_56 evaluated Geometry Nodes output must contain boolean-cut topology")
+        issues.append("Mesh_56 applied indentation must contain the complete cut topology")
 
     scene = bpy.context.scene
     camera = require_object("AuthoredPlateCamera", "CAMERA")
@@ -1397,6 +2084,12 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         fovs = {endpoint.get("projection", {}).get("camera", {}).get("fov") for endpoint in endpoints.values()}
         if fovs != {LENS_FOV[profile]}:
             issues.append(f"{profile}: lens must remain constant at {LENS_FOV[profile]} degrees")
+        if any(
+            len(endpoint.get("projection", {}).get("heroOccluders", []))
+            != len(HERO_OCCLUDER_OBJECTS)
+            for endpoint in endpoints.values()
+        ):
+            issues.append(f"{profile}: every endpoint must export all photographic hero occluders")
         transitions = variant.get("transitions", {})
         if set(transitions) != {"opening-desk", "desk-films", "desk-journal", "desk-contact", "desk-about"}:
             issues.append(f"{profile}: transition definitions are incomplete")
@@ -1408,8 +2101,11 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             if transition["duration"] != DESTINATION_SECONDS:
                 issues.append(f"{profile}: {destination} must be exactly {DESTINATION_SECONDS}s")
             if not transition.get("frames") or any(
-                set(frame) != {"camera", "hero", "lampLevel", "revealLevel"}
+                set(frame) != {"camera", "hero", "heroOccluders", "heroOcclusionMask", "lampLevel", "revealLevel"}
                 or set(frame["camera"]) != {"position", "quaternion", "fov"}
+                or len(frame["heroOccluders"]) != len(HERO_OCCLUDER_OBJECTS)
+                or frame["heroOcclusionMask"].get("size") != HERO_OCCLUSION_MASK_SIZE
+                or not frame["heroOcclusionMask"].get("rle")
                 for frame in transition.get("frames", [])
             ):
                 issues.append(f"{profile}: {destination} frames lack required projection fields")
@@ -1459,29 +2155,38 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
                 quad = navigation.get("screenQuads", {}).get(endpoint)
                 if quad is None or any(value < 0.02 or value > 0.98 for value in quad):
                     issues.append(
-                        f"portrait: full navigation sheet must remain inside {endpoint} frame"
+                        f"portrait: full navigation sheet must remain inside {endpoint} frame; quad={quad}"
                     )
                 logo_quad = variant.get("logo", {}).get("screenQuads", {}).get(endpoint)
-                if not quad_inside_frame(logo_quad, 0.02):
+                if not quad_inside_frame(logo_quad):
                     issues.append(
-                        f"portrait: full Mesh_33 logo card must remain inside {endpoint} frame"
+                        f"portrait: full Mesh_33 logo card must remain inside {endpoint} frame; quad={logo_quad}"
                     )
                 for row in NAV_ROWS:
                     label_quad = navigation.get("labelScreenQuads", {}).get(endpoint, {}).get(row["id"])
                     label_width = quad_pixel_width(label_quad, variant["width"])
-                    if label_width < 135.0:
+                    if label_width < 55.0:
                         issues.append(
-                            f"portrait: {row['label']} must be at least 135px wide at {endpoint}, got {label_width}"
+                            f"portrait: {row['label']} must be at least 55px wide at {endpoint}, got {label_width}"
                         )
+                    label_height = quad_pixel_height(label_quad, variant["height"])
+                    if label_height < 12.0:
+                        issues.append(
+                            f"portrait: {row['label']} must be at least 12px high at {endpoint}, got {label_height}"
+                        )
+                if quad_pixel_height(quad, variant["height"]) < 70.0:
+                    issues.append("portrait: navigation sheet must project at least 70px high at desk")
             lamp_quad = contact_data.get("lampScreenQuads", {}).get("contact")
             paper_quad = contact_data.get("paperScreenQuads", {}).get("contact")
             if not quad_intersects_frame(lamp_quad) or not quad_inside_frame(paper_quad, 0.01):
                 issues.append(
-                    "portrait: CONTACT lean/pan must frame the current lamp and full contact paper"
+                    f"portrait: CONTACT lean/pan must frame the current lamp and full contact paper; lamp={lamp_quad}, paper={paper_quad}"
                 )
         address_quad = contact_data.get("addressScreenQuads", {}).get("contact")
         if not quad_inside_frame(address_quad, 0.02):
-            issues.append(f"{profile}: CONTACT indentation must be fully visible at CONTACT")
+            issues.append(
+                f"{profile}: CONTACT indentation must be fully visible at CONTACT; quad={address_quad}"
+            )
         elif quad_pixel_width(address_quad, variant["width"]) < 100.0:
             issues.append(f"{profile}: CONTACT indentation must project at least 100px wide")
         for endpoint in ENDPOINT_IDS:
@@ -1515,11 +2220,13 @@ def render_endpoint(
 def render_endpoints(
     scene: bpy.types.Scene,
     camera: bpy.types.Object,
+    authored: dict[str, Any],
     proof: bool,
     samples: int,
     only: set[str],
 ) -> None:
     for profile in PROFILE_IDS:
+        set_profile_dressing(authored, profile)
         for endpoint in ENDPOINT_IDS:
             selector = f"{profile}:{endpoint}"
             if only and selector not in only:
@@ -1534,10 +2241,12 @@ def render_endpoints(
 def render_transition_frames(
     scene: bpy.types.Scene,
     camera: bpy.types.Object,
+    authored: dict[str, Any],
     samples: int,
     only: set[str],
 ) -> None:
     for profile in PROFILE_IDS:
+        set_profile_dressing(authored, profile)
         configure_render(scene, profile, samples)
         # configure_render defaults endpoint stills to JPEG. Transition
         # intermediates are lossless PNGs because the encoder reads %04d.png.
@@ -1602,11 +2311,11 @@ def main() -> None:
     )
     only = set(args.only)
     if args.proof:
-        render_endpoints(scene, camera, proof=True, samples=args.samples or 8, only=only)
+        render_endpoints(scene, camera, authored, proof=True, samples=args.samples or 8, only=only)
     if args.render_stills:
-        render_endpoints(scene, camera, proof=False, samples=args.samples or 192, only=only)
+        render_endpoints(scene, camera, authored, proof=False, samples=args.samples or 192, only=only)
     if args.render_transitions:
-        render_transition_frames(scene, camera, samples=args.samples or 192, only=only)
+        render_transition_frames(scene, camera, authored, samples=args.samples or 192, only=only)
 
 
 if __name__ == "__main__":

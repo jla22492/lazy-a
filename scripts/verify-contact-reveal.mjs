@@ -17,11 +17,12 @@
  *   node scripts/verify-contact-reveal.mjs [url] [--out-dir path]
  */
 
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
 import { chromium } from "playwright";
+import sharp from "sharp";
 
 const args = process.argv.slice(2);
 const baseUrl =
@@ -35,6 +36,23 @@ const outDir = resolve(
 );
 const viewport = { width: 1280, height: 720 };
 const SAMPLE_INTERVAL_MS = 100;
+const EXPECTED_CONTACT_COPY = [
+  "Jonathan Adelson",
+  "JonathanAdelson1@gmail.com",
+  "1-310-709-9283",
+].join("\n");
+const MID_LAMP_POOL_REGION = {
+  x: 0.3,
+  y: 0.52,
+  width: 0.05,
+  height: 0.1,
+};
+const MID_UNLIT_TABLE_REGION = {
+  x: 0.48,
+  y: 0.52,
+  width: 0.05,
+  height: 0.1,
+};
 
 function withContactRequest(url) {
   const target = new URL(url);
@@ -100,6 +118,85 @@ async function collect(page, durationMs, onSample) {
   return samples;
 }
 
+async function readGrayImage(path) {
+  const { data, info } = await sharp(path)
+    .greyscale()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height };
+}
+
+function boundsFromQuad(quad, image) {
+  const xs = quad.filter((_, index) => index % 2 === 0);
+  const ys = quad.filter((_, index) => index % 2 === 1);
+  const left = Math.max(0, Math.floor(Math.min(...xs) * image.width));
+  const right = Math.min(image.width, Math.ceil(Math.max(...xs) * image.width));
+  const top = Math.max(0, Math.floor(Math.min(...ys) * image.height));
+  const bottom = Math.min(
+    image.height,
+    Math.ceil(Math.max(...ys) * image.height),
+  );
+  return { left, top, right, bottom };
+}
+
+function boundsFromRegion(region, image) {
+  return {
+    left: Math.floor(region.x * image.width),
+    top: Math.floor(region.y * image.height),
+    right: Math.ceil((region.x + region.width) * image.width),
+    bottom: Math.ceil((region.y + region.height) * image.height),
+  };
+}
+
+function regionValues(image, bounds) {
+  const values = [];
+  for (let y = bounds.top; y < bounds.bottom; y += 1) {
+    for (let x = bounds.left; x < bounds.right; x += 1) {
+      values.push(image.data[y * image.width + x]);
+    }
+  }
+  return values;
+}
+
+function mean(values) {
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function percentile(values, fraction) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor((sorted.length - 1) * fraction)];
+}
+
+function regionContrast(image, bounds) {
+  const gradients = [];
+  for (let y = bounds.top + 1; y < bounds.bottom - 1; y += 1) {
+    for (let x = bounds.left + 1; x < bounds.right - 1; x += 1) {
+      const index = y * image.width + x;
+      gradients.push(
+        Math.abs(image.data[index + 1] - image.data[index - 1]),
+        Math.abs(
+          image.data[index + image.width] - image.data[index - image.width],
+        ),
+      );
+    }
+  }
+  return {
+    meanGradient: mean(gradients),
+    gradientP95: percentile(gradients, 0.95),
+  };
+}
+
+function meanAbsoluteDifference(first, second, bounds) {
+  const differences = [];
+  for (let y = bounds.top; y < bounds.bottom; y += 1) {
+    for (let x = bounds.left; x < bounds.right; x += 1) {
+      const index = y * first.width + x;
+      differences.push(Math.abs(first.data[index] - second.data[index]));
+    }
+  }
+  return mean(differences);
+}
+
 await mkdir(outDir, { recursive: true });
 
 const browser = await chromium.launch({
@@ -107,6 +204,11 @@ const browser = await chromium.launch({
   headless: true,
   args: ["--autoplay-policy=no-user-gesture-required"],
 });
+const closeBrowser = () =>
+  Promise.race([
+    browser.close(),
+    new Promise((resolve) => setTimeout(resolve, 1_500)),
+  ]);
 
 const evidence = {
   rest: resolve(outDir, "contact-rest.png"),
@@ -149,7 +251,7 @@ try {
   await page.screenshot({ path: evidence.reversed });
   await page.close();
 } finally {
-  await browser.close();
+  await closeBrowser();
 }
 
 const allSamples = [restSample, ...riseSamples, ...reverseSamples].filter(
@@ -160,6 +262,117 @@ const markerSamples = allSamples.filter(
 );
 const failures = [];
 const passes = [];
+let wideContact;
+
+try {
+  const manifest = JSON.parse(
+    await readFile(resolve("public/room/manifest.json"), "utf8"),
+  );
+  wideContact = manifest.variants?.wide?.contact;
+  const copies = Object.values(manifest.variants ?? {}).map(
+    (variant) => variant.contact?.addressCopy,
+  );
+  const mechanisms = Object.values(manifest.variants ?? {}).map(
+    (variant) => variant.contact?.mechanism,
+  );
+  if (
+    copies.length !== 2 ||
+    copies.some((copy) => copy !== EXPECTED_CONTACT_COPY)
+  ) {
+    failures.push(
+      `CONTACT copy mismatch: expected ${JSON.stringify(EXPECTED_CONTACT_COPY)}, got ${JSON.stringify(copies)}`,
+    );
+  } else {
+    passes.push("CONTACT manifest contains the exact approved three-line copy");
+  }
+  if (
+    mechanisms.length !== 2 ||
+    mechanisms.some(
+      (mechanism) => mechanism !== "applied-exact-pressure-indentation",
+    )
+  ) {
+    failures.push(
+      `CONTACT mechanism mismatch: expected applied-exact-pressure-indentation, got ${JSON.stringify(mechanisms)}`,
+    );
+  } else {
+    passes.push(
+      "CONTACT uses an exact pressure indentation applied to the paper",
+    );
+  }
+} catch (error) {
+  failures.push(`CONTACT manifest copy unavailable: ${error.message}`);
+}
+
+try {
+  if (!wideContact) throw new Error("wide CONTACT manifest data missing");
+  const [restImage, midImage, holdImage, reversedImage] = await Promise.all([
+    readGrayImage(evidence.rest),
+    readGrayImage(evidence.mid),
+    readGrayImage(evidence.hold),
+    readGrayImage(evidence.reversed),
+  ]);
+  const restAddress = boundsFromQuad(
+    wideContact.addressScreenQuads.desk,
+    restImage,
+  );
+  const holdAddress = boundsFromQuad(
+    wideContact.addressScreenQuads.contact,
+    holdImage,
+  );
+  const restContrast = regionContrast(restImage, restAddress);
+  const holdContrast = regionContrast(holdImage, holdAddress);
+  const holdValues = regionValues(holdImage, holdAddress);
+  const holdRange = percentile(holdValues, 0.95) - percentile(holdValues, 0.05);
+  const lampPoolMean = mean(
+    regionValues(midImage, boundsFromRegion(MID_LAMP_POOL_REGION, midImage)),
+  );
+  const unlitTableMean = mean(
+    regionValues(midImage, boundsFromRegion(MID_UNLIT_TABLE_REGION, midImage)),
+  );
+  const lampPoolLift = lampPoolMean - unlitTableMean;
+  const reverseDifference = meanAbsoluteDifference(
+    restImage,
+    reversedImage,
+    restAddress,
+  );
+
+  if (restContrast.gradientP95 > 4 || restContrast.meanGradient > 1.5) {
+    failures.push(
+      `latent CONTACT paper exposed visible typography-like edges (gradient p95=${restContrast.gradientP95.toFixed(1)}, mean=${restContrast.meanGradient.toFixed(2)})`,
+    );
+  } else {
+    passes.push("latent CONTACT paper remained visually clean at rest");
+  }
+  if (lampPoolLift < 20) {
+    failures.push(
+      `mid CONTACT reveal lacked a localized lamp-pool change (luma lift=${lampPoolLift.toFixed(1)})`,
+    );
+  } else {
+    passes.push(
+      `mid CONTACT reveal changed through the lamp pool (luma lift=${lampPoolLift.toFixed(1)})`,
+    );
+  }
+  if (
+    holdContrast.gradientP95 < 12 ||
+    holdContrast.meanGradient < 2 ||
+    holdRange < 60
+  ) {
+    failures.push(
+      `held CONTACT address lacked readable indentation contrast (gradient p95=${holdContrast.gradientP95.toFixed(1)}, mean=${holdContrast.meanGradient.toFixed(2)}, luma range=${holdRange.toFixed(1)})`,
+    );
+  } else {
+    passes.push("held CONTACT address showed readable indentation contrast");
+  }
+  if (reverseDifference > 2) {
+    failures.push(
+      `CONTACT reverse left visual residue on the paper (mean delta=${reverseDifference.toFixed(2)})`,
+    );
+  } else {
+    passes.push("CONTACT reverse returned the paper cleanly to rest");
+  }
+} catch (error) {
+  failures.push(`CONTACT pixel evidence unavailable: ${error.message}`);
+}
 
 if (markerSamples.length !== allSamples.length || markerSamples.length === 0) {
   failures.push(
