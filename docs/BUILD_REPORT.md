@@ -8,7 +8,9 @@ Commit:
 
 `1a32124` — post-render hero registration/occlusion sampling for networked review
 
-`cc6e4a9` — hydration-stable responsive profile selection and browser gate
+`cc6e4a9` — hydration regression gate and initial profile correction
+
+`a1733be` — responsive photographic bootstrap and client-only room boundary
 
 Version:
 
@@ -35,10 +37,11 @@ Architecture Decisions:
 - Desktop/tall/tablet select the approved wide camera by width; phone selects
   portrait. Both profiles derive pose, target, lens, and arrival endpoint from
   one JSON contract consumed by the exporter and runtime gate.
-- Server output and the first client render share the wide profile; viewport
-  selection runs after hydration and switches phone to portrait before its
-  authored arrival. The five-viewport gate fails on any React hydration error,
-  wrong profile, camera drift, or unstable endpoint pixels.
+- Server output provides a responsive authored opening photograph; the
+  interactive Stage is client-only and chooses wide/portrait from the measured
+  viewport before motion begins. No profile-dependent room markup hydrates and
+  no phone arrival can begin from wide. The five-viewport gate fails on any
+  hydration error, wrong profile, camera drift, or unstable endpoint pixels.
 - `PlateRoom` publishes projection from decoded `mediaTime * authored fps`, not
   container duration. The ended transition frame remains mounted so the desk
   still cannot introduce a second crop/camera handoff.
@@ -142,6 +145,10 @@ launch planning. This is not `WORK ORDER COMPLETE` until that approval is given.
 - Clock — settle `3.00s`; magic `4.80s`; physical JOURNAL target `0.08s`.
 - Performance — median `59.9fps`; `2.26MB` pre-settle; `4.56MB` total; no
   reverse-arrival preload.
+- Optimized-production bootstrap verification — PASS: responsive portrait/wide
+  opening sources exist in server HTML; five viewport arrivals pass without
+  hydration errors; hero `310/310`; clock `3.12s` / `4.91s` / `0.08s`; dwell
+  PASS x4; performance `59.9fps` / `2.26MB` / `4.56MB`.
 - Deployed GitHub Pages battery at commit `4fed800` — PASS: workflow
   `29411020891`; hero lifecycle/registration `310/310` with `0.000px` rendered
   corner error; settle `3.50s`; magic `5.28s`; JOURNAL `0.08s`; all four dwell

@@ -21,7 +21,9 @@ locked by one source camera contract. The hero shares the photographic plate's
 exact crop and per-decoded-frame camera sample, uses evaluated-mesh foreground
 silhouettes, plays once after settle through every destination, and holds its
 last frame. All wide and portrait endpoints and transitions come from the same
-current photographed master.
+current photographed master. Server HTML supplies the matching responsive
+opening photograph, then a client-only room chooses its profile before motion;
+phone never hydrates or begins from the wide room.
 
 The supplied headphones, peace lily, gold frame, trash can, green lamp, red mug,
 and basketball are saved in the reproducible master at measured proportions and

@@ -63,4 +63,6 @@
 
 - R-0117-R2 became a review candidate: the continuous human arrival and settled camera now survive every browser shape; the moving print remains on its physical paper through every turn, passes behind real foreground silhouettes, plays once, and holds; the seven supplied props read at measured scale in one photographed room; the production note offers four unmistakable choices; JOURNAL leans into a readable working posture; CONTACT appears only when the lamp rakes three pressure-cut lines in the paper; and ABOUT opens the room to the left. Desktop, tall-desktop, and phone journeys now exist at normal speed for Jonathan's final visual decision. No completion claim is made before that approval.
 
+- The first frame now knows which room it belongs to before anything moves: server HTML supplies the authored wide or portrait opening photograph, then the interactive room mounts on the client with that measured profile from frame one. Phones no longer hydrate through a wide-room mismatch or risk beginning the wrong arrival.
+
 Record experience changes here, not just technical ones.

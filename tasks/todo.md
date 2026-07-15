@@ -17,7 +17,8 @@
 
 - Master asset and saved-blend verification pass for all 12 durable room assets, including the seven supplied replacements at measured size, position, and contact surface.
 - Five-viewport arrival continuity, camera selection, four-corner hero registration, exact foreground silhouettes, final-frame retention, and 310/310 hero lifecycle checks pass.
-- Desktop through phone hydrate without profile mismatches; phone still selects and completes the exact portrait arrival after hydration.
+- Desktop through phone load without hydration mismatches; phone mounts and completes the exact portrait arrival from its first interactive frame.
+- Optimized server HTML provides the correct responsive opening photograph; the client-only interactive room selects its profile before motion, so phone never begins a wide transition.
 - The same 310/310 hero matrix passes on deployed GitHub Pages using post-render registration samples; decoded callbacks remain media-coverage evidence and pre-texture arrival states are reported separately.
 - CONTACT exact-copy, physical-indentation, lamp-rise, hold, reverse, and desktop/phone framing gates pass.
 - Normal-speed desktop, tall-desktop, and phone review films were captured and inspected; Jonathan's explicit visual approval remains open.
@@ -25,7 +26,7 @@
 ## Review
 
 - Runtime/media commit: `b0cf10b`.
-- Review evidence commit: `4fed800`; post-render verifier commit: `1a32124`; hydration fix: `cc6e4a9`.
+- Review evidence commit: `4fed800`; post-render verifier commit: `1a32124`; hydration gate: `cc6e4a9`; final responsive bootstrap: `a1733be`.
 - Build: PASS.
 - Clock: settle `3.00s`; magic `4.80s`; physical JOURNAL target `0.08s`.
 - Performance: median `59.9fps`; `2.26MB` pre-settle; `4.56MB` total.
