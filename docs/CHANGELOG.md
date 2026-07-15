@@ -65,4 +65,6 @@
 
 - The first frame now knows which room it belongs to before anything moves: server HTML supplies the authored wide or portrait opening photograph, then the interactive room mounts on the client with that measured profile from frame one. Phones no longer hydrate through a wide-room mismatch or risk beginning the wrong arrival.
 
+- R-0117-R2 failed Jonathan's full-frame visual review: nominal measurements and coordinate gates had passed while books sat on the desk instead of the shelf, the lamp and its reveal light floated away from physical support, old and photographed cameras overlapped, the blanket had fallen out of the room, right-corner props read as toys, and low-resolution paper, logo, pencil, and hero masks broke the photograph. The raw hero appeared independently of its poster and sheared during camera motion; FILMS moved the body, JOURNAL dropped the eye to desk height, and ABOUT exposed the room's left boundary. The candidate claim is withdrawn. R3 rebuilds the master and compositing contract around final-pixel believability, with Jonathan's leather seating area extending the unseen room to the left.
+
 Record experience changes here, not just technical ones.

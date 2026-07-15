@@ -14,25 +14,22 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R2 REVIEW CANDIDATE — implementation and behavioral verification are
-finished; Jonathan's explicit visual approval remains the only completion gate.
-The approved continuous 2.6-second arrival and settled desktop/phone cameras are
-locked by one source camera contract. The hero shares the photographic plate's
-exact crop and per-decoded-frame camera sample, uses evaluated-mesh foreground
-silhouettes, plays once after settle through every destination, and holds its
-last frame. All wide and portrait endpoints and transitions come from the same
-current photographed master. Server HTML supplies the matching responsive
-opening photograph, then a client-only room chooses its profile before motion;
-phone never hydrates or begins from the wide room.
+0117-R3 IN PROGRESS — Jonathan rejected the 0117-R2 review candidate after
+full-frame visual review. Coordinate and nominal-scale gates passed while the
+photographic result still contained misplaced books, a floating lamp and light
+source, duplicate camera geometry, a missing blanket, weak CONTACT indentation,
+toy-like basketball staging, low-resolution logo/tape/pencil artifacts, and an
+ungraded hero layer that appeared, sheared, and drifted independently of its
+poster. FILMS and JOURNAL also violated the intended seated-body choreography,
+and ABOUT exposed the room's left boundary.
 
-The supplied headphones, peace lily, gold frame, trash can, green lamp, red mug,
-and basketball are saved in the reproducible master at measured proportions and
-contact surfaces. The existing `Mesh_33` card carries the Lazy A mark. Four
-disjoint graphite rows provide FILMS/JOURNAL/CONTACT/ABOUT navigation; JOURNAL
-reaches a true forward/down reading posture; CONTACT reveals Jonathan's exact
-three-line copy as an applied 0.08 mm pressure indentation under fixed raking
-light; ABOUT turns left into the room. Fresh desktop, tall-desktop, and phone
-review films and endpoint captures are in `docs/progress/0117-r2-*`.
+The approved R3 design rebuilds the physical master before touching the live
+experience: corrected shelf/desk/right-corner dressing, restored blanket,
+single photographic camera, shade-origin CONTACT light, high-resolution plates,
+perspective-correct treated hero compositing, a forward-hinge JOURNAL lean, and
+an extended left room carrying Jonathan's supplied leather armchair, coffee
+table, and floor lamp. The written design is
+`docs/superpowers/specs/2026-07-15-0117-r3-production-quality-rebuild-design.md`.
 
 ---
 
@@ -189,13 +186,18 @@ review films and endpoint captures are in `docs/progress/0117-r2-*`.
 
 ## In Progress
 
-WORK ORDER 0117-R2 — correcting the rejected plate runtime and completing the approved physical room. Root causes are confirmed for the arrival, responsive camera drift, and hero registration. Supplied production props and final CONTACT information are under asset audit before the revised render contract is implemented.
+WORK ORDER 0117-R3 — rebuilding the rejected photographic composition and hero
+pipeline from the saved master. Root causes are confirmed and Jonathan has
+approved the unified correction design; implementation planning and failing
+behavioral gates are next.
 
 ---
 
 ## Next Recommended Work Order
 
-0117-R2 must pass Jonathan's full-motion visual review before 0118 can begin. After that: content-and-domain readiness, approved company material, authored JOURNAL/ABOUT content, and www.lazyaproductions.com migration.
+0117-R3 must pass Jonathan's full-motion visual review before 0118 can begin.
+After that: content-and-domain readiness, approved company material, authored
+JOURNAL/ABOUT content, and www.lazyaproductions.com migration.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 

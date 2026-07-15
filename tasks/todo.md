@@ -1,3 +1,27 @@
+# WORK ORDER 0117-R3 — Production-Quality Visual Rebuild
+
+## Approved Design
+
+- [x] Reproduce and visually inspect opening, desk, FILMS, JOURNAL, CONTACT,
+  ABOUT, desktop, tall-desktop, and phone failures.
+- [x] Trace misplaced, duplicated, floating, missing, pixelated, and distorted
+  objects to the saved master, source builder, render resolution, camera poses,
+  and hero compositor.
+- [x] Inspect and approve the supplied leather armchair, coffee-table, and
+  floor-lamp set for the left continuation.
+- [x] Receive Jonathan's approval of the unified master-first correction design.
+- [ ] Commit the implementation plan and failing behavioral gates.
+- [ ] Rebuild the master scene and supplied-object composition.
+- [ ] Correct CONTACT indentation and lamp-origin light.
+- [ ] Correct FILMS, JOURNAL, and room-supported ABOUT choreography.
+- [ ] Replace the hero's affine/raw-video/low-resolution-mask pipeline.
+- [ ] Render and encode high-resolution wide and portrait media.
+- [ ] Run full automated, full-motion visual, local-production, and deployed
+  verification.
+- [ ] Receive Jonathan's explicit visual approval before any completion claim.
+
+---
+
 # WORK ORDER 0117-R2 — Second Failed Review Correction
 
 ## Reopened Review

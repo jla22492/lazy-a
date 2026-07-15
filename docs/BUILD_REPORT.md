@@ -1,5 +1,19 @@
 # BUILD REPORT
 
+WORK ORDER 0117-R2 REVIEW CANDIDATE — REJECTED BY JONATHAN
+
+The automated coordinate, lifecycle, timing, and nominal-scale gates passed,
+but the live photographic composition did not meet the production-company
+quality bar. Jonathan's 2026-07-15 review identified misplaced and unsupported
+props, duplicate geometry, missing fabric, low-resolution foreground artifacts,
+an ungraded and unstable hero layer, physically incorrect JOURNAL/FILMS motion,
+and a left-room boundary exposed by ABOUT. The completion gate was never met.
+
+Superseded by approved Work Order 0117-R3 design:
+`docs/superpowers/specs/2026-07-15-0117-r3-production-quality-rebuild-design.md`.
+
+---
+
 WORK ORDER 0117-R2 REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
 
 Commit:
