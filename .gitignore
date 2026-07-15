@@ -19,6 +19,11 @@
 
 # production
 /build
+/public/room/_frames/
+/public/room/proof/
+
+# local renderer caches
+/scripts/__pycache__/
 
 # misc
 .DS_Store

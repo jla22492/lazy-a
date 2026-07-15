@@ -1,175 +1,277 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { useFrame } from "@react-three/fiber";
-import { Vector3 } from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import {
+  PerspectiveCamera,
+  Quaternion,
+  Vector3,
+  type Camera,
+} from "three";
 
-import { MOTION } from "@/components/site/motion";
 import { setContactLevel } from "@/three/interface/contact";
 import { setJournalLevel } from "@/three/interface/journal";
 import { setQuietLevel } from "@/three/interface/quiet";
-import { WORKBENCH } from "@/three/scene/constants";
-import { PRODUCTION_NAV_SHEET } from "@/three/scene/dressing/workbench";
+import {
+  INITIAL_PLATE_EXPERIENCE,
+  NAVIGATION_SHEET,
+  plateExperienceReducer,
+  type ExperienceEvent,
+  type ExperienceState,
+} from "@/three/animation/plateExperience";
+import {
+  plateManifest,
+  type CameraSample,
+  type DestinationId,
+  type EndpointId,
+  type Variant,
+} from "@/three/scene/plateManifest";
 
-interface Destination {
-  id: "films" | "journal" | "contact" | "about";
-  /** World-space attention center on the handwritten production sheet. */
-  center: [number, number, number];
-  /** Physical radius the pointer ray can hit. */
-  radius: number;
-  /** Where the head turns once the word is chosen. */
-  focus: [number, number, number];
-  /** How much of the head turn resolves toward the focus point. */
-  gazePull: number;
-  /** A human posture adjustment, not a software zoom. */
-  posture?: [number, number, number];
+type NavigationExperienceEvent = Extract<
+  ExperienceEvent,
+  { type: "SELECT" | "CLOSE" }
+>;
+
+export interface AttentionNavigationProps {
+  /** Sends user navigation intent to an optional Stage-owned reducer. */
+  onExperienceEvent?: (event: NavigationExperienceEvent) => void;
 }
 
-type ResolvedDestination = Destination & {
-  centerV: Vector3;
-  focusV: Vector3;
-  postureV: Vector3;
-};
-
-/**
- * R-0117: navigation is explicit and physical. The visitor reads a
- * production scratch sheet on the desk — pencil words the maker wrote for
- * himself — then the room turns toward the corresponding object.
- */
-function navWordCenter(id: Destination["id"]): [number, number, number] {
-  const word = PRODUCTION_NAV_SHEET.words.find((item) => item.id === id);
-  if (!word) throw new Error(`Unknown production note target: ${id}`);
-  const yaw = PRODUCTION_NAV_SHEET.yaw;
-  const cos = Math.cos(yaw);
-  const sin = Math.sin(yaw);
-  const x = PRODUCTION_NAV_SHEET.at.x + word.x * cos + word.z * sin;
-  const z = PRODUCTION_NAV_SHEET.at.z - word.x * sin + word.z * cos;
-  return [x, WORKBENCH.surfaceHeight + 0.012, z];
+interface CameraSnapshot {
+  endpoint: EndpointId;
+  requested: DestinationId | null;
+  transition: string | null;
+  phase: ExperienceState["phase"];
+  camera: {
+    position: [number, number, number];
+    quaternion: [number, number, number, number];
+    fov: number;
+  };
+  framing: {
+    coverage: {
+      notebook: number;
+      contactPaper: number;
+      charger: number;
+      leftHistory: number;
+    };
+  };
 }
 
-const DESTINATIONS: readonly Destination[] = [
-  {
-    id: "films",
-    center: navWordCenter("films"),
-    radius: 0.062,
-    focus: [0.47, 1.22, -0.42],
-    gazePull: 0.44,
-  },
-  {
-    id: "journal",
-    center: navWordCenter("journal"),
-    radius: 0.068,
-    focus: [0.35, 0.9, 0.12],
-    gazePull: 1.0,
-    posture: [0.02, -0.11, -0.18],
-  },
-  {
-    id: "contact",
-    center: navWordCenter("contact"),
-    radius: 0.07,
-    focus: [0.68, 0.88, 0.1],
-    gazePull: 0.86,
-    posture: [0.025, -0.045, -0.08],
-  },
-  {
-    id: "about",
-    center: navWordCenter("about"),
-    radius: 0.062,
-    focus: [-1.12, 1.08, -0.12],
-    gazePull: 0.65,
-    posture: [-0.03, 0, -0.02],
-  },
-];
+interface ActiveTransition {
+  id: string;
+  elapsed: number;
+  progress: number;
+}
 
-const LEAN_SECONDS = MOTION.lean.durationSeconds;
+const DESTINATIONS = NAVIGATION_SHEET.rows.map(({ id }) => id);
 
-function easeInOutCubic(t: number): number {
-  const clamped = Math.min(Math.max(t, 0), 1);
-  return clamped < 0.5
-    ? 4 * clamped ** 3
-    : 1 - Math.pow(-2 * clamped + 2, 3) / 2;
+interface ScreenPoint {
+  x: number;
+  y: number;
+}
+
+function pointInConvexQuad(point: ScreenPoint, quad: readonly ScreenPoint[]) {
+  let sign = 0;
+  for (let index = 0; index < quad.length; index += 1) {
+    const start = quad[index];
+    const end = quad[(index + 1) % quad.length];
+    const cross =
+      (end.x - start.x) * (point.y - start.y) -
+      (end.y - start.y) * (point.x - start.x);
+    if (Math.abs(cross) < 1e-7) continue;
+    const nextSign = Math.sign(cross);
+    if (sign !== 0 && nextSign !== sign) return false;
+    sign = nextSign;
+  }
+  return true;
 }
 
 function arrivalDone(): boolean {
-  if (typeof window === "undefined") return false;
-  return Boolean(
-    (window as Window & { __arrivalDone?: boolean }).__arrivalDone,
+  return (
+    typeof window !== "undefined" &&
+    (window as Window & { __arrivalDone?: boolean }).__arrivalDone === true
   );
 }
 
-function setDebugConversation(id: string | null): void {
-  if (typeof window === "undefined") return;
-  (window as Window & { __lazyAConversation?: string | null })
-    .__lazyAConversation = id;
+function cameraFov(camera: Camera): number {
+  return camera instanceof PerspectiveCamera ? camera.fov : 35;
 }
 
-function setDebugCandidate(id: string | null): void {
-  if (typeof window === "undefined") return;
-  (window as Window & { __lazyANavCandidate?: string | null })
-    .__lazyANavCandidate = id;
+function setCameraFov(camera: Camera, fov: number): void {
+  if (!(camera instanceof PerspectiveCamera)) return;
+  if (camera.fov === fov) return;
+  camera.fov = fov;
+  camera.updateProjectionMatrix();
 }
 
-export function AttentionNavigation() {
-  const [conversation, setConversation] = useState<string | null>(null);
-  const conversationRef = useRef<string | null>(null);
-  const candidateRef = useRef<string | null>(null);
+function applyCameraSample(camera: Camera, sample: CameraSample): void {
+  camera.position.set(...sample.position);
+  camera.quaternion.set(...sample.quaternion);
+  setCameraFov(camera, sample.fov);
+  camera.updateMatrixWorld();
+}
+
+function interpolateCameraSample(
+  camera: Camera,
+  from: CameraSample,
+  to: CameraSample,
+  amount: number,
+): void {
+  camera.position
+    .set(...from.position)
+    .lerp(new Vector3(...to.position), amount);
+  camera.quaternion
+    .set(...from.quaternion)
+    .slerp(new Quaternion(...to.quaternion), amount)
+    .normalize();
+  setCameraFov(camera, from.fov + (to.fov - from.fov) * amount);
+  camera.updateMatrixWorld();
+}
+
+function copySnapshot(snapshot: CameraSnapshot): CameraSnapshot {
+  return {
+    ...snapshot,
+    camera: {
+      position: [...snapshot.camera.position],
+      quaternion: [...snapshot.camera.quaternion],
+      fov: snapshot.camera.fov,
+    },
+    framing: { coverage: { ...snapshot.framing.coverage } },
+  };
+}
+
+export function AttentionNavigation({
+  onExperienceEvent,
+}: AttentionNavigationProps = {}) {
+  const { camera, gl, size } = useThree();
+  const variant: Variant =
+    size.width / Math.max(size.height, 1) < 1.5 ? "portrait" : "wide";
+  const profile = plateManifest.variants[variant];
+  const navigation = profile.navigation;
+
+  const conversationRef = useRef<DestinationId | null>(null);
+  const candidateRef = useRef<DestinationId | null>(null);
   const pointerAlive = useRef(false);
-  const leanT = useRef(0);
-  const basePose = useRef<{ position: Vector3; gaze: Vector3 } | null>(null);
-  const lastTarget = useRef<ResolvedDestination | null>(null);
+  const experienceRef = useRef<ExperienceState>(INITIAL_PLATE_EXPERIENCE);
+  const activeTransitionRef = useRef<ActiveTransition | null>(null);
+  const deskSampleRef = useRef<CameraSample | null>(null);
+  const historyRef = useRef<CameraSnapshot[]>([]);
 
-  const centers = useMemo<ResolvedDestination[]>(
-    () =>
-      DESTINATIONS.map((destination) => ({
-        ...destination,
-        centerV: new Vector3(...destination.center),
-        focusV: new Vector3(...destination.focus),
-        postureV: destination.posture
-          ? new Vector3(...destination.posture)
-          : new Vector3(),
-      })),
-    [],
+  const sheetProjection = useMemo(() => {
+    const values = navigation.screenQuads.desk ??
+      navigation.screenQuad ?? [0, 0, 1, 0, 1, 1, 0, 1];
+    const normalizedQuad = [0, 1, 2, 3].map((index) => ({
+      x: values[index * 2],
+      y: values[index * 2 + 1],
+    }));
+    const projectNormalized = (localX: number, localY: number): ScreenPoint => {
+      const u =
+        (localX - navigation.bounds.x) / navigation.bounds.width;
+      const v =
+        (localY - navigation.bounds.y) / navigation.bounds.height;
+      const top = {
+        x: normalizedQuad[0].x + (normalizedQuad[1].x - normalizedQuad[0].x) * u,
+        y: normalizedQuad[0].y + (normalizedQuad[1].y - normalizedQuad[0].y) * u,
+      };
+      const bottom = {
+        x: normalizedQuad[3].x + (normalizedQuad[2].x - normalizedQuad[3].x) * u,
+        y: normalizedQuad[3].y + (normalizedQuad[2].y - normalizedQuad[3].y) * u,
+      };
+      return {
+        x: top.x + (bottom.x - top.x) * v,
+        y: top.y + (bottom.y - top.y) * v,
+      };
+    };
+    const rowQuad = (rect: (typeof navigation.rows)[number]["rect"]) => [
+      projectNormalized(rect.x, rect.y),
+      projectNormalized(rect.x + rect.width, rect.y),
+      projectNormalized(rect.x + rect.width, rect.y + rect.height),
+      projectNormalized(rect.x, rect.y + rect.height),
+    ];
+    return { projectNormalized, rowQuad };
+  }, [navigation]);
+
+  const setConversation = useCallback((id: DestinationId | null): void => {
+    conversationRef.current = id;
+    (window as Window & { __lazyAConversation?: DestinationId | null })
+      .__lazyAConversation = id;
+  }, []);
+
+  const setExperience = useCallback((next: ExperienceState): void => {
+    experienceRef.current = next;
+    (window as Window & { __lazyAEndpoint?: EndpointId }).__lazyAEndpoint =
+      next.endpoint;
+  }, []);
+
+  const localEvent = useCallback(
+    (event: ExperienceEvent): ExperienceState => {
+      const next = plateExperienceReducer(experienceRef.current, event);
+      setExperience(next);
+      return next;
+    },
+    [setExperience],
   );
 
-  useEffect(() => {
-    setDebugConversation(conversation);
-  }, [conversation]);
+  const snapshot = useCallback((): CameraSnapshot => {
+    const state = experienceRef.current;
+    const coverage = profile.endpoints[state.endpoint].framing.coverage;
+    return {
+      endpoint: state.endpoint,
+      requested: state.requested,
+      transition: state.transition,
+      phase: state.phase,
+      camera: {
+        position: camera.position.toArray() as [number, number, number],
+        quaternion: camera.quaternion.toArray() as [
+          number,
+          number,
+          number,
+          number,
+        ],
+        fov: cameraFov(camera),
+      },
+      framing: { coverage: { ...coverage } },
+    };
+  }, [camera, profile]);
 
-  /* Dev-only capture aid: ?talk=<id> opens a conversation after arrival. */
-  useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("talk");
-    if (!id || !DESTINATIONS.some((d) => d.id === id)) return;
-    const timer = window.setInterval(() => {
-      if (arrivalDone()) {
-        conversationRef.current = id;
-        setConversation(id);
-        window.clearInterval(timer);
-      }
-    }, 150);
-    return () => window.clearInterval(timer);
-  }, []);
+  const recordSnapshot = useCallback((): void => {
+    historyRef.current.push(snapshot());
+  }, [snapshot]);
+
+  const requestDestination = useCallback(
+    (destination: DestinationId): void => {
+      if (!arrivalDone() || !DESTINATIONS.includes(destination)) return;
+      setConversation(destination);
+      const event: NavigationExperienceEvent = {
+        type: "SELECT",
+        destination,
+      };
+      onExperienceEvent?.(event);
+      localEvent(event);
+    },
+    [localEvent, onExperienceEvent, setConversation],
+  );
+
+  const close = useCallback((): void => {
+    setConversation(null);
+    const event: NavigationExperienceEvent = { type: "CLOSE" };
+    onExperienceEvent?.(event);
+    localEvent(event);
+  }, [localEvent, onExperienceEvent, setConversation]);
 
   useEffect(() => {
     const wake = () => {
       pointerAlive.current = true;
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        conversationRef.current = null;
-        setConversation(null);
-      }
+      if (event.key === "Escape") close();
     };
     const onClick = () => {
       if (!arrivalDone()) return;
       const candidate = candidateRef.current;
-      if (candidate) {
-        conversationRef.current = candidate;
-        setConversation(candidate);
-      } else if (conversationRef.current) {
-        conversationRef.current = null;
-        setConversation(null);
-      }
+      if (candidate) requestDestination(candidate);
+      else if (conversationRef.current) close();
     };
     window.addEventListener("pointermove", wake, { once: true });
     window.addEventListener("mousemove", wake, { once: true });
@@ -181,70 +283,174 @@ export function AttentionNavigation() {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("click", onClick);
     };
-  }, []);
+  }, [close, requestDestination]);
+
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("talk");
+    if (!DESTINATIONS.includes(id as DestinationId)) return;
+    const timer = window.setInterval(() => {
+      if (!arrivalDone()) return;
+      requestDestination(id as DestinationId);
+      window.clearInterval(timer);
+    }, 150);
+    return () => window.clearInterval(timer);
+  }, [requestDestination]);
+
+  useEffect(() => {
+    const matchesAtScreenPoint = (
+      screenX: number,
+      screenY: number,
+    ): DestinationId[] => {
+      const rect = gl.domElement.getBoundingClientRect();
+      const normalized = {
+        x: (screenX - rect.left) / rect.width,
+        y: (screenY - rect.top) / rect.height,
+      };
+      return navigation.rows
+        .filter(({ rect: row }) =>
+          pointInConvexQuad(normalized, sheetProjection.rowQuad(row)),
+        )
+        .map(({ id }) => id);
+    };
+    const projectSheetPoint = (localX: number, localY: number) => {
+      const rect = gl.domElement.getBoundingClientRect();
+      const normalized = sheetProjection.projectNormalized(localX, localY);
+      return {
+        x: rect.left + normalized.x * rect.width,
+        y: rect.top + normalized.y * rect.height,
+      };
+    };
+    const navigationDebug = {
+      sheet: {
+        bounds: { ...NAVIGATION_SHEET.bounds },
+        rows: NAVIGATION_SHEET.rows.map(({ id, rect }) => ({
+          id,
+          rect: { ...rect },
+        })),
+      },
+      projectSheetPoint,
+      matchesAtScreenPoint,
+    };
+    const cameraDebug = {
+      snapshot,
+      history: () => historyRef.current.map(copySnapshot),
+      clearHistory: () => {
+        historyRef.current = [];
+      },
+      requestDestination,
+      close,
+    };
+    const debugWindow = window as Window & {
+      __lazyANavigationDebug?: typeof navigationDebug;
+      __lazyACameraDebug?: typeof cameraDebug;
+    };
+    debugWindow.__lazyANavigationDebug = navigationDebug;
+    debugWindow.__lazyACameraDebug = cameraDebug;
+    return () => {
+      if (debugWindow.__lazyANavigationDebug === navigationDebug) {
+        delete debugWindow.__lazyANavigationDebug;
+      }
+      if (debugWindow.__lazyACameraDebug === cameraDebug) {
+        delete debugWindow.__lazyACameraDebug;
+      }
+    };
+  }, [close, gl, navigation, profile, requestDestination, sheetProjection, snapshot]);
 
   useFrame((state, delta) => {
-    const { raycaster, pointer, camera } = state;
-    let candidate: string | null = null;
-    if (pointerAlive.current) {
-      raycaster.setFromCamera(pointer, camera);
-      const ray = raycaster.ray;
-      let best = Infinity;
-      for (const destination of centers) {
-        const distance = ray.distanceToPoint(destination.centerV);
-        if (distance < destination.radius) {
-          const depth = destination.centerV.distanceTo(camera.position);
-          if (depth < best) {
-            best = depth;
-            candidate = destination.id;
-          }
-        }
-      }
+    if (arrivalDone() && experienceRef.current.phase === "opening") {
+      deskSampleRef.current = {
+        position: camera.position.toArray() as [number, number, number],
+        quaternion: camera.quaternion.toArray() as [
+          number,
+          number,
+          number,
+          number,
+        ],
+        fov: cameraFov(camera),
+      };
+      localEvent({ type: "ARRIVAL_SETTLED" });
+      recordSnapshot();
+    }
+
+    const current = experienceRef.current;
+    if (
+      current.phase === "resting" &&
+      current.endpoint === "desk" &&
+      current.requested
+    ) {
+      localEvent({ type: "SELECT", destination: current.requested });
+    }
+
+    let candidate: DestinationId | null = null;
+    if (
+      pointerAlive.current &&
+      arrivalDone() &&
+      experienceRef.current.phase === "resting" &&
+      experienceRef.current.endpoint === "desk"
+    ) {
+      const normalized = {
+        x: (state.pointer.x + 1) / 2,
+        y: (1 - state.pointer.y) / 2,
+      };
+      candidate =
+        navigation.rows.find(({ rect: row }) =>
+          pointInConvexQuad(normalized, sheetProjection.rowQuad(row)),
+        )?.id ?? null;
     }
     candidateRef.current = candidate;
-    setDebugCandidate(candidate);
+    (window as Window & { __lazyANavCandidate?: DestinationId | null })
+      .__lazyANavCandidate = candidate;
 
-    if (!arrivalDone()) return;
-    const talking = conversationRef.current;
-    const target = talking
-      ? centers.find((destination) => destination.id === talking) ?? null
-      : null;
-    const direction = talking ? 1 : -1;
-    const before = leanT.current;
-    leanT.current = Math.min(
-      Math.max(leanT.current + (direction * delta) / LEAN_SECONDS, 0),
-      1,
-    );
-    if (leanT.current === 0 && before === 0) {
-      basePose.current = null;
-      setQuietLevel(0);
-      setJournalLevel(0);
-      setContactLevel(0);
+    const experience = experienceRef.current;
+    if (experience.phase !== "transitioning" || !experience.transition) {
+      activeTransitionRef.current = null;
+      const active = experience.endpoint;
+      setQuietLevel(active === "desk" || active === "opening" ? 0 : 1);
+      setJournalLevel(active === "journal" ? 1 : 0);
+      setContactLevel(active === "contact" ? 1 : 0);
       return;
     }
-    if (!basePose.current) {
-      basePose.current = {
-        position: camera.position.clone(),
-        gaze: camera.position
-          .clone()
-          .add(camera.getWorldDirection(new Vector3()).multiplyScalar(4)),
-      };
+
+    const [from, to] = experience.transition.split("-to-") as [
+      EndpointId,
+      EndpointId,
+    ];
+    const destination = (from === "desk" ? to : from) as DestinationId;
+    const authored = profile.transitions[`desk-${destination}`];
+    if (!authored) return;
+
+    let active = activeTransitionRef.current;
+    if (!active || active.id !== experience.transition) {
+      active = { id: experience.transition, elapsed: 0, progress: 0 };
+      activeTransitionRef.current = active;
     }
+    active.elapsed = Math.min(active.elapsed + delta, authored.duration);
+    active.progress = active.elapsed / authored.duration;
+    const forwardProgress = from === "desk" ? active.progress : 1 - active.progress;
+    const framePosition = forwardProgress * (authored.frames.length - 1);
+    const lowerIndex = Math.floor(framePosition);
+    const upperIndex = Math.min(lowerIndex + 1, authored.frames.length - 1);
+    interpolateCameraSample(
+      camera,
+      authored.frames[lowerIndex].camera,
+      authored.frames[upperIndex].camera,
+      framePosition - lowerIndex,
+    );
 
-    const pose = basePose.current;
-    const eased = easeInOutCubic(leanT.current);
-    setQuietLevel(eased);
-    if (target) lastTarget.current = target;
-    const turnTo = lastTarget.current;
-    setJournalLevel(turnTo?.id === "journal" ? eased : 0);
-    setContactLevel(turnTo?.id === "contact" ? eased : 0);
-    if (!turnTo) return;
+    const effectProgress = from === "desk" ? active.progress : 1 - active.progress;
+    setQuietLevel(effectProgress);
+    setJournalLevel(destination === "journal" ? effectProgress : 0);
+    setContactLevel(destination === "contact" ? effectProgress : 0);
 
-    camera.position.copy(pose.position).addScaledVector(turnTo.postureV, eased);
-    const gazePoint = pose.gaze
-      .clone()
-      .lerp(turnTo.focusV, eased * turnTo.gazePull);
-    camera.lookAt(gazePoint);
+    if (active.progress < 1) return;
+    if (to === "desk" && deskSampleRef.current) {
+      applyCameraSample(camera, deskSampleRef.current);
+    } else {
+      applyCameraSample(camera, profile.endpoints[to].projection.camera);
+    }
+    activeTransitionRef.current = null;
+    localEvent({ type: "TRANSITION_ENDED" });
+    recordSnapshot();
   });
 
   return null;

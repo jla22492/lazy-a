@@ -3,7 +3,7 @@
 import { useEffect, useReducer, useRef, useState } from "react";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { VideoTexture } from "three";
+import { Mesh, Vector3, VideoTexture } from "three";
 
 import { assetPath } from "@/lib/assetPath";
 import {
@@ -22,6 +22,12 @@ const HERO_FILM = {
   settleBeatSeconds: 1.8,
   roughness: 0.52,
 } as const;
+
+declare global {
+  interface Window {
+    __lazyAHeroProjection?: readonly number[];
+  }
+}
 
 function arrivalDone(): boolean {
   return (
@@ -43,6 +49,7 @@ export function HeroFilm() {
     INITIAL_HERO_STATE,
   );
   const [texture, setTexture] = useState<VideoTexture | null>(null);
+  const meshRef = useRef<Mesh>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyRef = useRef(false);
   const beatElapsed = useRef(0);
@@ -61,6 +68,7 @@ export function HeroFilm() {
     video.crossOrigin = "anonymous";
     video.disablePictureInPicture = true;
     video.disableRemotePlayback = true;
+    video.dataset.lazyAHero = "true";
     video.setAttribute("playsinline", "");
     video.setAttribute("webkit-playsinline", "");
 
@@ -103,6 +111,7 @@ export function HeroFilm() {
       video.load();
       videoTexture.dispose();
       videoRef.current = null;
+      delete window.__lazyAHeroProjection;
     };
   }, [outputColorSpace]);
 
@@ -120,7 +129,24 @@ export function HeroFilm() {
     void video.play().catch(() => dispatch({ type: "FAILED" }));
   }, [state]);
 
-  useFrame((_, delta) => {
+  useFrame(({ camera }, delta) => {
+    const mesh = meshRef.current;
+    if (mesh) {
+      const halfWidth = (width - HERO_FILM.border * 2) / 2;
+      const halfHeight = (height - HERO_FILM.border * 2) / 2;
+      mesh.updateWorldMatrix(true, false);
+      window.__lazyAHeroProjection = [
+        [-halfWidth, halfHeight],
+        [halfWidth, halfHeight],
+        [halfWidth, -halfHeight],
+        [-halfWidth, -halfHeight],
+      ].flatMap(([x, y]) => {
+        const projected = new Vector3(x, y, 0)
+          .applyMatrix4(mesh.matrixWorld)
+          .project(camera);
+        return [(projected.x + 1) / 2, (1 - projected.y) / 2];
+      });
+    }
     if (beatPassed.current || !arrivalDone()) return;
     beatElapsed.current += delta;
     if (beatElapsed.current < HERO_FILM.settleBeatSeconds) return;
@@ -134,7 +160,11 @@ export function HeroFilm() {
   if (!texture) return null;
 
   return (
-    <mesh position={[0, 0, thickness * 1.1 + 0.0004]} receiveShadow>
+    <mesh
+      ref={meshRef}
+      position={[0, 0, thickness * 1.1 + 0.0004]}
+      receiveShadow
+    >
       <planeGeometry
         args={[width - HERO_FILM.border * 2, height - HERO_FILM.border * 2]}
       />

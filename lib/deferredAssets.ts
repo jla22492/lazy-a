@@ -14,6 +14,8 @@
 
 type DeferredTask = () => void;
 
+const ROOM_SETTLED_EVENT = "lazy-a:room-settled";
+
 const queue: DeferredTask[] = [];
 let draining = false;
 
@@ -37,7 +39,11 @@ function drain(): void {
       draining = false;
       return;
     }
-    task();
+    try {
+      task();
+    } catch {
+      // A failed optional asset must never stall the rest of the queue.
+    }
     window.setTimeout(step, STAGGER_MS);
   };
   window.setTimeout(step, POST_SETTLE_DELAY_MS);
@@ -48,12 +54,17 @@ function watchArrival(): void {
     drain();
     return;
   }
+  const settled = () => {
+    window.removeEventListener(ROOM_SETTLED_EVENT, settled);
+    window.clearInterval(timer);
+    drain();
+  };
   const timer = window.setInterval(() => {
     if (arrivalDone()) {
-      window.clearInterval(timer);
-      drain();
+      settled();
     }
   }, 200);
+  window.addEventListener(ROOM_SETTLED_EVENT, settled, { once: true });
 }
 
 let watching = false;
@@ -69,4 +80,13 @@ export function whenRoomIsSettled(load: DeferredTask): void {
   } else if (arrivalDone() && !draining) {
     drain();
   }
+}
+
+/** Publish the one desk-settle signal used by camera, media, and deferrals. */
+export function announceRoomSettled(): void {
+  if (typeof window === "undefined") return;
+  const roomWindow = window as Window & { __arrivalDone?: boolean };
+  if (roomWindow.__arrivalDone) return;
+  roomWindow.__arrivalDone = true;
+  window.dispatchEvent(new Event(ROOM_SETTLED_EVENT));
 }
