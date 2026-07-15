@@ -144,13 +144,8 @@ async function installPageProbes(expectedProfile) {
       const samples = [];
       let activeSegment = "arrival opening -> desk";
       let sampleId = 0;
-
-      const quadMatches = (left, right) =>
-        Array.isArray(left) &&
-        Array.isArray(right) &&
-        left.length === 8 &&
-        right.length === 8 &&
-        left.every((value, index) => Math.abs(value - right[index]) < 1e-9);
+      const lastSampledProjection = new Map();
+      const lastWaitingProjection = new Map();
 
       const expectedCorners = (authored) => {
         if (!Array.isArray(authored) || authored.length !== 8) return null;
@@ -204,79 +199,82 @@ async function installPageProbes(expectedProfile) {
         }
       };
 
-      const createSample = (kind, label, decodedFrame = null) => {
+      const createRegistrationSample = (kind, label) => {
         if (!activeSegment) return;
-        for (const sample of samples) {
-          if (
-            sample.segment === activeSegment &&
-            sample.kind === "decoded" &&
-            !sample.occlusionObserved
-          ) {
-            sample.expired = true;
-          }
-        }
         const authored = values.authored?.hero;
+        const live = values.live;
+        const occlusion = values.occlusion;
         samples.push({
           id: ++sampleId,
           segment: activeSegment,
           kind,
           label,
-          decodedFrame,
           authored: Array.isArray(authored) ? [...authored] : null,
           profile: window.__lazyAPlateState?.profile ?? null,
-          liveObserved: false,
-          occlusionObserved: false,
-          cornerErrors: null,
-          occluders: null,
-          masked: null,
+          liveObserved: Array.isArray(live),
+          occlusionObserved: Boolean(occlusion),
+          cornerErrors: cornerErrors(live, authored),
+          occluders: occlusion?.polygonCount ?? null,
+          masked: occlusion?.masked ?? null,
           expectedMasked: maskHasRuns(values.authored?.heroOcclusionMask),
-          expired: false,
         });
       };
 
-      const observeLive = (live) => {
-        const authored = values.authored?.hero;
-        const sample = samples.find(
-          (candidate) =>
-            candidate.segment === activeSegment &&
-            !candidate.liveObserved &&
-            !candidate.expired &&
-            quadMatches(candidate.authored, authored),
-        );
-        if (!sample) return;
-        sample.liveObserved = true;
-        sample.cornerErrors = cornerErrors(live, sample.authored);
+      const recordDecodedFrame = (metadata) => {
+        if (!activeSegment) return;
+        samples.push({
+          id: ++sampleId,
+          segment: activeSegment,
+          kind: "decoded",
+          label: `decoded frame ${metadata.presentedFrames}`,
+          decodedFrame: metadata.presentedFrames,
+          profile: window.__lazyAPlateState?.profile ?? null,
+        });
       };
 
-      const observeOcclusion = (occlusion) => {
-        const authored = values.authored?.hero;
-        const sample = samples.find(
-          (candidate) =>
-            candidate.segment === activeSegment &&
-            candidate.liveObserved &&
-            !candidate.occlusionObserved &&
-            !candidate.expired &&
-            quadMatches(candidate.authored, authored),
-        );
-        if (!sample) return;
-        sample.occlusionObserved = true;
-        sample.occluders = occlusion?.polygonCount ?? null;
-        sample.masked = occlusion?.masked ?? null;
+      const recordWaitingProjection = (projection) => {
+        if (!activeSegment) return;
+        samples.push({
+          id: ++sampleId,
+          segment: activeSegment,
+          kind: "waiting",
+          label: "hero texture not ready",
+          profile: window.__lazyAPlateState?.profile ?? null,
+        });
+        lastWaitingProjection.set(activeSegment, projection);
       };
 
-      const publishProperty = (name, key, observer) => {
+      const sampleRenderedState = () => {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const projection = values.authored;
+            if (!activeSegment || !projection) return;
+            if (!Array.isArray(values.live) || !values.occlusion) {
+              if (lastWaitingProjection.get(activeSegment) !== projection) {
+                recordWaitingProjection(projection);
+              }
+            } else if (lastSampledProjection.get(activeSegment) !== projection) {
+              lastSampledProjection.set(activeSegment, projection);
+              createRegistrationSample("rendered", "post-render state");
+            }
+          }, 0);
+          sampleRenderedState();
+        });
+      };
+      sampleRenderedState();
+
+      const publishProperty = (name, key) => {
         Object.defineProperty(window, name, {
           configurable: true,
           get: () => values[key],
           set: (value) => {
             values[key] = value;
-            observer?.(value);
           },
         });
       };
       publishProperty("__lazyAPlateProjection", "authored");
-      publishProperty("__lazyAHeroProjection", "live", observeLive);
-      publishProperty("__lazyAHeroOcclusion", "occlusion", observeOcclusion);
+      publishProperty("__lazyAHeroProjection", "live");
+      publishProperty("__lazyAHeroOcclusion", "occlusion");
 
       const nativeVideoFrameCallback =
         HTMLVideoElement.prototype.requestVideoFrameCallback;
@@ -287,11 +285,7 @@ async function installPageProbes(expectedProfile) {
           return nativeVideoFrameCallback.call(this, (now, metadata) => {
             callback(now, metadata);
             if (this.closest('[data-room-renderer="plate"]')) {
-              createSample(
-                "decoded",
-                `decoded frame ${metadata.presentedFrames}`,
-                metadata.presentedFrames,
-              );
+              recordDecodedFrame(metadata);
             }
           });
         };
@@ -299,24 +293,26 @@ async function installPageProbes(expectedProfile) {
 
       const summarize = (segment) => {
         const selected = samples.filter((sample) => sample.segment === segment);
-        const errors = selected.flatMap((sample) => sample.cornerErrors ?? []);
-        const occluders = selected
+        const rendered = selected.filter(
+          (sample) => sample.kind !== "decoded" && sample.kind !== "waiting",
+        );
+        const errors = rendered.flatMap((sample) => sample.cornerErrors ?? []);
+        const occluders = rendered
           .map((sample) => sample.occluders)
           .filter(Number.isFinite);
         return {
           segment,
-          total: selected.length,
+          total: rendered.length,
+          rawTotal: selected.length,
           decoded: selected.filter((sample) => sample.kind === "decoded")
             .length,
-          points: selected.filter((sample) => sample.kind === "point").length,
-          unresolved: selected.filter(
-            (sample) =>
-              sample.expired ||
-              !sample.liveObserved ||
-              !sample.occlusionObserved,
+          waiting: selected.filter((sample) => sample.kind === "waiting")
+            .length,
+          points: rendered.filter((sample) => sample.kind === "point").length,
+          unresolved: rendered.filter(
+            (sample) => !sample.liveObserved || !sample.occlusionObserved,
           ).length,
-          expired: selected.filter((sample) => sample.expired).length,
-          invalidCorners: selected.filter(
+          invalidCorners: rendered.filter(
             (sample) =>
               !Array.isArray(sample.cornerErrors) ||
               sample.cornerErrors.length !== 4,
@@ -326,7 +322,7 @@ async function installPageProbes(expectedProfile) {
           ).length,
           maxCornerError: errors.length ? Math.max(...errors) : null,
           minOccluders: occluders.length ? Math.min(...occluders) : null,
-          occlusionFailures: selected.filter(
+          occlusionFailures: rendered.filter(
             (sample) =>
               typeof sample.expectedMasked !== "boolean" ||
               sample.masked !== sample.expectedMasked ||
@@ -343,7 +339,7 @@ async function installPageProbes(expectedProfile) {
             activeSegment = segment;
           },
           capture(label) {
-            createSample("point", label);
+            createRegistrationSample("point", label);
           },
           summarize,
         },
@@ -476,8 +472,10 @@ async function assertRegistrationSegment(viewport, segment, requireDecoded) {
   const label = viewportLabel(viewport);
   const summary = await waitForRegistrationSummary(segment, requireDecoded);
   const coverageDetail =
-    `samples=${summary.total} decoded=${summary.decoded} points=${summary.points} ` +
-    `unresolved=${summary.unresolved} expired=${summary.expired}`;
+    `rendered=${summary.total} records=${summary.rawTotal} ` +
+    `decoded=${summary.decoded} waiting=${summary.waiting} ` +
+    `points=${summary.points} ` +
+    `unresolved=${summary.unresolved}`;
   check(
     summary.total > 0 &&
       summary.points > 0 &&
@@ -489,7 +487,7 @@ async function assertRegistrationSegment(viewport, segment, requireDecoded) {
   check(
     summary.profileMismatches === 0,
     `${label} ${segment} profile selection`,
-    `expected=${viewport.profile} mismatches=${summary.profileMismatches}/${summary.total}`,
+    `expected=${viewport.profile} mismatches=${summary.profileMismatches}/${summary.rawTotal}`,
   );
   check(
     summary.invalidCorners === 0 &&
