@@ -1,3 +1,20 @@
+# WORK ORDER 0117-R2 — Second Failed Review Correction
+
+## Reopened Review
+
+- [x] Reproduce the changed tall-desktop camera and identify the aspect-only profile switch.
+- [x] Reproduce hero separation and trace it to independent plate-crop and live-camera projections.
+- [x] Inventory the seven supplied prop archives and their licenses.
+- [ ] Approve the revised camera/hero/plate execution design.
+- [ ] Add failing regression gates for the original arrival, settled camera, endpoint handoff, and four-corner hero registration across representative aspect ratios.
+- [ ] Integrate the supplied headphones, peace lily, picture frame, trash can, desk lamp, red mug, and basketball into the master scene.
+- [ ] Author the supplied CONTACT name, email, and phone as the physical indentation reveal.
+- [ ] Correct navigation, JOURNAL, CONTACT, lighting, materials, and responsive composition to the production-company quality bar.
+- [ ] Capture and review complete desktop, tall-desktop, and phone journeys in motion.
+- [ ] Receive Jonathan's explicit visual approval before any completion claim.
+
+---
+
 # WORK ORDER 0117-R — Failed Review Correction
 
 ## Review Result

@@ -57,4 +57,6 @@
 
 - The room became one photograph again: desktop and phone now arrive through the same current master, with the Lazy A mark printed on the card that was already there, four unmistakable graphite production notes, a true lean over JOURNAL, and a lamp that exposes CONTACT as pressure in paper. ABOUT turns into the room instead of opening a page. The moving print starts once at 4.72 seconds, stays alive wherever the visitor looks, and ends by holding its final image. No destination falls back to a rendered approximation; every state belongs to the same room.
 
+- R-0117-R failed live creative review: the plate runtime changed the approved approach and responsive resting camera, and the moving hero no longer remained physically registered to its print outside two exact test sizes. Passing coordinate and timing gates did not make the navigation, JOURNAL, CONTACT, materials, or compositions production-ready. The completion claim was withdrawn again; the original camera and hero placement are now explicit regression references for 0117-R2.
+
 Record experience changes here, not just technical ones.

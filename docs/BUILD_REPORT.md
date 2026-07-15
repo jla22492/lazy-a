@@ -1,6 +1,31 @@
 # BUILD REPORT
 
-WORK ORDER COMPLETE
+WORK ORDER 0117-R REJECTED BY JONATHAN
+
+The prior completion report is withdrawn. Exact-size automated gates passed,
+but the live UX did not meet the creative definition of done.
+
+Observed failures:
+
+- Arrival no longer preserves the approved continuous human approach.
+- Tall desktop windows select the phone camera and settle at a different pose.
+- The hero plane and photographed print use different responsive projection
+  systems, so the image separates from its surface and snaps visually.
+- Navigation, JOURNAL, CONTACT, materials, lighting, and responsive composition
+  remain below the expected production-company quality bar.
+
+Current correction:
+
+- Work Order 0117-R2 is active.
+- The approved pre-0117 arrival, settled camera, and hero placement are locked
+  regression references.
+- Seven supplied production props and final CONTACT details are added to scope.
+
+---
+
+## Withdrawn 0117-R Report
+
+FORMER COMPLETION CLAIM (WITHDRAWN)
 
 Commit:
 

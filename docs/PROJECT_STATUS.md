@@ -14,13 +14,13 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R COMPLETE — FAILED REVIEW CORRECTION: the mixed pano/primitive first pass has been replaced by one reproducible photographic room for wide and portrait. Existing card `Mesh_33` carries the logo; the production sheet owns four disjoint rows; JOURNAL reaches a readable human lean; CONTACT uses a stationary current lamp and true Geometry Nodes indentation; ABOUT turns left into room history; all states use the smoothed-lighting master and current photographed props. The hero begins once after settle, remains alive through navigation, aligns to its authored print, and holds its final frame. Measured locally: settle 2.89s, hero 4.68s, JOURNAL recognition 0.08s, nominal 59.9fps, 2.35MB through settle, 4.64MB total. Desktop and phone visual evidence lives at `docs/progress/0117-r-*`.
+0117-R2 IN PROGRESS — SECOND FAILED REVIEW CORRECTION: Jonathan rejected the 0117-R live experience. The photographic runtime replaced the approved continuous human arrival with a plate transition that does not preserve the original choreography, and its aspect-ratio-only profile switch selects a wholly different phone camera in tall desktop windows. The settled pose therefore changes despite being locked. The live hero is projected in the browser camera while the photographed plate is independently cropped with CSS `object-fit`; outside the two exact test sizes its four corners separate from the physical print and the image appears to move and then attach elsewhere. Navigation, JOURNAL, CONTACT, materials, lighting, and mobile composition remain below the production-company quality bar. Correction also integrates Jonathan's supplied headphones, peace lily, picture frame, trash can, lamp, red mug, and basketball, plus his final CONTACT details. No completion claim stands; full-motion desktop, tall-desktop, and phone visual approval is required.
 
 ---
 
 ## Completed
 
-- WORK ORDER 0117-R — photographic correction: rebuilt all twelve room endpoints and ten bidirectional paths from the current Blender master; corrected logo, navigation, JOURNAL, CONTACT, ABOUT, lighting continuity, mobile hero visibility, and live hero depth alignment; passed the full desktop/phone behavioral and visual audit.
+- WORK ORDER 0117-R — REJECTED AFTER IMPLEMENTATION: its automated gates passed at two exact viewports, but the live experience changed the approved camera, broke hero-to-print registration at ordinary intermediate aspect ratios, and remained visibly below the creative quality bar. Superseded by 0117-R2.
 - WORK ORDER 0117 — Physical navigation refinement: removed the floating website label layer, moved the logo into the room as a desk/wall identity proof, added the pencil-written production note as explicit navigation, implemented CONTACT as a latent pressure-impression reveal, added ABOUT's leftward room-history turn, and reverified the live 4/5/6 clock at settle 3.41s / magic 4.72s / physical JOURNAL target 0.08s.
 - Repository initialized and connected to GitHub
 - Next.js (App Router) configured with strict TypeScript, Tailwind, ESLint, Prettier
@@ -171,13 +171,13 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## In Progress
 
-WORK ORDER 0117-R — correcting the rejected physical-navigation implementation. Root causes are confirmed across the pano/live composition boundary, camera choreography, material reveal, and overlapping hit geometry. Implementation is paused at the creative design gate until Jonathan identifies the intended smoothed lighting master and approves the corrected render architecture.
+WORK ORDER 0117-R2 — correcting the rejected plate runtime and completing the approved physical room. Root causes are confirmed for the arrival, responsive camera drift, and hero registration. Supplied production props and final CONTACT information are under asset audit before the revised render contract is implemented.
 
 ---
 
 ## Next Recommended Work Order
 
-0117-R must pass Jonathan's visual review before 0118 can begin. After that: content-and-domain readiness, approved company material, authored JOURNAL/CONTACT/ABOUT content, and www.lazyaproductions.com migration.
+0117-R2 must pass Jonathan's full-motion visual review before 0118 can begin. After that: content-and-domain readiness, approved company material, authored JOURNAL/ABOUT content, and www.lazyaproductions.com migration.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
