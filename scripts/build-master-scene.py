@@ -91,82 +91,170 @@ SCAN_OBJECTS = set()
 MASTER_INVENTORY = {}
 
 PICKS = [
-    # Jonathan's approvals (R-0111). (path, three-pos, yaw, height, hide_hint)
-    # NOTE (0116): glTF roots import in QUATERNION rotation mode, so the
-    # old euler yaws never actually applied — every approved render shows
-    # each scan's intrinsic orientation. Yaws below are therefore 0 to
-    # preserve the approved looks; only the lamp (Jonathan: "facing
-    # inwards on the desk") carries a real spin, applied via quaternion.
+    # Each entry: id, path, Three-space contact position, Blender XYZ
+    # rotation, target size, measured axis, contact surface, replacement.
     ("vase", asset_path("assets/master/scans/ceramic-vase/scene.gltf"),
-     (0.42, 0.9, -0.2), 0.0, 0.11, None),
+     (0.42, 0.9, -0.2), (0.0, 0.0, 0.0), 0.11, "z", "desk", None, ()),
     ("books", asset_path("assets/master/scans/encyclopedia-books/scene.gltf"),
-     (-0.62, 0.9, -0.24), 0.0, 0.235, None),
+     (-0.62, 0.9, -0.24), (0.0, 0.0, 0.0), 0.235, "z", "desk",
+     ("names", ("Mesh_35", "Mesh_36", "Mesh_37")), ()),
     # R-0114: Jonathan's vintage c.1940 wood office chair.
     ("chair", asset_path("assets/master/scans/vintage-office-chair/scene.gltf"),
-     (0.95, 0.0, 0.78), 0.0, 0.9, ("near", (0.95, 0.0, 0.78), 0.5)),
+     (0.95, 0.0, 0.78), (0.0, 0.0, 0.0), 0.9, "z", "floor",
+     ("names", tuple(f"Mesh_{index}" for index in range(81, 93))), ()),
     ("camera", asset_path("assets/master/scans/camera/scene.gltf"),
-     (0.78, 0.9, 0.04), 0.0, 0.12, None),
-    # R-0114: Jonathan's coffee mug (MEDOMAI, CC BY 4.0).
+     (0.78, 0.9, 0.04), (0.0, 0.0, 0.0), 0.12, "z", "desk", None, ()),
+    # 0117-R2: Jonathan's supplied replacements, at measured real scale.
     ("mug", asset_path("assets/master/scans/coffee-cup/scene.gltf"),
-     (-0.55, 0.9, 0.19), 0.0, 0.095, ("near", (-0.55, 0.9, 0.19), 0.09)),
-    # R-0114: Jonathan's current Fab desk lamp; archive checksum is recorded.
-    # Yaw pi turns the head inward, across the desk (aim lineup verified).
+     (-0.55, 0.9, 0.19), (0.0, 0.0, 2.4), 0.095, "z", "desk",
+     ("names", tuple(f"Mesh_{index}" for index in range(46, 50))), ()),
     ("lamp", asset_path("assets/master/scans/desk-lamp/scene.gltf"),
-     (-0.8, 0.9, -0.24), math.pi, 0.45, ("near", (-0.8, 0.9, -0.24), 0.3)),
-    # R-0111: the plant — Jonathan's pick (photoscanned, broader).
-    ("plant", asset_path("assets/master/scans/potted-plant/scene.gltf"),
-     (-1.95, -0.015, 0.12), 0.0, 0.9, ("near", (-1.95, 0.0, 0.12), 0.45)),
+     (-0.94, 0.9, -0.27), (0.0, 0.0, 0.0), 0.48, "z", "desk",
+     ("names", tuple(f"Mesh_{index}" for index in range(148, 155))), ()),
+    ("plant", asset_path("assets/master/scans/peace-lily/scene.gltf"),
+     (-1.95, 0.0, 0.12), (0.0, 0.0, 0.12), 0.75, "z", "floor",
+     ("names", tuple(f"Mesh_{index}" for index in range(93, 110))), ()),
+    ("headphones", asset_path("assets/master/scans/sony-mdr-7506/scene.gltf"),
+     (-0.70, 0.9, 0.05), (math.radians(88), 0.0, -0.5), 0.19,
+     "horizontal", "desk", ("names", ("Mesh_50", "Mesh_51", "Mesh_52")), ()),
+    ("pictureFrame", asset_path("assets/master/scans/gold-picture-frame/scene.gltf"),
+     (-0.83, 0.9, -0.08), (math.radians(-7), 0.0, -math.pi / 2), 0.20,
+     "z", "desk", None, ()),
+    ("trashCan", asset_path("assets/master/scans/trash-can/source/trash_can.glb"),
+     (-1.06, 0.0, 0.52), (0.0, 0.0, -0.18), 0.27, "z", "floor",
+     ("names", ("Mesh_133", "Mesh_134")), ()),
+    ("basketball", asset_path("assets/master/scans/basketball/scene.gltf"),
+     (1.95, 0.0, 0.72), (0.35, -0.2, 0.5), 0.24, "diameter", "floor",
+     None, ("Floor", "Khayt")),
 ]
 
 
-def place_scan(asset_id, path, three_pos, yaw, height, hide_hint=None):
+def world_bounds(objects):
+    bpy.context.view_layer.update()
+    bounds_min = Vector((1e9, 1e9, 1e9))
+    bounds_max = Vector((-1e9, -1e9, -1e9))
+    found = False
+    for obj in objects:
+        if obj.type != "MESH" or obj.hide_render:
+            continue
+        for corner in obj.bound_box:
+            point = obj.matrix_world @ Vector(corner)
+            bounds_min = Vector(map(min, bounds_min, point))
+            bounds_max = Vector(map(max, bounds_max, point))
+            found = True
+    if not found:
+        raise ValueError("Master asset has no renderable mesh bounds")
+    return bounds_min, bounds_max
+
+
+def hide_replacements(imported, hide_hint, target_size):
+    if not hide_hint:
+        return []
+    replaced = []
+    if isinstance(hide_hint, tuple) and hide_hint[0] == "near":
+        _, three_pos, radius = hide_hint
+        cx, cy, cz = three_pos[0], -three_pos[2], three_pos[1]
+        for obj in bpy.data.objects:
+            if obj.type != "MESH" or obj in imported or obj in SCAN_OBJECTS:
+                continue
+            loc = obj.matrix_world.translation
+            horizontal = math.hypot(loc.x - cx, loc.y - cy)
+            vertical = abs(loc.z - (cz + target_size / 2))
+            if horizontal < radius and vertical < max(target_size * 0.75, 0.3):
+                obj.hide_render = True
+                replaced.append(obj.name)
+    elif isinstance(hide_hint, tuple) and hide_hint[0] == "names":
+        _, object_names = hide_hint
+        for object_name in object_names:
+            obj = bpy.data.objects.get(object_name)
+            if obj is not None and obj not in imported and obj not in SCAN_OBJECTS:
+                obj.hide_render = True
+                replaced.append(obj.name)
+    else:
+        for obj in bpy.data.objects:
+            if obj in imported or obj in SCAN_OBJECTS:
+                continue
+            if hide_hint in obj.name:
+                obj.hide_render = True
+                replaced.append(obj.name)
+    return sorted(replaced)
+
+
+def record_asset(asset_id, roots, objects, source_entry, replaced_objects):
+    minimum, maximum = world_bounds(objects)
+    relative_source = os.path.relpath(source_entry, REPO_ROOT)
+    for obj in objects:
+        obj["lazy_a_asset_id"] = asset_id
+        obj["lazy_a_source_entry"] = relative_source
+    MASTER_INVENTORY[asset_id] = {
+        "objects": sorted(obj.name for obj in objects),
+        "roots": sorted(obj.name for obj in roots),
+        "source_entry": relative_source,
+        "replaced_objects": replaced_objects,
+        "world_bounds": {
+            "min": [round(value, 6) for value in minimum],
+            "max": [round(value, 6) for value in maximum],
+        },
+    }
+
+
+def place_scan(
+    asset_id,
+    path,
+    three_pos,
+    rotation,
+    target_size,
+    measure_axis,
+    contact_surface,
+    hide_hint=None,
+    excluded_materials=(),
+):
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     imported = [o for o in bpy.data.objects if o not in before]
-    for o in imported:
-        SCAN_OBJECTS.add(o.name)
+    forbidden = set(excluded_materials)
+    for obj in list(imported):
+        materials = {slot.material.name for slot in obj.material_slots if slot.material}
+        if obj.type == "MESH" and materials.intersection(forbidden):
+            imported.remove(obj)
+            bpy.data.objects.remove(obj, do_unlink=True)
+    imported = [obj for obj in imported if obj.name in bpy.data.objects]
     roots = [o for o in imported if o.parent not in imported]
-    from mathutils import Vector as V
-    bounds_min = V((1e9, 1e9, 1e9))
-    bounds_max = V((-1e9, -1e9, -1e9))
-    for o in imported:
-        if o.type != "MESH":
-            continue
-        for corner in o.bound_box:
-            world = o.matrix_world @ V(corner)
-            bounds_min = V(map(min, bounds_min, world))
-            bounds_max = V(map(max, bounds_max, world))
-    size = bounds_max - bounds_min
-    scale = height / max(size.z, 1e-6)
-    bx, by, bz = three_pos[0], -three_pos[2], three_pos[1]
-    spin = Quaternion((0.0, 0.0, 1.0), yaw)
-    for index, root in enumerate(roots):
-        root.name = f"scan_{asset_id}_{index}"
-        root.scale = tuple(v * scale for v in root.scale)
-        # glTF roots arrive in QUATERNION mode, where euler edits are
-        # silently ignored — spin in whichever mode the root really uses.
-        if root.rotation_mode == "QUATERNION":
-            root.rotation_quaternion = spin @ root.rotation_quaternion
-        else:
-            root.rotation_euler.z += yaw
-        root.location = (bx, by, bz - bounds_min.z * scale)
-    MASTER_INVENTORY[asset_id] = [root.name for root in roots]
+    bpy.ops.object.empty_add(type="PLAIN_AXES", location=(0.0, 0.0, 0.0))
+    anchor = bpy.context.active_object
+    anchor.name = f"scan_{asset_id}"
+    for root in roots:
+        matrix_world = root.matrix_world.copy()
+        root.parent = anchor
+        root.matrix_world = matrix_world
+    anchor.rotation_mode = "XYZ"
+    anchor.rotation_euler = rotation
+    bpy.context.view_layer.update()
+
+    minimum, maximum = world_bounds(imported)
+    dimensions = maximum - minimum
+    if measure_axis == "horizontal":
+        measured = max(dimensions.x, dimensions.y)
+    elif measure_axis == "diameter":
+        measured = max(dimensions)
+    else:
+        measured = dimensions.z
+    scale = target_size / max(measured, 1e-6)
+    anchor.scale = (scale, scale, scale)
+    bpy.context.view_layer.update()
+
+    minimum, maximum = world_bounds(imported)
+    center = (minimum + maximum) * 0.5
+    bx, by = three_pos[0], -three_pos[2]
+    contact_z = 0.9 if contact_surface == "desk" else 0.0
+    anchor.location += Vector((bx - center.x, by - center.y, contact_z - minimum.z))
+    bpy.context.view_layer.update()
+
+    replaced = hide_replacements(set(imported), hide_hint, target_size)
+    tracked = [anchor, *imported]
+    SCAN_OBJECTS.update(tracked)
+    record_asset(asset_id, [anchor], tracked, path, replaced)
     print("MASTER ASSET:", asset_id, path)
-    if hide_hint:
-        if isinstance(hide_hint, tuple) and hide_hint[0] == "near":
-            _, tp, radius = hide_hint
-            cx, cy, cz = tp[0], -tp[2], tp[1]
-            for o in bpy.data.objects:
-                if o.type == "MESH" and o not in imported and o.name not in SCAN_OBJECTS:
-                    loc = o.matrix_world.translation
-                    horizontal = ((loc.x - cx) ** 2 + (loc.y - cy) ** 2) ** 0.5
-                    vertical = abs(loc.z - (cz + height / 2))
-                    if horizontal < radius and vertical < max(height * 0.75, 0.3):
-                        o.hide_render = True
-        else:
-            for o in bpy.data.objects:
-                if hide_hint in o.name and o not in imported:
-                    o.hide_render = True
 
 
 for pick in PICKS:
@@ -179,7 +267,6 @@ blanket_tex = asset_path("assets/master/scans/blanket/texture.jpg")
 bpy.ops.mesh.primitive_plane_add(size=1, location=(1.0, -0.9, 1.02))
 cloth = bpy.context.active_object
 cloth.name = "scan_blanket_0"
-MASTER_INVENTORY["blanket"] = [cloth.name]
 cloth.scale = (0.28, 0.42, 1)
 cloth.rotation_euler.z = 0.55
 bpy.ops.object.transform_apply(scale=True, rotation=True)
@@ -210,6 +297,8 @@ tex = mat.node_tree.nodes.new("ShaderNodeTexImage")
 tex.image = bpy.data.images.load(blanket_tex)
 mat.node_tree.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
 cloth.data.materials.append(mat)
+SCAN_OBJECTS.add(cloth)
+record_asset("blanket", [cloth], [cloth], blanket_tex, [])
 
 # R-0115: the bookcase closes its open ends — books obey gravity.
 side = bpy.data.materials.new("case_side")
