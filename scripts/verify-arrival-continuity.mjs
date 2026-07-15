@@ -21,6 +21,7 @@ const requestedViewport = args
 const url =
   args.find((argument) => !argument.startsWith("--")) ??
   "http://localhost:3000/";
+const targetBasePath = new URL(url).pathname.replace(/\/+$/, "");
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(
   await readFile(resolve(repositoryRoot, "public/room/manifest.json"), "utf8"),
@@ -601,6 +602,7 @@ try {
   )) {
     const label = `${viewport.name} ${viewport.width}x${viewport.height}`;
     const expected = expectedArrival(viewport.profile);
+    expected.forward = `${targetBasePath}${expected.forward}`;
     const expectedProfile =
       viewport.width <= cameraContract.selection.phoneMaxWidth
         ? "portrait"
