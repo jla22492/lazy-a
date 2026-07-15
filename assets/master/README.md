@@ -30,6 +30,8 @@ not match the required IDs and entry points.
 | `pictureFrame` | `assets/master/scans/gold-picture-frame/scene.gltf`         |
 | `trashCan`     | `assets/master/scans/trash-can/source/trash_can.glb`        |
 | `basketball`   | `assets/master/scans/basketball/scene.gltf`                 |
+| `seating`      | `assets/master/scans/leather-seating/scene.gltf`             |
+| `logo`         | `assets/master/brand/lazy-a-logo-letterpress.png`            |
 
 Keep each model's referenced buffers and source textures beside its normalized
 entry point. Do not substitute a visually similar model when an approved source
@@ -68,10 +70,12 @@ point, recovered archive, and supplied license hashes.
 Poly Haven creator and source facts come from its official asset API and use
 the site's CC0 license. Sketchfab creator, source, and license facts come from
 the supplied archive metadata. The recovered chair, mug, lamp, blanket,
-headphones, peace lily, picture frame, trash can, and basketball archives are
-preserved beside their normalized entry points. The trash-can archive contains
-no attribution or license metadata, so both remain explicitly unresolved
-rather than guessed.
+headphones, peace lily, picture frame, trash can, basketball, and leather
+seating archives are preserved beside their normalized entry points. The exact
+original Lazy A letterpress PNG is pinned as proprietary brand artwork and must
+not be redrawn or generatively altered. The trash-can archive contains no
+attribution or license metadata, so both remain explicitly unresolved rather
+than guessed.
 
 The supplied basketball scene also contains display geometry. Its credits
 record is an import contract: only material `Ball` is renderable; materials

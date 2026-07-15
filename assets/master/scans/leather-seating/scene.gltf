@@ -1,0 +1,597 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 2636,
+      "max": [
+        24.414630889892578,
+        24.414630889892578,
+        28.022415161132813
+      ],
+      "min": [
+        -24.414630889892578,
+        -24.414630889892578,
+        -124.82134246826172
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 31632,
+      "componentType": 5126,
+      "count": 2636,
+      "max": [
+        0.9999032616615295,
+        0.9960743188858032,
+        0.9998275637626648
+      ],
+      "min": [
+        -0.9993659853935242,
+        -0.9961435794830322,
+        -0.9943830370903015
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 2636,
+      "max": [
+        0.9965455532073975,
+        0.9973110556602478,
+        0.9996556043624878,
+        1.0
+      ],
+      "min": [
+        -0.9947102069854736,
+        -0.9958404302597046,
+        -0.9976606965065002,
+        1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 2636,
+      "max": [
+        0.46811968088150024,
+        0.5430917143821716
+      ],
+      "min": [
+        0.003547810949385166,
+        0.0034784702584147453
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 10653,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 63264,
+      "componentType": 5126,
+      "count": 1875,
+      "max": [
+        50.752445220947266,
+        56.86891174316406,
+        107.67100524902344
+      ],
+      "min": [
+        -50.752445220947266,
+        -34.375343322753906,
+        4.0611263329992653e-07
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 85764,
+      "componentType": 5126,
+      "count": 1875,
+      "max": [
+        0.9996741414070129,
+        0.9999215602874756,
+        0.9999768733978271
+      ],
+      "min": [
+        -0.9996741414070129,
+        -0.9999141097068787,
+        -0.919406533241272
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 42176,
+      "componentType": 5126,
+      "count": 1875,
+      "max": [
+        1.0,
+        0.9999905228614807,
+        0.9977739453315735,
+        1.0
+      ],
+      "min": [
+        -0.99997878074646,
+        -0.9999905228614807,
+        -0.9999293088912964,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 21088,
+      "componentType": 5126,
+      "count": 1875,
+      "max": [
+        0.997323215007782,
+        0.9969599843025208
+      ],
+      "min": [
+        0.2845739424228668,
+        0.004578865133225918
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 42612,
+      "componentType": 5125,
+      "count": 8088,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 108264,
+      "componentType": 5126,
+      "count": 1440,
+      "max": [
+        76.14190673828125,
+        37.94133758544922,
+        39.098876953125
+      ],
+      "min": [
+        -76.14190673828125,
+        -37.94133758544922,
+        -0.0654144287109375
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 125544,
+      "componentType": 5126,
+      "count": 1440,
+      "max": [
+        0.9989461302757263,
+        0.9989461302757263,
+        1.0
+      ],
+      "min": [
+        -0.9989461302757263,
+        -0.9989461302757263,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 72176,
+      "componentType": 5126,
+      "count": 1440,
+      "max": [
+        0.9997705221176147,
+        0.9999377727508545,
+        0.9999212622642517,
+        1.0
+      ],
+      "min": [
+        -0.9997705221176147,
+        -1.0,
+        -0.999441921710968,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 36088,
+      "componentType": 5126,
+      "count": 1440,
+      "max": [
+        0.49603071808815,
+        0.9932669401168823
+      ],
+      "min": [
+        0.005213596858084202,
+        0.5046079158782959
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 74964,
+      "componentType": 5125,
+      "count": 4722,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "YJ_ (https://sketchfab.com/YJ_)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/leather-armchair-coffee-table-floorlamp-fcce92a09de84456a071ea6117b57cbc",
+      "title": "Leather armchair/ Coffee table/ Floorlamp"
+    },
+    "generator": "Sketchfab-12.59.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 93852,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 47608,
+      "byteOffset": 93852,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 142824,
+      "byteOffset": 141460,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 95216,
+      "byteOffset": 284284,
+      "byteStride": 16,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 379500,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/TEXSET_A_baseColor.png"
+    },
+    {
+      "uri": "textures/TEXSET_A_metallicRoughness.png"
+    },
+    {
+      "uri": "textures/TEXSET_A_emissive.png"
+    },
+    {
+      "uri": "textures/TEXSET_A_normal.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "emissiveFactor": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "emissiveTexture": {
+        "index": 2
+      },
+      "name": "TEXSET_A",
+      "normalTexture": {
+        "index": 3
+      },
+      "occlusionTexture": {
+        "index": 1,
+        "strength": 0.6036471918720245
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 1
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "FLOORLAMP_TEXSET_A_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "ARMCHAIR_TEXSET_A_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 6,
+            "POSITION": 5,
+            "TANGENT": 7,
+            "TEXCOORD_0": 8
+          },
+          "indices": 9,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "COFFEETABLE_TEXSET_A_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 11,
+            "POSITION": 10,
+            "TANGENT": 12,
+            "TEXCOORD_0": 13
+          },
+          "indices": 14,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.009999999776482582,
+        0.0,
+        0.0,
+        -0.009999999776482582,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "ea16bd4ed87b40cb88f597328f8e0c75.fbx"
+    },
+    {
+      "children": [
+        3
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "*GAMEREADY"
+    },
+    {
+      "children": [
+        5,
+        8,
+        10
+      ],
+      "name": "TEXSET_A"
+    },
+    {
+      "children": [
+        6
+      ],
+      "matrix": [
+        0.7938658284607848,
+        0.652210735894164,
+        -0.05736347121711953,
+        0.0,
+        -0.6523519412123523,
+        0.7956172357504748,
+        0.017958964799276014,
+        0.0,
+        0.05573469872673564,
+        0.022510788626322,
+        1.0272678682781204,
+        0.0,
+        80.26708221435547,
+        19.272911071777344,
+        138.46107482910156,
+        1.0
+      ],
+      "name": "FLOORLAMP"
+    },
+    {
+      "children": [
+        7
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        -0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        -10.315000534057617,
+        1.0
+      ],
+      "name": "Object_6"
+    },
+    {
+      "mesh": 0,
+      "name": "FLOORLAMP_TEXSET_A_0"
+    },
+    {
+      "children": [
+        9
+      ],
+      "matrix": [
+        0.9819541019839411,
+        0.1891193845086002,
+        0.0,
+        0.0,
+        -0.1891193845086002,
+        0.9819541019839411,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "ARMCHAIR"
+    },
+    {
+      "mesh": 1,
+      "name": "ARMCHAIR_TEXSET_A_0"
+    },
+    {
+      "children": [
+        11
+      ],
+      "matrix": [
+        0.9976912691591635,
+        0.06791267513194787,
+        0.0,
+        0.0,
+        -0.06791267513194787,
+        0.9976912691591635,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        23.314693450927734,
+        -100.41663360595703,
+        0.0,
+        1.0
+      ],
+      "name": "COFFEETABLE"
+    },
+    {
+      "mesh": 2,
+      "name": "COFFEETABLE_TEXSET_A_0"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    },
+    {
+      "sampler": 0,
+      "source": 3
+    }
+  ]
+}

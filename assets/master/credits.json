@@ -121,5 +121,25 @@
     "entryPoint": "assets/master/scans/basketball/scene.gltf",
     "renderableMaterials": ["Ball"],
     "nonRenderableMaterials": ["Floor", "Khayt"]
+  },
+  {
+    "id": "seating",
+    "creator": "YJ_",
+    "source": "https://sketchfab.com/3d-models/leather-armchair-coffee-table-floorlamp-fcce92a09de84456a071ea6117b57cbc",
+    "license": "CC-BY-4.0",
+    "licenseSha256": "b9140285ea6836aa01346e45f7f83c64ea6234ff15d7043451ea373597cf1204",
+    "archivePath": "assets/master/scans/leather-seating/source.zip",
+    "archiveSha256": "efbe16f542ff58b54b03c1a195dac3a0d3032d2dd30ab4b8d60c40e086687169",
+    "entryPointSha256": "c4aa1870e45653a81918c7baa3768e6ba00ce02ce6a46cf8ae66c3ee69cc1662",
+    "entryPoint": "assets/master/scans/leather-seating/scene.gltf"
+  },
+  {
+    "id": "logo",
+    "creator": "Lazy A Productions",
+    "source": "User-supplied master letterpress artwork",
+    "license": "Proprietary brand artwork",
+    "archiveSha256": "not archived; exact original PNG pinned by entryPointSha256",
+    "entryPointSha256": "599bec1d52fc8a78fa7a0d5fff5db51502655769e11abd32818cdc236563664f",
+    "entryPoint": "assets/master/brand/lazy-a-logo-letterpress.png"
   }
 ]

@@ -114,6 +114,43 @@ const required = [
     renderableMaterials: ["Ball"],
     nonRenderableMaterials: ["Floor", "Khayt"],
   }),
+  suppliedArchive({
+    id: "seating",
+    entryPoint: "assets/master/scans/leather-seating/scene.gltf",
+    entryPointSha256:
+      "c4aa1870e45653a81918c7baa3768e6ba00ce02ce6a46cf8ae66c3ee69cc1662",
+    dependencySha256: {
+      "assets/master/scans/leather-seating/scene.bin":
+        "b4f8b4a691c82b083e1db0252a9e9b3e858441277d34eebb6da470cb48f29040",
+      "assets/master/scans/leather-seating/textures/TEXSET_A_baseColor.png":
+        "897ffaf4de937c03be2a9416298da290a796b2b8a9208168a3f2c16ae258ad64",
+      "assets/master/scans/leather-seating/textures/TEXSET_A_emissive.png":
+        "6b94b0a78362f7208ccaf9f63e6d3cf965697ebec141f92cab8173198b7ecabf",
+      "assets/master/scans/leather-seating/textures/TEXSET_A_metallicRoughness.png":
+        "847e3312ce6389cfe79378dd23f4ea40ef6b279492a6ef1c23ef4483a1afd8a7",
+      "assets/master/scans/leather-seating/textures/TEXSET_A_normal.png":
+        "c1d6c5a7fa13819879e994bf6f8216581f5e3f27e4276eabc50a817370bae356",
+    },
+    archiveSha256:
+      "efbe16f542ff58b54b03c1a195dac3a0d3032d2dd30ab4b8d60c40e086687169",
+    creator: "YJ_",
+    source:
+      "https://sketchfab.com/3d-models/leather-armchair-coffee-table-floorlamp-fcce92a09de84456a071ea6117b57cbc",
+    license: "CC-BY-4.0",
+    licensePath: "assets/master/scans/leather-seating/license.txt",
+    licenseSha256:
+      "b9140285ea6836aa01346e45f7f83c64ea6234ff15d7043451ea373597cf1204",
+  }),
+  {
+    id: "logo",
+    entryPoint: "assets/master/brand/lazy-a-logo-letterpress.png",
+    entryPointSha256:
+      "599bec1d52fc8a78fa7a0d5fff5db51502655769e11abd32818cdc236563664f",
+    creator: "Lazy A Productions",
+    source: "User-supplied master letterpress artwork",
+    license: "Proprietary brand artwork",
+    dimensions: { width: 2000, height: 1588 },
+  },
 ];
 
 const builderPath = "scripts/build-master-scene.py";
@@ -128,7 +165,11 @@ const requiredCreditFields = [
 ];
 const forbiddenBuilderReferences = [
   { label: "/private/tmp", pattern: /\/private\/tmp/ },
-  { label: "~/Downloads", pattern: /~\/Downloads(?:\/|\b)/ },
+  { label: "/tmp", pattern: /\/tmp(?:\/|\b)/ },
+  { label: "Downloads", pattern: /\bDownloads\b/ },
+  { label: "Path.home()", pattern: /\bPath\.home\s*\(/ },
+  { label: "Python tempfile", pattern: /\btempfile\b/ },
+  { label: "temporary environment path", pattern: /\b(?:TMPDIR|TEMP|TMP)\b/ },
   { label: "absolute macOS user path", pattern: /\/Users\/[^/\s"']+\// },
   { label: "absolute Linux user path", pattern: /\/home\/[^/\s"']+\// },
   {
@@ -151,7 +192,12 @@ async function sha256(relativePath) {
 async function findMissingAssets() {
   const missing = [];
 
-  for (const { entryPoint, archivePath, licensePath } of required) {
+  for (const {
+    entryPoint,
+    archivePath,
+    licensePath,
+    dependencySha256,
+  } of required) {
     for (const requiredPath of [archivePath, licensePath].filter(Boolean)) {
       try {
         const details = await stat(absolutePath(requiredPath));
@@ -189,6 +235,26 @@ async function findMissingAssets() {
       }
     } catch {
       missing.push(entryPoint);
+    }
+
+    for (const [dependency, expectedHash] of Object.entries(
+      dependencySha256 ?? {},
+    )) {
+      try {
+        const details = await stat(absolutePath(dependency));
+        if (!details.isFile() || details.size === 0) {
+          missing.push(dependency);
+          continue;
+        }
+        const actualHash = await sha256(dependency);
+        if (actualHash !== expectedHash) {
+          missing.push(
+            `${dependency} hash ${actualHash} expected ${expectedHash}`,
+          );
+        }
+      } catch {
+        missing.push(dependency);
+      }
     }
   }
 
@@ -269,6 +335,44 @@ async function findCreditIssues() {
           `id "${id}" entryPointSha256=${credit.entryPointSha256} expected ${actualEntryPointHash}`,
         );
       }
+      if (
+        asset.entryPointSha256 &&
+        actualEntryPointHash !== asset.entryPointSha256
+      ) {
+        issues.push(
+          `id "${id}" entry point hash ${actualEntryPointHash} expected ${asset.entryPointSha256}`,
+        );
+      }
+
+      for (const field of ["creator", "source", "license"]) {
+        if (asset[field] && credit[field] !== asset[field]) {
+          issues.push(
+            `id "${id}" ${field}=${JSON.stringify(credit[field])} expected ${JSON.stringify(asset[field])}`,
+          );
+        }
+      }
+
+      if (asset.dimensions) {
+        const source = await readFile(absolutePath(entryPoint));
+        const pngSignature = "89504e470d0a1a0a";
+        if (
+          source.length < 24 ||
+          source.subarray(0, 8).toString("hex") !== pngSignature
+        ) {
+          issues.push(`id "${id}" entry point is not a valid PNG`);
+        } else {
+          const width = source.readUInt32BE(16);
+          const height = source.readUInt32BE(20);
+          if (
+            width !== asset.dimensions.width ||
+            height !== asset.dimensions.height
+          ) {
+            issues.push(
+              `id "${id}" dimensions=${width}x${height} expected ${asset.dimensions.width}x${asset.dimensions.height}`,
+            );
+          }
+        }
+      }
 
       if (asset.archivePath) {
         if (credit.archivePath !== asset.archivePath) {
@@ -291,14 +395,6 @@ async function findCreditIssues() {
           }
         } catch (error) {
           if (error?.code !== "ENOENT") throw error;
-        }
-
-        for (const field of ["creator", "source", "license"]) {
-          if (credit[field] !== asset[field]) {
-            issues.push(
-              `id "${id}" ${field}=${JSON.stringify(credit[field])} expected ${JSON.stringify(asset[field])}`,
-            );
-          }
         }
       } else {
         const archivePath = join(dirname(entryPoint), "source.zip");
