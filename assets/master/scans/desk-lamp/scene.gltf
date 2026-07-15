@@ -3,107 +3,143 @@
     {
       "bufferView": 2,
       "componentType": 5126,
-      "count": 2432,
+      "count": 14979,
       "max": [
-        0.10249510407447815,
-        0.2604942321777344,
-        0.08033089339733124
+        0.9582260251045227,
+        1.0,
+        0.31538599729537964
       ],
       "min": [
-        -0.13117575645446777,
-        1.4343477516831626e-08,
-        -0.08033085614442825
+        -0.9582260251045227,
+        -1.0,
+        -0.31538599729537964
       ],
       "type": "VEC3"
     },
     {
       "bufferView": 2,
-      "byteOffset": 29184,
+      "byteOffset": 179748,
       "componentType": 5126,
-      "count": 2432,
+      "count": 14979,
+      "max": [
+        0.9999445080757141,
+        0.9999840259552002,
+        1.0
+      ],
+      "min": [
+        -0.999946117401123,
+        -1.0,
+        -0.999996542930603
+      ],
       "type": "VEC3"
     },
     {
       "bufferView": 3,
       "componentType": 5126,
-      "count": 2432,
+      "count": 14979,
+      "max": [
+        1.0,
+        0.9999475479125977,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -0.9999992251396179,
+        -0.9999997615814209,
+        -0.9999964833259583,
+        -1.0
+      ],
       "type": "VEC4"
     },
     {
       "bufferView": 1,
       "componentType": 5126,
-      "count": 2432,
-      "type": "VEC2"
-    },
-    {
-      "bufferView": 1,
-      "byteOffset": 19456,
-      "componentType": 5126,
-      "count": 2432,
+      "count": 14979,
+      "max": [
+        0.9794570207595825,
+        0.9800000190734863
+      ],
+      "min": [
+        0.019999999552965164,
+        0.019999999552965164
+      ],
       "type": "VEC2"
     },
     {
       "bufferView": 0,
       "componentType": 5125,
-      "count": 9144,
+      "count": 70776,
       "type": "SCALAR"
     }
   ],
   "asset": {
-    "generator": "fab-model-conversion",
+    "extras": {
+      "author": "olleli1125 (https://sketchfab.com/olleli1125)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/desk-lamp-7be9e6cbf6e04365a028217a4874730e",
+      "title": "Desk Lamp"
+    },
+    "generator": "Sketchfab-12.64.0",
     "version": "2.0"
   },
   "bufferViews": [
     {
       "buffer": 0,
-      "byteLength": 36576,
+      "byteLength": 283104,
+      "name": "floatBufferViews",
       "target": 34963
     },
     {
       "buffer": 0,
-      "byteLength": 38912,
-      "byteOffset": 36576,
+      "byteLength": 119832,
+      "byteOffset": 283104,
       "byteStride": 8,
+      "name": "floatBufferViews",
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 58368,
-      "byteOffset": 75488,
+      "byteLength": 359496,
+      "byteOffset": 402936,
       "byteStride": 12,
+      "name": "floatBufferViews",
       "target": 34962
     },
     {
       "buffer": 0,
-      "byteLength": 38912,
-      "byteOffset": 133856,
+      "byteLength": 239664,
+      "byteOffset": 762432,
       "byteStride": 16,
+      "name": "floatBufferViews",
       "target": 34962
     }
   ],
   "buffers": [
     {
-      "byteLength": 172768,
+      "byteLength": 1002096,
       "uri": "scene.bin"
     }
   ],
   "images": [
     {
-      "uri": "textures/TableLamp_BaseColor.jpeg"
+      "uri": "textures/Material__63_baseColor.jpeg"
     },
     {
-      "uri": "textures/TableLamp_ORM.jpeg"
+      "uri": "textures/Material__63_metallicRoughness.png"
     },
     {
-      "uri": "textures/TableLamp_Normal.png"
+      "uri": "textures/Material__63_normal.png"
     }
   ],
   "materials": [
     {
       "doubleSided": true,
-      "name": "TableLamp",
+      "name": "Material__63",
       "normalTexture": {
         "index": 2
+      },
+      "occlusionTexture": {
+        "index": 1
       },
       "pbrMetallicRoughness": {
         "baseColorTexture": {
@@ -117,17 +153,16 @@
   ],
   "meshes": [
     {
-      "name": "Object_0",
+      "name": "defaultMaterial",
       "primitives": [
         {
           "attributes": {
             "NORMAL": 1,
             "POSITION": 0,
             "TANGENT": 2,
-            "TEXCOORD_0": 3,
-            "TEXCOORD_1": 4
+            "TEXCOORD_0": 3
           },
-          "indices": 5,
+          "indices": 4,
           "material": 0,
           "mode": 4
         }
@@ -157,17 +192,11 @@
         0.0,
         1.0
       ],
-      "name": "FAB converted model"
+      "name": "Sketchfab_model"
     },
     {
       "children": [
         2
-      ],
-      "name": "root"
-    },
-    {
-      "children": [
-        3
       ],
       "matrix": [
         1.0,
@@ -175,29 +204,29 @@
         0.0,
         0.0,
         0.0,
-        2.220446049250313e-16,
-        1.0,
+        -4.371139006309477e-08,
+        0.999999999999999,
         0.0,
         0.0,
-        -1.0,
-        2.220446049250313e-16,
+        -0.999999999999999,
+        -4.371139006309477e-08,
         0.0,
         0.0,
         0.0,
         0.0,
         1.0
       ],
-      "name": "GLTF_SceneRootNode"
+      "name": "Collada visual scene group"
     },
     {
       "children": [
-        4
+        3
       ],
-      "name": "TableLamp_0"
+      "name": "desk_lamp"
     },
     {
       "mesh": 0,
-      "name": "Object_4"
+      "name": "defaultMaterial"
     }
   ],
   "samplers": [
@@ -211,7 +240,7 @@
   "scene": 0,
   "scenes": [
     {
-      "name": "FAB converted",
+      "name": "Sketchfab_Scene",
       "nodes": [
         0
       ]

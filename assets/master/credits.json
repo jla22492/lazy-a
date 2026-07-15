@@ -37,30 +37,36 @@
   },
   {
     "id": "mug",
-    "creator": "MEDOMAI",
-    "source": "https://sketchfab.com/3d-models/coffee-cup-87fc1f649a434120b0d420f2eec45edc",
-    "license": "CC BY 4.0",
-    "archiveSha256": "ac2ed11daa551c804f8aad01994e59e77dcc1dc7e9b57128dfac639b3be3c58e",
-    "entryPointSha256": "ba46cea5f5c5336a4ce049a29867a12cf7391592bc21a31e3b1c285058e69d01",
+    "creator": "Ane07",
+    "source": "https://sketchfab.com/3d-models/red-mug-bdf703f536454fe9bae49000dbb73d26",
+    "license": "SKETCHFAB Standard",
+    "licenseSha256": "2f6af0f21674bf8805bc026a3496010a400c8583fc0fd19f4e9ebee5b6ee44e5",
+    "archivePath": "assets/master/scans/coffee-cup/source.zip",
+    "archiveSha256": "58371d1d881e0808535ab221697fb613af52ead7d6752c1eff65be2169efa0d9",
+    "entryPointSha256": "21b5fdb8090f1ddfeaed605638d14cb6ee673ab8c24b0ff8f3d61a5a80569937",
     "entryPoint": "assets/master/scans/coffee-cup/scene.gltf"
   },
   {
     "id": "lamp",
-    "creator": "Unresolved; Fab archive contains no attribution metadata",
-    "source": "https://www.fab.com/",
-    "license": "Fab Standard License",
-    "archiveSha256": "b0c32e845738e9bea768172d54f997174b9142894ce6c482e3508b6e75f8977e",
-    "entryPointSha256": "10784fac4c24db558b73b2fbefaba12ab120c8fe22ccdab4f1000bf7918df6e7",
+    "creator": "olleli1125",
+    "source": "https://sketchfab.com/3d-models/desk-lamp-7be9e6cbf6e04365a028217a4874730e",
+    "license": "CC-BY-4.0",
+    "licenseSha256": "3ff3784606178d12a1f5d0ccfc601fd3651f0214f6aa8981b993173574215197",
+    "archivePath": "assets/master/scans/desk-lamp/source.zip",
+    "archiveSha256": "99a81c159ba7c625a886b980a4362d234101b4b1fe8de63d46d5c0f14323a167",
+    "entryPointSha256": "8203bc06687890c446bf6fc907e7254cd11eb6a92ba6cfc62efe5145731adeba",
     "entryPoint": "assets/master/scans/desk-lamp/scene.gltf"
   },
   {
     "id": "plant",
-    "creator": "James Ray Cock",
-    "source": "https://polyhaven.com/a/potted_plant_04",
-    "license": "CC0",
-    "archiveSha256": "normalized Poly Haven API download; no source archive",
-    "entryPointSha256": "b3a3bc3e97da75844999c4da07b7104b6c023f729a7c045979929b9504184339",
-    "entryPoint": "assets/master/scans/potted-plant/scene.gltf"
+    "creator": "aqpetteri",
+    "source": "https://sketchfab.com/3d-models/peace-lily-9036c0e1761b471aa4e8035d8e972308",
+    "license": "CC-BY-4.0",
+    "licenseSha256": "2f7a46855ed7b4c495171151fdfb9f2839ed9b3a58ef7eee4d944c8013fce35d",
+    "archivePath": "assets/master/scans/peace-lily/source.zip",
+    "archiveSha256": "9849a44503eb54c66cbbd90876e15f7f48c5c9c23106c5f08130f587b336836f",
+    "entryPointSha256": "14e05728e9a29e308227a7fd9f7bd108f79580d708ad717df1fecd8f019f8eec",
+    "entryPoint": "assets/master/scans/peace-lily/scene.gltf"
   },
   {
     "id": "blanket",
@@ -70,5 +76,50 @@
     "archiveSha256": "58bcfbda88941408c07c7f96b4023cbe4d7dd394e0a4ab6b903211a2f3203b5d",
     "entryPointSha256": "1b0399b421cc5b2e38eea36a14dccc37486e0b267cc093aa3e62c77013ad63fe",
     "entryPoint": "assets/master/scans/blanket/texture.jpg"
+  },
+  {
+    "id": "headphones",
+    "creator": "AndreiVNK",
+    "source": "https://sketchfab.com/3d-models/sony-mdr-7506-headphones-05735b74d3524f00b648231138122a28",
+    "license": "CC-BY-4.0",
+    "licenseSha256": "2600112a2d88eef0bd6bfc15f9beba0fbda8048843b5da41da5dab7e69774eb9",
+    "archivePath": "assets/master/scans/sony-mdr-7506/source.zip",
+    "archiveSha256": "2bf70f31ce0df920b8e33fd90912f85ed9a28cef1b6cf1761878db7910f29eff",
+    "entryPointSha256": "2a888e52293973951fd981a4cc372ec0927de2157d1673bc0b3afce53fc712fe",
+    "entryPoint": "assets/master/scans/sony-mdr-7506/scene.gltf"
+  },
+  {
+    "id": "pictureFrame",
+    "creator": "balchinostudio",
+    "source": "https://sketchfab.com/3d-models/a-gold-wooden-picture-frame-0f061366cdd6451f9f996dfb5afcb0ce",
+    "license": "CC-BY-4.0",
+    "licenseSha256": "85ebac1454df857d36ffa6dbc9a962065a7b97df6f5a2a2064d2eedafbc31c34",
+    "archivePath": "assets/master/scans/gold-picture-frame/source.zip",
+    "archiveSha256": "ab862ff4be59cd230a33f8f3d37b291cdfe72aa73d142adcbf70036b82b2ec71",
+    "entryPointSha256": "4442427e508d28999cf166cee4384f41aeb86b561c796e7d6b30ba1546f7c52d",
+    "entryPoint": "assets/master/scans/gold-picture-frame/scene.gltf"
+  },
+  {
+    "id": "trashCan",
+    "creator": "Unresolved; user-supplied archive contains no attribution metadata",
+    "source": "User-supplied archive: trash-can_mesh.zip",
+    "license": "Unresolved; user-supplied archive contains no license metadata",
+    "archivePath": "assets/master/scans/trash-can/source.zip",
+    "archiveSha256": "b8f0d4847f0cd6ebb491e2557f4d2bb42c71afe18d884e7148f2672f2006fb09",
+    "entryPointSha256": "6573898f1f2eb5384993f0dfd3c8ac7df1e9308bb22060b1a25f9026c9167ab2",
+    "entryPoint": "assets/master/scans/trash-can/source/trash_can.glb"
+  },
+  {
+    "id": "basketball",
+    "creator": "BenAissa_Karim",
+    "source": "https://sketchfab.com/3d-models/basketball-ff3b7016740e403f902a7ee54b07ef52",
+    "license": "CC-BY-4.0",
+    "licenseSha256": "9ec95727064d95a5e9db0dbbc620f4ff04a8cef28a4b19524b60b249981d258b",
+    "archivePath": "assets/master/scans/basketball/source.zip",
+    "archiveSha256": "df7768fc1fcc39e36ca1cebb45494dd4089ef91206f567b2b89d2c9556979656",
+    "entryPointSha256": "2197758496aaf5b7fd5aeed713b41663f49fb46e8a8dab8998fd171babc6611a",
+    "entryPoint": "assets/master/scans/basketball/scene.gltf",
+    "renderableMaterials": ["Ball"],
+    "nonRenderableMaterials": ["Floor", "Khayt"]
   }
 ]

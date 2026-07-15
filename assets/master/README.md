@@ -16,16 +16,20 @@ not match the required IDs and entry points.
 
 ## Required Inventory
 
-| ID        | Normalized entry point                                |
-| --------- | ----------------------------------------------------- |
-| `vase`    | `assets/master/scans/ceramic-vase/scene.gltf`         |
-| `books`   | `assets/master/scans/encyclopedia-books/scene.gltf`   |
-| `chair`   | `assets/master/scans/vintage-office-chair/scene.gltf` |
-| `camera`  | `assets/master/scans/camera/scene.gltf`               |
-| `mug`     | `assets/master/scans/coffee-cup/scene.gltf`           |
-| `lamp`    | `assets/master/scans/desk-lamp/scene.gltf`            |
-| `plant`   | `assets/master/scans/potted-plant/scene.gltf`         |
-| `blanket` | `assets/master/scans/blanket/texture.jpg`             |
+| ID             | Normalized entry point                                      |
+| -------------- | ----------------------------------------------------------- |
+| `vase`         | `assets/master/scans/ceramic-vase/scene.gltf`               |
+| `books`        | `assets/master/scans/encyclopedia-books/scene.gltf`         |
+| `chair`        | `assets/master/scans/vintage-office-chair/scene.gltf`       |
+| `camera`       | `assets/master/scans/camera/scene.gltf`                     |
+| `mug`          | `assets/master/scans/coffee-cup/scene.gltf`                 |
+| `lamp`         | `assets/master/scans/desk-lamp/scene.gltf`                  |
+| `plant`        | `assets/master/scans/peace-lily/scene.gltf`                 |
+| `blanket`      | `assets/master/scans/blanket/texture.jpg`                   |
+| `headphones`   | `assets/master/scans/sony-mdr-7506/scene.gltf`              |
+| `pictureFrame` | `assets/master/scans/gold-picture-frame/scene.gltf`         |
+| `trashCan`     | `assets/master/scans/trash-can/source/trash_can.glb`        |
+| `basketball`   | `assets/master/scans/basketball/scene.gltf`                 |
 
 Keep each model's referenced buffers and source textures beside its normalized
 entry point. Do not substitute a visually similar model when an approved source
@@ -54,20 +58,27 @@ shasum -a 256 path/to/original-archive
 `credits.json` is a JSON array with one record per required ID. The gate
 requires non-empty string fields `id`, `creator`, `source`, `license`, and
 `entryPoint`, and requires the IDs and entry points to match the table above.
-`archiveSha256` contains the original archive checksum for each recovered
-user-supplied model. Poly Haven entries identify the normalized API download
-because those models were retrieved as individual glTF dependencies rather
-than one archive. `entryPointSha256` pins every normalized entry point; the
-gate recomputes both entry-point and recovered-archive hashes.
+Every user-supplied archive also records its repository-relative `archivePath`
+and exact `archiveSha256`. Poly Haven entries identify the normalized API
+download because those models were retrieved as individual glTF dependencies
+rather than one archive. `entryPointSha256` pins every normalized entry point;
+`licenseSha256` pins each supplied license file. The gate recomputes the entry
+point, recovered archive, and supplied license hashes.
 
 Poly Haven creator and source facts come from its official asset API and use
 the site's CC0 license. Sketchfab creator, source, and license facts come from
-its official model API. The recovered chair, mug, lamp, and blanket archives
-are preserved beside their normalized entry points. The lamp archive contains
-no creator metadata, so that creator remains explicitly unresolved rather than
-guessed; its Fab source and license are recorded.
+the supplied archive metadata. The recovered chair, mug, lamp, blanket,
+headphones, peace lily, picture frame, trash can, and basketball archives are
+preserved beside their normalized entry points. The trash-can archive contains
+no attribution or license metadata, so both remain explicitly unresolved
+rather than guessed.
 
-After building, verify the saved scene's eight-ID inventory and approved grade:
+The supplied basketball scene also contains display geometry. Its credits
+record is an import contract: only material `Ball` is renderable; materials
+`Floor` and `Khayt` are non-renderable and must be excluded by the master-scene
+builder.
+
+After building, verify the saved scene's required inventory and approved grade:
 
 ```bash
 /Applications/Blender.app/Contents/MacOS/Blender -b \

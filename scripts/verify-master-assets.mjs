@@ -7,6 +7,11 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 
+const suppliedArchive = (details) => ({
+  archivePath: `${dirname(details.entryPoint)}/source.zip`,
+  ...details,
+});
+
 const required = [
   { id: "vase", entryPoint: "assets/master/scans/ceramic-vase/scene.gltf" },
   {
@@ -18,10 +23,97 @@ const required = [
     entryPoint: "assets/master/scans/vintage-office-chair/scene.gltf",
   },
   { id: "camera", entryPoint: "assets/master/scans/camera/scene.gltf" },
-  { id: "mug", entryPoint: "assets/master/scans/coffee-cup/scene.gltf" },
-  { id: "lamp", entryPoint: "assets/master/scans/desk-lamp/scene.gltf" },
-  { id: "plant", entryPoint: "assets/master/scans/potted-plant/scene.gltf" },
+  suppliedArchive({
+    id: "mug",
+    entryPoint: "assets/master/scans/coffee-cup/scene.gltf",
+    archiveSha256:
+      "58371d1d881e0808535ab221697fb613af52ead7d6752c1eff65be2169efa0d9",
+    creator: "Ane07",
+    source:
+      "https://sketchfab.com/3d-models/red-mug-bdf703f536454fe9bae49000dbb73d26",
+    license: "SKETCHFAB Standard",
+    licensePath: "assets/master/scans/coffee-cup/license.txt",
+    licenseSha256:
+      "2f6af0f21674bf8805bc026a3496010a400c8583fc0fd19f4e9ebee5b6ee44e5",
+  }),
+  suppliedArchive({
+    id: "lamp",
+    entryPoint: "assets/master/scans/desk-lamp/scene.gltf",
+    archiveSha256:
+      "99a81c159ba7c625a886b980a4362d234101b4b1fe8de63d46d5c0f14323a167",
+    creator: "olleli1125",
+    source:
+      "https://sketchfab.com/3d-models/desk-lamp-7be9e6cbf6e04365a028217a4874730e",
+    license: "CC-BY-4.0",
+    licensePath: "assets/master/scans/desk-lamp/license.txt",
+    licenseSha256:
+      "3ff3784606178d12a1f5d0ccfc601fd3651f0214f6aa8981b993173574215197",
+  }),
+  suppliedArchive({
+    id: "plant",
+    entryPoint: "assets/master/scans/peace-lily/scene.gltf",
+    archiveSha256:
+      "9849a44503eb54c66cbbd90876e15f7f48c5c9c23106c5f08130f587b336836f",
+    creator: "aqpetteri",
+    source:
+      "https://sketchfab.com/3d-models/peace-lily-9036c0e1761b471aa4e8035d8e972308",
+    license: "CC-BY-4.0",
+    licensePath: "assets/master/scans/peace-lily/license.txt",
+    licenseSha256:
+      "2f7a46855ed7b4c495171151fdfb9f2839ed9b3a58ef7eee4d944c8013fce35d",
+  }),
   { id: "blanket", entryPoint: "assets/master/scans/blanket/texture.jpg" },
+  suppliedArchive({
+    id: "headphones",
+    entryPoint: "assets/master/scans/sony-mdr-7506/scene.gltf",
+    archiveSha256:
+      "2bf70f31ce0df920b8e33fd90912f85ed9a28cef1b6cf1761878db7910f29eff",
+    creator: "AndreiVNK",
+    source:
+      "https://sketchfab.com/3d-models/sony-mdr-7506-headphones-05735b74d3524f00b648231138122a28",
+    license: "CC-BY-4.0",
+    licensePath: "assets/master/scans/sony-mdr-7506/license.txt",
+    licenseSha256:
+      "2600112a2d88eef0bd6bfc15f9beba0fbda8048843b5da41da5dab7e69774eb9",
+  }),
+  suppliedArchive({
+    id: "pictureFrame",
+    entryPoint: "assets/master/scans/gold-picture-frame/scene.gltf",
+    archiveSha256:
+      "ab862ff4be59cd230a33f8f3d37b291cdfe72aa73d142adcbf70036b82b2ec71",
+    creator: "balchinostudio",
+    source:
+      "https://sketchfab.com/3d-models/a-gold-wooden-picture-frame-0f061366cdd6451f9f996dfb5afcb0ce",
+    license: "CC-BY-4.0",
+    licensePath: "assets/master/scans/gold-picture-frame/license.txt",
+    licenseSha256:
+      "85ebac1454df857d36ffa6dbc9a962065a7b97df6f5a2a2064d2eedafbc31c34",
+  }),
+  suppliedArchive({
+    id: "trashCan",
+    entryPoint: "assets/master/scans/trash-can/source/trash_can.glb",
+    archivePath: "assets/master/scans/trash-can/source.zip",
+    archiveSha256:
+      "b8f0d4847f0cd6ebb491e2557f4d2bb42c71afe18d884e7148f2672f2006fb09",
+    creator: "Unresolved; user-supplied archive contains no attribution metadata",
+    source: "User-supplied archive: trash-can_mesh.zip",
+    license: "Unresolved; user-supplied archive contains no license metadata",
+  }),
+  suppliedArchive({
+    id: "basketball",
+    entryPoint: "assets/master/scans/basketball/scene.gltf",
+    archiveSha256:
+      "df7768fc1fcc39e36ca1cebb45494dd4089ef91206f567b2b89d2c9556979656",
+    creator: "BenAissa_Karim",
+    source:
+      "https://sketchfab.com/3d-models/basketball-ff3b7016740e403f902a7ee54b07ef52",
+    license: "CC-BY-4.0",
+    licensePath: "assets/master/scans/basketball/license.txt",
+    licenseSha256:
+      "9ec95727064d95a5e9db0dbbc620f4ff04a8cef28a4b19524b60b249981d258b",
+    renderableMaterials: ["Ball"],
+    nonRenderableMaterials: ["Floor", "Khayt"],
+  }),
 ];
 
 const builderPath = "scripts/build-master-scene.py";
@@ -59,7 +151,16 @@ async function sha256(relativePath) {
 async function findMissingAssets() {
   const missing = [];
 
-  for (const { entryPoint } of required) {
+  for (const { entryPoint, archivePath, licensePath } of required) {
+    for (const requiredPath of [archivePath, licensePath].filter(Boolean)) {
+      try {
+        const details = await stat(absolutePath(requiredPath));
+        if (!details.isFile() || details.size === 0) missing.push(requiredPath);
+      } catch {
+        missing.push(requiredPath);
+      }
+    }
+
     try {
       const details = await stat(absolutePath(entryPoint));
       if (!details.isFile() || details.size === 0) {
@@ -154,7 +255,8 @@ async function findCreditIssues() {
     }
   });
 
-  for (const { id, entryPoint } of required) {
+  for (const asset of required) {
+    const { id, entryPoint } = asset;
     const credit = creditsById.get(id);
     if (!credit) {
       issues.push(`missing entry for id "${id}"`);
@@ -168,19 +270,97 @@ async function findCreditIssues() {
         );
       }
 
-      const archivePath = join(dirname(entryPoint), "source.zip");
-      try {
-        const archiveDetails = await stat(absolutePath(archivePath));
-        if (archiveDetails.isFile()) {
-          const actualArchiveHash = await sha256(archivePath);
-          if (credit.archiveSha256 !== actualArchiveHash) {
+      if (asset.archivePath) {
+        if (credit.archivePath !== asset.archivePath) {
+          issues.push(
+            `id "${id}" must use archivePath "${asset.archivePath}"`,
+          );
+        }
+
+        try {
+          const actualArchiveHash = await sha256(asset.archivePath);
+          if (actualArchiveHash !== asset.archiveSha256) {
             issues.push(
-              `id "${id}" archiveSha256=${credit.archiveSha256} expected ${actualArchiveHash}`,
+              `id "${id}" source archive hash ${actualArchiveHash} expected ${asset.archiveSha256}`,
+            );
+          }
+          if (credit.archiveSha256 !== asset.archiveSha256) {
+            issues.push(
+              `id "${id}" archiveSha256=${credit.archiveSha256} expected ${asset.archiveSha256}`,
+            );
+          }
+        } catch (error) {
+          if (error?.code !== "ENOENT") throw error;
+        }
+
+        for (const field of ["creator", "source", "license"]) {
+          if (credit[field] !== asset[field]) {
+            issues.push(
+              `id "${id}" ${field}=${JSON.stringify(credit[field])} expected ${JSON.stringify(asset[field])}`,
             );
           }
         }
-      } catch (error) {
-        if (error?.code !== "ENOENT") throw error;
+      } else {
+        const archivePath = join(dirname(entryPoint), "source.zip");
+        try {
+          const archiveDetails = await stat(absolutePath(archivePath));
+          if (archiveDetails.isFile()) {
+            const actualArchiveHash = await sha256(archivePath);
+            if (credit.archiveSha256 !== actualArchiveHash) {
+              issues.push(
+                `id "${id}" archiveSha256=${credit.archiveSha256} expected ${actualArchiveHash}`,
+              );
+            }
+          }
+        } catch (error) {
+          if (error?.code !== "ENOENT") throw error;
+        }
+      }
+
+      if (asset.renderableMaterials) {
+        if (
+          JSON.stringify(credit.renderableMaterials) !==
+          JSON.stringify(asset.renderableMaterials)
+        ) {
+          issues.push(
+            `id "${id}" renderableMaterials must be ["Ball"]`,
+          );
+        }
+        if (
+          JSON.stringify(credit.nonRenderableMaterials) !==
+          JSON.stringify(asset.nonRenderableMaterials)
+        ) {
+          issues.push(
+            `id "${id}" nonRenderableMaterials must be ["Floor","Khayt"]`,
+          );
+        }
+
+        const gltf = JSON.parse(await readFile(absolutePath(entryPoint), "utf8"));
+        const materialNames = new Set(
+          (gltf.materials ?? []).map((material) => material.name),
+        );
+        for (const material of [
+          ...asset.renderableMaterials,
+          ...asset.nonRenderableMaterials,
+        ]) {
+          if (!materialNames.has(material)) {
+            issues.push(`id "${id}" entry point is missing material "${material}"`);
+          }
+        }
+      }
+
+      if (asset.licensePath) {
+        const actualLicenseHash = await sha256(asset.licensePath);
+        if (actualLicenseHash !== asset.licenseSha256) {
+          issues.push(
+            `id "${id}" license hash ${actualLicenseHash} expected ${asset.licenseSha256}`,
+          );
+        }
+        if (credit.licenseSha256 !== asset.licenseSha256) {
+          issues.push(
+            `id "${id}" licenseSha256=${credit.licenseSha256} expected ${asset.licenseSha256}`,
+          );
+        }
       }
     }
   }

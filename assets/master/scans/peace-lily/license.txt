@@ -1,0 +1,11 @@
+Model Information:
+* title:	Peace Lily
+* source:	https://sketchfab.com/3d-models/peace-lily-9036c0e1761b471aa4e8035d8e972308
+* author:	aqpetteri (https://sketchfab.com/aqpetteri)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Peace Lily" (https://sketchfab.com/3d-models/peace-lily-9036c0e1761b471aa4e8035d8e972308) by aqpetteri (https://sketchfab.com/aqpetteri) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,0 +1,11 @@
+Model Information:
+* title:	Sony MDR-7506 Headphones
+* source:	https://sketchfab.com/3d-models/sony-mdr-7506-headphones-05735b74d3524f00b648231138122a28
+* author:	AndreiVNK (https://sketchfab.com/AndreiVNK)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Sony MDR-7506 Headphones" (https://sketchfab.com/3d-models/sony-mdr-7506-headphones-05735b74d3524f00b648231138122a28) by AndreiVNK (https://sketchfab.com/AndreiVNK) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
