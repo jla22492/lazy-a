@@ -5,13 +5,29 @@
 - [x] Reproduce the changed tall-desktop camera and identify the aspect-only profile switch.
 - [x] Reproduce hero separation and trace it to independent plate-crop and live-camera projections.
 - [x] Inventory the seven supplied prop archives and their licenses.
-- [ ] Approve the revised camera/hero/plate execution design.
-- [ ] Add failing regression gates for the original arrival, settled camera, endpoint handoff, and four-corner hero registration across representative aspect ratios.
-- [ ] Integrate the supplied headphones, peace lily, picture frame, trash can, desk lamp, red mug, and basketball into the master scene.
-- [ ] Author the supplied CONTACT name, email, and phone as the physical indentation reveal.
-- [ ] Correct navigation, JOURNAL, CONTACT, lighting, materials, and responsive composition to the production-company quality bar.
-- [ ] Capture and review complete desktop, tall-desktop, and phone journeys in motion.
+- [x] Approve the revised camera/hero/plate execution design.
+- [x] Add failing regression gates for the original arrival, settled camera, endpoint handoff, and four-corner hero registration across representative aspect ratios.
+- [x] Integrate the supplied headphones, peace lily, picture frame, trash can, desk lamp, red mug, and basketball into the master scene.
+- [x] Author the supplied CONTACT name, email, and phone as an exact applied pressure indentation in `Mesh_56`.
+- [x] Correct navigation, JOURNAL, CONTACT, lighting, materials, and responsive composition to the production-company quality bar.
+- [x] Capture and review complete desktop, tall-desktop, and phone journeys in motion.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
+
+## 0117-R2 Review Candidate
+
+- Master asset and saved-blend verification pass for all 12 durable room assets, including the seven supplied replacements at measured size, position, and contact surface.
+- Five-viewport arrival continuity, camera selection, four-corner hero registration, exact foreground silhouettes, final-frame retention, and 310/310 hero lifecycle checks pass.
+- CONTACT exact-copy, physical-indentation, lamp-rise, hold, reverse, and desktop/phone framing gates pass.
+- Normal-speed desktop, tall-desktop, and phone review films were captured and inspected; Jonathan's explicit visual approval remains open.
+
+## Review
+
+- Runtime/media commit: `b0cf10b`.
+- Build: PASS.
+- Clock: settle `3.00s`; magic `4.80s`; physical JOURNAL target `0.08s`.
+- Performance: median `59.9fps`; `2.26MB` pre-settle; `4.56MB` total.
+- Review films: `docs/progress/0117-r2-review-desktop.mp4`, `docs/progress/0117-r2-review-tall.mp4`, and `docs/progress/0117-r2-review-phone.mp4`.
+- Approval audit: every implementation item has behavioral and visual evidence; the unchecked Jonathan-approval item prevents a completion claim.
 
 ---
 

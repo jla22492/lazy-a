@@ -14,7 +14,23 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R2 IN PROGRESS — SECOND FAILED REVIEW CORRECTION: Jonathan rejected the 0117-R live experience. The photographic runtime replaced the approved continuous human arrival with a plate transition that does not preserve the original choreography, and its aspect-ratio-only profile switch selects a wholly different phone camera in tall desktop windows. The settled pose therefore changes despite being locked. The live hero is projected in the browser camera while the photographed plate is independently cropped with CSS `object-fit`; outside the two exact test sizes its four corners separate from the physical print and the image appears to move and then attach elsewhere. Navigation, JOURNAL, CONTACT, materials, lighting, and mobile composition remain below the production-company quality bar. Correction also integrates Jonathan's supplied headphones, peace lily, picture frame, trash can, lamp, red mug, and basketball, plus his final CONTACT details. No completion claim stands; full-motion desktop, tall-desktop, and phone visual approval is required.
+0117-R2 REVIEW CANDIDATE — implementation and behavioral verification are
+finished; Jonathan's explicit visual approval remains the only completion gate.
+The approved continuous 2.6-second arrival and settled desktop/phone cameras are
+locked by one source camera contract. The hero shares the photographic plate's
+exact crop and per-decoded-frame camera sample, uses evaluated-mesh foreground
+silhouettes, plays once after settle through every destination, and holds its
+last frame. All wide and portrait endpoints and transitions come from the same
+current photographed master.
+
+The supplied headphones, peace lily, gold frame, trash can, green lamp, red mug,
+and basketball are saved in the reproducible master at measured proportions and
+contact surfaces. The existing `Mesh_33` card carries the Lazy A mark. Four
+disjoint graphite rows provide FILMS/JOURNAL/CONTACT/ABOUT navigation; JOURNAL
+reaches a true forward/down reading posture; CONTACT reveals Jonathan's exact
+three-line copy as an applied 0.08 mm pressure indentation under fixed raking
+light; ABOUT turns left into the room. Fresh desktop, tall-desktop, and phone
+review films and endpoint captures are in `docs/progress/0117-r2-*`.
 
 ---
 

@@ -1,25 +1,137 @@
 # BUILD REPORT
 
-WORK ORDER 0117-R REJECTED BY JONATHAN
+WORK ORDER 0117-R2 REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
 
-The prior completion report is withdrawn. Exact-size automated gates passed,
-but the live UX did not meet the creative definition of done.
+Commit:
 
-Observed failures:
+`b0cf10b` — runtime, authored media, camera/matte contracts, and behavioral gates
 
-- Arrival no longer preserves the approved continuous human approach.
-- Tall desktop windows select the phone camera and settle at a different pose.
-- The hero plane and photographed print use different responsive projection
-  systems, so the image separates from its surface and snaps visually.
-- Navigation, JOURNAL, CONTACT, materials, lighting, and responsive composition
-  remain below the expected production-company quality bar.
+Version:
 
-Current correction:
+v0.1 — Work Order 0117-R2 review candidate
 
-- Work Order 0117-R2 is active.
-- The approved pre-0117 arrival, settled camera, and hero placement are locked
-  regression references.
-- Seven supplied production props and final CONTACT details are added to scope.
+Files Changed:
+
+- `assets/master/camera-contract.json`, `scripts/render-master-shots.py`,
+  `public/room/**`, and `three/scene/plateManifest.ts`: one camera contract,
+  current wide/portrait photographs and transitions, measured physical scene,
+  per-frame camera/hero metadata, and compact evaluated-mesh hero silhouettes.
+- `components/room/PlateRoom.tsx`, `components/room/HeroFilm.tsx`,
+  `lib/plateAssets.ts`, and `lib/plateSpace.ts`: decoded-frame projection,
+  stable endpoint retention, exact plate crop parity, one-shot hero playback,
+  and physical foreground occlusion.
+- `scripts/verify-*.mjs`, `scripts/film-review.mjs`, and
+  `docs/progress/0117-r2-*`: source/media contracts, five-viewport browser
+  verification, normal-speed review films, and final endpoint evidence.
+
+Architecture Decisions:
+
+- The saved Blender master remains the source of truth for room pixels, object
+  dimensions, light, physical paper, camera choreography, and depth ordering.
+- Desktop/tall/tablet select the approved wide camera by width; phone selects
+  portrait. Both profiles derive pose, target, lens, and arrival endpoint from
+  one JSON contract consumed by the exporter and runtime gate.
+- `PlateRoom` publishes projection from decoded `mediaTime * authored fps`, not
+  container duration. The ended transition frame remains mounted so the desk
+  still cannot introduce a second crop/camera handoff.
+- The living hero uses the same four-corner cover transform as the plate. A
+  256px per-frame RLE silhouette rasterized from evaluated foreground triangles
+  supplies concave depth masks without multi-megabyte manifests or full-screen
+  mask uploads.
+- Navigation, CONTACT, and JOURNAL remain physical scene artifacts. No floating
+  website labels, CONTACT planes, or primitive/render fallbacks are mounted.
+
+Creative Decisions Implemented:
+
+- The Lazy A mark is printed on existing card `Mesh_33`; no new card exists and
+  the former pinned wall note is retired.
+- The supplied Sony headphones, peace lily, gold picture frame, trash can,
+  green desk lamp, red mug, and basketball are placed at measured real-world
+  proportions and authored contact surfaces in the reproducible master.
+- FILMS, JOURNAL, CONTACT, and ABOUT are four separate graphite rows on one
+  working production sheet, with visible gaps and empty selectable margins.
+- JOURNAL turns the head first, then leans forward/down. The notebook occupies
+  55.4% of desktop and 59.2% of phone framing with its pencil clear of the copy.
+- CONTACT remains at the desk. The fixed lamp raises raking light over the
+  existing paper and reveals an applied 0.08 mm pressure indentation containing
+  exactly `Jonathan Adelson`, `JonathanAdelson1@gmail.com`, and
+  `1-310-709-9283`.
+- ABOUT turns left into the shelf, plant, frame, books, and room history.
+- The hero begins once after final settle, continues through every destination,
+  passes behind photographed foreground props, ends once, and holds its final
+  decoded image until reload.
+
+Deferred:
+
+- Company-authored film, JOURNAL, and ABOUT material remains the next content
+  phase by direction; the current placeholders are intentional review content.
+- Migration to `www.lazyaproductions.com` remains a separate launch work order.
+
+Decisions Required:
+
+- Jonathan's explicit visual approval of this browser review candidate.
+
+Ready for:
+
+Jonathan's desktop/phone review, then company-content integration and domain
+launch planning. This is not `WORK ORDER COMPLETE` until that approval is given.
+
+## Enumerated 0117-R2 Audit
+
+1. ✅ Approved arrival restored + decoded behavior gate: continuous 2.6-second
+   opening spans the authored index range at five viewport shapes, with exact
+   camera samples and a pixel-identical retained desk handoff.
+2. ✅ Settled perspective restored + source-derived camera gate: desktop,
+   tall-desktop, both tablet shapes, and phone select only the intended profile;
+   every return restores the exact desk camera.
+3. ✅ Logo correction shipped + render-contract proof: `Mesh_33` retains its
+   transform and carries the explicit upright logo UV; no added card geometry.
+4. ✅ Seven supplied props shipped + saved-master behavioral verifier: all have
+   one tracked root, measured scale, exact desk/floor contact, intended position,
+   replacement ownership, and no renderable duplicate.
+5. ✅ Photographic coherence shipped + source/media/failure gates: two profiles,
+   twelve endpoints, ten forward/reverse paths, 32 media files, 22 decoded source
+   relationships, and no primitive/loading/error replacement state.
+6. ✅ Hero placement and lifecycle shipped + 310/310 browser matrix: zero-pixel
+   four-corner error through all transitions, one play start, uninterrupted
+   navigation playback, exact foreground-mask parity, and final-frame hold.
+7. ✅ Navigation legibility shipped + dense geometry/interaction gate: 2,501
+   points per profile show no overlap or false selection; every center opens only
+   its named destination and every margin/gap selects nothing.
+8. ✅ JOURNAL perspective shipped + camera-state gate: head-first/body-second
+   lean reaches 1.253 m desktop and 1.981 m phone travel with readable framing.
+9. ✅ CONTACT composition shipped + material/pixel gate: exact three-line copy,
+   applied pressure topology, latent clean rest, intermediate lamp rise, readable
+   hold, 3.334-second dwell, fixed paper opacity, zero standalone planes, and
+   clean reverse.
+10. ✅ Former right-side/pasted CONTACT removed + camera/DOM gate: CONTACT frames
+    the paper at the desk, not the charger, and no CONTACT/email overlay exists.
+11. ✅ Smoothed lighting/current prop set shipped + master verification: Cycles
+    192, AgX 0.25, world 0.24, denoising, and approved 5.5/23/60 light energies.
+12. ✅ Full responsive review captured + normal-speed evidence: desktop,
+    tall-desktop, and phone films include arrival, settle, all four destinations,
+    desk returns, hero end, and the retained final image.
+13. ⚠️ Jonathan visual approval pending: implementation and behavioral evidence
+    are ready; this human acceptance gate cannot be self-certified.
+
+## 0117-R2 Verification
+
+- Production build and targeted ESLint — PASS.
+- Blender saved-master and shot-contract validation — PASS.
+- Media parity — PASS: 2 profiles, 12 endpoints, 10 forward/reverse paths, 32
+  media files, 22 decoded source relationships, 0 pending.
+- Arrival continuity — PASS at 1280x720, 1316x1329, 1024x768, 768x1024, and
+  375x812; zero camera mismatch and zero endpoint pixel delta.
+- Hero lifecycle/registration — PASS, 310/310 checks; foreground mask pixel gate
+  reports masked p90 `0` and changing unmasked p90 `35`.
+- Physical navigation, camera states, CONTACT reveal, media failure behavior,
+  clock, and dwell — PASS.
+- Clock — settle `3.00s`; magic `4.80s`; physical JOURNAL target `0.08s`.
+- Performance — median `59.9fps`; `2.26MB` pre-settle; `4.56MB` total; no
+  reverse-arrival preload.
+- Review films — `docs/progress/0117-r2-review-desktop.mp4`,
+  `docs/progress/0117-r2-review-tall.mp4`, and
+  `docs/progress/0117-r2-review-phone.mp4`.
 
 ---
 

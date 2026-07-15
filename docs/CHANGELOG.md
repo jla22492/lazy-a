@@ -59,4 +59,8 @@
 
 - R-0117-R failed live creative review: the plate runtime changed the approved approach and responsive resting camera, and the moving hero no longer remained physically registered to its print outside two exact test sizes. Passing coordinate and timing gates did not make the navigation, JOURNAL, CONTACT, materials, or compositions production-ready. The completion claim was withdrawn again; the original camera and hero placement are now explicit regression references for 0117-R2.
 
+- R-0117-R2 reached an authoring milestone, not completion: Jonathan's supplied headphones, peace lily, gold frame, trash can, green lamp, red mug, and basketball are measured into the one reproducible photographic master; the original seated camera and continuous arrival are locked numerically; the moving print shares the plate's exact crop transform; and the lamp reveals Jonathan's exact contact details as pressure cut into the paper itself. Final motion rendering and live visual approval remain open.
+
+- R-0117-R2 became a review candidate: the continuous human arrival and settled camera now survive every browser shape; the moving print remains on its physical paper through every turn, passes behind real foreground silhouettes, plays once, and holds; the seven supplied props read at measured scale in one photographed room; the production note offers four unmistakable choices; JOURNAL leans into a readable working posture; CONTACT appears only when the lamp rakes three pressure-cut lines in the paper; and ABOUT opens the room to the left. Desktop, tall-desktop, and phone journeys now exist at normal speed for Jonathan's final visual decision. No completion claim is made before that approval.
+
 Record experience changes here, not just technical ones.
