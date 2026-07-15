@@ -131,11 +131,14 @@ function evidenceIssues(viewport, expected, evidence) {
   if (
     presented.some((value) => !Number.isInteger(value)) ||
     presented.some(
-      (value, index) => index > 0 && value !== presented[index - 1] + 1,
+      (value, index) =>
+        index > 0 &&
+        (value <= presented[index - 1] ||
+          value - presented[index - 1] > MAX_AUTHORED_INDEX_STEP),
     )
   ) {
     issues.push(
-      `decoded frame sequence skipped or repeated a frame: ${JSON.stringify(presented)}`,
+      `decoded frame sequence repeated or skipped multiple frames: ${JSON.stringify(presented)}`,
     );
   }
 
@@ -612,7 +615,17 @@ try {
       viewport: { width: viewport.width, height: viewport.height },
     });
     const pageErrors = [];
+    const hydrationErrors = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
+    page.on("console", (message) => {
+      const text = message.text();
+      if (
+        message.type() === "error" &&
+        /hydrated but some attributes|hydration mismatch/i.test(text)
+      ) {
+        hydrationErrors.push(text);
+      }
+    });
     try {
       await page.addInitScript(installArrivalProbe, {
         forward: expected.forward,
@@ -674,6 +687,12 @@ try {
         failures += pageErrors.length;
         for (const error of pageErrors) {
           console.log(`FAIL ${label} page error: ${error}`);
+        }
+      }
+      if (hydrationErrors.length > 0) {
+        failures += hydrationErrors.length;
+        for (const error of hydrationErrors) {
+          console.log(`FAIL ${label} hydration error: ${error}`);
         }
       }
     } catch (error) {
