@@ -11,6 +11,7 @@ import {
 } from "three";
 
 import { setContactLevel } from "@/three/interface/contact";
+import { mapPlateQuad, selectPlateVariant } from "@/lib/plateSpace";
 import { setJournalLevel } from "@/three/interface/journal";
 import { setQuietLevel } from "@/three/interface/quiet";
 import {
@@ -145,8 +146,7 @@ export function AttentionNavigation({
   onExperienceEvent,
 }: AttentionNavigationProps = {}) {
   const { camera, gl, size } = useThree();
-  const variant: Variant =
-    size.width / Math.max(size.height, 1) < 1.5 ? "portrait" : "wide";
+  const variant: Variant = selectPlateVariant(size.width);
   const profile = plateManifest.variants[variant];
   const navigation = profile.navigation;
 
@@ -161,9 +161,14 @@ export function AttentionNavigation({
   const sheetProjection = useMemo(() => {
     const values = navigation.screenQuads.desk ??
       navigation.screenQuad ?? [0, 0, 1, 0, 1, 1, 0, 1];
+    const mapped = mapPlateQuad(
+      values,
+      { width: profile.width, height: profile.height },
+      size,
+    );
     const normalizedQuad = [0, 1, 2, 3].map((index) => ({
-      x: values[index * 2],
-      y: values[index * 2 + 1],
+      x: mapped[index * 2] / size.width,
+      y: mapped[index * 2 + 1] / size.height,
     }));
     const projectNormalized = (localX: number, localY: number): ScreenPoint => {
       const u =
@@ -190,7 +195,7 @@ export function AttentionNavigation({
       projectNormalized(rect.x, rect.y + rect.height),
     ];
     return { projectNormalized, rowQuad };
-  }, [navigation]);
+  }, [navigation, profile.height, profile.width, size]);
 
   const setConversation = useCallback((id: DestinationId | null): void => {
     conversationRef.current = id;

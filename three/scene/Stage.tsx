@@ -9,6 +9,7 @@ import { HeroFilm } from "@/components/room/HeroFilm";
 import { PlateRoom } from "@/components/room/PlateRoom";
 import { AttentionNavigation } from "@/components/site/AttentionNavigation";
 import { announceRoomSettled } from "@/lib/deferredAssets";
+import { PHONE_MAX_WIDTH, selectPlateVariant } from "@/lib/plateSpace";
 import {
   adaptPlateManifest,
   getPlateProjection,
@@ -21,8 +22,7 @@ import {
   type ExperienceEvent,
 } from "@/three/animation/plateExperience";
 import { activeStudy } from "@/three/scene/cameraStudies";
-import { ROOM, STAGE } from "@/three/scene/constants";
-import { HERO_PRINT, WALL_GAP } from "@/three/scene/dressing/referenceWall";
+import { STAGE } from "@/three/scene/constants";
 import { plateManifest } from "@/three/scene/plateManifest";
 import { scheduleProgressShot } from "@/three/scene/progressShot";
 
@@ -46,8 +46,8 @@ function isCaptureRun(): boolean {
 
 function viewportVariant(): PlateVariant {
   if (typeof window === "undefined") return "wide";
-  return window.innerWidth / Math.max(window.innerHeight, 1) < 1.5
-    ? "portrait"
+  return window.innerWidth <= PHONE_MAX_WIDTH
+    ? selectPlateVariant(window.innerWidth)
     : "wide";
 }
 
@@ -74,18 +74,12 @@ function LivingPlateLayers({
     event: Extract<ExperienceEvent, { type: "SELECT" | "CLOSE" }>,
   ) => void;
 }) {
-  const { center, roll } = HERO_PRINT;
   return (
     <>
       <ambientLight intensity={Math.PI} />
       <RoomClockDriver />
       <PlateProjectionCamera />
-      <group
-        position={[center.x, center.y, ROOM.rearWall.z + WALL_GAP]}
-        rotation={[0, 0, roll]}
-      >
-        <HeroFilm />
-      </group>
+      <HeroFilm />
       <AttentionNavigation onExperienceEvent={onExperienceEvent} />
     </>
   );

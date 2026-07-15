@@ -108,8 +108,8 @@ website experience across real desktop and phone browser shapes.
 
   ```text
   Jonathan Adelson
-  Email: JonathanAdelson1@gmail.com
-  Phone: 310-709-9283
+  JonathanAdelson1@gmail.com
+  1-310-709-9283
   ```
 
 - The final hold must be fully legible without looking like luminous, outlined,

@@ -133,7 +133,9 @@ export function PlateRoom({
         setStatus("retained");
       }
       if (runRef.current !== run) return;
-      setTransition(null);
+      // Keep the ended clip on its final decoded frame. Removing it here
+      // reveals a separately decoded still and creates a visible camera/crop
+      // handoff even when both assets were authored from the same scene.
       if (targetId === "desk" && completesArrival) onDeskSettled();
       else onTransitionEnded();
     },
@@ -245,8 +247,10 @@ export function PlateRoom({
     const video = videoRef.current;
     const frames = transition?.projectionFrames;
     if (!video || !frames || frames.length === 0) return;
-    let frame = 0;
-    const sample = () => {
+    let frame = -1;
+    let animationFrame = 0;
+    let videoFrame = 0;
+    const publishCurrentFrame = () => {
       const duration = video.duration;
       const progress = Number.isFinite(duration) && duration > 0
         ? video.currentTime / duration
@@ -259,12 +263,33 @@ export function PlateRoom({
         frame = nextFrame;
         publishPlateProjection(frames[frame]);
       }
-      if (!video.paused && !video.ended) requestAnimationFrame(sample);
+    };
+    const sampleAnimationFrame = () => {
+      publishCurrentFrame();
+      if (!video.paused && !video.ended) {
+        animationFrame = requestAnimationFrame(sampleAnimationFrame);
+      }
+    };
+    const sampleVideoFrame = () => {
+      publishCurrentFrame();
+      if (!video.ended) {
+        videoFrame = video.requestVideoFrameCallback(sampleVideoFrame);
+      }
     };
     publishPlateProjection(frames[0]);
-    const onPlaying = () => requestAnimationFrame(sample);
+    const onPlaying = () => {
+      if ("requestVideoFrameCallback" in video) {
+        videoFrame = video.requestVideoFrameCallback(sampleVideoFrame);
+      } else {
+        animationFrame = requestAnimationFrame(sampleAnimationFrame);
+      }
+    };
     video.addEventListener("playing", onPlaying);
-    return () => video.removeEventListener("playing", onPlaying);
+    return () => {
+      video.removeEventListener("playing", onPlaying);
+      cancelAnimationFrame(animationFrame);
+      if (videoFrame) video.cancelVideoFrameCallback(videoFrame);
+    };
   }, [transition]);
 
   const objectPosition = current.objectPosition ?? "50% 50%";
@@ -340,6 +365,12 @@ export function PlateRoom({
             });
           }}
           onEnded={() => {
+            const video = videoRef.current;
+            if (video) video.pause();
+            const frames = transition.projectionFrames;
+            if (frames?.length) {
+              publishPlateProjection(frames[frames.length - 1]);
+            }
             const run = runRef.current;
             void finish(
               transitionTarget(state),

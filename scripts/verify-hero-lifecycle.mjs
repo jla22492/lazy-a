@@ -9,7 +9,7 @@
 import { chromium } from "playwright";
 
 const url = process.argv[2] ?? "http://localhost:3000/";
-const VIEWPORT = { width: 1280, height: 720 };
+const VIEWPORT = { width: 1316, height: 1329 };
 const TIME_EPSILON = 0.04;
 
 let failures = 0;
@@ -23,14 +23,6 @@ function check(ok, name, detail) {
 
 function fixed(value) {
   return Number.isFinite(value) ? `${value.toFixed(3)}s` : "unavailable";
-}
-
-function quadCenter(quad) {
-  if (!Array.isArray(quad) || quad.length !== 8) return null;
-  return {
-    x: (quad[0] + quad[2] + quad[4] + quad[6]) / 4,
-    y: (quad[1] + quad[3] + quad[5] + quad[7]) / 4,
-  };
 }
 
 const browser = await chromium.launch({
@@ -195,10 +187,29 @@ async function conversationState() {
 }
 
 async function heroProjectionState() {
-  return page.evaluate(() => ({
-    live: window.__lazyAHeroProjection ?? null,
-    authored: window.__lazyAPlateProjection?.hero ?? null,
-  }));
+  return page.evaluate(() => {
+    const live = window.__lazyAHeroProjection ?? null;
+    const authored = window.__lazyAPlateProjection?.hero ?? null;
+    const profile = window.__lazyAPlateState?.profile ?? "wide";
+    const source = profile === "portrait"
+      ? { width: 375, height: 812 }
+      : { width: 1280, height: 720 };
+    const scale = Math.max(
+      innerWidth / source.width,
+      innerHeight / source.height,
+    );
+    const offsetX = (innerWidth - source.width * scale) / 2;
+    const offsetY = (innerHeight - source.height * scale) / 2;
+    const expected = Array.isArray(authored)
+      ? authored.flatMap((value, index) => {
+          const pixels = index % 2 === 0
+            ? offsetX + value * source.width * scale
+            : offsetY + value * source.height * scale;
+          return [pixels / (index % 2 === 0 ? innerWidth : innerHeight)];
+        })
+      : null;
+    return { live, expected, profile };
+  });
 }
 
 async function waitForRestingEndpoint(id) {
@@ -291,20 +302,23 @@ try {
       `initial=${fixed(settled.initialTime)} max=${fixed(settled.preSettleMaxTime)}`,
     );
     const projection = await heroProjectionState();
-    const liveCenter = quadCenter(projection.live);
-    const authoredCenter = quadCenter(projection.authored);
-    const projectionError =
-      liveCenter && authoredCenter
-        ? Math.hypot(
-            liveCenter.x - authoredCenter.x,
-            liveCenter.y - authoredCenter.y,
+    const cornerErrors =
+      Array.isArray(projection.live) && Array.isArray(projection.expected)
+        ? [0, 1, 2, 3].map((index) =>
+            Math.hypot(
+              (projection.live[index * 2] - projection.expected[index * 2]) * VIEWPORT.width,
+              (projection.live[index * 2 + 1] - projection.expected[index * 2 + 1]) * VIEWPORT.height,
+            ),
           )
-        : Infinity;
+        : [];
+    const projectionError = cornerErrors.length === 4
+      ? Math.max(...cornerErrors)
+      : Infinity;
     check(
-      projectionError <= 0.015,
-      "live hero aligns to authored print",
+      projection.profile === "wide" && projectionError <= 1,
+      "all four live hero corners align to authored print",
       Number.isFinite(projectionError)
-        ? `center error=${projectionError.toFixed(4)}`
+        ? `profile=${projection.profile} max corner error=${projectionError.toFixed(3)}px`
         : "live/authored hero projection diagnostics unavailable",
     );
     check(

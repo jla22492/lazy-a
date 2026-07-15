@@ -1,27 +1,49 @@
 "use client";
 
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import { Mesh, Vector3, VideoTexture } from "three";
+import {
+  BufferGeometry,
+  DoubleSide,
+  Float32BufferAttribute,
+  Mesh,
+  ShaderMaterial,
+  VideoTexture,
+} from "three";
 
 import { assetPath } from "@/lib/assetPath";
+import { getPlateProjection } from "@/lib/plateAssets";
+import {
+  mapPlateQuad,
+  selectPlateVariant,
+} from "@/lib/plateSpace";
 import {
   INITIAL_HERO_STATE,
   heroLifecycleReducer,
 } from "@/three/animation/heroLifecycle";
-import {
-  REFLECTION_INTENSITY,
-  useReflections,
-} from "@/three/lighting/reflections";
-import { HERO_PRINT } from "@/three/scene/dressing/referenceWall";
+import { plateManifest } from "@/three/scene/plateManifest";
 
 const HERO_FILM = {
   src: "/videos/hero-print-placeholder.mp4",
-  border: 0.018,
   settleBeatSeconds: 1.8,
-  roughness: 0.52,
 } as const;
+
+const HERO_VERTEX_SHADER = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = vec4(position.xy, 0.0, 1.0);
+  }
+`;
+
+const HERO_FRAGMENT_SHADER = `
+  uniform sampler2D heroMap;
+  varying vec2 vUv;
+  void main() {
+    gl_FragColor = texture2D(heroMap, vUv);
+  }
+`;
 
 declare global {
   interface Window {
@@ -41,9 +63,8 @@ function arrivalDone(): boolean {
  * state never enter this component, so neither can pause or restart the film.
  */
 export function HeroFilm() {
-  const { width, height, thickness } = HERO_PRINT;
   const outputColorSpace = useThree((state) => state.gl.outputColorSpace);
-  const reflections = useReflections();
+  const viewportSize = useThree((state) => state.size);
   const [state, dispatch] = useReducer(
     heroLifecycleReducer,
     INITIAL_HERO_STATE,
@@ -56,6 +77,37 @@ export function HeroFilm() {
   const beatPassed = useRef(false);
   const settleDispatched = useRef(false);
   const playAttempted = useRef(false);
+  const geometry = useMemo(() => {
+    const next = new BufferGeometry();
+    next.setAttribute(
+      "position",
+      new Float32BufferAttribute(new Float32Array(12), 3),
+    );
+    next.setAttribute(
+      "uv",
+      new Float32BufferAttribute(
+        [0, 1, 1, 1, 1, 0, 0, 0],
+        2,
+      ),
+    );
+    next.setIndex([0, 1, 2, 0, 2, 3]);
+    return next;
+  }, []);
+  const material = useMemo(
+    () =>
+      texture
+        ? new ShaderMaterial({
+            uniforms: { heroMap: { value: texture } },
+            vertexShader: HERO_VERTEX_SHADER,
+            fragmentShader: HERO_FRAGMENT_SHADER,
+            depthTest: false,
+            depthWrite: false,
+            side: DoubleSide,
+            toneMapped: false,
+          })
+        : null,
+    [texture],
+  );
 
   useEffect(() => {
     const video = document.createElement("video");
@@ -129,23 +181,40 @@ export function HeroFilm() {
     void video.play().catch(() => dispatch({ type: "FAILED" }));
   }, [state]);
 
-  useFrame(({ camera }, delta) => {
+  useEffect(
+    () => () => {
+      geometry.dispose();
+      material?.dispose();
+    },
+    [geometry, material],
+  );
+
+  useFrame((_, delta) => {
     const mesh = meshRef.current;
     if (mesh) {
-      const halfWidth = (width - HERO_FILM.border * 2) / 2;
-      const halfHeight = (height - HERO_FILM.border * 2) / 2;
-      mesh.updateWorldMatrix(true, false);
-      window.__lazyAHeroProjection = [
-        [-halfWidth, halfHeight],
-        [halfWidth, halfHeight],
-        [halfWidth, -halfHeight],
-        [-halfWidth, -halfHeight],
-      ].flatMap(([x, y]) => {
-        const projected = new Vector3(x, y, 0)
-          .applyMatrix4(mesh.matrixWorld)
-          .project(camera);
-        return [(projected.x + 1) / 2, (1 - projected.y) / 2];
-      });
+      const hero = getPlateProjection()?.hero;
+      const variant = selectPlateVariant(viewportSize.width);
+      const profile = plateManifest.variants[variant];
+      const mapped = hero
+        ? mapPlateQuad(
+            hero,
+            { width: profile.width, height: profile.height },
+            viewportSize,
+          )
+        : [];
+      mesh.visible = mapped.length === 8;
+      if (mapped.length === 8) {
+        const positions = geometry.getAttribute("position");
+        const normalized: number[] = [];
+        for (let index = 0; index < 4; index += 1) {
+          const x = mapped[index * 2] / viewportSize.width;
+          const y = mapped[index * 2 + 1] / viewportSize.height;
+          positions.setXYZ(index, x * 2 - 1, 1 - y * 2, 0);
+          normalized.push(x, y);
+        }
+        positions.needsUpdate = true;
+        window.__lazyAHeroProjection = normalized;
+      }
     }
     if (beatPassed.current || !arrivalDone()) return;
     beatElapsed.current += delta;
@@ -157,23 +226,15 @@ export function HeroFilm() {
     }
   });
 
-  if (!texture) return null;
+  if (!texture || !material) return null;
 
   return (
     <mesh
       ref={meshRef}
-      position={[0, 0, thickness * 1.1 + 0.0004]}
-      receiveShadow
-    >
-      <planeGeometry
-        args={[width - HERO_FILM.border * 2, height - HERO_FILM.border * 2]}
-      />
-      <meshStandardMaterial
-        map={texture}
-        roughness={HERO_FILM.roughness}
-        envMap={reflections ?? undefined}
-        envMapIntensity={REFLECTION_INTENSITY.gloss}
-      />
-    </mesh>
+      geometry={geometry}
+      material={material}
+      frustumCulled={false}
+      renderOrder={100}
+    />
   );
 }
