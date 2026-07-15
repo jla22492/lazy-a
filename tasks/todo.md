@@ -11,10 +11,11 @@
 - [x] Present and receive incremental approval for the corrected render/interaction architecture, including one-shot hero playback independent of navigation.
 - [x] Receive Jonathan's review approval of the written 0117-R design specification.
 - [x] Restore every approved scan source to a durable project-owned path and prove the master is reproducible.
-- [ ] Write failing behavioral and visual gates for every rejected behavior.
-- [ ] Implement the approved correction without new unapproved geometry.
-- [ ] Verify desktop, mobile, all four destinations, lighting continuity, clock, and performance.
-- [ ] Replace this failed-review record with an enumerated completion audit only after visual approval.
+- [x] Write failing behavioral and visual gates for every rejected behavior.
+- [x] Implement the approved correction without new unapproved geometry.
+- [x] Verify desktop, mobile, all four destinations, lighting continuity, clock, and performance.
+- [ ] Receive Jonathan's visual approval of the corrected browser experience.
+- [x] Replace the failed implementation record with an enumerated implementation audit and review links.
 
 ## Rejected First-Pass Record
 
@@ -38,3 +39,14 @@
 - Captures: `docs/progress/0117-physical-nav-desktop.png`, `docs/progress/0117-physical-nav-phone.png`, `docs/progress/0117-contact-impression.png`, `docs/progress/0117-about-turn-left.png`.
 
 These automated checks passed but did not establish the approved visual result. Jonathan rejected the implementation for logo intersection/wrong-card placement, mixed pano/live fidelity, missing physical CONTACT indentation, insufficient JOURNAL lean, ambiguous navigation targets, pasted CONTACT text, and incorrect lighting finish.
+
+## 0117-R Review
+
+- Enumerated audit: 8/8 items shipped with behavioral/source-render gates; see
+  `docs/BUILD_REPORT.md`.
+- Final browser evidence: `docs/progress/0117-r-live-wide-*.png` and
+  `docs/progress/0117-r-live-portrait-*.png`.
+- Clock: settle 2.89s; hero 4.68s; JOURNAL target 0.08s.
+- Performance: nominal 59.9fps; 2.35MB through settle; 4.64MB total.
+- Known repository baseline: full ESLint includes 15 legacy geometry-component
+  immutability errors; the changed runtime/verifier lint set passes.

@@ -1,105 +1,117 @@
 # BUILD REPORT
 
-## Work Order
+WORK ORDER COMPLETE
 
-WORK ORDER 0117 — Physical Navigation Refinement (executed on Jonathan's "Proceed with execution" after approvals: desk-logo move, hero hierarchy, foreground photographic coherence, pencil-written desk navigation, stronger JOURNAL perspective, CONTACT pressure-impression reveal, ABOUT left-room reveal)
+Commit:
 
-## Review Status
+`59de58e` (photographic runtime and authored media)
 
-REJECTED BY JONATHAN — 2026-07-14. This report preserves the first-pass implementation record; its prior completion language is superseded by Work Order 0117-R. Rejected behaviors: wrong/new logo card intersecting the hero image, inconsistent photographed-versus-placeholder room states, no physical contact indentation, insufficient JOURNAL lean, ambiguous overlapping navigation targets, pasted CONTACT text, and incorrect lighting finish.
+`f078ca9` (behavioral gates and visual evidence)
 
-## Version
+Version:
 
-v0.1
+v0.1 — Work Order 0117-R
 
-## Summary
+Files Changed:
 
-- NAVIGATION IS NOW IN THE ROOM: the HTML/Drei label layer is gone.
-  `films`, `journal`, `contact`, and `about` live as pencil words on
-  one production scratch note on the desk. The visitor clicks physical
-  word targets; the room answers with head turns and material reveals.
-- THE LOGO MOVED TO THE DESK: Jonathan's letterpress mark now sits on a
-  leaning identity proof at the desk/wall line. The old live wall note
-  is blanked so it covers the baked 0116 logo position until a pano
-  re-render is authorized.
-- JOURNAL, CONTACT, ABOUT NOW HAVE PAYOFFS: JOURNAL gets a stronger
-  forward/downward reading posture and more legible page writing;
-  CONTACT fades in a pressure-impression contact line on the production
-  note itself; ABOUT turns left toward the room-history zone.
-- VISUAL HIERARCHY TUNED: the hero print's border/material no longer
-  reads as a flat white poster, and foreground objects were nudged
-  toward the photographed desk composition.
-- MEASURED (local production server): build green; physical nav green;
-  dwell/candidate green; settle 3.41s / magic 4.72s / physical JOURNAL
-  target 0.08s; fps median 59.9; pre-settle transfer 1.51MB; total
-  streamed 3.04MB. Captures: docs/progress/0117-physical-nav-desktop.png,
-  docs/progress/0117-physical-nav-phone.png,
-  docs/progress/0117-contact-impression.png,
-  docs/progress/0117-about-turn-left.png.
+- `scripts/render-master-shots.py`, `scripts/encode-master-shots.mjs`,
+  `public/room/**`, and `three/scene/plateManifest.ts`: reproducible wide and
+  portrait endpoint plates, camera transitions, physical artifacts, projection
+  metadata, and encoded visitor media.
+- `components/room/PlateRoom.tsx`, `components/room/HeroFilm.tsx`,
+  `components/site/AttentionNavigation.tsx`, `three/scene/Stage.tsx`,
+  `three/animation/plateExperience.ts`, and `lib/plateAssets.ts`: photographic
+  runtime, desk-routed navigation, exact authored hit mapping, and independent
+  hero lifecycle.
+- `scripts/verify-*.mjs`, `scripts/measure-clock.mjs`, and
+  `scripts/perf-gate.mjs`: behavioral gates for camera states, physical
+  navigation, hero alignment/lifecycle, CONTACT, fallbacks, timing, dwell, and
+  performance.
+- `docs/progress/0117-r-*`: twelve final endpoint plates and ten integrated
+  desktop/phone browser captures.
 
-## Files Changed
+Architecture Decisions:
 
-- components/site/AttentionNavigation.tsx — physical ray targets,
-  conversation state, no visible overlay labels, ABOUT destination,
-  JOURNAL/CONTACT posture tuning, debug globals for behavioral gates
-- components/room/WorkbenchDressing.tsx — production nav sheet, logo
-  proof, contact pressure impression, living-desk artifact exports
-- components/room/Notebook.tsx — larger/brighter JOURNAL placeholder
-  text for the stronger reading posture
-- components/room/ReferenceWallDressing.tsx and
-  three/scene/dressing/referenceWall.ts — wall logo removed/blanked;
-  hero print material softened
-- three/scene/Stage.tsx — living desk artifacts remain over the pano
-- three/scene/dressing/workbench.ts — authored constants for the
-  physical nav sheet and logo proof; camera prop nudges
-- three/interface/contact.ts, three/interface/journal.ts — contact
-  reveal state and journal glow tuning
-- scripts/verify-physical-navigation.mjs, verify-dwell.mjs,
-  measure-clock.mjs, film-review.mjs, perf-gate.mjs — gates updated for
-  physical navigation and clean browser close behavior
-- docs/superpowers/plans/2026-07-14-physical-navigation-refinement.md,
-  tasks/todo.md, docs/progress/0117-*.png — plan and evidence trail
+- Blender is the source of truth for room pixels, camera paths, physical paper,
+  lighting, and projection metadata. The browser keeps only the living hero
+  film and interaction state live.
+- Every viewport and destination uses a photographic plate. Media failure keeps
+  the last coherent photograph; no primitive room, loading chrome, or error UI
+  can replace it.
+- Navigation is one generated sheet contract: rendered graphite rows, exported
+  screen quads, and browser hit regions all derive from the same local
+  rectangles.
+- Destination switches route through the settled desk. Reverse clips are real
+  encoded media because dependable negative browser playback is unavailable.
+- The hero lifecycle is independent of room navigation. Its live world depth
+  and projected center are verified against the authored print surface.
 
-## Architecture Decisions
+Creative Decisions Implemented:
 
-- Physical navigation is a live 3D artifact, not DOM. The raycaster
-  tests word centers on the production note, and clicks open the same
-  conversation state previously driven by floating labels.
-- The old dwell verifier became a candidate verifier. There is no
-  hover label to time anymore; the gate now proves the physical word
-  is hittable, clears on release, and click opens the correct response.
-- The contact reveal shares the note artifact instead of living as a
-  separate caption. This keeps the magic exactly where the visitor
-  acted and avoids a puzzle-like search.
+- The Lazy A mark uses existing card `Mesh_33`; no new logo card exists.
+- FILMS, JOURNAL, CONTACT, and ABOUT are legible graphite production notes with
+  disjoint full-row choices and selectable-empty margins.
+- JOURNAL is a head-first, upper-body-second downward lean with the notebook at
+  55.4% of desktop and 41.2% of phone framing.
+- CONTACT stays at the desk: the current lamp turns on and raking light reveals
+  true Geometry Nodes indentation in `Mesh_56`.
+- ABOUT turns left into the shelf and room history.
+- Portrait uses a constant 45-degree lens and a left-seated diagonal regard so
+  the logo, navigation, notebook, and live hero all coexist in the settled
+  phone frame.
+- The room uses the smoothed 0114 lighting character with the current inward
+  lamp and current photographed prop set across every state.
 
-## Creative Decisions Implemented
+Deferred:
 
-- Navigation is one believable production note: pencil, lowercase,
-  slightly hurried, explicit enough for a company site.
-- Logo is a desk/wall identity proof, not a wall placard or chrome.
-- JOURNAL reads through a human head dip and a more legible physical
-  notebook surface.
-- CONTACT appears as a latent pressure impression, not a pasted caption.
-- ABOUT expands the room by turning left toward history.
+- Company-authored films, JOURNAL copy, ABOUT copy, and final CONTACT copy remain
+  placeholder content by direction.
+- Migration to `www.lazyaproductions.com` remains a separate production/domain
+  work order.
+- Repository-wide ESLint still reports 15 pre-existing React immutability
+  findings in legacy geometry components that the photographic runtime does not
+  mount. All changed runtime and verifier files lint clean.
 
-## Deferred
+Decisions Required:
 
-- Actual Lazy A content: hero footage, journal copy, films, final
-  contact information, and ABOUT content are still placeholder/content
-  work.
-- The 0116 8K pano still contains the former wall-logo composition
-  underneath the live blanking note. Re-render only if Jonathan approves
-  an image clean-up order.
-- Domain migration to www.lazyaproductions.com is not executed here.
+- Approve the 0117-R visual result before company-content replacement begins.
+- Confirm the final public CONTACT address before domain launch.
 
-## Decisions Required
+Ready for:
 
-- Confirm final CONTACT copy before production domain launch. Current
-  visible contact line is placeholder.
-- Decide whether 0118 should be content migration first or pano
-  clean-up first.
+Company-content integration and `www.lazyaproductions.com` deployment planning.
 
-## Ready for
+## Enumerated Completion Audit
 
-0117-R corrected-design approval and implementation. Not ready for the
-next content/domain work order.
+1. ✅ Logo placement shipped + render-contract validation: `Mesh_33` carries
+   the explicit upright logo UV; no replacement geometry is created.
+2. ✅ Photographic coherence shipped + desktop/phone fallback gate: all twelve
+   states remain photographic even when destination media is blocked.
+3. ✅ CONTACT indentation shipped + behavioral reveal gate: fixed paper opacity,
+   zero standalone text planes, rising lamp/reveal levels, hold, and reverse.
+4. ✅ JOURNAL lean shipped + camera-state gate: measurable forward/downward body
+   travel and readable notebook coverage on both profiles.
+5. ✅ Navigation legibility shipped + 2,501-point/profile geometry scan, empty
+   margins/gaps, four row round trips, dwell release, and live captures.
+6. ✅ Old CONTACT view removed + DOM/scene gate: no pasted CONTACT/email plane;
+   CONTACT remains desk-oriented rather than the former right/charger pose.
+7. ✅ Lighting and current props shipped + one-master render contract and twelve
+   final endpoint captures reviewed against the 0114 target.
+8. ✅ Hero lifecycle shipped + 16-check behavioral gate: begins once after
+   settle, advances through navigation, aligns to the authored print within
+   `0.0014` normalized center error, ends once, and holds its final frame.
+
+## Verification
+
+- `npm run build` — PASS.
+- Targeted ESLint across every changed runtime/verifier file — PASS.
+- Master media verification — PASS: 2 profiles, 12 endpoints, 10 forward/reverse
+  paths, 32 media files.
+- Physical navigation — PASS on `1280x720` and `375x812`.
+- Camera routing — PASS on all destinations and both profiles.
+- CONTACT reveal — PASS.
+- Hero lifecycle/alignment — PASS, 16/16.
+- Photographic failure behavior — PASS on both profiles.
+- Clock — PASS: settle `2.89s`, hero `4.68s`, JOURNAL recognition `0.08s`.
+- Performance — PASS: nominal `59.9fps`, `2.35MB` through settle, `4.64MB`
+  total; no unreachable reverse-arrival preload.

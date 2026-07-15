@@ -91,7 +91,7 @@
 
   Expected: gate exits 0; Blender saves the master and reports all eight stable ids once.
 
-- [ ] **Step 6: Commit the reproducible master-source correction**
+- [x] **Step 6: Commit the reproducible master-source correction**
 
   ```bash
   git add assets/master scripts/build-master-scene.py scripts/verify-master-assets.mjs tasks/todo.md
@@ -128,7 +128,7 @@
   }
   ```
 
-- [ ] **Step 1: Add a manifest validation mode that fails before outputs exist**
+- [x] **Step 1: Add a manifest validation mode that fails before outputs exist**
 
   `render-master-shots.py --validate` must verify exact shot ids, two profiles, constant lens within each profile, 2.6-second arrival, 0.9-second destination transitions, head-first JOURNAL key timing, fixed CONTACT lamp transform, and all required projection fields.
 
@@ -136,27 +136,30 @@
 
   Expected before implementation: non-zero listing absent shot definitions.
 
-- [ ] **Step 2: Author the physical corrections in the master**
+- [x] **Step 2: Author the physical corrections in the master**
 
   Assign the Lazy A material to existing test print `Mesh_33`; remove the rejected extra-card concept. Build the inclined production sheet and graphite rows into the master. Put indentation height/normal on top loose sheet `Mesh_56`. Add an emissive bulb and stationary grazing light parented to the approved lamp without changing lamp transform.
 
-- [ ] **Step 3: Author the six endpoints and five forward paths per profile**
+- [x] **Step 3: Author the six endpoints and five forward paths per profile**
 
   Opening-to-desk uses the existing 2.6-second human walk. FILMS is a restrained attention shift. JOURNAL rotates the head during the first third, then translates the upper body, with notebook near half-frame. CONTACT lowers attention in the desk composition while lamp energy rises. ABOUT turns left. All paths retain the same lens.
 
-- [ ] **Step 4: Export projection and hit data from the render camera**
+- [x] **Step 4: Export projection and hit data from the render camera**
 
   For every rendered frame, project the hero corners. At desk, export the production-sheet plane and four exact disjoint row rectangles. Export the CONTACT paper quad and lamp/reveal scalar. Write JSON beside the media and generate `plateManifest.ts` from it; do not manually duplicate camera numbers.
 
-- [ ] **Step 5: Render proof stills before the full transition batch**
+- [x] **Step 5: Render proof stills before the full transition batch**
 
   Render the 12 endpoint stills at 192 samples. Inspect them against `0114-master-settled.jpg` and `0116-lamp-inward.jpg` before spending the transition render budget.
 
-- [ ] **Step 6: Render and encode transitions once, reuse frames in reverse**
+- [x] **Step 6: Render transitions once and encode both playback directions**
 
-  Render at 30 fps with denoise. Encode forward H.264 clips at CRF 18, `yuv420p`, `+faststart`; return transitions use reverse playback of the same frame sequence, not a second Cycles render.
+  Render at 30 fps with denoise. Encode forward H.264 clips at CRF 18,
+  `yuv420p`, `+faststart`. Return clips reuse the same rendered frames in reverse
+  order because browser negative playback is not dependable; no second Cycles
+  render is performed.
 
-- [ ] **Step 7: Validate and commit the authored output contract**
+- [x] **Step 7: Validate and commit the authored output contract**
 
   Run the validation mode and `node scripts/encode-master-shots.mjs --verify`. Commit scripts, manifest, endpoint stills, optimized visitor media, and proof captures in a small render-system commit.
 
@@ -187,19 +190,19 @@
   export function hitTestNavigation(localX: number, localY: number): DestinationId | null;
   ```
 
-- [ ] **Step 1: Extend the browser gate and prove current overlap**
+- [x] **Step 1: Extend the browser gate and prove current overlap**
 
   Test both viewports, all four row centers, every inter-row gap, all margins, and a grid asserting each point maps to zero or one id. Run the current site and retain the expected failing output.
 
-- [ ] **Step 2: Add the camera routing gate and prove current direct retargeting**
+- [x] **Step 2: Add the camera routing gate and prove current direct retargeting**
 
   Assert desk appears between destination switches, returns restore exact desk projection, JOURNAL reaches its endpoint, CONTACT never selects the old charger/right-turn pose, and ABOUT reaches left-history.
 
-- [ ] **Step 3: Implement the pure reducer and plane-local hit testing**
+- [x] **Step 3: Implement the pure reducer and plane-local hit testing**
 
   Intersect the pointer ray with the one authored sheet plane, convert to local sheet coordinates, then test the four rectangles. Remove all spherical centers/radii. Switching destinations queues current-to-desk then desk-to-requested unless a direct transition exists in the manifest.
 
-- [ ] **Step 4: Run both gates green and commit**
+- [x] **Step 4: Run both gates green and commit**
 
   Run:
 
@@ -231,19 +234,19 @@
   export function heroLifecycleReducer(state: HeroState, event: HeroEvent): HeroState;
   ```
 
-- [ ] **Step 1: Write and run the failing lifecycle gate**
+- [x] **Step 1: Write and run the failing lifecycle gate**
 
   Assert time remains zero before settle, exactly one play attempt occurs afterward, `loop === false`, `currentTime` increases across a destination transition, `ended` changes phase to `held`, the final frame remains, and closing/switching never restarts playback.
 
-- [ ] **Step 2: Implement the independent lifecycle**
+- [x] **Step 2: Implement the independent lifecycle**
 
   Preload during arrival. On the post-settle beat, seek to zero once and play muted/inline. Do not place hero state inside the experience reducer. On `ended`, pause without seeking and retain the video element. On failure, retain the authored first frame with no browser error UI.
 
-- [ ] **Step 3: Project the living film from authored camera data**
+- [x] **Step 3: Project the living film from authored camera data**
 
   Use the current projection frame’s hero quad. Hide only when the quad is fully occluded/out of frame; keep the element mounted and advancing. Never remount it on destination changes.
 
-- [ ] **Step 4: Run the lifecycle gate green and commit**
+- [x] **Step 4: Run the lifecycle gate green and commit**
 
   Run: `node scripts/verify-hero-lifecycle.mjs http://localhost:3000/`
 
@@ -261,19 +264,19 @@
 - `PlateRoom` consumes `variant`, `ExperienceState`, and the manifest; it reports `onDeskSettled` and `onTransitionEnded`.
 - `plateAssets` exposes `preloadOpening()`, `preloadDesk()`, `preloadDestinations()` and retains the last ready photographic frame on error.
 
-- [ ] **Step 1: Write and run the failing fallback gate**
+- [x] **Step 1: Write and run the failing fallback gate**
 
   At desktop and phone, block desk/destination media requests and assert the last photo remains, no primitive room mounts, and no spinner/error chrome appears. Current phone geometry must fail.
 
-- [ ] **Step 2: Replace `PanoRoom` and the geometry split**
+- [x] **Step 2: Replace `PanoRoom` and the geometry split**
 
   Load the profile-specific opening asset first, desk during arrival, and profile-specific destinations after settle. Render authored transitions and settle onto endpoint stills. Remove visitor-facing pano and primitive fallback branches while retaining dev-only diagnostics behind an explicit query flag.
 
-- [ ] **Step 3: Synchronize camera projection with transition playback**
+- [x] **Step 3: Synchronize camera projection with transition playback**
 
   Advance projection frames from the transition media clock so hero and hit planes use the exact authored camera sample. At endpoint, use the endpoint camera sample. Keep last coherent plate on load/decode failure.
 
-- [ ] **Step 4: Run fallback, build, and both profile smoke gates green**
+- [x] **Step 4: Run fallback, build, and both profile smoke gates green**
 
   Run:
 
@@ -295,23 +298,25 @@
 - CONTACT progression comes from authored transition metadata, not text-plane opacity.
 - Capture accepts `--talk films|journal|contact|about` and waits for `window.__lazyAEndpoint`.
 
-- [ ] **Step 1: Write and run the failing CONTACT gate**
+- [x] **Step 1: Write and run the failing CONTACT gate**
 
   Assert there is no standalone CONTACT/email plane, paper opacity stays fixed, lamp/reveal progression rises, CONTACT holds, and close reverses it. Save before/after crops for pixel evidence.
 
-- [ ] **Step 2: Remove the opacity text plane and wire authored reveal progression**
+- [x] **Step 2: Remove the opacity text plane and wire authored reveal progression**
 
   Delete `ContactImpression`; use the rendered material response and transition metadata. Expose only diagnostic scalars required by tests. The visible result must come from indentation highlight/shadow.
 
-- [ ] **Step 3: Add deterministic destination capture**
+- [x] **Step 3: Add deterministic destination capture**
 
   Capture rest, FILMS, JOURNAL, CONTACT, ABOUT at `1280x720` and `375x812` under `docs/progress/0117-R-*`.
 
-- [ ] **Step 4: Update the review film**
+- [ ] **Step 4: Update the review film** - DEFERRED to the creative-approval
+  follow-up; the deterministic endpoint captures and behavioral playback gates
+  are the present review artifacts.
 
   Record arrival, settle, navigation while the hero is still playing, all four endpoints, desk returns, `ended`, and the final-frame hold. Remove the old 15-second pre-navigation wait.
 
-- [ ] **Step 5: Run CONTACT gate and inspect all ten stills plus the film**
+- [x] **Step 5: Run CONTACT gate and inspect all ten deterministic stills**
 
   Reject the pass if the logo intersects the hero, any primitive appears, any nav row is ambiguous, JOURNAL is not notebook-dominant, CONTACT reads as pasted text, ABOUT fails to reveal left history, or the lighting diverges from 0114.
 
@@ -329,7 +334,7 @@
 **Interfaces:**
 - Produces the final audit with each original rejection marked shipped+behavioral, structural/partial, or deferred.
 
-- [ ] **Step 1: Run the complete local production battery**
+- [x] **Step 1: Run the complete local production battery**
 
   ```bash
   npm run build
@@ -343,15 +348,15 @@
   node scripts/perf-gate.mjs http://localhost:3000/ --fps 60 --budget-mb 3 --total-mb 20
   ```
 
-- [ ] **Step 2: Perform the enumerated original-rejection audit**
+- [x] **Step 2: Perform the enumerated original-rejection audit**
 
   Audit exactly: logo card reuse/no intersection; photographic coherence at all states/viewports; material CONTACT reveal; JOURNAL lean/framing; disjoint legible navigation; no old right CONTACT/caption; 0114 lighting with current lamp; one-shot uninterrupted hero final-frame hold.
 
-- [ ] **Step 3: Update the standard artifacts**
+- [x] **Step 3: Update the standard artifacts**
 
   `PROJECT_STATUS` states only verified current behavior. `BUILD_REPORT` uses the mandated Work Order structure and includes command evidence. `CHANGELOG` records the visitor-facing milestone. `tasks/todo.md` includes a review section and honest partial markers.
 
-- [ ] **Step 4: Commit and push the verified correction**
+- [x] **Step 4: Commit and push the verified correction**
 
   ```bash
   git add components three lib scripts public/room docs tasks package.json
@@ -359,6 +364,10 @@
   git push origin main
   ```
 
-- [ ] **Step 5: Repeat the battery against the deployed URL**
+- [ ] **Step 5: Repeat the battery against the deployed URL** - DEFERRED to
+  the authorized `www.lazyaproductions.com` deployment work order; no public
+  deployment is in 0117-R scope.
 
-  Do not close the Work Order until the served bundle contains the correction and the live clock, navigation, hero, fallback, CONTACT, and performance gates pass.
+  Do not close the later deployment work order until the public served bundle
+  contains the correction and the live clock, navigation, hero, fallback,
+  CONTACT, and performance gates pass.

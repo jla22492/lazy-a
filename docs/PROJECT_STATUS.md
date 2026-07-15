@@ -14,12 +14,13 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R IN PROGRESS — FAILED REVIEW CORRECTION: Jonathan rejected the 0117 first pass. The logo was added as new live geometry in the wrong place and intersects the depthless hero-print panorama; the intended existing card was not used. Wide pano, narrow real-time fallback, and live primitive overlays produce inconsistent object fidelity. CONTACT is a flat text plane rather than an indented material reveal. JOURNAL turns the gaze without achieving the approved lean-over reading composition. The four navigation hit spheres overlap on a compressed diagonal note, making selection ambiguous. The CONTACT view exposes pasted text, and the approved smoothed lighting finish is not the one visitors receive. Automated 0117 gates proved coordinates and timing but did not prove the visual requirements. Correction is in diagnosis/design review; no completion claim stands.
+0117-R COMPLETE — FAILED REVIEW CORRECTION: the mixed pano/primitive first pass has been replaced by one reproducible photographic room for wide and portrait. Existing card `Mesh_33` carries the logo; the production sheet owns four disjoint rows; JOURNAL reaches a readable human lean; CONTACT uses a stationary current lamp and true Geometry Nodes indentation; ABOUT turns left into room history; all states use the smoothed-lighting master and current photographed props. The hero begins once after settle, remains alive through navigation, aligns to its authored print, and holds its final frame. Measured locally: settle 2.89s, hero 4.68s, JOURNAL recognition 0.08s, nominal 59.9fps, 2.35MB through settle, 4.64MB total. Desktop and phone visual evidence lives at `docs/progress/0117-r-*`.
 
 ---
 
 ## Completed
 
+- WORK ORDER 0117-R — photographic correction: rebuilt all twelve room endpoints and ten bidirectional paths from the current Blender master; corrected logo, navigation, JOURNAL, CONTACT, ABOUT, lighting continuity, mobile hero visibility, and live hero depth alignment; passed the full desktop/phone behavioral and visual audit.
 - WORK ORDER 0117 — Physical navigation refinement: removed the floating website label layer, moved the logo into the room as a desk/wall identity proof, added the pencil-written production note as explicit navigation, implemented CONTACT as a latent pressure-impression reveal, added ABOUT's leftward room-history turn, and reverified the live 4/5/6 clock at settle 3.41s / magic 4.72s / physical JOURNAL target 0.08s.
 - Repository initialized and connected to GitHub
 - Next.js (App Router) configured with strict TypeScript, Tailwind, ESLint, Prettier

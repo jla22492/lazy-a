@@ -55,4 +55,6 @@
 
 - R-0117 failed creative review: the first physical-navigation pass proved click routing but not the experience. New live geometry intersected the photographed room, mobile and desktop belonged to different fidelity states, CONTACT was text rather than material evidence, JOURNAL never reached a readable human lean, and four overlapping targets turned explicit navigation into guesswork. The completion claim was withdrawn and the order reopened.
 
+- The room became one photograph again: desktop and phone now arrive through the same current master, with the Lazy A mark printed on the card that was already there, four unmistakable graphite production notes, a true lean over JOURNAL, and a lamp that exposes CONTACT as pressure in paper. ABOUT turns into the room instead of opening a page. The moving print starts once at 4.72 seconds, stays alive wherever the visitor looks, and ends by holding its final image. No destination falls back to a rendered approximation; every state belongs to the same room.
+
 Record experience changes here, not just technical ones.
