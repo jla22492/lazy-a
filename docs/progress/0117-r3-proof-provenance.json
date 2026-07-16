@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-07-15T23:57:48.097282+00:00",
+  "masterBuildInvocationId": "34ec3533-0b29-46f6-a692-bd2cf6c9de8e",
+  "masterBuilderSha256": "344fc964072d5420ffbb9233a446a7628bb8341124c9a5b11745e98997b86c7d",
+  "outputs": {
+    "portrait-about.jpg": {
+      "bytes": 34223,
+      "sha256": "d87c9b2323b55309c5257cd76cf5e7b63cfa928c9d8ff52ce14dac82f90e645a"
+    },
+    "portrait-contact.jpg": {
+      "bytes": 39283,
+      "sha256": "9037b31976cb224eeaeb1453f1aed091d54944f5d29dda5541aeb6952efb7daa"
+    },
+    "portrait-desk.jpg": {
+      "bytes": 41644,
+      "sha256": "aec2bb3362c16d69fa9b05eb6d5cf56b307a53c50bcd51d1822ffc3d96651899"
+    },
+    "portrait-films.jpg": {
+      "bytes": 42833,
+      "sha256": "32a1f6804587fc140b9cb132c04b85c59ebb2f132aa7eae92b90d7246b0890da"
+    },
+    "portrait-journal.jpg": {
+      "bytes": 33829,
+      "sha256": "17336f318969564c67dcdcb7a4d0d5c1d3a43f8ccfc77d78943e4b13df754720"
+    },
+    "portrait-opening.jpg": {
+      "bytes": 32955,
+      "sha256": "653d0922777b33cc0afcad8d6ff1c36a56cadec69a343f4961b66b94ba8ca3ac"
+    },
+    "wide-about.jpg": {
+      "bytes": 94329,
+      "sha256": "89f1178d792ab158e72c1bf7356335b38f8480b7668fb1de16de2e77bdd63fa5"
+    },
+    "wide-contact.jpg": {
+      "bytes": 108464,
+      "sha256": "bdf6c1107db9b854778bc350ffb912974ae2142d90787575535814b030f76473"
+    },
+    "wide-desk.jpg": {
+      "bytes": 125370,
+      "sha256": "e9f699361a1efd94409f8ca63b7dc518cbf66ba6edb371e8a4c1dba8e4f16ff7"
+    },
+    "wide-films.jpg": {
+      "bytes": 96474,
+      "sha256": "3b1672f4dd53daef9e50c0467a1ac0402c605221d006671ca311043770760fb4"
+    },
+    "wide-journal.jpg": {
+      "bytes": 93215,
+      "sha256": "6c27fe74ff5e843e0189f882d7a9585d20e3275e86f9e1c1733be8b6591fd806"
+    },
+    "wide-opening.jpg": {
+      "bytes": 93470,
+      "sha256": "d4bd1db42221a9a65968fed1281233d354fc1455629a0e1183ad47565ed24946"
+    }
+  },
+  "renderer": "scripts/render-master-shots.py",
+  "rendererSha256": "86754bdbe789165dfb78a63019e46cc18fca68a5205a1e0032b9eb3febc44d86",
+  "samples": 8,
+  "selectors": [],
+  "sourceBlend": "build/wo-0117-r/master.blend",
+  "sourceBlendSha256": "015a72c5e12f49c5681148e39aa7f89a4c037e020644bdd5f85952a977461d28"
+}

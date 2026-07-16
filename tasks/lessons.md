@@ -13,7 +13,7 @@
 - Treat user-supplied public copy as a byte-exact contract. Pin the exact line breaks and punctuation in both generated media metadata and a behavioral gate before rendering.
 - For pressure marks cut from font geometry, validate cutter solid orientation and the rendered groove itself. Added topology does not prove a boolean produced readable indentation.
 - A latent physical reveal must match the host surface's full material response at rest, not only its base color; roughness or specular mismatch can expose Boolean faces before the light cue.
-- When room light still exposes a correctly cut pressure mark, animate the recess depth within the same paper mesh alongside the raking light; do not cover it with a second plane or fall back to flat text.
+- A pressure indentation is fixed physical geometry. If it reads before the cue, correct the groove depth, host-material parity, camera, and raking-light design; do not animate the recess or crossfade its color to manufacture the reveal.
 - Shader parity means cloning the host surface's linked node graph. Copying a Principled default color does not reproduce a texture-driven paper and can expose otherwise correct inset faces as flat white.
 - Four aligned hero corners do not prove foreground depth. Export the actual evaluated foreground meshes, preserve concavities in a compact per-frame silhouette, and compare masked and unmasked pixels in a live browser.
 - Drive projection metadata from `requestVideoFrameCallback().mediaTime` and the authored frame rate. Container duration can include a trailing frame interval and will register the overlay one frame late.
@@ -23,3 +23,10 @@
 - Nominal dimensions and coordinate contact are not visual acceptance. Every room pass must inspect support, silhouette, scale relationships, duplicates, texture sharpness, and full-frame motion at desktop, tall, tablet, and phone shapes before it can become a review candidate.
 - A four-corner overlay check cannot prove a planar image belongs to a photographed surface. Verify perspective interpolation, first-frame continuity, lighting treatment, foreground-edge quality, and poster-axis stability against the actual rendered pixels.
 - Cloth simulation output must be validated by final world bounds and a rendered visibility check. A successful modifier application can still leave the cloth below the room.
+- A multi-object scan set cannot inherit believable scale from one component alone. Measure the chair, table, lamp, and other independently recognizable objects in world units, then constrain each component to plausible real proportions.
+- Camera-projected bounding boxes can claim visibility for geometry that is occluded or contributes no readable pixels. Pair projection contracts with rendered-frame inspection before accepting edge-of-frame art direction.
+- A supplied furniture vignette must remain spatially coherent in world space. Gate component-to-component BVH intersections, believable distances, geometry-derived facing, and rendered visibility from every camera where the vignette is meant to read.
+- “Use the card directly left” is an object-identity requirement, not an approximate placement. Pin the exact mesh owner and the exact high-resolution source dimensions so a nearby card or packed preview texture cannot pass.
+- Companion props that read as one physical arrangement must move and verify as a group; a detached tape remnant can invalidate an otherwise correct identity card.
+- Before recording an imported scan as unlicensed, inspect embedded glTF/GLB asset metadata and pin any creator, source URL, and license found there into the durable credits ledger.
+- Proof renders need machine-readable source-blend, renderer, and output hashes. A visually current-looking JPEG without provenance cannot establish that the reviewed frame came from the reviewed master.

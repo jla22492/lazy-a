@@ -1,0 +1,6 @@
+Asset: Trash can
+Creator: Chenchanchong (https://sketchfab.com/Chenchanchong)
+Source: https://sketchfab.com/3d-models/trash-can-264734874792486fa03e2ef2bfd06007
+License: CC-BY-4.0
+License URL: https://creativecommons.org/licenses/by/4.0/
+Provenance: Copied from the source GLB asset.extras metadata embedded by Sketchfab.

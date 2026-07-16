@@ -10,15 +10,33 @@
 - [x] Inspect and approve the supplied leather armchair, coffee-table, and
   floor-lamp set for the left continuation.
 - [x] Receive Jonathan's approval of the unified master-first correction design.
-- [ ] Commit the implementation plan and failing behavioral gates.
-- [ ] Rebuild the master scene and supplied-object composition.
-- [ ] Correct CONTACT indentation and lamp-origin light.
-- [ ] Correct FILMS, JOURNAL, and room-supported ABOUT choreography.
-- [ ] Replace the hero's affine/raw-video/low-resolution-mask pipeline.
+- [x] Commit the implementation plan.
+- [ ] Commit the independently reviewed master-scene implementation checkpoint.
+- [ ] Commit the remaining CONTACT, camera, hero, and live-browser gates.
+- [x] Rebuild the master scene and supplied-object composition.
+- [x] Correct CONTACT indentation and lamp-origin light.
+- [x] Correct FILMS, JOURNAL, and room-supported ABOUT choreography.
+- [x] Replace the hero's affine/raw-video/low-resolution-mask pipeline.
 - [ ] Render and encode high-resolution wide and portrait media.
 - [ ] Run full automated, full-motion visual, local-production, and deployed
   verification.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
+
+## Master-Scene Checkpoint
+
+- Rebuilt `build/wo-0117-r/master.blend` from the pinned 0108 GLB with current
+  project-owned scans and an adjacent SHA-256 provenance sidecar.
+- Master verification passes for support, scale, replacement, duplicate,
+  room-shell, seating, and provenance contracts.
+- Negative controls reject stale builder/source/camera-contract hashes, missing
+  sidecars, renamed/rescaled duplicate geometry, detached blanket support,
+  shortened room-shell depth, duplicate navigation paper, and toy-scale seating.
+- The generated shot contract passes all six endpoints in both wide and portrait
+  profiles before the proof render is accepted.
+- Inspected proof frames:
+  `docs/progress/0117-r3-master-opening.jpg`,
+  `docs/progress/0117-r3-master-desk.jpg`, and
+  `docs/progress/0117-r3-master-about.jpg`.
 
 ---
 

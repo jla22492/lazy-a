@@ -1,5 +1,57 @@
 # BUILD REPORT
 
+WORK ORDER 0117-R3 MASTER CHECKPOINT — FINAL MEDIA OPEN
+
+Version:
+
+v0.1 — Work Order 0117-R3 partial checkpoint
+
+Observed Result:
+
+- The deterministic Blender master passes support, replacement, duplicate,
+  real-world scale, seating-coherence, left-shell, lighting-source, and current
+  provenance contracts for every supplied room asset.
+- Independent review found no P1/P2 issue in the 12 current static proof frames.
+  CONTACT is readable as a recessed same-paper impression, the supplied seating
+  remains peripheral, the floor-lamp practical warms ABOUT from a physical
+  source, and the approved portrait ABOUT camera remains unchanged.
+- The physical hero first frame, reciprocal-depth projection, ten evaluated
+  foreground occluders, and 512px concave silhouette masks pass the generated
+  wide/portrait contract. Delta-varint encoding keeps the manifest at 1.10MB.
+- `docs/progress/0117-r3-proof-provenance.json` binds all 12 reviewed proofs to
+  the current master, builder invocation, renderer, and output hashes.
+
+Behavioral Verification:
+
+- `scripts/verify-master-blend.py` — PASS on the saved master. Four negative
+  controls independently reject wrong logo ownership, missing seating lamp,
+  colliding seating furniture, and a dark/detached card-tape artifact.
+- `verify-camera-states.mjs --manifest-only` — PASS: locked FILMS, JOURNAL, and
+  ABOUT choreography.
+- `verify-contact-reveal.mjs --manifest-only` — PASS: exact fixed 0.30mm
+  indentation and shade-origin lamp only.
+- `verify-contact-proof.mjs` — PASS: wide and portrait illuminated copy exceed
+  measured contrast/edge thresholds; blank-paper negative controls fail.
+- `verify-hero-occlusion-contract.mjs --geometry-only` — PASS: 394 projection
+  samples, 386 visible projective frames, and 280 non-empty evaluated masks.
+- TypeScript and targeted ESLint — PASS.
+
+Enumerated Checkpoint Audit:
+
+1. ✅ Master props, proportions, support, duplicates, blanket, room extension,
+   logo/tape, and practical lighting shipped + saved-scene behavioral gates.
+2. ✅ FILMS/JOURNAL/CONTACT/ABOUT endpoint composition shipped + generated
+   camera and proof-image behavioral gates.
+3. ✅ Physical hero/poster compositing contract shipped + reciprocal-depth and
+   evaluated-mask decoder gates.
+4. ⚠️ Final endpoint stills and 20 forward/reverse transition MP4s not yet
+   replaced; the existing files are deliberately rejected as stale dimensions.
+5. ⚠️ Local production, full-motion viewport battery, deployed Pages battery,
+   and Jonathan's explicit visual approval remain assigned to this order's
+   final-media successor checkpoint.
+
+---
+
 WORK ORDER 0117-R2 REVIEW CANDIDATE — REJECTED BY JONATHAN
 
 The automated coordinate, lifecycle, timing, and nominal-scale gates passed,

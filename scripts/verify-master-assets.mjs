@@ -95,9 +95,13 @@ const required = [
     archivePath: "assets/master/scans/trash-can/source.zip",
     archiveSha256:
       "b8f0d4847f0cd6ebb491e2557f4d2bb42c71afe18d884e7148f2672f2006fb09",
-    creator: "Unresolved; user-supplied archive contains no attribution metadata",
-    source: "User-supplied archive: trash-can_mesh.zip",
-    license: "Unresolved; user-supplied archive contains no license metadata",
+    creator: "Chenchanchong",
+    source:
+      "https://sketchfab.com/3d-models/trash-can-264734874792486fa03e2ef2bfd06007",
+    license: "CC-BY-4.0",
+    licensePath: "assets/master/scans/trash-can/license.txt",
+    licenseSha256:
+      "56c1c6f73bb9c8f5df70ceb35b634eb4eeaefbae7072ab92b25f29eecb286daf",
   }),
   suppliedArchive({
     id: "basketball",

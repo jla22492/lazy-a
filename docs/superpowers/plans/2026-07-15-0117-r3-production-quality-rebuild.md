@@ -17,7 +17,7 @@ room-treated hero over those plates. Automated gates reject unsupported props,
 duplicates, camera-body violations, low-resolution media, and compositor
 regressions. Normal-speed multi-viewport review remains the final gate.
 
-**Stack:** Blender 4.x/Cycles/AgX, Python, Next.js 16, React 19, Three.js/R3F,
+**Stack:** Blender 5.1.2/Cycles/AgX, Python, Next.js 16, React 19, Three.js/R3F,
 Node verification scripts, FFmpeg/FFprobe, Playwright with real Chrome.
 
 ## Global Constraints
@@ -100,7 +100,7 @@ Node verification scripts, FFmpeg/FFprobe, Playwright with real Chrome.
    with a pinned visible drape. Record actual source, support, replacement,
    dimensions, orientation, and world bounds in `master_asset_inventory`.
 4. Build the master:
-   `/Applications/Blender.app/Contents/MacOS/Blender -b --python scripts/build-master-scene.py`.
+   `/Applications/Blender.app/Contents/MacOS/Blender --factory-startup -b -P scripts/build-master-scene.py -- docs/progress/0108-scene.glb build/wo-0117-r/master.blend build`.
    The builder must stamp its source SHA-256, asset-inventory SHA-256, build
    timestamp, and a unique invocation ID into the `.blend`.
 5. Run `scripts/verify-master-blend.py`; require GREEN and require those

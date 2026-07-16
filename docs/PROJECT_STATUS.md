@@ -31,6 +31,16 @@ an extended left room carrying Jonathan's supplied leather armchair, coffee
 table, and floor lamp. The written design is
 `docs/superpowers/specs/2026-07-15-0117-r3-production-quality-rebuild-design.md`.
 
+R3 master checkpoint accepted internally on 2026-07-15: the rebuilt saved
+scene, 12 hashed proof frames, camera/contact/hero contracts, and independent
+review carry no open P1/P2 static finding. The supplied seating area now lights
+ABOUT from its own floor lamp; CONTACT passes both geometry and final-pixel
+readability gates; the treated poster and live hero share projective depth and
+512px evaluated masks. This is a partial milestone only. The 20 runtime
+transition MP4s are still stale low-resolution media and are rejected by the
+encoder verifier; final rendering, encoding, live browser proof, deployed proof,
+and Jonathan's explicit approval remain open.
+
 ---
 
 ## Completed
