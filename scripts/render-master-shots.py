@@ -16,10 +16,12 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import math
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -57,9 +59,11 @@ LENS_FOV = {
     "wide": float(CAMERA_CONTRACT["desktop"]["fov"]),
     "portrait": float(CAMERA_CONTRACT["phone"]["fov"]),
 }
-RESOLUTION = {"wide": (1280, 720), "portrait": (375, 812)}
+RESOLUTION = {"wide": (2560, 1440), "portrait": (750, 1624)}
+PROOF_RESOLUTION = {"wide": (1280, 720), "portrait": (375, 812)}
+MOTION_RESOLUTION = {"wide": (1920, 1080), "portrait": (750, 1624)}
 
-LOGO_OBJECT = "Mesh_33"
+LOGO_OBJECT = "Mesh_31"
 OBSOLETE_PINNED_LOGO = "Mesh_173"
 CONTACT_PAPER = "Mesh_56"
 HERO_OBJECT = "Mesh_170"
@@ -77,7 +81,8 @@ HERO_OCCLUDER_OBJECTS = (
 )
 HERO_OCCLUDER_ROUND_DIGITS = 6
 HERO_OCCLUDER_SIMPLIFY_TOLERANCE = 0.0001
-HERO_OCCLUSION_MASK_SIZE = 256
+HERO_OCCLUSION_MASK_SIZE = 512
+HERO_FIRST_FRAME_SOURCE = "assets/master/hero/hero-print-first-frame.png"
 LAMP_ROOT = "scan_lamp"
 NAV_SHEET = "ProductionNavigationSheet"
 NAV_PREFIX = "ProductionNavigationRow_"
@@ -107,7 +112,9 @@ CONTACT_FONT_PATH = Path("/System/Library/Fonts/Supplemental/Arial Narrow.ttf")
 NAV_LABEL_WIDTHS = (0.113, 0.145, 0.155, 0.110)
 CONTACT_PAPER_POSITION = (-0.35, -0.04)
 CONTACT_PAPER_YAW = math.radians(4.5)
-CONTACT_INDENT_DEPTH = 0.00008
+# Mesh_56 is a 0.4 mm sheet. A 0.30 mm blind-deboss leaves a continuous paper
+# floor while giving the lamp enough real sidewall to reveal the copy.
+CONTACT_INDENT_DEPTH = 0.00030
 CONTACT_INDENT_VERTEX_INDICES: tuple[int, ...] = ()
 CONTACT_INDENT_TOP_Z = 0.0
 NAV_ROWS = (
@@ -187,7 +194,6 @@ def remove_object(obj: bpy.types.Object) -> None:
 
 def remove_authored_objects() -> None:
     exact_names = {
-        NAV_SHEET,
         CONTACT_CUTTER,
         CONTACT_RECESS,
         CONTACT_LIGHT,
@@ -232,7 +238,7 @@ def apply_logo_to_existing_card() -> bpy.types.Object:
     card = require_object(LOGO_OBJECT, "MESH")
     original_matrix = card.matrix_world.copy()
     bpy.context.view_layer.update()
-    logo_path = REPO_ROOT / "public" / "brand" / "logo-note.png"
+    logo_path = REPO_ROOT / "assets" / "master" / "brand" / "lazy-a-logo-letterpress.png"
     if not logo_path.is_file():
         raise RuntimeError(f"Lazy A logo texture is missing: {logo_path}")
 
@@ -264,6 +270,8 @@ def apply_logo_to_existing_card() -> bpy.types.Object:
     card["lazy_a_logo_geometry_created"] = False
     card["lazy_a_logo_orientation"] = "upright-local-xz"
     card["lazy_a_logo_uv_binding"] = "explicit-uv-map"
+    card["lazy_a_logo_source"] = "assets/master/brand/lazy-a-logo-letterpress.png"
+    card["lazy_a_logo_source_resolution"] = json.dumps(list(image.size))
     card["lazy_a_logo_transform_preserved"] = card.matrix_world == original_matrix
     old_logo = bpy.data.objects.get(OBSOLETE_PINNED_LOGO)
     if old_logo is not None and old_logo.type == "MESH":
@@ -274,6 +282,42 @@ def apply_logo_to_existing_card() -> bpy.types.Object:
         old_logo.data.materials.append(blank_paper)
         old_logo["lazy_a_authored_role"] = "retired-pinned-logo-paper"
     return card
+
+
+def apply_hero_first_frame() -> bpy.types.Object:
+    poster = require_object(HERO_OBJECT, "MESH")
+    source_path = REPO_ROOT / HERO_FIRST_FRAME_SOURCE
+    if not source_path.is_file():
+        raise RuntimeError(f"Hero first-frame texture is missing: {source_path}")
+
+    uv_layer = ensure_upright_card_uv(poster)
+    material = bpy.data.materials.get("LazyAHeroPhysicalPoster") or bpy.data.materials.new(
+        "LazyAHeroPhysicalPoster"
+    )
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+    output = nodes.new("ShaderNodeOutputMaterial")
+    bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+    image_node = nodes.new("ShaderNodeTexImage")
+    image_node.interpolation = "Cubic"
+    uv_node = nodes.new("ShaderNodeUVMap")
+    uv_node.uv_map = uv_layer.name
+    image = bpy.data.images.load(str(source_path), check_existing=True)
+    image.colorspace_settings.name = "sRGB"
+    image_node.image = image
+    bsdf.inputs["Roughness"].default_value = 0.9
+    bsdf.inputs["Specular IOR Level"].default_value = 0.22
+    links.new(uv_node.outputs["UV"], image_node.inputs["Vector"])
+    links.new(image_node.outputs["Color"], bsdf.inputs["Base Color"])
+    links.new(bsdf.outputs["BSDF"], output.inputs["Surface"])
+    poster.data.materials.clear()
+    poster.data.materials.append(material)
+    poster["lazy_a_hero_first_frame_source"] = HERO_FIRST_FRAME_SOURCE
+    poster["lazy_a_hero_resting_mechanism"] = "baked-physical-poster"
+    poster["lazy_a_hero_uv_binding"] = "explicit-uv-map"
+    return poster
 
 
 def ensure_upright_card_uv(card: bpy.types.Object) -> bpy.types.MeshUVLoopLayer:
@@ -376,15 +420,14 @@ def create_production_sheet() -> tuple[bpy.types.Object, dict[str, list[bpy.type
     font = handwriting_font()
 
     near_edge_drop = math.sin(NAV_INCLINE) * NAV_HEIGHT / 2.0
-    bpy.ops.mesh.primitive_cube_add(
-        size=1.0,
-        location=(NAV_CENTER_X, NAV_CENTER_Y, DESK_HEIGHT + near_edge_drop + NAV_THICKNESS / 2.0),
-        rotation=(NAV_INCLINE, 0.0, NAV_YAW),
+    sheet = require_object(NAV_SHEET, "MESH")
+    sheet.location = (
+        NAV_CENTER_X,
+        NAV_CENTER_Y,
+        DESK_HEIGHT + near_edge_drop + NAV_THICKNESS / 2.0,
     )
-    sheet = bpy.context.active_object
-    sheet.name = NAV_SHEET
-    sheet.dimensions = (NAV_WIDTH, NAV_HEIGHT, NAV_THICKNESS)
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    sheet.rotation_euler = (NAV_INCLINE, 0.0, NAV_YAW)
+    sheet.data.materials.clear()
     sheet.data.materials.append(paper)
     sheet["lazy_a_authored_role"] = "physical-navigation-sheet"
     sheet["lazy_a_row_order"] = json.dumps([row["id"] for row in NAV_ROWS])
@@ -457,9 +500,9 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
             f"{CONTACT_CUTTER}_{index + 1}",
             body,
             0.030,
-            0.00020,
+            0.00035,
             font=font,
-            bevel=False,
+            bevel=True,
         )
         if part.dimensions.x > 0:
             factor = target_width / part.dimensions.x
@@ -511,21 +554,30 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
     groove_bsdf = groove_material.node_tree.nodes.get("Principled BSDF")
     if groove_bsdf is None:
         raise RuntimeError("CONTACT paper host material has no Principled BSDF")
-    base_input = groove_bsdf.inputs["Base Color"]
-    base_link = base_input.links[0] if base_input.is_linked else None
-    reveal_mix = groove_material.node_tree.nodes.new("ShaderNodeMixRGB")
-    reveal_mix.name = "ContactRevealMix"
-    reveal_mix.label = "Paper texture to illuminated indentation"
-    reveal_mix.blend_type = "MIX"
-    reveal_mix.inputs[0].default_value = 0.0
-    reveal_mix.inputs[2].default_value = (0.24, 0.19, 0.14, 1.0)
-    if base_link is not None:
-        source_socket = base_link.from_socket
-        groove_material.node_tree.links.remove(base_link)
-        groove_material.node_tree.links.new(source_socket, reveal_mix.inputs[1])
+    # Preserve the host paper's linked color network, then model the slight
+    # fixed darkening of compressed cotton fibers. This is not an animated
+    # reveal mix: the applied recess remains constant and the lamp supplies the
+    # changing illumination. Bevelled walls create the highlight/shadow pair.
+    groove_bsdf.inputs["Roughness"].default_value = 0.62
+    groove_bsdf.inputs["Specular IOR Level"].default_value = 0.32
+    base_color = groove_bsdf.inputs["Base Color"]
+    source_link = next(
+        (link for link in groove_material.node_tree.links if link.to_socket == base_color),
+        None,
+    )
+    compressed_fibers = groove_material.node_tree.nodes.new("ShaderNodeMixRGB")
+    compressed_fibers.name = "ContactCompressedPaperFibers"
+    compressed_fibers.blend_type = "MULTIPLY"
+    compressed_fibers.inputs[0].default_value = 1.0
+    compressed_fibers.inputs[2].default_value = (0.66, 0.65, 0.63, 1.0)
+    if source_link is not None:
+        source_socket = source_link.from_socket
+        groove_material.node_tree.links.remove(source_link)
+        groove_material.node_tree.links.new(source_socket, compressed_fibers.inputs[1])
     else:
-        reveal_mix.inputs[1].default_value = base_input.default_value
-    groove_material.node_tree.links.new(reveal_mix.outputs["Color"], base_input)
+        compressed_fibers.inputs[1].default_value = base_color.default_value
+    groove_material.node_tree.links.new(compressed_fibers.outputs[0], base_color)
+    groove_material["lazy_a_contact_color_parity"] = "fixed-compressed-fiber-response"
     groove_index = next(
         (
             index
@@ -660,7 +712,7 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
         emission=(1.0, 0.47, 0.16, 1.0),
     )
 
-    bulb_location = Vector((-0.615, 0.24, 1.205))
+    bulb_location = Vector((-0.615, 0.22, 1.205))
     bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.018, location=bulb_location)
     bulb = bpy.context.active_object
     bulb.name = CONTACT_BULB
@@ -675,17 +727,17 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
     light_data.color = (1.0, 0.58, 0.30)
     light_data.spot_size = math.radians(70.0)
     light_data.spot_blend = 0.94
-    light_data.shadow_soft_size = 0.008
+    light_data.shadow_soft_size = 0.001
     light = bpy.data.objects.new(CONTACT_LIGHT, light_data)
     bpy.context.collection.objects.link(light)
-    # The visible bulb remains inside the shade; the photometric source sits
-    # just below its lip so light grazes the paper instead of making a white
-    # spotlight over the address.
-    light.location = Vector((-0.60, 0.10, 0.955))
+    # Keep the photometric source at the bulb inside the visible shade. The
+    # shade, not an off-fixture helper light, is now the physical source.
+    light.location = bulb_location.copy()
     target = normalized_surface_matrix(contact_sheet, 0.0, 0.0, 0.0).translation
     light.rotation_euler = (target - light.location).to_track_quat("-Z", "Y").to_euler()
     light["lazy_a_authored_role"] = "fixed-transform-raking-light"
-    light["lazy_a_contact_energy"] = 45.0
+    light["lazy_a_contact_energy"] = 78.0
+    light["lazy_a_contact_target"] = json.dumps(rounded_vector(target))
     parent_keep_world(light, lamp)
     return bulb, light
 
@@ -699,21 +751,8 @@ def reveal_level(value: float) -> None:
     bsdf = material.node_tree.nodes.get("Principled BSDF")
     if bsdf is not None:
         bsdf.inputs["Emission Strength"].default_value = 18.0 * value
-    groove_material = bpy.data.materials.get("ContactPressureGroove")
-    reveal_mix = (
-        groove_material.node_tree.nodes.get("ContactRevealMix")
-        if groove_material and groove_material.node_tree
-        else None
-    )
-    paper = require_object(CONTACT_PAPER, "MESH")
-    depth_level = smoothstep(value)
-    for vertex_index in CONTACT_INDENT_VERTEX_INDICES:
-        paper.data.vertices[vertex_index].co.z = (
-            CONTACT_INDENT_TOP_Z - CONTACT_INDENT_DEPTH * depth_level
-        )
-    paper.data.update()
-    if reveal_mix is not None:
-        reveal_mix.inputs[0].default_value = depth_level
+    # CONTACT geometry is always fully indented. The apparent reveal is only
+    # the changing light pool, so no vertex or paper-color state is animated.
 
 
 def unhide_notebook() -> list[bpy.types.Object]:
@@ -749,31 +788,31 @@ def reposition_journal_pencil() -> bpy.types.Object:
 def author_journal_copy() -> list[bpy.types.Object]:
     cover = require_object("Mesh_185", "MESH")
     ink = make_principled_material(
-        "JournalPlaceholderGraphite", (0.43, 0.41, 0.385, 1.0), 0.98
+        "JournalPlaceholderGraphite", (0.58, 0.555, 0.52, 1.0), 0.98
     )
     font = handwriting_font()
     lines: list[bpy.types.Object] = []
-    first_y = -0.024
-    line_step = 0.0135
+    first_y = 0.014
+    line_step = 0.019
     line_offsets = (0.0, 0.0008, -0.0004, 0.0005, -0.0002)
     for index, body in enumerate(JOURNAL_COPY):
         line = create_text_mesh(
             f"{JOURNAL_PREFIX}{index + 1}",
             body,
-            0.0061,
+            0.0092,
             0.000014,
             material=ink,
             align_x="LEFT",
             font=font,
         )
         normalize_mesh_left_edge(line)
-        if line.dimensions.x > 0.108:
-            factor = 0.108 / line.dimensions.x
+        if line.dimensions.x > 0.165:
+            factor = 0.165 / line.dimensions.x
             line.scale.x *= factor
             line.scale.y *= factor
         line.matrix_world = normalized_surface_matrix(
             cover,
-            -0.058 + line_offsets[index],
+            -0.065 + line_offsets[index],
             first_y - index * line_step,
             0.0017,
             rotation_z=0.0,
@@ -790,6 +829,7 @@ def author_physical_scene() -> dict[str, Any]:
     lamp = require_object(LAMP_ROOT)
     lamp_matrix_before = [rounded(value) for row in lamp.matrix_world for value in row]
     card = apply_logo_to_existing_card()
+    hero_poster = apply_hero_first_frame()
     nav_sheet, nav_labels = create_production_sheet()
     contact_sheet = author_contact_indentation()
     contact_cutter = require_object(CONTACT_CUTTER, "MESH")
@@ -807,6 +847,7 @@ def author_physical_scene() -> dict[str, Any]:
     lamp_matrix_after = [rounded(value) for row in lamp.matrix_world for value in row]
     return {
         "card": card,
+        "heroPoster": hero_poster,
         "navigation": nav_sheet,
         "navigationLabels": nav_labels,
         "navigationFontFamily": "Noteworthy",
@@ -838,8 +879,11 @@ PROFILE_POSES = {
             "position": tuple(CAMERA_CONTRACT["desktop"]["position"]),
             "target": tuple(CAMERA_CONTRACT["desktop"]["target"]),
         },
-        "films": {"position": (0.05, 1.6, 1.45), "target": (0.55, 1.27, -0.45)},
-        "journal": {"position": (0.31, 1.06, 0.35), "target": (0.35, 0.91, 0.12)},
+        "films": {
+            "position": tuple(CAMERA_CONTRACT["desktop"]["position"]),
+            "target": (0.55, 1.27, -0.45),
+        },
+        "journal": {"position": (0.28, 1.34, 0.15), "target": (0.35, 0.91, 0.12)},
         "contact": {"position": (-0.45, 1.58, 0.32), "target": (-0.46, 0.91, -0.01)},
         "about": {"position": (0.02, 1.58, 1.45), "target": (-1.28, 1.22, -0.08)},
     },
@@ -849,8 +893,11 @@ PROFILE_POSES = {
             "position": tuple(CAMERA_CONTRACT["phone"]["position"]),
             "target": tuple(CAMERA_CONTRACT["phone"]["target"]),
         },
-        "films": {"position": (0.05, 1.70, 1.75), "target": (0.55, 1.27, -0.45)},
-        "journal": {"position": (0.30, 1.075, 0.44), "target": (0.30, 0.91, 0.12)},
+        "films": {
+            "position": tuple(CAMERA_CONTRACT["phone"]["position"]),
+            "target": (0.55, 1.27, -0.45),
+        },
+        "journal": {"position": (0.28, 1.36, 0.45), "target": (0.321, 0.91, 0.12)},
         "contact": {"position": (-0.40, 2.25, 0.85), "target": (-0.4415, 0.91, -0.02)},
         "about": {"position": (0.22, 1.58, 2.27), "target": (-1.52, 0.92, -0.08)},
     },
@@ -1058,7 +1105,22 @@ def endpoint_framing(scene: bpy.types.Scene, camera: bpy.types.Object, authored:
 
 def hero_projection(scene: bpy.types.Scene, camera: bpy.types.Object) -> list[float] | None:
     hero = require_object(HERO_OBJECT, "MESH")
-    return project_world_points(scene, camera, local_face_points(hero, 1, "min"))
+    points = local_face_points(hero, 1, "min")
+    if any((camera.matrix_world.inverted() @ point).z >= -1e-8 for point in points):
+        return None
+    return project_world_points(scene, camera, points)
+
+
+def hero_reciprocal_w(camera: bpy.types.Object) -> list[float] | None:
+    camera_inverse = camera.matrix_world.inverted()
+    values = []
+    for point in hero_world_quad():
+        camera_point = camera_inverse @ point
+        clip_w = -camera_point.z
+        if clip_w <= 1e-8:
+            return None
+        values.append(rounded(1.0 / clip_w))
+    return values
 
 
 def convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
@@ -1241,7 +1303,7 @@ def hero_occluder_projection(
     camera: bpy.types.Object,
 ) -> list[list[float]]:
     hero_world = hero_world_quad()
-    hero_screen_values = project_world_points(scene, camera, hero_world)
+    hero_screen_values = hero_projection(scene, camera)
     if hero_screen_values is None:
         return [[] for _ in HERO_OCCLUDER_OBJECTS]
     hero_screen = list(zip(hero_screen_values[0::2], hero_screen_values[1::2]))
@@ -1368,6 +1430,15 @@ def rasterize_mask_polygon(
 def encode_mask_runs(mask: bytearray) -> str:
     size = HERO_OCCLUSION_MASK_SIZE
     payload = bytearray()
+
+    def append_varint(value: int) -> None:
+        if value < 0:
+            raise RuntimeError(f"Hero silhouette varint cannot encode {value}")
+        while value >= 0x80:
+            payload.append((value & 0x7F) | 0x80)
+            value >>= 7
+        payload.append(value)
+
     for y in range(size):
         runs: list[tuple[int, int]] = []
         x = 0
@@ -1380,11 +1451,12 @@ def encode_mask_runs(mask: bytearray) -> str:
                 x += 1
             runs.append((start, x))
             x += 1
-        if len(runs) > 255:
-            raise RuntimeError(f"Hero silhouette row {y} exceeds 255 runs")
-        payload.append(len(runs))
+        append_varint(len(runs))
+        previous_end = -1
         for start, end in runs:
-            payload.extend((start, end))
+            append_varint(start - previous_end - 1)
+            append_varint(end - start + 1)
+            previous_end = end
     return base64.b64encode(payload).decode("ascii")
 
 
@@ -1393,10 +1465,11 @@ def hero_occlusion_mask(
     camera: bpy.types.Object,
 ) -> dict[str, Any]:
     hero_world = hero_world_quad()
-    hero_screen_values = project_world_points(scene, camera, hero_world)
+    hero_screen_values = hero_projection(scene, camera)
     if hero_screen_values is None:
         return {
             "size": HERO_OCCLUSION_MASK_SIZE,
+            "encoding": "rle-varint-v1",
             "rle": encode_mask_runs(bytearray(HERO_OCCLUSION_MASK_SIZE ** 2)),
         }
     hero_screen = list(zip(hero_screen_values[0::2], hero_screen_values[1::2]))
@@ -1443,6 +1516,7 @@ def hero_occlusion_mask(
             evaluated.to_mesh_clear()
     return {
         "size": HERO_OCCLUSION_MASK_SIZE,
+        "encoding": "rle-varint-v1",
         "rle": encode_mask_runs(mask),
     }
 
@@ -1601,10 +1675,12 @@ def frame_metadata(
     return {
         "camera": camera_sample(camera, LENS_FOV[profile]),
         "hero": hero_projection(scene, camera),
+        "heroReciprocalW": hero_reciprocal_w(camera),
         "heroOccluders": hero_occluder_projection(scene, camera),
         "heroOcclusionMask": hero_occlusion_mask(scene, camera),
         "lampLevel": rounded(lamp_level),
         "revealLevel": rounded(lamp_level),
+        "contactIndentDepth": CONTACT_INDENT_DEPTH,
     }
 
 
@@ -1612,10 +1688,23 @@ def media_path(path: Path) -> str:
     return "/" + path.relative_to(REPO_ROOT / "public").as_posix()
 
 
-def configure_render(scene: bpy.types.Scene, profile: str, samples: int) -> None:
-    width, height = RESOLUTION[profile]
+def configure_render(
+    scene: bpy.types.Scene,
+    profile: str,
+    samples: int,
+    *,
+    proof: bool = False,
+    motion: bool = False,
+) -> None:
+    resolution = (
+        PROOF_RESOLUTION if proof else MOTION_RESOLUTION if motion else RESOLUTION
+    )
+    width, height = resolution[profile]
     scene.render.engine = "CYCLES"
     scene.cycles.samples = samples
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = 0.025
+    scene.cycles.adaptive_min_samples = min(4, samples)
     scene.cycles.use_denoising = True
     scene.render.resolution_x = width
     scene.render.resolution_y = height
@@ -1625,14 +1714,73 @@ def configure_render(scene: bpy.types.Scene, profile: str, samples: int) -> None
     scene.render.film_transparent = False
 
 
+def world_bounds(objects: list[bpy.types.Object]) -> tuple[Vector, Vector]:
+    points = [
+        obj.matrix_world @ Vector(corner)
+        for obj in objects
+        for corner in obj.bound_box
+    ]
+    return (
+        Vector(min(point[axis] for point in points) for axis in range(3)),
+        Vector(max(point[axis] for point in points) for axis in range(3)),
+    )
+
+
+def contact_light_contract(authored: dict[str, Any]) -> dict[str, Any]:
+    light = require_object(CONTACT_LIGHT, "LIGHT")
+    bulb = require_object(CONTACT_BULB, "MESH")
+    paper = authored["contact"]
+    origin = light.matrix_world.translation.copy()
+    direction = light.matrix_world.to_quaternion() @ Vector((0.0, 0.0, -1.0))
+    direction.normalize()
+
+    lamp_min, lamp_max = world_bounds(authored["lampMeshes"])
+    lamp_height = lamp_max.z - lamp_min.z
+    inside_lamp_bounds = all(
+        lamp_min[axis] <= origin[axis] <= lamp_max[axis] for axis in range(3)
+    )
+    inside_shade = (
+        inside_lamp_bounds
+        and origin.z >= lamp_min.z + lamp_height * 0.45
+        and (origin - bulb.matrix_world.translation).length <= 1e-6
+    )
+
+    inverse = paper.matrix_world.inverted()
+    local_origin = inverse @ origin
+    local_direction = inverse.to_3x3() @ direction
+    paper_top = max(Vector(corner).z for corner in paper.bound_box)
+    denominator = local_direction.z
+    intersects = False
+    hit_world = None
+    if abs(denominator) > 1e-8:
+        distance = (paper_top - local_origin.z) / denominator
+        if distance > 0.0:
+            hit = local_origin + local_direction * distance
+            local_bounds = [Vector(corner) for corner in paper.bound_box]
+            min_x = min(point.x for point in local_bounds)
+            max_x = max(point.x for point in local_bounds)
+            min_y = min(point.y for point in local_bounds)
+            max_y = max(point.y for point in local_bounds)
+            intersects = min_x <= hit.x <= max_x and min_y <= hit.y <= max_y
+            hit_world = paper.matrix_world @ hit
+    return {
+        "lightOrigin": blender_to_three(origin),
+        "lightTarget": blender_to_three(hit_world) if hit_world is not None else None,
+        "lightInsideShade": inside_shade,
+        "lightIntersectsPaper": intersects,
+    }
+
+
 def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: dict[str, Any]) -> dict[str, Any]:
     variants: dict[str, Any] = {}
+    light_contract = contact_light_contract(authored)
     contact_world = [
         blender_to_three(point)
         for point in local_face_points(authored["contact"], 2, "max")
     ]
 
     for profile in PROFILE_IDS:
+        print(f"MANIFEST: {profile} endpoints", flush=True)
         set_profile_dressing(authored, profile)
         width, height = RESOLUTION[profile]
         scene.render.resolution_x = width
@@ -1650,6 +1798,7 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 "projection": frame_metadata(scene, camera, profile, level),
                 "framing": endpoint_framing(scene, camera, authored),
             }
+            print(f"MANIFEST: {profile}/{endpoint}", flush=True)
 
         transitions: dict[str, Any] = {}
         destinations = (("desk", OPENING_SECONDS),) + tuple(
@@ -1666,6 +1815,12 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 )
                 set_camera_transform(camera, position, quaternion)
                 frames.append(frame_metadata(scene, camera, profile, lamp_level))
+                if (frame_index + 1) % 30 == 0 or frame_index == frame_count - 1:
+                    print(
+                        f"MANIFEST: {profile}/{transition_id} "
+                        f"{frame_index + 1}/{frame_count}",
+                        flush=True,
+                    )
             forward_path = f"/room/{profile}/transitions/{transition_id}.mp4"
             reverse_path = f"/room/{profile}/transitions/{destination}-{source}.mp4"
             transitions[transition_id] = {
@@ -1742,12 +1897,19 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
             "logo": {
                 "object": LOGO_OBJECT,
                 "geometryCreated": False,
+                "source": authored["card"].get("lazy_a_logo_source"),
+                "sourceResolution": json.loads(
+                    authored["card"].get("lazy_a_logo_source_resolution", "[]")
+                ),
                 "uvLayer": authored["card"].data.uv_layers.active.name,
                 "uvBinding": authored["card"].get("lazy_a_logo_uv_binding"),
                 "screenQuads": logo_screen_quads,
             },
             "contact": {
                 "mechanism": "applied-exact-pressure-indentation",
+                "materialMechanism": "paper-consistent-groove",
+                "coloredRevealMixCount": 0,
+                "geometryAnimated": False,
                 "paperObject": CONTACT_PAPER,
                 "paperWorldQuad": contact_world,
                 "paperScreenQuad": contact_projection(scene, camera, authored["contact"]),
@@ -1768,6 +1930,7 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 "addressScreenQuads": address_screen_quads,
                 "paperScreenQuads": paper_screen_quads,
                 "lampScreenQuads": lamp_screen_quads,
+                **light_contract,
             },
             "journal": {
                 "mechanism": "physical-text-geometry",
@@ -1789,6 +1952,13 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
         "fps": FPS,
         "endpointIds": list(ENDPOINT_IDS),
         "destinationIds": list(DESTINATION_IDS),
+        "hero": {
+            "object": HERO_OBJECT,
+            "firstFrameSource": HERO_FIRST_FRAME_SOURCE,
+            "restingMechanism": "baked-physical-poster",
+            "liveProjection": "camera-reciprocal-depth-projective",
+            "maskResolution": HERO_OCCLUSION_MASK_SIZE,
+        },
         "variants": variants,
     }
 
@@ -1806,10 +1976,12 @@ export interface Rect { x: number; y: number; width: number; height: number }
 export interface ProjectionFrame {
   camera: CameraSample;
   hero: readonly [number, number, number, number, number, number, number, number] | null;
+  heroReciprocalW: readonly [number, number, number, number] | null;
   heroOccluders: readonly (readonly number[])[];
-  heroOcclusionMask: { size: 256; rle: string };
+  heroOcclusionMask: { size: 512; encoding: "rle-varint-v1"; rle: string };
   lampLevel: number;
   revealLevel: number;
+  contactIndentDepth: number;
 }
 export interface PlateEndpoint {
   id: EndpointId;
@@ -1853,14 +2025,19 @@ export interface PlateVariant {
     rowPitch: 0.044;
   };
   logo: {
-    object: "Mesh_33";
+    object: "Mesh_31";
     geometryCreated: false;
+    source: "assets/master/brand/lazy-a-logo-letterpress.png";
+    sourceResolution: readonly [2000, 1588];
     uvLayer: string;
     uvBinding: "explicit-uv-map";
     screenQuads: Record<EndpointId, readonly number[] | null>;
   };
   contact: {
     mechanism: \"applied-exact-pressure-indentation\";
+    materialMechanism: "paper-consistent-groove";
+    coloredRevealMixCount: 0;
+    geometryAnimated: false;
     paperObject: string;
     paperWorldQuad: readonly (readonly number[])[];
     paperScreenQuad: readonly number[] | null;
@@ -1871,12 +2048,16 @@ export interface PlateVariant {
     lampTransform: readonly number[];
     paperTransform: readonly number[];
     paperMovedOnce: true;
-    indentDepth: 0.00008;
+    indentDepth: number;
     geometryStats: { baseVertices: number; indentedVertices: number; basePolygons: number; indentedPolygons: number };
     addressCopy: string;
     addressScreenQuads: Record<EndpointId, readonly number[] | null>;
     paperScreenQuads: Record<EndpointId, readonly number[] | null>;
     lampScreenQuads: Record<EndpointId, readonly number[] | null>;
+    lightOrigin: readonly [number, number, number];
+    lightTarget: readonly [number, number, number];
+    lightInsideShade: true;
+    lightIntersectsPaper: true;
   };
   journal: {
     mechanism: "physical-text-geometry";
@@ -1900,6 +2081,13 @@ export interface PlateManifest {
   fps: number;
   endpointIds: readonly EndpointId[];
   destinationIds: readonly DestinationId[];
+  hero: {
+    object: "Mesh_170";
+    firstFrameSource: "assets/master/hero/hero-print-first-frame.png";
+    restingMechanism: "baked-physical-poster";
+    liveProjection: "camera-reciprocal-depth-projective";
+    maskResolution: 512;
+  };
   variants: Record<Variant, PlateVariant>;
 }
 
@@ -2005,19 +2193,41 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         issues.append(f"profiles must be exactly {PROFILE_IDS}")
     if manifest.get("cameraRotationConversion") != "basis-similarity-with-camera-local-basis":
         issues.append("camera rotation export must use the verified basis-similarity conversion")
+    if manifest.get("hero") != {
+        "object": HERO_OBJECT,
+        "firstFrameSource": HERO_FIRST_FRAME_SOURCE,
+        "restingMechanism": "baked-physical-poster",
+        "liveProjection": "camera-reciprocal-depth-projective",
+        "maskResolution": HERO_OCCLUSION_MASK_SIZE,
+    }:
+        issues.append("hero must retain the physical first frame and reciprocal-depth live projection")
+    hero_poster = authored["heroPoster"]
+    if (
+        hero_poster.name != HERO_OBJECT
+        or hero_poster.get("lazy_a_hero_first_frame_source") != HERO_FIRST_FRAME_SOURCE
+        or hero_poster.get("lazy_a_hero_resting_mechanism") != "baked-physical-poster"
+    ):
+        issues.append("Mesh_170 must carry the treated physical hero first frame")
     if authored["lampMatrixBefore"] != authored["lampMatrixAfter"]:
         issues.append(f"{LAMP_ROOT} transform changed while authoring CONTACT light")
     card = authored["card"]
     if card.name != LOGO_OBJECT or card.get("lazy_a_logo_geometry_created") is not False:
-        issues.append("Lazy A logo must reuse Mesh_33 without new card geometry")
+        issues.append("Lazy A logo must reuse Mesh_31 without new card geometry")
     if card.get("lazy_a_logo_transform_preserved") is not True:
-        issues.append("Mesh_33 logo card must preserve its master-scene transform")
+        issues.append("Mesh_31 logo card must preserve its master-scene transform")
     if card.get("lazy_a_logo_orientation") != "upright-local-xz" or card.data.uv_layers.active is None:
-        issues.append("Mesh_33 logo must use an explicit upright local X/Z UV map")
+        issues.append("Mesh_31 logo must use an explicit upright local X/Z UV map")
+    if (
+        card.get("lazy_a_logo_source")
+        != "assets/master/brand/lazy-a-logo-letterpress.png"
+        or json.loads(card.get("lazy_a_logo_source_resolution", "[]"))
+        != [2000, 1588]
+    ):
+        issues.append("Mesh_31 logo must use the pinned 2000x1588 letterpress source")
     logo_material = card.data.materials[0] if card.data.materials else None
     logo_nodes = logo_material.node_tree.nodes if logo_material and logo_material.use_nodes else ()
     if not any(node.bl_idname == "ShaderNodeUVMap" for node in logo_nodes):
-        issues.append("Mesh_33 logo image must be bound to its explicit upright UV map")
+        issues.append("Mesh_31 logo image must be bound to its explicit upright UV map")
     nav_rows = [obj for obj in bpy.data.objects if obj.name.startswith(NAV_PREFIX)]
     if len(nav_rows) != 4 or [row["id"] for row in NAV_ROWS] != list(DESTINATION_IDS):
         issues.append("production sheet must carry four separated uppercase rows in destination order")
@@ -2040,7 +2250,17 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         or abs(float(cutter.get("lazy_a_contact_indent_depth", 0.0)) - CONTACT_INDENT_DEPTH)
         > 1e-9
     ):
-        issues.append("CONTACT typography must retain the measured 0.08 mm pressure indentation")
+        issues.append("CONTACT typography must retain the authored 0.30 mm blind-deboss indentation")
+    groove_material = bpy.data.materials.get("ContactPressureGroove")
+    if (
+        groove_material is None
+        or groove_material.node_tree is None
+        or groove_material.node_tree.nodes.get("ContactRevealMix") is not None
+        or groove_material.node_tree.nodes.get("ContactCompressedPaperFibers") is None
+        or groove_material.get("lazy_a_contact_color_parity")
+        != "fixed-compressed-fiber-response"
+    ):
+        issues.append("CONTACT groove must retain the paper material without a colored reveal mix")
     if len(authored.get("journalCopy", [])) != len(JOURNAL_COPY):
         issues.append("notebook must carry every approved physical placeholder line")
     if authored.get("journalPencil", {}).get("lazy_a_repositioned_once") is not True:
@@ -2101,19 +2321,55 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             if transition["duration"] != DESTINATION_SECONDS:
                 issues.append(f"{profile}: {destination} must be exactly {DESTINATION_SECONDS}s")
             if not transition.get("frames") or any(
-                set(frame) != {"camera", "hero", "heroOccluders", "heroOcclusionMask", "lampLevel", "revealLevel"}
+                set(frame) != {"camera", "hero", "heroReciprocalW", "heroOccluders", "heroOcclusionMask", "lampLevel", "revealLevel", "contactIndentDepth"}
                 or set(frame["camera"]) != {"position", "quaternion", "fov"}
+                or (
+                    frame["hero"] is not None
+                    and (
+                        frame["heroReciprocalW"] is None
+                        or len(frame["heroReciprocalW"]) != 4
+                    )
+                )
+                or (frame["hero"] is None and frame["heroReciprocalW"] is not None)
                 or len(frame["heroOccluders"]) != len(HERO_OCCLUDER_OBJECTS)
                 or frame["heroOcclusionMask"].get("size") != HERO_OCCLUSION_MASK_SIZE
+                or frame["heroOcclusionMask"].get("encoding") != "rle-varint-v1"
                 or not frame["heroOcclusionMask"].get("rle")
+                or frame["contactIndentDepth"] != CONTACT_INDENT_DEPTH
                 for frame in transition.get("frames", [])
             ):
                 issues.append(f"{profile}: {destination} frames lack required projection fields")
         journal = transitions["desk-journal"]
         if journal["translationStartsAtSeconds"] < journal["journalHeadLeadSeconds"]:
             issues.append(f"{profile}: JOURNAL translation begins before the head lead completes")
-        contact_transition = transitions["desk-contact"]
+        journal_frames = journal["frames"]
         desk_camera = endpoints["desk"]["projection"]["camera"]
+        journal_camera = endpoints["journal"]["projection"]["camera"]
+        if journal_camera["position"][1] < 1.32:
+            issues.append(f"{profile}: JOURNAL eye height must remain at least 1.32m")
+        if desk_camera["position"][2] - journal_camera["position"][2] < 0.3:
+            issues.append(f"{profile}: JOURNAL must hinge forward at least 0.3m")
+        if any(frame["camera"]["position"][1] < 1.32 for frame in journal_frames):
+            issues.append(f"{profile}: JOURNAL transition drops toward desk-level framing")
+        first_rotation = next(
+            (
+                index
+                for index, frame in enumerate(journal_frames)
+                if frame["camera"]["quaternion"] != desk_camera["quaternion"]
+            ),
+            -1,
+        )
+        first_translation = next(
+            (
+                index
+                for index, frame in enumerate(journal_frames)
+                if frame["camera"]["position"] != desk_camera["position"]
+            ),
+            -1,
+        )
+        if first_rotation < 0 or first_translation < 0 or first_rotation >= first_translation:
+            issues.append(f"{profile}: JOURNAL head rotation must begin before forward translation")
+        contact_transition = transitions["desk-contact"]
         contact_camera = endpoints["contact"]["projection"]["camera"]
         if contact_camera == desk_camera or all(
             frame["camera"] == desk_camera for frame in contact_transition["frames"]
@@ -2121,10 +2377,17 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             issues.append(f"{profile}: CONTACT must use an authored lean/pan away from desk")
         levels = [frame["lampLevel"] for frame in contact_transition["frames"]]
         if not levels or levels[0] != 0.0 or levels[-1] != 1.0:
-            issues.append(f"{profile}: CONTACT lamp/reveal must ramp from 0 to 1")
+            issues.append(f"{profile}: CONTACT lamp must ramp from 0 to 1")
         navigation = variant.get("navigation", {})
         contact_data = variant.get("contact", {})
         journal_data = variant.get("journal", {})
+        films_camera = endpoints["films"]["projection"]["camera"]
+        if (
+            films_camera["position"] != desk_camera["position"]
+            or films_camera["fov"] != desk_camera["fov"]
+            or films_camera["quaternion"] == desk_camera["quaternion"]
+        ):
+            issues.append(f"{profile}: FILMS must be an exact desk-position head-only turn")
         if not navigation.get("plane") or len(navigation.get("rows", [])) != 4:
             issues.append(f"{profile}: navigation plane and row rectangles are required")
         desk_hero_quad = endpoints.get("desk", {}).get("projection", {}).get("hero")
@@ -2134,6 +2397,16 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             )
         if not contact_data.get("paperWorldQuad") or contact_data.get("standalonePlaneCount") != 0:
             issues.append(f"{profile}: CONTACT paper quad is required and standalone planes are forbidden")
+        if (
+            contact_data.get("materialMechanism") != "paper-consistent-groove"
+            or contact_data.get("coloredRevealMixCount") != 0
+            or contact_data.get("geometryAnimated") is not False
+            or contact_data.get("lightInsideShade") is not True
+            or contact_data.get("lightIntersectsPaper") is not True
+            or not contact_data.get("lightOrigin")
+            or not contact_data.get("lightTarget")
+        ):
+            issues.append(f"{profile}: CONTACT must use fixed indentation and shade-origin raking light only")
         if (
             journal_data.get("mechanism") != "physical-text-geometry"
             or tuple(journal_data.get("copy", ())) != JOURNAL_COPY
@@ -2160,7 +2433,7 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
                 logo_quad = variant.get("logo", {}).get("screenQuads", {}).get(endpoint)
                 if not quad_inside_frame(logo_quad):
                     issues.append(
-                        f"portrait: full Mesh_33 logo card must remain inside {endpoint} frame; quad={logo_quad}"
+                        f"portrait: full Mesh_31 logo card must remain inside {endpoint} frame; quad={logo_quad}"
                     )
                 for row in NAV_ROWS:
                     label_quad = navigation.get("labelScreenQuads", {}).get(endpoint, {}).get(row["id"])
@@ -2206,8 +2479,9 @@ def render_endpoint(
     endpoint: str,
     output: Path,
     samples: int,
+    proof: bool,
 ) -> None:
-    configure_render(scene, profile, samples)
+    configure_render(scene, profile, samples, proof=proof)
     position, quaternion = pose_transform(profile, endpoint)
     set_camera_transform(camera, position, quaternion)
     reveal_level(1.0 if endpoint == "contact" else 0.0)
@@ -2235,7 +2509,47 @@ def render_endpoints(
                 output = PUBLIC_ROOT / "proof" / f"{profile}-{endpoint}.jpg"
             else:
                 output = PUBLIC_ROOT / profile / "stills" / f"{endpoint}.jpg"
-            render_endpoint(scene, camera, profile, endpoint, output, samples)
+            render_endpoint(scene, camera, profile, endpoint, output, samples, proof)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def write_proof_provenance(samples: int, only: set[str]) -> None:
+    proof_root = PUBLIC_ROOT / "proof"
+    rendered = {}
+    for path in sorted(proof_root.glob("*.jpg")):
+        selector = path.stem.replace("-", ":", 1)
+        if only and selector not in only:
+            continue
+        rendered[path.name] = {
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+        }
+    source_blend = REPO_ROOT / SOURCE_BLEND
+    sidecar_path = Path(f"{source_blend}.provenance.json")
+    master_provenance = json.loads(sidecar_path.read_text(encoding="utf-8"))
+    payload = {
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+        "renderer": "scripts/render-master-shots.py",
+        "rendererSha256": sha256_file(Path(__file__).resolve()),
+        "sourceBlend": SOURCE_BLEND,
+        "sourceBlendSha256": sha256_file(source_blend),
+        "masterBuildInvocationId": master_provenance.get("invocation_id"),
+        "masterBuilderSha256": master_provenance.get("builder_sha256"),
+        "samples": samples,
+        "selectors": sorted(only),
+        "outputs": rendered,
+    }
+    (proof_root / "provenance.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def render_transition_frames(
@@ -2247,7 +2561,9 @@ def render_transition_frames(
 ) -> None:
     for profile in PROFILE_IDS:
         set_profile_dressing(authored, profile)
-        configure_render(scene, profile, samples)
+        # Motion plates remain 1080p/full-phone resolution; endpoint handoffs
+        # use the higher delivery stills after the sub-second movement ends.
+        configure_render(scene, profile, samples, motion=True)
         # configure_render defaults endpoint stills to JPEG. Transition
         # intermediates are lossless PNGs because the encoder reads %04d.png.
         scene.render.image_settings.file_format = "PNG"
@@ -2281,6 +2597,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--proof", action="store_true")
     parser.add_argument("--render-stills", action="store_true")
     parser.add_argument("--render-transitions", action="store_true")
+    parser.add_argument(
+        "--visual-only",
+        action="store_true",
+        help="Skip manifest generation for disposable proof-only iteration",
+    )
     parser.add_argument("--samples", type=int)
     parser.add_argument(
         "--only",
@@ -2296,22 +2617,29 @@ def main() -> None:
     scene = bpy.context.scene
     authored = author_physical_scene()
     camera = create_camera()
-    manifest = build_manifest(scene, camera, authored)
-    write_manifest(manifest)
-    issues = validate_manifest(manifest, authored)
-    if issues:
-        print(f"SHOT CONTRACT INVALID ({len(issues)} issues):", file=sys.stderr)
-        for issue in issues:
-            print(f"  - {issue}", file=sys.stderr)
-        raise SystemExit(1)
+    if args.visual_only:
+        if not args.proof or args.render_stills or args.render_transitions:
+            raise SystemExit("--visual-only is restricted to disposable --proof renders")
+        print("VISUAL ITERATION ONLY: manifest generation and validation skipped")
+    else:
+        manifest = build_manifest(scene, camera, authored)
+        write_manifest(manifest)
+        issues = validate_manifest(manifest, authored)
+        if issues:
+            print(f"SHOT CONTRACT INVALID ({len(issues)} issues):", file=sys.stderr)
+            for issue in issues:
+                print(f"  - {issue}", file=sys.stderr)
+            raise SystemExit(1)
 
-    print(
-        "SHOT CONTRACT VALID: 6 endpoints x 2 profiles; opening 2.6s; "
-        "destinations 0.9s; constant lens; JOURNAL head-first; CONTACT authored lean/pan."
-    )
+        print(
+            "SHOT CONTRACT VALID: 6 endpoints x 2 profiles; opening 2.6s; "
+            "destinations 0.9s; constant lens; JOURNAL head-first; CONTACT authored lean/pan."
+        )
     only = set(args.only)
     if args.proof:
-        render_endpoints(scene, camera, authored, proof=True, samples=args.samples or 8, only=only)
+        proof_samples = args.samples or 8
+        render_endpoints(scene, camera, authored, proof=True, samples=proof_samples, only=only)
+        write_proof_provenance(proof_samples, only)
     if args.render_stills:
         render_endpoints(scene, camera, authored, proof=False, samples=args.samples or 192, only=only)
     if args.render_transitions:

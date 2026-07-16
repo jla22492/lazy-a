@@ -16,10 +16,16 @@
  *   node scripts/verify-camera-states.mjs [url]
  */
 
+import { readFile } from "node:fs/promises";
+
 import { chromium } from "playwright";
 import { Quaternion, Vector3 } from "three";
 
-const url = process.argv[2] ?? "http://localhost:3000/";
+const args = process.argv.slice(2);
+const manifestOnly = args.includes("--manifest-only");
+const url =
+  args.find((argument) => !argument.startsWith("--")) ??
+  "http://localhost:3000/";
 
 const VIEWPORTS = [
   { name: "desktop", width: 1280, height: 720 },
@@ -32,6 +38,110 @@ const JOURNAL_MAX_COVERAGE = 0.6;
 const MIN_JOURNAL_TRAVEL = 0.05;
 const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
+const MIN_JOURNAL_EYE_HEIGHT = 1.32;
+const MIN_JOURNAL_FORWARD_TRAVEL = 0.3;
+const APPROVED_ABOUT_CAMERAS = {
+  wide: {
+    position: [0.019999999553, 1.580000042915, 1.450000047684],
+    quaternion: [-0.083158425987, 0.343562364578, 0.030558215454, 0.934941589832],
+    fov: 35,
+  },
+  portrait: {
+    position: [0.219999998808, 1.580000042915, 2.269999980927],
+    quaternion: [-0.105192042887, 0.311378329992, 0.034704685211, 0.943808138371],
+    fov: 35,
+  },
+};
+
+function sameTuple(left, right, tolerance = 1e-9) {
+  return (
+    Array.isArray(left) &&
+    Array.isArray(right) &&
+    left.length === right.length &&
+    left.every((value, index) => Math.abs(value - right[index]) <= tolerance)
+  );
+}
+
+function cameraContractFailures(manifest) {
+  const failures = [];
+  for (const profile of ["wide", "portrait"]) {
+    const variant = manifest.variants?.[profile];
+    const endpoints = variant?.endpoints;
+    const desk = endpoints?.desk?.projection?.camera;
+    const films = endpoints?.films?.projection?.camera;
+    const journal = endpoints?.journal?.projection?.camera;
+    const about = endpoints?.about?.projection?.camera;
+    const transition = variant?.transitions?.["desk-journal"];
+    const frames = transition?.frames ?? [];
+    if (!desk || !films || !journal || !about || frames.length < 3) {
+      failures.push(`${profile}: camera manifest is incomplete`);
+      continue;
+    }
+    if (
+      !sameTuple(films.position, desk.position) ||
+      films.fov !== desk.fov ||
+      sameTuple(films.quaternion, desk.quaternion)
+    ) {
+      failures.push(
+        `${profile}: FILMS must preserve the exact desk position/FOV while changing only head rotation`,
+      );
+    }
+    const forwardTravel = desk.position[2] - journal.position[2];
+    if (
+      journal.position[1] < MIN_JOURNAL_EYE_HEIGHT ||
+      forwardTravel < MIN_JOURNAL_FORWARD_TRAVEL
+    ) {
+      failures.push(
+        `${profile}: JOURNAL must keep eye height >=${MIN_JOURNAL_EYE_HEIGHT}m and hinge forward >=${MIN_JOURNAL_FORWARD_TRAVEL}m; got y=${journal.position[1]}, forward=${forwardTravel}`,
+      );
+    }
+    if (
+      frames.some(
+        (frame) => frame.camera?.position?.[1] < MIN_JOURNAL_EYE_HEIGHT,
+      )
+    ) {
+      failures.push(`${profile}: JOURNAL transition drops below seated eye height`);
+    }
+    const firstRotation = frames.findIndex(
+      (frame) => !sameTuple(frame.camera?.quaternion, desk.quaternion),
+    );
+    const firstTranslation = frames.findIndex(
+      (frame) => !sameTuple(frame.camera?.position, desk.position),
+    );
+    if (
+      firstRotation < 0 ||
+      firstTranslation < 0 ||
+      firstRotation >= firstTranslation
+    ) {
+      failures.push(
+        `${profile}: JOURNAL rotation must begin before body translation; got rotation=${firstRotation}, translation=${firstTranslation}`,
+      );
+    }
+    const approvedAbout = APPROVED_ABOUT_CAMERAS[profile];
+    if (
+      !sameTuple(about.position, approvedAbout.position) ||
+      !sameTuple(about.quaternion, approvedAbout.quaternion) ||
+      about.fov !== approvedAbout.fov
+    ) {
+      failures.push(`${profile}: approved ABOUT endpoint changed`);
+    }
+  }
+  return failures;
+}
+
+if (manifestOnly) {
+  const manifest = JSON.parse(
+    await readFile("public/room/manifest.json", "utf8"),
+  );
+  const failures = cameraContractFailures(manifest);
+  failures.forEach((failure) => console.log(`FAIL manifest: ${failure}`));
+  if (failures.length === 0) {
+    console.log(
+      "PASS manifest: FILMS head-only, JOURNAL seated hinge, and approved ABOUT contracts",
+    );
+  }
+  process.exit(failures.length === 0 ? 0 : 1);
+}
 
 const browser = await chromium.launch({
   channel: "chrome",

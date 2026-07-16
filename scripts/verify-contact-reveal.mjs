@@ -25,6 +25,7 @@ import { chromium } from "playwright";
 import sharp from "sharp";
 
 const args = process.argv.slice(2);
+const manifestOnly = args.includes("--manifest-only");
 const baseUrl =
   args.find((argument) => !argument.startsWith("--")) ??
   "http://localhost:3000/";
@@ -53,6 +54,62 @@ const MID_UNLIT_TABLE_REGION = {
   width: 0.05,
   height: 0.1,
 };
+
+function contactManifestFailures(manifest) {
+  const failures = [];
+  for (const [profile, variant] of Object.entries(manifest.variants ?? {})) {
+    const contact = variant.contact;
+    if (!contact) {
+      failures.push(`${profile}: CONTACT manifest data missing`);
+      continue;
+    }
+    if (
+      contact.materialMechanism !== "paper-consistent-groove" ||
+      contact.coloredRevealMixCount !== 0 ||
+      contact.geometryAnimated !== false
+    ) {
+      failures.push(
+        `${profile}: CONTACT must use fixed geometry and a paper-consistent groove with no colored reveal mix`,
+      );
+    }
+    if (
+      !Array.isArray(contact.lightOrigin) ||
+      contact.lightOrigin.length !== 3 ||
+      !Array.isArray(contact.lightTarget) ||
+      contact.lightTarget.length !== 3 ||
+      contact.lightInsideShade !== true ||
+      contact.lightIntersectsPaper !== true
+    ) {
+      failures.push(
+        `${profile}: CONTACT light must originate inside the visible lamp shade and intersect the contact paper`,
+      );
+    }
+    const frames = variant.transitions?.["desk-contact"]?.frames ?? [];
+    if (
+      frames.length === 0 ||
+      frames.some((frame) => frame.contactIndentDepth !== contact.indentDepth)
+    ) {
+      failures.push(
+        `${profile}: CONTACT indentation depth must remain physically fixed through the light reveal`,
+      );
+    }
+  }
+  return failures;
+}
+
+if (manifestOnly) {
+  const manifest = JSON.parse(
+    await readFile(resolve("public/room/manifest.json"), "utf8"),
+  );
+  const failures = contactManifestFailures(manifest);
+  failures.forEach((failure) => console.log(`FAIL ${failure}`));
+  if (failures.length === 0) {
+    console.log(
+      "PASS CONTACT manifest uses fixed physical indentation and lamp-origin light only",
+    );
+  }
+  process.exit(failures.length === 0 ? 0 : 1);
+}
 
 function withContactRequest(url) {
   const target = new URL(url);

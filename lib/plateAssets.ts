@@ -31,9 +31,11 @@ export interface PlateProjectionFrame {
   hero:
     | readonly [number, number, number, number, number, number, number, number]
     | null;
+  heroReciprocalW: readonly [number, number, number, number] | null;
   heroOccluders: readonly (readonly number[])[];
   heroOcclusionMask?: {
     size: number;
+    encoding: "rle-varint-v1";
     rle: string;
   };
 }
@@ -136,6 +138,7 @@ function projectionFrame(value: unknown): PlateProjectionFrame | undefined {
   const camera = cameraSample(value.camera);
   if (!camera) return undefined;
   const hero = value.hero;
+  const heroReciprocalW = value.heroReciprocalW;
   const heroOccluders = Array.isArray(value.heroOccluders)
     ? value.heroOccluders.map((polygon): number[] => {
         if (Array.isArray(polygon) && polygon.length === 0) return [];
@@ -154,9 +157,14 @@ function projectionFrame(value: unknown): PlateProjectionFrame | undefined {
     rawMask &&
     typeof rawMask.size === "number" &&
     rawMask.size > 0 &&
+    rawMask.encoding === "rle-varint-v1" &&
     typeof rawMask.rle === "string" &&
     rawMask.rle.length > 0
-      ? { size: rawMask.size, rle: rawMask.rle }
+      ? {
+          size: rawMask.size,
+          encoding: "rle-varint-v1" as const,
+          rle: rawMask.rle,
+        }
       : undefined;
   return {
     camera,
@@ -167,6 +175,17 @@ function projectionFrame(value: unknown): PlateProjectionFrame | undefined {
         hero.every((item) => typeof item === "number"))
         ? (hero as PlateProjectionFrame["hero"])
         : null,
+    heroReciprocalW:
+      hero === null
+        ? null
+        : Array.isArray(heroReciprocalW) &&
+            heroReciprocalW.length === 4 &&
+            heroReciprocalW.every(
+              (item) =>
+                typeof item === "number" && Number.isFinite(item) && item > 0,
+            )
+          ? (heroReciprocalW as unknown as readonly [number, number, number, number])
+          : null,
     heroOccluders,
     heroOcclusionMask,
   };

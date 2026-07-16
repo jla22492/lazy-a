@@ -185,15 +185,29 @@ async function installPageProbes(expectedProfile) {
         }
         try {
           const binary = atob(mask.rle);
+          const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
           let offset = 0;
           let hasRuns = false;
+          const readVarint = () => {
+            let value = 0;
+            let shift = 0;
+            while (offset < bytes.length && shift <= 28) {
+              const byte = bytes[offset++];
+              value |= (byte & 0x7f) << shift;
+              if ((byte & 0x80) === 0) return value;
+              shift += 7;
+            }
+            return null;
+          };
           for (let y = 0; y < mask.size; y += 1) {
-            if (offset >= binary.length) return null;
-            const runCount = binary.charCodeAt(offset++);
+            const runCount = readVarint();
+            if (runCount === null) return null;
             hasRuns ||= runCount > 0;
-            offset += runCount * 2;
+            for (let run = 0; run < runCount; run += 1) {
+              if (readVarint() === null || readVarint() === null) return null;
+            }
           }
-          return offset === binary.length ? hasRuns : null;
+          return offset === bytes.length ? hasRuns : null;
         } catch {
           return null;
         }

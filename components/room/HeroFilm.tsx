@@ -42,9 +42,10 @@ const MAX_MASK_PIXELS = Math.floor(
 const MASK_TEXTURE_SIZE = Math.floor(Math.sqrt(MAX_MASK_PIXELS));
 
 const HERO_VERTEX_SHADER = `
-  varying vec2 vUv;
+  attribute float reciprocalW;
+  varying vec3 vProjectiveUv;
   void main() {
-    vUv = uv;
+    vProjectiveUv = vec3(uv * reciprocalW, reciprocalW);
     gl_Position = vec4(position.xy, 0.0, 1.0);
   }
 `;
@@ -53,7 +54,7 @@ const HERO_FRAGMENT_SHADER = `
   uniform sampler2D heroMap;
   uniform sampler2D occluderMask;
   uniform vec4 occluderBounds;
-  varying vec2 vUv;
+  varying vec3 vProjectiveUv;
   void main() {
     vec2 maskUv = (gl_FragCoord.xy - occluderBounds.xy) / occluderBounds.zw;
     if (
@@ -61,7 +62,13 @@ const HERO_FRAGMENT_SHADER = `
       all(lessThanEqual(maskUv, vec2(1.0))) &&
       texture2D(occluderMask, maskUv).r > 0.01
     ) discard;
-    gl_FragColor = texture2D(heroMap, vUv);
+    vec2 projectiveUv = vProjectiveUv.xy / max(vProjectiveUv.z, 0.000001);
+    vec4 hero = texture2D(heroMap, projectiveUv);
+    float luminance = dot(hero.rgb, vec3(0.2126, 0.7152, 0.0722));
+    hero.rgb = mix(vec3(luminance), hero.rgb, 0.82) * vec3(0.78, 0.75, 0.68);
+    gl_FragColor = vec4(hero.rgb, 0.94);
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
   }
 `;
 
@@ -103,15 +110,33 @@ function paintEncodedMask(
   source.clearRect(0, 0, mask.size, mask.size);
   source.fillStyle = "#fff";
   const binary = window.atob(mask.rle);
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
   let offset = 0;
   let runTotal = 0;
-  for (let y = 0; y < mask.size && offset < binary.length; y += 1) {
-    const runCount = binary.charCodeAt(offset++);
-    for (let run = 0; run < runCount && offset + 1 < binary.length; run += 1) {
-      const start = binary.charCodeAt(offset++);
-      const end = binary.charCodeAt(offset++);
+  const readVarint = () => {
+    let value = 0;
+    let shift = 0;
+    while (offset < bytes.length && shift <= 28) {
+      const byte = bytes[offset++];
+      value |= (byte & 0x7f) << shift;
+      if ((byte & 0x80) === 0) return value;
+      shift += 7;
+    }
+    return null;
+  };
+  for (let y = 0; y < mask.size; y += 1) {
+    const runCount = readVarint();
+    if (runCount === null) break;
+    let previousEnd = -1;
+    for (let run = 0; run < runCount; run += 1) {
+      const gap = readVarint();
+      const length = readVarint();
+      if (gap === null || length === null || length <= 0) break;
+      const start = previousEnd + 1 + gap;
+      const end = start + length - 1;
       source.fillRect(start, y, end - start + 1, 1);
       runTotal += 1;
+      previousEnd = end;
     }
   }
   destination.imageSmoothingEnabled = true;
@@ -141,7 +166,7 @@ declare global {
       textureWidth: number;
       textureHeight: number;
       uploadBytes: number;
-      source: "evaluated-mesh-rle" | "convex-fallback";
+      source: "evaluated-mesh-rle-varint" | "convex-fallback";
     };
   }
 }
@@ -187,6 +212,10 @@ export function HeroFilm() {
       "uv",
       new Float32BufferAttribute([0, 1, 1, 1, 1, 0, 0, 0], 2),
     );
+    next.setAttribute(
+      "reciprocalW",
+      new Float32BufferAttribute([1, 1, 1, 1], 1),
+    );
     next.setIndex([0, 1, 2, 0, 2, 3]);
     return next;
   }, []);
@@ -205,7 +234,8 @@ export function HeroFilm() {
             depthTest: false,
             depthWrite: false,
             side: DoubleSide,
-            toneMapped: false,
+            toneMapped: true,
+            transparent: true,
           })
         : null,
     [occluder.map, texture],
@@ -307,17 +337,22 @@ export function HeroFilm() {
             viewportSize,
           )
         : [];
-      mesh.visible = mapped.length === 8;
+      mesh.visible =
+        mapped.length === 8 &&
+        (state.phase === "playing" || state.phase === "held");
       if (mapped.length === 8) {
         const positions = geometry.getAttribute("position");
+        const reciprocalW = geometry.getAttribute("reciprocalW");
         const normalized: number[] = [];
         for (let index = 0; index < 4; index += 1) {
           const x = mapped[index * 2] / viewportSize.width;
           const y = mapped[index * 2 + 1] / viewportSize.height;
           positions.setXYZ(index, x * 2 - 1, 1 - y * 2, 0);
           normalized.push(x, y);
+          reciprocalW.setX(index, projection?.heroReciprocalW?.[index] ?? 1);
         }
         positions.needsUpdate = true;
+        reciprocalW.needsUpdate = true;
         window.__lazyAHeroProjection = normalized;
       }
       const bufferSize = renderState.gl.getDrawingBufferSize(
@@ -428,7 +463,7 @@ export function HeroFilm() {
         textureHeight,
         uploadBytes: textureWidth * textureHeight * MASK_BYTES_PER_PIXEL,
         source: projection?.heroOcclusionMask
-          ? "evaluated-mesh-rle"
+          ? "evaluated-mesh-rle-varint"
           : "convex-fallback",
       };
     }

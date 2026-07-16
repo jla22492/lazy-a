@@ -35,7 +35,7 @@ const OCCLUDER_SLOTS = [
 ];
 const MAX_MANIFEST_BYTES = 1_500_000;
 const MAX_MASK_UPLOAD_BYTES = 1_500_000;
-const AUTHORED_MASK_SIZE = 256;
+const AUTHORED_MASK_SIZE = 512;
 const COORDINATE_EPSILON = 2e-5;
 const ROUNDING_DIGITS = 6;
 const viewport = { width: 1280, height: 720 };
@@ -92,22 +92,35 @@ function pairs(values) {
 
 function decodeSilhouetteMask(mask, id) {
   assert.equal(mask?.size, AUTHORED_MASK_SIZE, `${id} mask size`);
+  assert.equal(mask?.encoding, "rle-varint-v1", `${id} mask encoding`);
   assert.equal(typeof mask?.rle, "string", `${id} mask payload`);
   const bytes = Buffer.from(mask.rle, "base64");
   let offset = 0;
+  const readVarint = () => {
+    let value = 0;
+    let shift = 0;
+    while (offset < bytes.length && shift <= 28) {
+      const byte = bytes[offset++];
+      value |= (byte & 0x7f) << shift;
+      if ((byte & 0x80) === 0) return value;
+      shift += 7;
+    }
+    assert.fail(`${id} mask contains a truncated varint`);
+  };
   let filledPixels = 0;
   let rowsWithMultipleRuns = 0;
   for (let y = 0; y < AUTHORED_MASK_SIZE; y += 1) {
-    assert.ok(offset < bytes.length, `${id} row ${y} is truncated`);
-    const runCount = bytes[offset++];
+    const runCount = readVarint();
     if (runCount > 1) rowsWithMultipleRuns += 1;
     let previousEnd = -1;
     for (let run = 0; run < runCount; run += 1) {
-      assert.ok(offset + 1 < bytes.length, `${id} row ${y} run ${run} is truncated`);
-      const start = bytes[offset++];
-      const end = bytes[offset++];
+      const gap = readVarint();
+      const length = readVarint();
+      const start = previousEnd + 1 + gap;
+      const end = start + length - 1;
       assert.ok(start <= end, `${id} row ${y} run ${run} is reversed`);
       assert.ok(start > previousEnd, `${id} row ${y} runs overlap`);
+      assert.ok(end < AUTHORED_MASK_SIZE, `${id} row ${y} exceeds mask bounds`);
       filledPixels += end - start + 1;
       previousEnd = end;
     }
@@ -118,6 +131,40 @@ function decodeSilhouetteMask(mask, id) {
 
 const manifest = JSON.parse(fs.readFileSync(publicManifestPath, "utf8"));
 const frames = projectionFrames(manifest);
+
+check("hero remains a treated physical poster before playback", () => {
+  assert.equal(manifest.hero?.object, "Mesh_170");
+  assert.equal(
+    manifest.hero?.firstFrameSource,
+    "assets/master/hero/hero-print-first-frame.png",
+  );
+  assert.equal(manifest.hero?.restingMechanism, "baked-physical-poster");
+  assert.equal(
+    manifest.hero?.liveProjection,
+    "camera-reciprocal-depth-projective",
+  );
+  return manifest.hero.liveProjection;
+});
+
+check("every hero projection carries four reciprocal-depth weights", () => {
+  let visibleFrames = 0;
+  for (const { id, projection } of frames) {
+    if (projection.hero === null) {
+      assert.equal(projection.heroReciprocalW, null, `${id} hidden weights`);
+      continue;
+    }
+    visibleFrames += 1;
+    assert.equal(projection.heroReciprocalW?.length, 4, `${id} weight count`);
+    assert.ok(
+      projection.heroReciprocalW.every(
+        (value) => Number.isFinite(value) && value > 0,
+      ),
+      `${id} reciprocal-depth weights`,
+    );
+  }
+  assert.ok(visibleFrames > 300, `${visibleFrames} visible projective frames`);
+  return `${visibleFrames} visible projective frames`;
+});
 
 check("generated manifests stay materially compact", () => {
   const sizes = [publicManifestPath, typescriptManifestPath].map((file) => ({
@@ -146,7 +193,15 @@ check("occluder vertices are clipped to the visible physical hero", () => {
   let vertices = 0;
   let emptySlots = 0;
   for (const { id, projection } of frames) {
-    assert.equal(projection.hero?.length, 8, `${id} hero quad`);
+    if (projection.hero === null) {
+      assert.ok(
+        projection.heroOccluders.every((polygon) => polygon.length === 0),
+        `${id} hidden hero must not export occluders`,
+      );
+      emptySlots += projection.heroOccluders.length;
+      continue;
+    }
+    assert.equal(projection.hero.length, 8, `${id} hero quad`);
     const hero = pairs(projection.hero);
     for (let slot = 0; slot < projection.heroOccluders.length; slot += 1) {
       const polygon = projection.heroOccluders[slot];

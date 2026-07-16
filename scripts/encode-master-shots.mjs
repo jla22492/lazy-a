@@ -40,7 +40,7 @@ const expectedContactCopy = [
   "JonathanAdelson1@gmail.com",
   "1-310-709-9283",
 ].join("\n");
-const expectedContactIndentDepth = 0.00008;
+const expectedContactIndentDepth = 0.0003;
 const decodedSampleSize = 64;
 const maximumDecodedMeanError = 8;
 const minimumDecodedMotion = 0.5;
@@ -429,6 +429,21 @@ function validateProjection(frame, label, issues) {
     issues.push(`${label} hero projection must be an 8-number quad or null`);
   }
   if (
+    (frame.hero === null && frame.heroReciprocalW !== null) ||
+    (frame.hero !== null &&
+      (!finiteTuple(frame.heroReciprocalW, 4) ||
+        frame.heroReciprocalW.some((value) => value <= 0)))
+  ) {
+    issues.push(`${label} hero reciprocal-depth weights are malformed`);
+  }
+  if (
+    frame.heroOcclusionMask?.size !== 512 ||
+    frame.heroOcclusionMask?.encoding !== "rle-varint-v1" ||
+    typeof frame.heroOcclusionMask?.rle !== "string"
+  ) {
+    issues.push(`${label} hero silhouette must use the 512px varint RLE contract`);
+  }
+  if (
     !Array.isArray(frame.heroOccluders) ||
     frame.heroOccluders.length !== 10 ||
     frame.heroOccluders.some(
@@ -452,6 +467,11 @@ function validateProjection(frame, label, issues) {
     frame.revealLevel > 1
   ) {
     issues.push(`${label} lamp/reveal levels must be within 0..1`);
+  }
+  if (frame.contactIndentDepth !== expectedContactIndentDepth) {
+    issues.push(
+      `${label} CONTACT indentation depth must stay fixed at ${expectedContactIndentDepth}m`,
+    );
   }
 }
 
@@ -507,6 +527,19 @@ function validateManifest(manifest) {
     JSON.stringify(manifest.endpointIds) !== JSON.stringify(expectedEndpoints)
   ) {
     issues.push("manifest endpointIds are incomplete or out of order");
+  }
+  if (
+    manifest.hero?.object !== "Mesh_170" ||
+    manifest.hero?.firstFrameSource !==
+      "assets/master/hero/hero-print-first-frame.png" ||
+    manifest.hero?.restingMechanism !== "baked-physical-poster" ||
+    manifest.hero?.liveProjection !==
+      "camera-reciprocal-depth-projective" ||
+    manifest.hero?.maskResolution !== 512
+  ) {
+    issues.push(
+      "manifest hero must use the treated physical first frame and reciprocal-depth projection",
+    );
   }
   exactKeys(manifest.variants, expectedVariants, "variants", issues);
 
@@ -600,6 +633,8 @@ function validateManifest(manifest) {
     }
     const contact = variant.transitions?.["desk-contact"];
     const deskCamera = variant.endpoints?.desk?.projection?.camera;
+    const filmsCamera = variant.endpoints?.films?.projection?.camera;
+    const journalCamera = variant.endpoints?.journal?.projection?.camera;
     const contactCamera = variant.endpoints?.contact?.projection?.camera;
     if (
       JSON.stringify(contactCamera) === JSON.stringify(deskCamera) ||
@@ -612,10 +647,51 @@ function validateManifest(manifest) {
       );
     }
     if (
+      JSON.stringify(filmsCamera?.position) !==
+        JSON.stringify(deskCamera?.position) ||
+      filmsCamera?.fov !== deskCamera?.fov ||
+      JSON.stringify(filmsCamera?.quaternion) ===
+        JSON.stringify(deskCamera?.quaternion)
+    ) {
+      issues.push(
+        `${variantId}/films must preserve the exact desk position/FOV and change only head rotation`,
+      );
+    }
+    const journalFrames = journal?.frames ?? [];
+    const firstJournalRotation = journalFrames.findIndex(
+      (frame) =>
+        JSON.stringify(frame.camera?.quaternion) !==
+        JSON.stringify(deskCamera?.quaternion),
+    );
+    const firstJournalTranslation = journalFrames.findIndex(
+      (frame) =>
+        JSON.stringify(frame.camera?.position) !==
+        JSON.stringify(deskCamera?.position),
+    );
+    if (
+      journalCamera?.position?.[1] < 1.32 ||
+      deskCamera?.position?.[2] - journalCamera?.position?.[2] < 0.3 ||
+      journalFrames.some((frame) => frame.camera?.position?.[1] < 1.32) ||
+      firstJournalRotation < 0 ||
+      firstJournalTranslation < 0 ||
+      firstJournalRotation >= firstJournalTranslation
+    ) {
+      issues.push(
+        `${variantId}/journal must use a head-first seated hinge above 1.32m eye height`,
+      );
+    }
+    if (
       variant.navigation?.rows?.length !== 4 ||
       !variant.navigation?.plane ||
       variant.navigation?.containment !== "half-open" ||
       variant.contact?.mechanism !== "applied-exact-pressure-indentation" ||
+      variant.contact?.materialMechanism !== "paper-consistent-groove" ||
+      variant.contact?.coloredRevealMixCount !== 0 ||
+      variant.contact?.geometryAnimated !== false ||
+      variant.contact?.lightInsideShade !== true ||
+      variant.contact?.lightIntersectsPaper !== true ||
+      !finiteTuple(variant.contact?.lightOrigin, 3) ||
+      !finiteTuple(variant.contact?.lightTarget, 3) ||
       variant.contact?.standalonePlaneCount !== 0 ||
       variant.contact?.paperOpacity !== 1 ||
       variant.contact?.indentDepth !== expectedContactIndentDepth
@@ -686,19 +762,23 @@ function validateManifest(manifest) {
       }
     }
     if (
-      variant.logo?.object !== "Mesh_33" ||
+      variant.logo?.object !== "Mesh_31" ||
       variant.logo?.geometryCreated !== false ||
-      variant.logo?.uvBinding !== "explicit-uv-map"
+      variant.logo?.uvBinding !== "explicit-uv-map" ||
+      variant.logo?.source !==
+        "assets/master/brand/lazy-a-logo-letterpress.png" ||
+      JSON.stringify(variant.logo?.sourceResolution) !==
+        JSON.stringify([2000, 1588])
     ) {
       issues.push(
-        `${variantId} logo must bind the upright UV map on existing Mesh_33`,
+        `${variantId} logo must bind the pinned 2000x1588 source to the upright UV map on existing Mesh_31`,
       );
     }
     for (const endpointId of ["desk"]) {
       const logoQuad = variant.logo?.screenQuads?.[endpointId];
       if (variantId === "portrait" && !quadInsideFrame(logoQuad, 0.01)) {
         issues.push(
-          `portrait/${endpointId} must include the full existing Mesh_33 logo card`,
+          `portrait/${endpointId} must include the full existing Mesh_31 logo card`,
         );
       }
       for (const row of variant.navigation?.rows ?? []) {
@@ -825,7 +905,7 @@ async function encode(manifest, args) {
         "-i",
         resolve(frameDirectory, "%04d.png"),
         "-vf",
-        "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+        `scale=${variant.width}:${variant.height}:flags=lanczos,pad=ceil(iw/2)*2:ceil(ih/2)*2`,
         "-c:v",
         "libx264",
         "-crf",
@@ -850,7 +930,7 @@ async function encode(manifest, args) {
         "-i",
         resolve(frameDirectory, "%04d.png"),
         "-vf",
-        "reverse,pad=ceil(iw/2)*2:ceil(ih/2)*2",
+        `reverse,scale=${variant.width}:${variant.height}:flags=lanczos,pad=ceil(iw/2)*2:ceil(ih/2)*2`,
         "-c:v",
         "libx264",
         "-crf",
