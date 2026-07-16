@@ -11,8 +11,8 @@
   floor-lamp set for the left continuation.
 - [x] Receive Jonathan's approval of the unified master-first correction design.
 - [x] Commit the implementation plan.
-- [ ] Commit the independently reviewed master-scene implementation checkpoint.
-- [ ] Commit the remaining CONTACT, camera, hero, and live-browser gates.
+- [x] Commit the independently reviewed master-scene implementation checkpoint.
+- [x] Commit the remaining CONTACT, camera, hero, and live-browser gates.
 - [x] Rebuild the master scene and supplied-object composition.
 - [x] Correct CONTACT indentation and lamp-origin light.
 - [x] Correct FILMS, JOURNAL, and room-supported ABOUT choreography.

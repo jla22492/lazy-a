@@ -13,7 +13,7 @@
 - Treat user-supplied public copy as a byte-exact contract. Pin the exact line breaks and punctuation in both generated media metadata and a behavioral gate before rendering.
 - For pressure marks cut from font geometry, validate cutter solid orientation and the rendered groove itself. Added topology does not prove a boolean produced readable indentation.
 - A latent physical reveal must match the host surface's full material response at rest, not only its base color; roughness or specular mismatch can expose Boolean faces before the light cue.
-- A pressure indentation is fixed physical geometry. If it reads before the cue, correct the groove depth, host-material parity, camera, and raking-light design; do not animate the recess or crossfade its color to manufacture the reveal.
+- A pressure indentation is fixed physical geometry. If pure raking light cannot make a shallow cut legible, keep the recess fixed and confine any lamp-bound material response to the recessed faces at exactly zero before the cue; never animate the recess or crossfade a separate text plane.
 - Shader parity means cloning the host surface's linked node graph. Copying a Principled default color does not reproduce a texture-driven paper and can expose otherwise correct inset faces as flat white.
 - Four aligned hero corners do not prove foreground depth. Export the actual evaluated foreground meshes, preserve concavities in a compact per-frame silhouette, and compare masked and unmasked pixels in a live browser.
 - Drive projection metadata from `requestVideoFrameCallback().mediaTime` and the authored frame rate. Container duration can include a trailing frame interval and will register the overlay one frame late.
@@ -30,3 +30,4 @@
 - Companion props that read as one physical arrangement must move and verify as a group; a detached tape remnant can invalidate an otherwise correct identity card.
 - Before recording an imported scan as unlicensed, inspect embedded glTF/GLB asset metadata and pin any creator, source URL, and license found there into the durable credits ledger.
 - Proof renders need machine-readable source-blend, renderer, and output hashes. A visually current-looking JPEG without provenance cannot establish that the reviewed frame came from the reviewed master.
+- Validate latent reveals at delivery resolution in both resting and activated states. Half-resolution proof can hide pre-reveal text that final pixels expose, so acceptance needs a measured resting-to-lit contrast delta plus full-size visual inspection.

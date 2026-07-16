@@ -685,13 +685,17 @@ function validateManifest(manifest) {
       !variant.navigation?.plane ||
       variant.navigation?.containment !== "half-open" ||
       variant.contact?.mechanism !== "applied-exact-pressure-indentation" ||
-      variant.contact?.materialMechanism !== "paper-consistent-groove" ||
-      variant.contact?.coloredRevealMixCount !== 0 ||
+      variant.contact?.materialMechanism !==
+        "lamp-reactive-compressed-fiber-groove" ||
+      variant.contact?.coloredRevealMixCount !== 1 ||
+      variant.contact?.fiberResponseAnimated !== true ||
       variant.contact?.geometryAnimated !== false ||
       variant.contact?.lightInsideShade !== true ||
       variant.contact?.lightIntersectsPaper !== true ||
       !finiteTuple(variant.contact?.lightOrigin, 3) ||
       !finiteTuple(variant.contact?.lightTarget, 3) ||
+      !Number.isFinite(variant.contact?.grazingAngleDegrees) ||
+      variant.contact.grazingAngleDegrees > 35 ||
       variant.contact?.standalonePlaneCount !== 0 ||
       variant.contact?.paperOpacity !== 1 ||
       variant.contact?.indentDepth !== expectedContactIndentDepth

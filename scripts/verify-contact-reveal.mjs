@@ -42,6 +42,8 @@ const EXPECTED_CONTACT_COPY = [
   "JonathanAdelson1@gmail.com",
   "1-310-709-9283",
 ].join("\n");
+const EXPECTED_INDENT_DEPTH = 0.0003;
+const MAX_GRAZING_ANGLE_DEGREES = 35;
 const MID_LAMP_POOL_REGION = {
   x: 0.3,
   y: 0.52,
@@ -64,12 +66,16 @@ function contactManifestFailures(manifest) {
       continue;
     }
     if (
-      contact.materialMechanism !== "paper-consistent-groove" ||
-      contact.coloredRevealMixCount !== 0 ||
+      contact.materialMechanism !== "lamp-reactive-compressed-fiber-groove" ||
+      contact.coloredRevealMixCount !== 1 ||
+      contact.fiberResponseAnimated !== true ||
       contact.geometryAnimated !== false
+      || contact.indentDepth !== EXPECTED_INDENT_DEPTH ||
+      !Number.isFinite(contact.grazingAngleDegrees) ||
+      contact.grazingAngleDegrees > MAX_GRAZING_ANGLE_DEGREES
     ) {
       failures.push(
-        `${profile}: CONTACT must use fixed geometry and a paper-consistent groove with no colored reveal mix`,
+        `${profile}: CONTACT must use fixed geometry and a lamp-reactive compressed-fiber groove`,
       );
     }
     if (
@@ -105,7 +111,7 @@ if (manifestOnly) {
   failures.forEach((failure) => console.log(`FAIL ${failure}`));
   if (failures.length === 0) {
     console.log(
-      "PASS CONTACT manifest uses fixed physical indentation and lamp-origin light only",
+      "PASS CONTACT manifest uses fixed physical indentation and lamp-origin fiber response",
     );
   }
   process.exit(failures.length === 0 ? 0 : 1);

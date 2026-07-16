@@ -301,7 +301,7 @@ PICKS = [
      (-0.55, 0.9, 0.19), (0.0, 0.0, 2.4), 0.095, "z", "desk",
      ("names", tuple(f"Mesh_{index}" for index in range(46, 50))), ()),
     ("lamp", asset_path("assets/master/scans/desk-lamp/scene.gltf"),
-     (-0.67, 0.9, -0.16), (0.0, 0.0, 0.0), 0.48, "z", "desk",
+     (-0.67, 0.9, -0.295), (0.0, 0.0, 0.0), 0.48, "z", "desk",
      ("names", tuple(f"Mesh_{index}" for index in range(148, 155))), ()),
     ("plant", asset_path("assets/master/scans/peace-lily/scene.gltf"),
      (1.68, 0.0, -0.06), (0.0, 0.0, 0.12), 0.75, "z", "floor",

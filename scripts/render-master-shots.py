@@ -108,13 +108,14 @@ NAV_CENTER_Y = -0.265
 NAV_CENTER_Y_PORTRAIT = 0.15
 DESK_HEIGHT = 0.9
 HANDWRITING_FONT_PATH = Path("/System/Library/Fonts/Noteworthy.ttc")
-CONTACT_FONT_PATH = Path("/System/Library/Fonts/Supplemental/Arial Narrow.ttf")
+CONTACT_FONT_PATH = Path("/System/Library/Fonts/Supplemental/Arial Narrow Bold.ttf")
 NAV_LABEL_WIDTHS = (0.113, 0.145, 0.155, 0.110)
 CONTACT_PAPER_POSITION = (-0.35, -0.04)
 CONTACT_PAPER_YAW = math.radians(4.5)
-# Mesh_56 is a 0.4 mm sheet. A 0.30 mm blind-deboss leaves a continuous paper
-# floor while giving the lamp enough real sidewall to reveal the copy.
+# Mesh_56 retains its authored stock. A shallow 0.30 mm blind deboss remains
+# physically applied; a Cycles bevel normal lets raking light resolve its edge.
 CONTACT_INDENT_DEPTH = 0.00030
+CONTACT_FIBER_RESPONSE_PEAK = 0.88
 CONTACT_INDENT_VERTEX_INDICES: tuple[int, ...] = ()
 CONTACT_INDENT_TOP_Z = 0.0
 NAV_ROWS = (
@@ -489,10 +490,12 @@ def position_contact_sheet(sheet: bpy.types.Object) -> None:
 
 def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
     parts: list[bpy.types.Object] = []
+    # The block sits forward of the picture-frame shadow while retaining the
+    # irregular spacing of pressure-set type on a working sheet.
     lines = (
-        (CONTACT_COPY[0], 0.155, 0.055),
-        (CONTACT_COPY[1], 0.185, 0.000),
-        (CONTACT_COPY[2], 0.145, -0.055),
+        (CONTACT_COPY[0], 0.155, 0.000),
+        (CONTACT_COPY[1], 0.185, -0.045),
+        (CONTACT_COPY[2], 0.145, -0.090),
     )
     font = contact_font()
     for index, (body, target_width, local_y) in enumerate(lines):
@@ -554,30 +557,42 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
     groove_bsdf = groove_material.node_tree.nodes.get("Principled BSDF")
     if groove_bsdf is None:
         raise RuntimeError("CONTACT paper host material has no Principled BSDF")
-    # Preserve the host paper's linked color network, then model the slight
-    # fixed darkening of compressed cotton fibers. This is not an animated
-    # reveal mix: the applied recess remains constant and the lamp supplies the
-    # changing illumination. Bevelled walls create the highlight/shadow pair.
-    groove_bsdf.inputs["Roughness"].default_value = 0.62
-    groove_bsdf.inputs["Specular IOR Level"].default_value = 0.32
     base_color = groove_bsdf.inputs["Base Color"]
-    source_link = next(
+    base_link = next(
         (link for link in groove_material.node_tree.links if link.to_socket == base_color),
         None,
     )
-    compressed_fibers = groove_material.node_tree.nodes.new("ShaderNodeMixRGB")
-    compressed_fibers.name = "ContactCompressedPaperFibers"
-    compressed_fibers.blend_type = "MULTIPLY"
-    compressed_fibers.inputs[0].default_value = 1.0
-    compressed_fibers.inputs[2].default_value = (0.66, 0.65, 0.63, 1.0)
-    if source_link is not None:
-        source_socket = source_link.from_socket
-        groove_material.node_tree.links.remove(source_link)
-        groove_material.node_tree.links.new(source_socket, compressed_fibers.inputs[1])
+    fiber_response = groove_material.node_tree.nodes.new("ShaderNodeMixRGB")
+    fiber_response.name = "ContactLampFiberResponse"
+    fiber_response.label = "Lamp-reactive compressed paper fibers"
+    fiber_response.blend_type = "MULTIPLY"
+    fiber_response.inputs["Fac"].default_value = 0.0
+    fiber_response.inputs[2].default_value = (0.18, 0.10, 0.06, 1.0)
+    if base_link is not None:
+        source_socket = base_link.from_socket
+        groove_material.node_tree.links.remove(base_link)
+        groove_material.node_tree.links.new(source_socket, fiber_response.inputs[1])
     else:
-        compressed_fibers.inputs[1].default_value = base_color.default_value
-    groove_material.node_tree.links.new(compressed_fibers.outputs[0], base_color)
-    groove_material["lazy_a_contact_color_parity"] = "fixed-compressed-fiber-response"
+        fiber_response.inputs[1].default_value = base_color.default_value
+    groove_material.node_tree.links.new(fiber_response.outputs["Color"], base_color)
+    # Preserve the host paper network at rest. The lamp response above is
+    # confined to the Boolean groove material; it never creates text geometry.
+    normal_input = groove_bsdf.inputs["Normal"]
+    normal_link = next(
+        (link for link in groove_material.node_tree.links if link.to_socket == normal_input),
+        None,
+    )
+    bevel_normal = groove_material.node_tree.nodes.new("ShaderNodeBevel")
+    bevel_normal.name = "ContactPressureEdgeBevel"
+    bevel_normal.samples = 8
+    bevel_normal.inputs["Radius"].default_value = 0.00040
+    if normal_link is not None:
+        source_socket = normal_link.from_socket
+        groove_material.node_tree.links.remove(normal_link)
+        groove_material.node_tree.links.new(source_socket, bevel_normal.inputs["Normal"])
+    groove_material.node_tree.links.new(bevel_normal.outputs["Normal"], normal_input)
+    groove_material["lazy_a_contact_color_parity"] = True
+    groove_material["lazy_a_contact_fiber_response_peak"] = CONTACT_FIBER_RESPONSE_PEAK
     groove_index = next(
         (
             index
@@ -593,9 +608,8 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
         cutter.data.materials.append(material)
     for polygon in cutter.data.polygons:
         polygon.material_index = groove_index
-    # Place the cutter by measured overlap, not an assumed font origin. It
-    # crosses Mesh_56's top face by exactly 0.08 mm and stops above the bottom,
-    # leaving a shallow paper-floored pressure indentation.
+    # Place the cutter by measured overlap, not an assumed font origin. It stops
+    # above the bottom of the stock, leaving a continuous paper floor.
     sheet_top = max(Vector(corner).z for corner in sheet.bound_box)
     sheet_inverse = sheet.matrix_world.inverted()
     cutter_bottom = min(
@@ -712,7 +726,7 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
         emission=(1.0, 0.47, 0.16, 1.0),
     )
 
-    bulb_location = Vector((-0.615, 0.22, 1.205))
+    bulb_location = Vector((-0.615, 0.355, 1.205))
     bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.018, location=bulb_location)
     bulb = bpy.context.active_object
     bulb.name = CONTACT_BULB
@@ -727,16 +741,16 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
     light_data.color = (1.0, 0.58, 0.30)
     light_data.spot_size = math.radians(70.0)
     light_data.spot_blend = 0.94
-    light_data.shadow_soft_size = 0.001
+    light_data.shadow_soft_size = 0.0005
     light = bpy.data.objects.new(CONTACT_LIGHT, light_data)
     bpy.context.collection.objects.link(light)
     # Keep the photometric source at the bulb inside the visible shade. The
     # shade, not an off-fixture helper light, is now the physical source.
     light.location = bulb_location.copy()
-    target = normalized_surface_matrix(contact_sheet, 0.0, 0.0, 0.0).translation
+    target = normalized_surface_matrix(contact_sheet, 0.0, -0.025, 0.0).translation
     light.rotation_euler = (target - light.location).to_track_quat("-Z", "Y").to_euler()
     light["lazy_a_authored_role"] = "fixed-transform-raking-light"
-    light["lazy_a_contact_energy"] = 78.0
+    light["lazy_a_contact_energy"] = 110.0
     light["lazy_a_contact_target"] = json.dumps(rounded_vector(target))
     parent_keep_world(light, lamp)
     return bulb, light
@@ -751,8 +765,16 @@ def reveal_level(value: float) -> None:
     bsdf = material.node_tree.nodes.get("Principled BSDF")
     if bsdf is not None:
         bsdf.inputs["Emission Strength"].default_value = 18.0 * value
-    # CONTACT geometry is always fully indented. The apparent reveal is only
-    # the changing light pool, so no vertex or paper-color state is animated.
+    groove_material = bpy.data.materials.get("ContactPressureGroove")
+    fiber_response = (
+        groove_material.node_tree.nodes.get("ContactLampFiberResponse")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
+    if fiber_response is not None:
+        fiber_response.inputs["Fac"].default_value = CONTACT_FIBER_RESPONSE_PEAK * value
+    # CONTACT geometry remains fixed. The lamp both lights the paper and reveals
+    # density in the compressed fibers on the recessed faces themselves.
 
 
 def unhide_notebook() -> list[bpy.types.Object]:
@@ -1748,6 +1770,10 @@ def contact_light_contract(authored: dict[str, Any]) -> dict[str, Any]:
     inverse = paper.matrix_world.inverted()
     local_origin = inverse @ origin
     local_direction = inverse.to_3x3() @ direction
+    local_direction.normalize()
+    grazing_angle = math.degrees(
+        math.asin(max(0.0, min(1.0, abs(local_direction.z))))
+    )
     paper_top = max(Vector(corner).z for corner in paper.bound_box)
     denominator = local_direction.z
     intersects = False
@@ -1768,6 +1794,7 @@ def contact_light_contract(authored: dict[str, Any]) -> dict[str, Any]:
         "lightTarget": blender_to_three(hit_world) if hit_world is not None else None,
         "lightInsideShade": inside_shade,
         "lightIntersectsPaper": intersects,
+        "grazingAngleDegrees": rounded(grazing_angle),
     }
 
 
@@ -1907,8 +1934,10 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
             },
             "contact": {
                 "mechanism": "applied-exact-pressure-indentation",
-                "materialMechanism": "paper-consistent-groove",
-                "coloredRevealMixCount": 0,
+                "materialMechanism": "lamp-reactive-compressed-fiber-groove",
+                "coloredRevealMixCount": 1,
+                "fiberResponseAnimated": True,
+                "fiberResponsePeak": CONTACT_FIBER_RESPONSE_PEAK,
                 "geometryAnimated": False,
                 "paperObject": CONTACT_PAPER,
                 "paperWorldQuad": contact_world,
@@ -2035,8 +2064,10 @@ export interface PlateVariant {
   };
   contact: {
     mechanism: \"applied-exact-pressure-indentation\";
-    materialMechanism: "paper-consistent-groove";
-    coloredRevealMixCount: 0;
+    materialMechanism: "lamp-reactive-compressed-fiber-groove";
+    coloredRevealMixCount: 1;
+    fiberResponseAnimated: true;
+    fiberResponsePeak: number;
     geometryAnimated: false;
     paperObject: string;
     paperWorldQuad: readonly (readonly number[])[];
@@ -2058,6 +2089,7 @@ export interface PlateVariant {
     lightTarget: readonly [number, number, number];
     lightInsideShade: true;
     lightIntersectsPaper: true;
+    grazingAngleDegrees: number;
   };
   journal: {
     mechanism: "physical-text-geometry";
@@ -2252,15 +2284,32 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
     ):
         issues.append("CONTACT typography must retain the authored 0.30 mm blind-deboss indentation")
     groove_material = bpy.data.materials.get("ContactPressureGroove")
+    groove_bevel = (
+        groove_material.node_tree.nodes.get("ContactPressureEdgeBevel")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
+    fiber_response = (
+        groove_material.node_tree.nodes.get("ContactLampFiberResponse")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
     if (
         groove_material is None
         or groove_material.node_tree is None
         or groove_material.node_tree.nodes.get("ContactRevealMix") is not None
-        or groove_material.node_tree.nodes.get("ContactCompressedPaperFibers") is None
-        or groove_material.get("lazy_a_contact_color_parity")
-        != "fixed-compressed-fiber-response"
+        or groove_material.node_tree.nodes.get("ContactCompressedPaperFibers") is not None
+        or groove_material.get("lazy_a_contact_color_parity") is not True
+        or abs(
+            float(groove_material.get("lazy_a_contact_fiber_response_peak", -1.0))
+            - CONTACT_FIBER_RESPONSE_PEAK
+        )
+        > 1e-9
+        or fiber_response is None
+        or groove_bevel is None
+        or abs(float(groove_bevel.inputs["Radius"].default_value) - 0.00040) > 1e-9
     ):
-        issues.append("CONTACT groove must retain the paper material without a colored reveal mix")
+        issues.append("CONTACT groove must retain idle paper color, lamp fiber response, and fixed pressure-edge bevel")
     if len(authored.get("journalCopy", [])) != len(JOURNAL_COPY):
         issues.append("notebook must carry every approved physical placeholder line")
     if authored.get("journalPencil", {}).get("lazy_a_repositioned_once") is not True:
@@ -2398,15 +2447,17 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         if not contact_data.get("paperWorldQuad") or contact_data.get("standalonePlaneCount") != 0:
             issues.append(f"{profile}: CONTACT paper quad is required and standalone planes are forbidden")
         if (
-            contact_data.get("materialMechanism") != "paper-consistent-groove"
-            or contact_data.get("coloredRevealMixCount") != 0
+            contact_data.get("materialMechanism") != "lamp-reactive-compressed-fiber-groove"
+            or contact_data.get("coloredRevealMixCount") != 1
+            or contact_data.get("fiberResponseAnimated") is not True
             or contact_data.get("geometryAnimated") is not False
+            or not 0.0 < contact_data.get("grazingAngleDegrees", 90.0) <= 35.0
             or contact_data.get("lightInsideShade") is not True
             or contact_data.get("lightIntersectsPaper") is not True
             or not contact_data.get("lightOrigin")
             or not contact_data.get("lightTarget")
         ):
-            issues.append(f"{profile}: CONTACT must use fixed indentation and shade-origin raking light only")
+            issues.append(f"{profile}: CONTACT must use fixed indentation and shade-origin lamp response")
         if (
             journal_data.get("mechanism") != "physical-text-geometry"
             or tuple(journal_data.get("copy", ())) != JOURNAL_COPY
