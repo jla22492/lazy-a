@@ -50,6 +50,9 @@ const EXPECTED_CONTACT_COPY = [
 const EXPECTED_INDENT_DEPTH = 0.0003;
 const MAX_GRAZING_ANGLE_DEGREES = 35;
 const CONTACT_ACTIVATION_SAMPLES = 31;
+const PRACTICAL_REGION_AUTHORSHIP = "authored-screen-quads-v1";
+const MIN_BULB_LUMINANCE_RISE = 20;
+const MIN_SHADE_INTERIOR_LUMINANCE_RISE = 8;
 const APPROVED_R3_CONTACT_PATH_SHA256 = {
   wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
   portrait: "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
@@ -84,7 +87,10 @@ const MID_UNLIT_TABLE_REGION = {
 };
 
 function exactCameraMatch(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return (
+    JSON.stringify(left?.camera ?? left) ===
+    JSON.stringify(right?.camera ?? right)
+  );
 }
 
 function monotonicallyRises(values) {
@@ -98,6 +104,50 @@ function monotonicallyRises(values) {
   );
 }
 
+function quadArea(quad) {
+  let area = 0;
+  for (let index = 0; index < quad.length; index += 2) {
+    const next = (index + 2) % quad.length;
+    area += quad[index] * quad[next + 1] - quad[next] * quad[index + 1];
+  }
+  return Math.abs(area) / 2;
+}
+
+function practicalLightRegionContractIssues(regions) {
+  const issues = [];
+  if (regions?.authorship !== PRACTICAL_REGION_AUTHORSHIP) {
+    issues.push(
+      `practical-light regions must declare ${PRACTICAL_REGION_AUTHORSHIP}`,
+    );
+  }
+  if (regions?.camera !== "desk") {
+    issues.push("practical-light regions must be authored for the desk camera");
+  }
+  for (const [label, quad] of [
+    ["bulb", regions?.bulb],
+    ["shade interior", regions?.shadeInterior],
+  ]) {
+    if (
+      !Array.isArray(quad) ||
+      quad.length !== 8 ||
+      quad.some((value) => !Number.isFinite(value) || value < 0 || value > 1) ||
+      quadArea(quad) < 0.00001
+    ) {
+      issues.push(
+        `${label} needs a non-trivial authored normalized screen quad`,
+      );
+    }
+  }
+  if (
+    Array.isArray(regions?.bulb) &&
+    Array.isArray(regions?.shadeInterior) &&
+    JSON.stringify(regions.bulb) === JSON.stringify(regions.shadeInterior)
+  ) {
+    issues.push("bulb and shade interior need distinct authored regions");
+  }
+  return issues;
+}
+
 function assertR4ContactContract(contact, transition) {
   assert.equal(contact.activationHoldSeconds, 1);
   assert.equal(contact.visibleBulb, true);
@@ -105,6 +155,10 @@ function assertR4ContactContract(contact, transition) {
   assert.ok(contact.shadeAxisErrorDegrees <= 12);
   assert.equal(contact.lightIntersectsPaper, true);
   assert.equal(transition.duration, 1.9);
+  assert.deepEqual(
+    practicalLightRegionContractIssues(contact.practicalLightRegions),
+    [],
+  );
 }
 
 function assertR4ContactStubsFail() {
@@ -114,6 +168,12 @@ function assertR4ContactStubsFail() {
     visibleShadeInterior: true,
     shadeAxisErrorDegrees: 12,
     lightIntersectsPaper: true,
+    practicalLightRegions: {
+      authorship: PRACTICAL_REGION_AUTHORSHIP,
+      camera: "desk",
+      bulb: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
+      shadeInterior: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
+    },
   };
   const transition = { duration: 1.9 };
   assert.doesNotThrow(() => assertR4ContactContract(contact, transition));
@@ -123,6 +183,16 @@ function assertR4ContactStubsFail() {
     [{ ...contact, visibleShadeInterior: false }, transition],
     [{ ...contact, shadeAxisErrorDegrees: 13 }, transition],
     [{ ...contact, lightIntersectsPaper: false }, transition],
+    [
+      {
+        ...contact,
+        practicalLightRegions: {
+          ...contact.practicalLightRegions,
+          bulb: contact.practicalLightRegions.shadeInterior,
+        },
+      },
+      transition,
+    ],
     [contact, { duration: 0.9 }],
   ];
   for (const [stubContact, stubTransition] of stubs) {
@@ -237,7 +307,54 @@ function contactManifestFailures(manifest) {
 
 if (selfTest) {
   assertR4ContactStubsFail();
-  console.log("contact-reveal self-tests passed (6 structural stubs).");
+  const grayFixture = (value = 20) => ({
+    data: Buffer.alloc(20 * 20, value),
+    width: 20,
+    height: 20,
+  });
+  const practicalRegions = {
+    authorship: PRACTICAL_REGION_AUTHORSHIP,
+    camera: "desk",
+    bulb: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
+    shadeInterior: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
+  };
+  const brighten = (image, quad, amount) => {
+    const bounds = boundsFromQuad(quad, image);
+    for (let y = bounds.top; y < bounds.bottom; y += 1) {
+      for (let x = bounds.left; x < bounds.right; x += 1) {
+        image.data[y * image.width + x] += amount;
+      }
+    }
+  };
+  const rest = grayFixture();
+  const lit = grayFixture();
+  brighten(lit, practicalRegions.bulb, 40);
+  brighten(lit, practicalRegions.shadeInterior, 20);
+  assert.deepEqual(
+    practicalLightRegionIssues(rest, lit, practicalRegions),
+    [],
+    "authored bulb and shade-interior luminance rises should pass",
+  );
+
+  const independentDeskLight = grayFixture();
+  brighten(
+    independentDeskLight,
+    [0.65, 0.65, 0.95, 0.65, 0.95, 0.95, 0.65, 0.95],
+    80,
+  );
+  assert.match(
+    practicalLightRegionIssues(
+      rest,
+      independentDeskLight,
+      practicalRegions,
+    ).join("; "),
+    /bulb.*shade interior|shade interior.*bulb/,
+    "an independent desk light with an invisible practical must fail",
+  );
+
+  console.log(
+    "contact-reveal self-tests passed (structural stubs plus invisible-practical negative).",
+  );
   process.exit(0);
 }
 
@@ -278,6 +395,7 @@ function inspectContact() {
   return {
     at: performance.now(),
     endpoint: window.__lazyAEndpoint ?? window.__lazyAConversation ?? null,
+    camera: window.__lazyACameraDebug?.snapshot?.() ?? null,
     marker,
     standaloneDomPlanes,
   };
@@ -384,6 +502,49 @@ function mean(values) {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
+function practicalLightRegionMetrics(rest, lit, regions) {
+  const rises = {};
+  for (const [key, quad] of [
+    ["bulb", regions.bulb],
+    ["shadeInterior", regions.shadeInterior],
+  ]) {
+    const bounds = boundsFromQuad(quad, rest);
+    rises[key] =
+      mean(regionValues(lit, bounds)) - mean(regionValues(rest, bounds));
+  }
+  return rises;
+}
+
+function practicalLightRegionIssues(rest, lit, regions) {
+  const issues = practicalLightRegionContractIssues(regions);
+  if (
+    rest?.width !== lit?.width ||
+    rest?.height !== lit?.height ||
+    !Buffer.isBuffer(rest?.data) ||
+    !Buffer.isBuffer(lit?.data) ||
+    rest.data.length !== rest.width * rest.height ||
+    lit.data.length !== lit.width * lit.height
+  ) {
+    return [...issues, "rest and lit practical-light images must match"];
+  }
+  if (issues.length > 0) return issues;
+  const rises = practicalLightRegionMetrics(rest, lit, regions);
+  if (!Number.isFinite(rises.bulb) || rises.bulb < MIN_BULB_LUMINANCE_RISE) {
+    issues.push(
+      `bulb luminance rise ${String(rises.bulb)} is below ${MIN_BULB_LUMINANCE_RISE}`,
+    );
+  }
+  if (
+    !Number.isFinite(rises.shadeInterior) ||
+    rises.shadeInterior < MIN_SHADE_INTERIOR_LUMINANCE_RISE
+  ) {
+    issues.push(
+      `shade interior luminance rise ${String(rises.shadeInterior)} is below ${MIN_SHADE_INTERIOR_LUMINANCE_RISE}`,
+    );
+  }
+  return issues;
+}
+
 function percentile(values, fraction) {
   const sorted = [...values].sort((a, b) => a - b);
   return sorted[Math.floor((sorted.length - 1) * fraction)];
@@ -435,6 +596,7 @@ const closeBrowser = () =>
 const evidence = {
   rest: resolve(outDir, "contact-rest.png"),
   mid: resolve(outDir, "contact-reveal-mid.png"),
+  activationLit: resolve(outDir, "contact-activation-lit.png"),
   hold: resolve(outDir, "contact-hold.png"),
   reversed: resolve(outDir, "contact-reversed.png"),
 };
@@ -442,6 +604,9 @@ const evidence = {
 let restSample;
 let riseSamples = [];
 let reverseSamples = [];
+let midCaptured = false;
+let activationLitCaptured = false;
+let activationLitSample = null;
 try {
   const restPage = await browser.newPage({ viewport });
   await restPage.goto(baseUrl, { waitUntil: "load" });
@@ -453,11 +618,15 @@ try {
   const page = await browser.newPage({ viewport });
   await page.goto(baseUrl, { waitUntil: "load" });
   await activatePhysicalContact(page);
-  let midCaptured = false;
   riseSamples = await collect(page, 7000, async (sample) => {
     const revealLevel = sample.marker?.revealLevel;
+    const stationaryDesk = exactCameraMatch(
+      sample.camera,
+      APPROVED_R3_DESK_CAMERAS.wide,
+    );
     if (
       !midCaptured &&
+      stationaryDesk &&
       isFiniteLevel(revealLevel) &&
       revealLevel >= MID_REVEAL_MIN &&
       revealLevel <= MID_REVEAL_MAX
@@ -465,8 +634,20 @@ try {
       midCaptured = true;
       await page.screenshot({ path: evidence.mid });
     }
+    if (
+      !activationLitCaptured &&
+      stationaryDesk &&
+      sample.marker?.lampLevel >= 0.9
+    ) {
+      activationLitCaptured = true;
+      activationLitSample = sample;
+      await page.screenshot({ path: evidence.activationLit });
+    }
   });
   if (!midCaptured) await page.screenshot({ path: evidence.mid });
+  if (!activationLitCaptured) {
+    await page.screenshot({ path: evidence.activationLit });
+  }
   await page.screenshot({ path: evidence.hold });
 
   await page.keyboard.press("Escape");
@@ -537,14 +718,31 @@ try {
   failures.push(`CONTACT manifest copy unavailable: ${error.message}`);
 }
 
+if (
+  !exactCameraMatch(restSample?.camera, APPROVED_R3_DESK_CAMERAS.wide) ||
+  !midCaptured ||
+  !activationLitCaptured ||
+  !exactCameraMatch(activationLitSample?.camera, APPROVED_R3_DESK_CAMERAS.wide)
+) {
+  failures.push(
+    "CONTACT practical-light evidence was not captured at the exact stationary desk camera during activation",
+  );
+} else {
+  passes.push(
+    "CONTACT practical-light evidence was captured during the stationary desk hold",
+  );
+}
+
 try {
   if (!wideContact) throw new Error("wide CONTACT manifest data missing");
-  const [restImage, midImage, holdImage, reversedImage] = await Promise.all([
-    readGrayImage(evidence.rest),
-    readGrayImage(evidence.mid),
-    readGrayImage(evidence.hold),
-    readGrayImage(evidence.reversed),
-  ]);
+  const [restImage, midImage, activationLitImage, holdImage, reversedImage] =
+    await Promise.all([
+      readGrayImage(evidence.rest),
+      readGrayImage(evidence.mid),
+      readGrayImage(evidence.activationLit),
+      readGrayImage(evidence.hold),
+      readGrayImage(evidence.reversed),
+    ]);
   const restAddress = boundsFromQuad(
     wideContact.addressScreenQuads.desk,
     restImage,
@@ -564,6 +762,11 @@ try {
     regionValues(midImage, boundsFromRegion(MID_UNLIT_TABLE_REGION, midImage)),
   );
   const lampPoolLift = lampPoolMean - unlitTableMean;
+  const practicalIssues = practicalLightRegionIssues(
+    restImage,
+    activationLitImage,
+    wideContact.practicalLightRegions,
+  );
   const reverseDifference = meanAbsoluteDifference(
     restImage,
     reversedImage,
@@ -584,6 +787,20 @@ try {
   } else {
     passes.push(
       `mid CONTACT reveal changed through the lamp pool (luma lift=${lampPoolLift.toFixed(1)})`,
+    );
+  }
+  if (practicalIssues.length > 0) {
+    failures.push(
+      `visible CONTACT practical did not rise in its authored regions: ${practicalIssues.join("; ")}`,
+    );
+  } else {
+    const practicalRises = practicalLightRegionMetrics(
+      restImage,
+      activationLitImage,
+      wideContact.practicalLightRegions,
+    );
+    passes.push(
+      `visible bulb and shade interior rose during the stationary hold (luma=${practicalRises.bulb.toFixed(1)}/${practicalRises.shadeInterior.toFixed(1)})`,
     );
   }
   if (
@@ -754,6 +971,7 @@ for (const pass of passes) console.log(`PASS ${pass}`);
 for (const failure of failures) console.log(`FAIL ${failure}`);
 console.log(`INFO pixel evidence: ${evidence.rest}`);
 console.log(`INFO pixel evidence: ${evidence.mid}`);
+console.log(`INFO pixel evidence: ${evidence.activationLit}`);
 console.log(`INFO pixel evidence: ${evidence.hold}`);
 console.log(`INFO pixel evidence: ${evidence.reversed}`);
 

@@ -8,6 +8,7 @@
  */
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 
 import { chromium } from "playwright";
 import sharp from "sharp";
@@ -29,8 +30,13 @@ const PRESENTED_FRAME_EVENT = "lazy-a:compositor-frame-presented";
 const PRESENTED_PIXEL_REFERENCES =
   "/room/hero/hero-presented-pixel-references.json";
 const PRESENTED_PIXEL_REFERENCE_KIND = "authored-presented-pixels-v1";
-const PRESENTED_PIXEL_REGION_ENCODING =
-  "rgb-poster-foreground-treatment";
+const PRESENTED_PIXEL_REGION_ENCODING = "rgb-poster-foreground-treatment";
+const PRESENTED_PIXEL_AUTHORSHIP = "independent-authored-render-v1";
+const MIN_TRACE_REGION_PIXELS = 16;
+const MIN_TRACE_REGION_FRACTION = 0.0005;
+const MIN_TREATMENT_REGION_PIXELS = 64;
+const MIN_TREATMENT_REGION_FRACTION = 0.002;
+const MAX_TRACE_OVERLAP_FRACTION = 0.05;
 const selfTest = process.argv.includes("--self-test");
 
 let failures = 0;
@@ -59,6 +65,190 @@ function pixelAt(frame, x, y) {
 
 function luma([red, green, blue]) {
   return red * 0.2126 + green * 0.7152 + blue * 0.0722;
+}
+
+function referenceRegionMapIssues(regions) {
+  if (
+    !Buffer.isBuffer(regions?.data) ||
+    !Number.isInteger(regions?.width) ||
+    !Number.isInteger(regions?.height) ||
+    regions.width <= 0 ||
+    regions.height <= 0 ||
+    regions.data.length !== regions.width * regions.height * 4
+  ) {
+    return ["reference region map is malformed"];
+  }
+  const counts = [0, 0, 0];
+  let redGreenOverlap = 0;
+  for (let offset = 0; offset < regions.data.length; offset += 4) {
+    const marked = [0, 1, 2].map(
+      (channel) => regions.data[offset + channel] >= 128,
+    );
+    marked.forEach((value, channel) => {
+      if (value) counts[channel] += 1;
+    });
+    if (marked[0] && marked[1]) redGreenOverlap += 1;
+  }
+  const area = regions.width * regions.height;
+  const minimums = [
+    Math.max(
+      MIN_TRACE_REGION_PIXELS,
+      Math.ceil(area * MIN_TRACE_REGION_FRACTION),
+    ),
+    Math.max(
+      MIN_TRACE_REGION_PIXELS,
+      Math.ceil(area * MIN_TRACE_REGION_FRACTION),
+    ),
+    Math.max(
+      MIN_TREATMENT_REGION_PIXELS,
+      Math.ceil(area * MIN_TREATMENT_REGION_FRACTION),
+    ),
+  ];
+  const issues = [];
+  const names = ["red poster-axis", "green foreground-edge", "blue treatment"];
+  for (let channel = 0; channel < names.length; channel += 1) {
+    if (counts[channel] < minimums[channel]) {
+      issues.push(
+        `${names[channel]} region needs substantial coverage; got ${counts[channel]} pixels, minimum ${minimums[channel]}`,
+      );
+    }
+  }
+  const smallerTrace = Math.min(counts[0], counts[1]);
+  if (
+    smallerTrace > 0 &&
+    redGreenOverlap / smallerTrace > MAX_TRACE_OVERLAP_FRACTION
+  ) {
+    issues.push(
+      `red poster-axis and green foreground traces must be independent; ${redGreenOverlap}/${smallerTrace} trace pixels overlap`,
+    );
+  }
+  return issues;
+}
+
+function presentationSequenceIssues(frameNumbers) {
+  if (!Array.isArray(frameNumbers) || frameNumbers.length === 0) {
+    return ["no live compositor frame was presented after playback release"];
+  }
+  const issues = [];
+  if (frameNumbers[0] !== 1) {
+    issues.push(
+      `frame 1 must be the first live compositor presentation after release; got ${frameNumbers[0]}`,
+    );
+  }
+  for (let index = 0; index < frameNumbers.length; index += 1) {
+    if (!Number.isInteger(frameNumbers[index]) || frameNumbers[index] < 1) {
+      issues.push(`invalid presented frame ${String(frameNumbers[index])}`);
+      continue;
+    }
+    if (index > 0 && frameNumbers[index] < frameNumbers[index - 1]) {
+      issues.push(
+        `compositor frames arrived out of order at ${frameNumbers[index - 1]} -> ${frameNumbers[index]}`,
+      );
+    }
+  }
+  return issues;
+}
+
+function normalizePresentedPixelCatalog(catalog, viewportKey, catalogUrl) {
+  if (
+    catalog?.version !== 1 ||
+    catalog?.presentationEvent !== PRESENTED_FRAME_EVENT ||
+    catalog?.kind !== PRESENTED_PIXEL_REFERENCE_KIND ||
+    catalog?.regionEncoding !== PRESENTED_PIXEL_REGION_ENCODING
+  ) {
+    throw new Error(
+      `${viewportKey} catalog must use the version-1 presented-pixel contract`,
+    );
+  }
+  if (catalog.authorship !== PRESENTED_PIXEL_AUTHORSHIP) {
+    throw new Error(
+      `${viewportKey} catalog authorship must be ${PRESENTED_PIXEL_AUTHORSHIP}`,
+    );
+  }
+  const frames = catalog.viewports?.[viewportKey]?.frames;
+  if (!Array.isArray(frames) || frames.length < 4) {
+    throw new Error(
+      `${viewportKey} must provide resting plus forward/reverse moving authored references`,
+    );
+  }
+  const normalized = frames
+    .map((frame) => {
+      const composite =
+        typeof frame?.composite === "string"
+          ? new URL(frame.composite, catalogUrl).href
+          : null;
+      const regions =
+        typeof frame?.regions === "string"
+          ? new URL(frame.regions, catalogUrl).href
+          : null;
+      const authoredSource =
+        typeof frame?.authoredSource === "string"
+          ? new URL(frame.authoredSource, catalogUrl).href
+          : null;
+      return {
+        heroFramePresented: frame?.heroFramePresented,
+        plateState: frame?.plateState,
+        projectionFrame: frame?.projectionFrame,
+        composite,
+        regions,
+        authoredSource,
+        authoredSourceSha256: frame?.authoredSourceSha256,
+      };
+    })
+    .sort((left, right) => left.heroFramePresented - right.heroFramePresented);
+  if (
+    normalized[0]?.heroFramePresented !== 1 ||
+    normalized.some(
+      (frame, index) =>
+        !Number.isInteger(frame.heroFramePresented) ||
+        frame.heroFramePresented < 1 ||
+        !Number.isInteger(frame.projectionFrame) ||
+        frame.projectionFrame < 0 ||
+        typeof frame.plateState !== "string" ||
+        !frame.composite ||
+        !frame.regions ||
+        !frame.authoredSource ||
+        frame.authoredSource === frame.composite ||
+        frame.authoredSource === frame.regions ||
+        frame.regions === frame.composite ||
+        !/^[a-f0-9]{64}$/.test(frame.authoredSourceSha256 ?? "") ||
+        (index > 0 &&
+          frame.heroFramePresented ===
+            normalized[index - 1].heroFramePresented),
+    )
+  ) {
+    throw new Error(
+      `${viewportKey} references need unique positive frame ids, exact plate/projection state, distinct authored sources/region maps, and SHA-256 provenance`,
+    );
+  }
+  const resting = normalized.filter(
+    ({ plateState }) => plateState === "resting:desk",
+  );
+  const forward = normalized.filter(({ plateState }) =>
+    /^transitioning:desk-to-(films|journal|contact|about)$/.test(plateState),
+  );
+  const reverse = normalized.filter(({ plateState }) =>
+    /^transitioning:(films|journal|contact|about)-to-desk$/.test(plateState),
+  );
+  const pairedTransition = forward.some(({ plateState }) => {
+    const destination = plateState.slice("transitioning:desk-to-".length);
+    return reverse.some(
+      (candidate) =>
+        candidate.plateState === `transitioning:${destination}-to-desk`,
+    );
+  });
+  if (
+    resting.length < 2 ||
+    resting[0]?.heroFramePresented !== 1 ||
+    forward.length === 0 ||
+    reverse.length === 0 ||
+    !pairedTransition
+  ) {
+    throw new Error(
+      `${viewportKey} references must include frame 1 plus representative resting, paired forward, and paired reverse navigation captures`,
+    );
+  }
+  return normalized;
 }
 
 function maskedPixelDelta(actual, reference, regions, maskChannel) {
@@ -244,9 +434,7 @@ function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
       minPosterAxisEdgeStrength: Math.min(
         ...posterAxis.map(({ minStrength }) => minStrength),
       ),
-      posterAxisSamples: Math.min(
-        ...posterAxis.map(({ samples }) => samples),
-      ),
+      posterAxisSamples: Math.min(...posterAxis.map(({ samples }) => samples)),
       posterAxisWeakSamples: Math.max(
         ...posterAxis.map(({ weakSamples }) => weakSamples),
       ),
@@ -256,9 +444,7 @@ function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
       minForegroundEdgeStrength: Math.min(
         ...foreground.map(({ minStrength }) => minStrength),
       ),
-      foregroundSamples: Math.min(
-        ...foreground.map(({ samples }) => samples),
-      ),
+      foregroundSamples: Math.min(...foreground.map(({ samples }) => samples)),
       foregroundWeakSamples: Math.max(
         ...foreground.map(({ weakSamples }) => weakSamples),
       ),
@@ -279,9 +465,7 @@ function fixtureFrame({
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const offset = (y * width + x) * 4;
-      const value = x >= 6 && x <= 25 && y >= 6 && y <= 25
-        ? paper
-        : background;
+      const value = x >= 6 && x <= 25 && y >= 6 && y <= 25 ? paper : background;
       data[offset] = value;
       data[offset + 1] = value;
       data[offset + 2] = value;
@@ -343,11 +527,131 @@ function runSelfTests() {
   const resting = fixtureFrame();
   const firstPainted = withFixtureReference(fixtureFrame());
   const changedContent = fixtureFrame({ paper: 110 });
-  const good = measuredPresentedPixelMetrics(
-    resting,
-    firstPainted,
-    [withFixtureReference(changedContent)],
+  assert.deepEqual(
+    referenceRegionMapIssues(fixtureRegions()),
+    [],
+    "independent substantial RGB reference regions should pass",
   );
+
+  const trivialRegions = fixtureRegions();
+  trivialRegions.data.fill(0);
+  for (let channel = 0; channel < 3; channel += 1) {
+    trivialRegions.data[channel] = 255;
+  }
+  assert.match(
+    referenceRegionMapIssues(trivialRegions).join("\n"),
+    /substantial/,
+    "single-pixel RGB maps must not establish authored coverage",
+  );
+
+  const overlappingRegions = fixtureRegions();
+  for (let offset = 0; offset < overlappingRegions.data.length; offset += 4) {
+    overlappingRegions.data[offset + 1] = overlappingRegions.data[offset];
+  }
+  assert.match(
+    referenceRegionMapIssues(overlappingRegions).join("\n"),
+    /independent/,
+    "overlapping poster and foreground traces must not pass as independent maps",
+  );
+
+  const authoredHash = "a".repeat(64);
+  const catalog = {
+    version: 1,
+    presentationEvent: PRESENTED_FRAME_EVENT,
+    kind: PRESENTED_PIXEL_REFERENCE_KIND,
+    regionEncoding: PRESENTED_PIXEL_REGION_ENCODING,
+    authorship: "independent-authored-render-v1",
+    viewports: {
+      "32x32": {
+        frames: [
+          {
+            heroFramePresented: 1,
+            plateState: "resting:desk",
+            projectionFrame: 0,
+            composite: "frame-0001.png",
+            regions: "frame-0001-regions.png",
+            authoredSource: "authored/frame-0001.png",
+            authoredSourceSha256: authoredHash,
+          },
+          {
+            heroFramePresented: 2,
+            plateState: "resting:desk",
+            projectionFrame: 0,
+            composite: "frame-0002.png",
+            regions: "frame-0002-regions.png",
+            authoredSource: "authored/frame-0002.png",
+            authoredSourceSha256: authoredHash,
+          },
+          {
+            heroFramePresented: 12,
+            plateState: "transitioning:desk-to-films",
+            projectionFrame: 10,
+            composite: "frame-0012.png",
+            regions: "frame-0012-regions.png",
+            authoredSource: "authored/frame-0012.png",
+            authoredSourceSha256: authoredHash,
+          },
+          {
+            heroFramePresented: 45,
+            plateState: "transitioning:films-to-desk",
+            projectionFrame: 10,
+            composite: "frame-0045.png",
+            regions: "frame-0045-regions.png",
+            authoredSource: "authored/frame-0045.png",
+            authoredSourceSha256: authoredHash,
+          },
+        ],
+      },
+    },
+  };
+  assert.equal(
+    normalizePresentedPixelCatalog(
+      catalog,
+      "32x32",
+      "https://example.test/room/hero/catalog.json",
+    ).length,
+    4,
+    "catalog must carry resting plus moving forward/reverse authored references",
+  );
+  assert.throws(
+    () =>
+      normalizePresentedPixelCatalog(
+        { ...catalog, authorship: undefined },
+        "32x32",
+        "https://example.test/room/hero/catalog.json",
+      ),
+    /authorship/,
+    "catalogs without authored-source provenance must fail",
+  );
+  const selfReferentialCatalog = structuredClone(catalog);
+  selfReferentialCatalog.viewports["32x32"].frames[0].authoredSource =
+    "frame-0001.png";
+  assert.throws(
+    () =>
+      normalizePresentedPixelCatalog(
+        selfReferentialCatalog,
+        "32x32",
+        "https://example.test/room/hero/catalog.json",
+      ),
+    /distinct authored sources/,
+    "a delivered composite cannot cite itself as independent authored provenance",
+  );
+
+  assert.deepEqual(presentationSequenceIssues([1, 2, 3]), []);
+  assert.match(
+    presentationSequenceIssues([2, 1]).join("\n"),
+    /first|out of order/,
+    "a later frame presented before frame 1 must fail",
+  );
+  assert.match(
+    presentationSequenceIssues([0, 1]).join("\n"),
+    /first/,
+    "a pre-frame-1 compositor presentation must fail",
+  );
+
+  const good = measuredPresentedPixelMetrics(resting, firstPainted, [
+    withFixtureReference(changedContent),
+  ]);
   assert.ok(good.firstFrame.meanLumaDelta <= 3);
   assert.ok(good.firstFrame.meanChannelDelta <= 4);
   assert.ok(
@@ -358,12 +662,10 @@ function runSelfTests() {
   assert.ok(good.motionSamples.maxPosterAxisErrorPx <= 0.75);
   assert.ok(good.motionSamples.maxForegroundEdgeErrorPx <= 1);
   assert.ok(
-    good.motionSamples.minPosterAxisEdgeStrength >=
-      MIN_CAPTURED_EDGE_STRENGTH,
+    good.motionSamples.minPosterAxisEdgeStrength >= MIN_CAPTURED_EDGE_STRENGTH,
   );
   assert.ok(
-    good.motionSamples.minForegroundEdgeStrength >=
-      MIN_CAPTURED_EDGE_STRENGTH,
+    good.motionSamples.minForegroundEdgeStrength >= MIN_CAPTURED_EDGE_STRENGTH,
   );
 
   const flat = fixtureFrame({
@@ -435,7 +737,7 @@ function runSelfTests() {
   );
   assert.equal(fabricatedDiagnostics.pixels.firstFrame.meanLumaDelta, 0);
   console.log(
-    "hero lifecycle self-tests passed (per-frame references and independent captured edges reject stubs).",
+    "hero lifecycle self-tests passed (trivial/overlapping maps, out-of-order presentation, and final-pixel edge/treatment negatives).",
   );
 }
 
@@ -552,6 +854,11 @@ async function installPageProbes(expectedProfile) {
           records,
           events,
           releasePlayback() {
+            presented.presentedFramesAfterRelease.length = 0;
+            presented.videoFrames.clear();
+            presented.compositorFrames.clear();
+            presented.latestFrame = 0;
+            presented.playbackReleasedAt = performance.now();
             heroPlaybackReleased = true;
             for (const { element, resolve, reject } of pendingHeroPlays.splice(
               0,
@@ -658,8 +965,7 @@ async function installPageProbes(expectedProfile) {
               Array.isArray(projection.hero) && projection.hero.length === 8;
             const compositorReady =
               window.__lazyACompositor?.atomic === true &&
-              window.__lazyACompositor?.occlusion ===
-                "authored-depth-geometry";
+              window.__lazyACompositor?.occlusion === "authored-depth-geometry";
             if (
               !compositorReady ||
               (authoredProjectable && !Array.isArray(values.live))
@@ -692,12 +998,14 @@ async function installPageProbes(expectedProfile) {
       publishProperty("__lazyAHeroProjection", "live");
 
       const presented = {
-        targetFrame: null,
+        target: null,
         capture: null,
         latestFrame: 0,
         overlay: null,
         slowedVideo: null,
         armedAt: 0,
+        playbackReleasedAt: 0,
+        presentedFramesAfterRelease: [],
         videoFrames: new Map(),
         compositorFrames: new Map(),
       };
@@ -759,20 +1067,24 @@ async function installPageProbes(expectedProfile) {
         return source.bounds.toJSON();
       };
       const tryCapturePresentedFrame = (frameNumber) => {
+        const target = presented.target;
+        const compositor = presented.compositorFrames.get(frameNumber);
         if (
           presented.capture ||
-          presented.targetFrame !== frameNumber ||
+          target?.heroFramePresented !== frameNumber ||
           !presented.videoFrames.has(frameNumber) ||
-          !presented.compositorFrames.has(frameNumber) ||
-          presented.compositorFrames.get(frameNumber).at < presented.armedAt ||
-          !presented.compositorFrames.get(frameNumber).heroPlaying
+          !compositor ||
+          compositor.at < presented.armedAt ||
+          !compositor.heroPlaying ||
+          compositor.projectionFrame !== target.projectionFrame ||
+          compositor.plateState !== target.plateState
         ) {
           return;
         }
         const canvasBounds = freezePresentedCanvas();
         if (!canvasBounds) return;
         presented.capture = {
-          compositor: presented.compositorFrames.get(frameNumber),
+          compositor,
           nativeVideoFrame: presented.videoFrames.get(frameNumber),
           canvasBounds,
           legacyOcclusionMarkerPresent: "__lazyAHeroOcclusion" in window,
@@ -792,11 +1104,18 @@ async function installPageProbes(expectedProfile) {
           heroFramePresented: detail.heroFramePresented,
           treatment: detail.treatment,
           occlusion: detail.occlusion,
+          plateState: window.__lazyAPlateState?.state ?? null,
           heroPlaying:
             Boolean(heroRecord) &&
             heroRecord.playStarts > 0 &&
             !heroRecord.element.paused,
         };
+        if (
+          heroPlaybackReleased &&
+          snapshot.at >= presented.playbackReleasedAt
+        ) {
+          presented.presentedFramesAfterRelease.push(detail.heroFramePresented);
+        }
         presented.latestFrame = Math.max(
           presented.latestFrame,
           detail.heroFramePresented,
@@ -868,8 +1187,7 @@ async function installPageProbes(expectedProfile) {
           maxCornerError: errors.length ? Math.max(...errors) : null,
           occlusionFailures: rendered.filter(
             (sample) =>
-              !sample.occlusionObserved ||
-              sample.legacyOcclusionMarkerPresent,
+              !sample.occlusionObserved || sample.legacyOcclusionMarkerPresent,
           ).length,
         };
       };
@@ -890,25 +1208,28 @@ async function installPageProbes(expectedProfile) {
       Object.defineProperty(window, "__heroPresentedFrameProbe", {
         configurable: false,
         value: {
-          arm(frameNumber) {
+          arm(target) {
             removeOverlay();
             presented.capture = null;
-            presented.targetFrame = frameNumber;
+            presented.target = target;
             presented.armedAt = performance.now();
-            tryCapturePresentedFrame(frameNumber);
+            tryCapturePresentedFrame(target.heroFramePresented);
           },
           snapshot() {
             return {
               capture: presented.capture,
               latestFrame: presented.latestFrame,
-              targetFrame: presented.targetFrame,
+              target: presented.target,
+              presentedFramesAfterRelease: [
+                ...presented.presentedFramesAfterRelease,
+              ],
             };
           },
           release() {
             removeOverlay();
             restorePlaybackRate();
             presented.capture = null;
-            presented.targetFrame = null;
+            presented.target = null;
           },
         },
       });
@@ -1004,14 +1325,8 @@ async function captureCurrentFrame() {
 }
 
 async function loadPresentedPixelReferenceCatalog(viewport) {
-  return page.evaluate(
-    async ({
-      eventName,
-      referenceSuffix,
-      referenceKind,
-      regionEncoding,
-      viewportKey,
-    }) => {
+  const { catalog, catalogUrl } = await page.evaluate(
+    async ({ eventName, referenceSuffix, referenceKind, regionEncoding }) => {
       const manifestUrl = new URL("room/manifest.json", document.baseURI);
       const manifestResponse = await fetch(manifestUrl);
       if (!manifestResponse.ok) {
@@ -1041,67 +1356,22 @@ async function loadPresentedPixelReferenceCatalog(viewport) {
           `could not load ${catalogUrl.pathname} (${catalogResponse.status})`,
         );
       }
-      const catalog = await catalogResponse.json();
-      const frames = catalog.viewports?.[viewportKey]?.frames;
-      if (
-        catalog.version !== 1 ||
-        catalog.presentationEvent !== eventName ||
-        !Array.isArray(frames) ||
-        frames.length < 2
-      ) {
-        throw new Error(
-          `${viewportKey} must provide at least two version-1 presented-pixel references`,
-        );
-      }
-      if (
-        catalog.kind !== referenceKind ||
-        catalog.regionEncoding !== regionEncoding ||
-        frames.some(
-          (frame) =>
-            typeof frame?.composite !== "string" ||
-            typeof frame?.regions !== "string",
-        )
-      ) {
-        throw new Error(
-          `${viewportKey} must use ${referenceKind} with ${regionEncoding} region maps`,
-        );
-      }
-      const normalized = frames
-        .map((frame) => ({
-          heroFramePresented: frame.heroFramePresented,
-          composite: new URL(frame.composite, catalogUrl).href,
-          regions: new URL(frame.regions, catalogUrl).href,
-        }))
-        .sort(
-          (left, right) =>
-            left.heroFramePresented - right.heroFramePresented,
-        );
-      if (
-        normalized[0]?.heroFramePresented !== 1 ||
-        normalized.some(
-          (frame, index) =>
-            !Number.isInteger(frame.heroFramePresented) ||
-            frame.heroFramePresented < 1 ||
-            !frame.composite ||
-            !frame.regions ||
-            (index > 0 &&
-              frame.heroFramePresented ===
-                normalized[index - 1].heroFramePresented),
-        )
-      ) {
-        throw new Error(
-          `${viewportKey} references must start at presented frame 1 and use unique integer frame ids`,
-        );
-      }
-      return normalized;
+      return {
+        catalog: await catalogResponse.json(),
+        catalogUrl: catalogUrl.href,
+      };
     },
     {
       eventName: PRESENTED_FRAME_EVENT,
       referenceSuffix: PRESENTED_PIXEL_REFERENCES,
       referenceKind: PRESENTED_PIXEL_REFERENCE_KIND,
       regionEncoding: PRESENTED_PIXEL_REGION_ENCODING,
-      viewportKey: `${viewport.width}x${viewport.height}`,
     },
+  );
+  return normalizePresentedPixelCatalog(
+    catalog,
+    `${viewport.width}x${viewport.height}`,
+    catalogUrl,
   );
 }
 
@@ -1116,7 +1386,11 @@ async function loadReferenceAsset(source) {
             `could not load presented-pixel reference ${source} (${response.status})`,
           );
         }
-        return decodePng(Buffer.from(await response.arrayBuffer()));
+        const buffer = Buffer.from(await response.arrayBuffer());
+        return {
+          frame: await decodePng(buffer),
+          sha256: createHash("sha256").update(buffer).digest("hex"),
+        };
       })(),
     );
   }
@@ -1124,10 +1398,15 @@ async function loadReferenceAsset(source) {
 }
 
 async function loadPresentedPixelReference(reference, viewport) {
-  const [composite, regions] = await Promise.all([
-    loadReferenceAsset(reference.composite),
-    loadReferenceAsset(reference.regions),
-  ]);
+  const [compositeAsset, regionsAsset, authoredSourceAsset] = await Promise.all(
+    [
+      loadReferenceAsset(reference.composite),
+      loadReferenceAsset(reference.regions),
+      loadReferenceAsset(reference.authoredSource),
+    ],
+  );
+  const composite = compositeAsset.frame;
+  const regions = regionsAsset.frame;
   for (const [kind, frame] of [
     ["composite", composite],
     ["regions", regions],
@@ -1138,13 +1417,31 @@ async function loadPresentedPixelReference(reference, viewport) {
       );
     }
   }
+  if (
+    authoredSourceAsset.sha256 !== reference.authoredSourceSha256 ||
+    compositeAsset.sha256 !== authoredSourceAsset.sha256
+  ) {
+    throw new Error(
+      `authored source provenance for frame ${reference.heroFramePresented} does not match its delivered composite (${authoredSourceAsset.sha256}/${compositeAsset.sha256}; expected ${reference.authoredSourceSha256})`,
+    );
+  }
+  const regionIssues = referenceRegionMapIssues(regions);
+  if (regionIssues.length > 0) {
+    throw new Error(
+      `region reference for frame ${reference.heroFramePresented} is invalid: ${regionIssues.join("; ")}`,
+    );
+  }
   return { composite, regions };
 }
 
-async function armPresentedFrameCapture(frameNumber) {
+async function armPresentedFrameCapture(reference) {
   await page.evaluate(
     (target) => window.__heroPresentedFrameProbe.arm(target),
-    frameNumber,
+    {
+      heroFramePresented: reference.heroFramePresented,
+      plateState: reference.plateState,
+      projectionFrame: reference.projectionFrame,
+    },
   );
 }
 
@@ -1155,34 +1452,73 @@ async function releaseHeroPlayback() {
 async function captureArmedPresentedFrame(
   reference,
   decodedReference,
-  nextFrameNumber = null,
+  nextReference = null,
 ) {
   await page.waitForFunction(
-    (target) =>
-      window.__heroPresentedFrameProbe.snapshot().capture?.compositor
-        ?.heroFramePresented === target,
-    reference.heroFramePresented,
+    (target) => {
+      const snapshot = window.__heroPresentedFrameProbe.snapshot();
+      const sequence = snapshot.presentedFramesAfterRelease;
+      const invalidSequence =
+        sequence.length > 0 &&
+        (sequence[0] !== 1 ||
+          sequence.some(
+            (frame, index) => index > 0 && frame < sequence[index - 1],
+          ));
+      return (
+        invalidSequence ||
+        (snapshot.capture?.compositor?.heroFramePresented ===
+          target.heroFramePresented &&
+          snapshot.capture?.compositor?.plateState === target.plateState &&
+          snapshot.capture?.compositor?.projectionFrame ===
+            target.projectionFrame)
+      );
+    },
+    {
+      heroFramePresented: reference.heroFramePresented,
+      plateState: reference.plateState,
+      projectionFrame: reference.projectionFrame,
+    },
     { timeout: 8_000 },
   );
+  const probeBeforeCapture = await page.evaluate(() =>
+    window.__heroPresentedFrameProbe.snapshot(),
+  );
+  const sequenceIssues = presentationSequenceIssues(
+    probeBeforeCapture.presentedFramesAfterRelease,
+  );
+  if (sequenceIssues.length > 0) {
+    throw new Error(sequenceIssues.join("; "));
+  }
   const [png, probe] = await Promise.all([
     page.screenshot(),
     page.evaluate(() => window.__heroPresentedFrameProbe.snapshot()),
   ]);
-  await page.evaluate((nextTarget) => {
-    window.__heroPresentedFrameProbe.release();
-    if (Number.isInteger(nextTarget)) {
-      window.__heroPresentedFrameProbe.arm(nextTarget);
-    }
-  }, nextFrameNumber);
+  await page.evaluate(
+    (nextTarget) => {
+      window.__heroPresentedFrameProbe.release();
+      if (nextTarget) {
+        window.__heroPresentedFrameProbe.arm(nextTarget);
+      }
+    },
+    nextReference
+      ? {
+          heroFramePresented: nextReference.heroFramePresented,
+          plateState: nextReference.plateState,
+          projectionFrame: nextReference.projectionFrame,
+        }
+      : null,
+  );
   const frame = await decodePng(png);
   const capture = probe.capture;
   if (
     capture?.nativeVideoFrame?.presentedFrames !==
       reference.heroFramePresented ||
-    capture?.compositor?.heroFramePresented !== reference.heroFramePresented
+    capture?.compositor?.heroFramePresented !== reference.heroFramePresented ||
+    capture?.compositor?.plateState !== reference.plateState ||
+    capture?.compositor?.projectionFrame !== reference.projectionFrame
   ) {
     throw new Error(
-      `frame callback/compositor mismatch for reference ${reference.heroFramePresented}: ${JSON.stringify(capture)}`,
+      `frame callback/compositor state mismatch for reference ${reference.heroFramePresented}: ${JSON.stringify(capture)}`,
     );
   }
   return {
@@ -1211,8 +1547,7 @@ function assertAtomicCompositor(viewport, capturedFrame) {
     JSON.stringify({
       compositor,
       nativeVideoFrame: capturedFrame.nativeVideoFrame,
-      legacyOcclusionMarkerPresent:
-        capturedFrame.legacyOcclusionMarkerPresent,
+      legacyOcclusionMarkerPresent: capturedFrame.legacyOcclusionMarkerPresent,
     }),
   );
 }
@@ -1243,8 +1578,7 @@ function assertPresentedPixelContract(
   check(
     motionSamples?.posterAxisSamples > 0 &&
       motionSamples?.posterAxisWeakSamples === 0 &&
-      motionSamples?.minPosterAxisEdgeStrength >=
-        MIN_CAPTURED_EDGE_STRENGTH &&
+      motionSamples?.minPosterAxisEdgeStrength >= MIN_CAPTURED_EDGE_STRENGTH &&
       motionSamples?.maxPosterAxisErrorPx <= 0.75,
     `${label} captured poster-axis edges stay registered`,
     JSON.stringify(motionSamples),
@@ -1252,8 +1586,7 @@ function assertPresentedPixelContract(
   check(
     motionSamples?.foregroundSamples > 0 &&
       motionSamples?.foregroundWeakSamples === 0 &&
-      motionSamples?.minForegroundEdgeStrength >=
-        MIN_CAPTURED_EDGE_STRENGTH &&
+      motionSamples?.minForegroundEdgeStrength >= MIN_CAPTURED_EDGE_STRENGTH &&
       motionSamples?.maxForegroundEdgeErrorPx <= 1,
     `${label} captured foreground occlusion edges stay registered`,
     JSON.stringify(motionSamples),
@@ -1464,13 +1797,45 @@ async function runViewport(viewport) {
       `loop=${settled.loop}`,
     );
     const references = await loadPresentedPixelReferenceCatalog(viewport);
-    const [firstReference, representativeReference] = references;
-    const [firstDecodedReference, representativeDecodedReference] =
-      await Promise.all([
-        loadPresentedPixelReference(firstReference, viewport),
-        loadPresentedPixelReference(representativeReference, viewport),
-      ]);
-    await armPresentedFrameCapture(firstReference.heroFramePresented);
+    const restingReferences = references.filter(
+      ({ plateState }) => plateState === "resting:desk",
+    );
+    const firstReference = restingReferences.find(
+      ({ heroFramePresented }) => heroFramePresented === 1,
+    );
+    const representativeReference = restingReferences.find(
+      ({ heroFramePresented }) => heroFramePresented !== 1,
+    );
+    const forwardReference = references.find(({ plateState }) => {
+      if (
+        !/^transitioning:desk-to-(films|journal|contact|about)$/.test(
+          plateState,
+        )
+      ) {
+        return false;
+      }
+      const destination = plateState.slice("transitioning:desk-to-".length);
+      return references.some(
+        (candidate) =>
+          candidate.plateState === `transitioning:${destination}-to-desk`,
+      );
+    });
+    const movingDestination = forwardReference.plateState.slice(
+      "transitioning:desk-to-".length,
+    );
+    const reverseReference = references.find(
+      ({ plateState }) =>
+        plateState === `transitioning:${movingDestination}-to-desk`,
+    );
+    const decodedReferences = new Map(
+      await Promise.all(
+        references.map(async (reference) => [
+          reference.heroFramePresented,
+          await loadPresentedPixelReference(reference, viewport),
+        ]),
+      ),
+    );
+    await armPresentedFrameCapture(firstReference);
     const restingPoster = await captureCurrentFrame();
     await releaseHeroPlayback();
 
@@ -1495,20 +1860,14 @@ async function runViewport(viewport) {
     );
     const firstPaintedLiveFrame = await captureArmedPresentedFrame(
       firstReference,
-      firstDecodedReference,
-      representativeReference.heroFramePresented,
+      decodedReferences.get(firstReference.heroFramePresented),
+      representativeReference,
     );
     const representativePlayingFrame = await captureArmedPresentedFrame(
       representativeReference,
-      representativeDecodedReference,
+      decodedReferences.get(representativeReference.heroFramePresented),
     );
     assertAtomicCompositor(viewport, firstPaintedLiveFrame);
-    assertPresentedPixelContract(
-      viewport,
-      restingPoster,
-      firstPaintedLiveFrame,
-      [representativePlayingFrame],
-    );
 
     const debug = await conversationState();
     check(
@@ -1520,13 +1879,33 @@ async function runViewport(viewport) {
     );
 
     const playbackSnapshots = [];
+    const movingFrames = [];
     let allDestinationsOpened = true;
     let allDeskReturns = true;
-    for (const destination of DESTINATIONS) {
+    const orderedDestinations = [
+      movingDestination,
+      ...DESTINATIONS.filter(
+        (destination) => destination !== movingDestination,
+      ),
+    ];
+    for (const destination of orderedDestinations) {
       const forward = `desk -> ${destination}`;
       await beginRegistrationSegment(forward);
       const beforeOpen = await heroSnapshot();
+      let forwardCapture = null;
+      if (destination === movingDestination) {
+        await armPresentedFrameCapture(forwardReference);
+        forwardCapture = captureArmedPresentedFrame(
+          forwardReference,
+          decodedReferences.get(forwardReference.heroFramePresented),
+        );
+      }
       const opened = await openDestination(destination);
+      if (forwardCapture) {
+        const captured = await forwardCapture;
+        movingFrames.push(captured);
+        assertAtomicCompositor(viewport, captured);
+      }
       allDestinationsOpened &&= opened.ok;
       if (opened.ok) {
         await captureRegistrationPoint(`${destination} endpoint`);
@@ -1552,7 +1931,20 @@ async function runViewport(viewport) {
 
       const reverse = `${destination} -> desk`;
       await beginRegistrationSegment(reverse);
+      let reverseCapture = null;
+      if (destination === movingDestination) {
+        await armPresentedFrameCapture(reverseReference);
+        reverseCapture = captureArmedPresentedFrame(
+          reverseReference,
+          decodedReferences.get(reverseReference.heroFramePresented),
+        );
+      }
       const closed = await closeDestination(destination);
+      if (reverseCapture) {
+        const captured = await reverseCapture;
+        movingFrames.push(captured);
+        assertAtomicCompositor(viewport, captured);
+      }
       allDeskReturns &&= closed.ok;
       if (closed.ok) {
         await captureRegistrationPoint(`desk endpoint after ${destination}`);
@@ -1575,6 +1967,26 @@ async function runViewport(viewport) {
         );
       }
     }
+
+    check(
+      movingFrames.length === 2 &&
+        movingFrames[0]?.compositor?.plateState ===
+          forwardReference.plateState &&
+        movingFrames[1]?.compositor?.plateState === reverseReference.plateState,
+      `${label} forward and reverse moving references were presented`,
+      movingFrames
+        .map(
+          ({ compositor }) =>
+            `${compositor.plateState}@hero=${compositor.heroFramePresented}/projection=${compositor.projectionFrame}`,
+        )
+        .join(", "),
+    );
+    assertPresentedPixelContract(
+      viewport,
+      restingPoster,
+      firstPaintedLiveFrame,
+      [representativePlayingFrame, ...movingFrames],
+    );
 
     const monotonicPlayback = playbackSnapshots.every(
       (snapshot, index) =>
@@ -1609,6 +2021,18 @@ async function runViewport(viewport) {
       endedSnapshot.endedEvents === 1 && endedSnapshot.ended,
       `${label} hero reaches ended once`,
       `endedEvents=${endedSnapshot.endedEvents} ended=${endedSnapshot.ended} currentTime=${fixed(endedSnapshot.currentTime)}`,
+    );
+    const presentedSequence = await page.evaluate(
+      () =>
+        window.__heroPresentedFrameProbe.snapshot().presentedFramesAfterRelease,
+    );
+    const sequenceIssues = presentationSequenceIssues(presentedSequence);
+    check(
+      sequenceIssues.length === 0,
+      `${label} compositor presentation begins at frame 1 and stays ordered`,
+      sequenceIssues.length > 0
+        ? sequenceIssues.join("; ")
+        : `${presentedSequence.length} live presentations, first=${presentedSequence[0]}`,
     );
 
     const finalFrameTime = endedSnapshot.currentTime;

@@ -36,6 +36,10 @@ const ARRIVAL_TIMEOUT_MS = 12_000;
 const TRANSITION_TIMEOUT_MS = 12_000;
 const JOURNAL_MIN_COVERAGE = 0.4;
 const JOURNAL_MAX_COVERAGE = 0.6;
+const MAX_JOURNAL_ANGULAR_STEP_DEGREES = 3;
+const MAX_ORIENTATION_ONLY_PLATEAU_STEPS = 0;
+const CAMERA_POSITION_EPSILON = 1e-7;
+const CAMERA_ANGLE_EPSILON_DEGREES = 1e-5;
 const MIN_JOURNAL_TRAVEL = 0.05;
 const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
@@ -149,10 +153,22 @@ function clipPolygonToViewport(points) {
     return [first[0] + (second[0] - first[0]) * ratio, y];
   };
   return [
-    [(point) => point[0] >= 0, (first, second) => interpolateAtX(first, second, 0)],
-    [(point) => point[0] <= 1, (first, second) => interpolateAtX(first, second, 1)],
-    [(point) => point[1] >= 0, (first, second) => interpolateAtY(first, second, 0)],
-    [(point) => point[1] <= 1, (first, second) => interpolateAtY(first, second, 1)],
+    [
+      (point) => point[0] >= 0,
+      (first, second) => interpolateAtX(first, second, 0),
+    ],
+    [
+      (point) => point[0] <= 1,
+      (first, second) => interpolateAtX(first, second, 1),
+    ],
+    [
+      (point) => point[1] >= 0,
+      (first, second) => interpolateAtY(first, second, 0),
+    ],
+    [
+      (point) => point[1] <= 1,
+      (first, second) => interpolateAtY(first, second, 1),
+    ],
   ].reduce(
     (polygon, [inside, intersect]) =>
       polygon.length === 0 ? polygon : clip(polygon, inside, intersect),
@@ -247,6 +263,118 @@ function sightlineIntersectsNotebook(camera, notebookWorldQuad) {
   return inTriangle(first, second, third) || inTriangle(first, third, fourth);
 }
 
+function cameraPositionStep(left, right) {
+  if (!isNumberTuple(left?.position, 3) || !isNumberTuple(right?.position, 3)) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return Math.hypot(
+    ...left.position.map((value, index) => value - right.position[index]),
+  );
+}
+
+function cameraAngularStepDegrees(left, right) {
+  if (
+    !isNumberTuple(left?.quaternion, 4) ||
+    !isNumberTuple(right?.quaternion, 4)
+  ) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const leftLength = Math.hypot(...left.quaternion);
+  const rightLength = Math.hypot(...right.quaternion);
+  if (leftLength <= 0 || rightLength <= 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const dot = Math.abs(
+    left.quaternion.reduce(
+      (sum, value, index) =>
+        sum + (value / leftLength) * (right.quaternion[index] / rightLength),
+      0,
+    ),
+  );
+  return (2 * Math.acos(Math.min(1, dot)) * 180) / Math.PI;
+}
+
+function journalMotionMetrics(frames) {
+  if (
+    !Array.isArray(frames) ||
+    frames.length < 3 ||
+    frames.some(
+      (frame) =>
+        !isNumberTuple(frame?.camera?.position, 3) ||
+        !isNumberTuple(frame?.camera?.quaternion, 4),
+    )
+  ) {
+    return null;
+  }
+  const steps = frames.slice(1).map((frame, index) => {
+    const previous = frames[index].camera;
+    const current = frame.camera;
+    return {
+      frame: index + 1,
+      translation: cameraPositionStep(previous, current),
+      angleDegrees: cameraAngularStepDegrees(previous, current),
+    };
+  });
+  const firstTranslation = steps.find(
+    ({ translation }) => translation > CAMERA_POSITION_EPSILON,
+  );
+  const firstOrientation = steps.find(
+    ({ angleDegrees }) => angleDegrees > CAMERA_ANGLE_EPSILON_DEGREES,
+  );
+  let orientationOnlyPlateau = 0;
+  let maxOrientationOnlyPlateau = 0;
+  for (const step of steps) {
+    if (
+      step.angleDegrees > CAMERA_ANGLE_EPSILON_DEGREES &&
+      step.translation <= CAMERA_POSITION_EPSILON
+    ) {
+      orientationOnlyPlateau += 1;
+      maxOrientationOnlyPlateau = Math.max(
+        maxOrientationOnlyPlateau,
+        orientationOnlyPlateau,
+      );
+    } else {
+      orientationOnlyPlateau = 0;
+    }
+  }
+  return {
+    firstTranslationFrame: firstTranslation?.frame ?? Number.POSITIVE_INFINITY,
+    firstOrientationFrame: firstOrientation?.frame ?? Number.POSITIVE_INFINITY,
+    maxAngularStepDegrees: Math.max(
+      ...steps.map(({ angleDegrees }) => angleDegrees),
+    ),
+    maxOrientationOnlyPlateauFrames: maxOrientationOnlyPlateau,
+  };
+}
+
+function journalMotionIssues(frames) {
+  const metrics = journalMotionMetrics(frames);
+  if (!metrics) return ["actual camera samples are incomplete"];
+  const issues = [];
+  if (
+    metrics.firstTranslationFrame > 1 ||
+    metrics.firstOrientationFrame > 1 ||
+    metrics.firstTranslationFrame !== metrics.firstOrientationFrame
+  ) {
+    issues.push(
+      `position and orientation must begin coupled at frame 1; got translation frame ${metrics.firstTranslationFrame} and orientation frame ${metrics.firstOrientationFrame}`,
+    );
+  }
+  if (metrics.maxAngularStepDegrees > MAX_JOURNAL_ANGULAR_STEP_DEGREES) {
+    issues.push(
+      `actual max angular step ${metrics.maxAngularStepDegrees.toFixed(3)}deg exceeds ${MAX_JOURNAL_ANGULAR_STEP_DEGREES}deg`,
+    );
+  }
+  if (
+    metrics.maxOrientationOnlyPlateauFrames > MAX_ORIENTATION_ONLY_PLATEAU_STEPS
+  ) {
+    issues.push(
+      `orientation-only plateau lasts ${metrics.maxOrientationOnlyPlateauFrames} frames; maximum is ${MAX_ORIENTATION_ONLY_PLATEAU_STEPS}`,
+    );
+  }
+  return issues;
+}
+
 function cameraContractFailures(manifest) {
   const failures = [];
   for (const profile of ["wide", "portrait"]) {
@@ -283,16 +411,12 @@ function cameraContractFailures(manifest) {
       );
     }
     const journal = { ...variant.journal, ...transition };
-    if (
-      journal.journalHeadLeadSeconds !== 0 ||
-      !(journal.translationStartsAtSeconds <= 1 / journal.fps) ||
-      journal.motionModel !== "coupled-hip-pivot" ||
-      !(journal.maxAngularStepDegrees <= 3)
-    ) {
-      failures.push(
-        `${profile}: JOURNAL must use the coupled-hip-pivot path with no head lead, translation by frame 1, <=3 degree steps, <=12 degree baseline, and 40-60% notebook coverage`,
-      );
-    }
+    const motionMetrics = journalMotionMetrics(frames);
+    failures.push(
+      ...journalMotionIssues(frames).map(
+        (issue) => `${profile}: JOURNAL ${issue}`,
+      ),
+    );
     const journalMetrics = projectedJournalEndpointMetrics(
       variant,
       journalEndpoint,
@@ -308,12 +432,10 @@ function cameraContractFailures(manifest) {
         `${profile}: JOURNAL notebookWorldQuad projection must produce <=12 degree paragraph baseline rotation and 40-60% notebook coverage`,
       );
     }
-    const firstTranslation = frames.findIndex(
-      (frame) => !sameTuple(frame.camera?.position, desk.position),
-    );
+    const firstTranslation = motionMetrics?.firstTranslationFrame ?? -1;
     if (firstTranslation < 0 || firstTranslation > 1) {
       failures.push(
-        `${profile}: JOURNAL translation must begin at authored frame 1 or earlier; got frame ${firstTranslation}`,
+        `${profile}: JOURNAL translation must begin at authored frame 1; got frame ${firstTranslation}`,
       );
     }
     const missedNotebookAt = frames
@@ -359,7 +481,50 @@ if (selfTest) {
       `projected JOURNAL coverage must clip to the viewport; got ${metrics.endpointCoverage}`,
     );
   }
-  console.log("camera-state self-tests passed (viewport-clipped coverage).");
+  const yawQuaternion = (degrees) => {
+    const radians = (degrees * Math.PI) / 180;
+    return [0, Math.sin(radians / 2), 0, Math.cos(radians / 2)];
+  };
+  const coupledFrames = Array.from({ length: 6 }, (_, index) => ({
+    camera: {
+      position: [0, -index * 0.01, -index * 0.02],
+      quaternion: yawQuaternion(index),
+      fov: 35,
+    },
+  }));
+  if (journalMotionIssues(coupledFrames).length > 0) {
+    throw new Error("a continuously coupled JOURNAL fixture must pass");
+  }
+
+  const discontinuityFrames = structuredClone(coupledFrames);
+  discontinuityFrames[3].camera.quaternion = yawQuaternion(12);
+  if (
+    !journalMotionIssues(discontinuityFrames).some((issue) =>
+      issue.includes("angular step"),
+    )
+  ) {
+    throw new Error("a JOURNAL angular discontinuity must fail");
+  }
+
+  const stagedFrames = Array.from({ length: 7 }, (_, index) => ({
+    camera: {
+      position: index < 4 ? [0, 0, 0] : [0, 0, -(index - 3) * 0.02],
+      quaternion: yawQuaternion(index),
+      fov: 35,
+    },
+  }));
+  if (
+    !journalMotionIssues(stagedFrames).some(
+      (issue) =>
+        issue.includes("coupled") || issue.includes("orientation-only"),
+    )
+  ) {
+    throw new Error("a staged head-then-body JOURNAL fixture must fail");
+  }
+
+  console.log(
+    "camera-state self-tests passed (clipped coverage plus discontinuity and staged-motion negatives).",
+  );
   process.exit(0);
 }
 

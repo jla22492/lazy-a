@@ -43,12 +43,16 @@ const expectedContactCopy = [
 ].join("\n");
 const expectedContactIndentDepth = 0.0003;
 const contactActivationSamples = 31;
+const practicalRegionAuthorship = "authored-screen-quads-v1";
+const maximumJournalAngularStepDegrees = 3;
+const maximumOrientationOnlyPlateauSteps = 0;
+const cameraPositionEpsilon = 1e-7;
+const cameraAngleEpsilonDegrees = 1e-5;
 const presentedFrameEvent = "lazy-a:compositor-frame-presented";
 const presentedPixelReferences =
   "/room/hero/hero-presented-pixel-references.json";
 const presentedPixelReferenceKind = "authored-presented-pixels-v1";
-const presentedPixelRegionEncoding =
-  "rgb-poster-foreground-treatment";
+const presentedPixelRegionEncoding = "rgb-poster-foreground-treatment";
 const approvedR3ContactPathSha256 = {
   wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
   portrait: "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
@@ -385,7 +389,61 @@ async function runSelfTests() {
     `projected JOURNAL coverage must clip to the viewport; got ${clippedJournalMetrics.endpointCoverage}`,
   );
 
-  console.log("encode-master-shots self-tests passed (5 behavioral checks). ");
+  const yawQuaternion = (degrees) => {
+    const radians = (degrees * Math.PI) / 180;
+    return [0, Math.sin(radians / 2), 0, Math.cos(radians / 2)];
+  };
+  const coupledFrames = Array.from({ length: 6 }, (_, index) => ({
+    camera: {
+      position: [0, -index * 0.01, -index * 0.02],
+      quaternion: yawQuaternion(index),
+      fov: 35,
+    },
+  }));
+  assert.deepEqual(
+    journalMotionIssues(coupledFrames),
+    [],
+    "continuously coupled JOURNAL samples should pass",
+  );
+  const discontinuityFrames = structuredClone(coupledFrames);
+  discontinuityFrames[3].camera.quaternion = yawQuaternion(12);
+  assert.match(
+    journalMotionIssues(discontinuityFrames).join("\n"),
+    /angular step/,
+    "an angular discontinuity must fail from actual camera samples",
+  );
+  const stagedFrames = Array.from({ length: 7 }, (_, index) => ({
+    camera: {
+      position: index < 4 ? [0, 0, 0] : [0, 0, -(index - 3) * 0.02],
+      quaternion: yawQuaternion(index),
+      fov: 35,
+    },
+  }));
+  assert.match(
+    journalMotionIssues(stagedFrames).join("\n"),
+    /coupled|orientation-only/,
+    "staged head-then-body motion must fail from actual camera samples",
+  );
+
+  const practicalRegions = {
+    authorship: practicalRegionAuthorship,
+    camera: "desk",
+    bulb: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
+    shadeInterior: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
+  };
+  assert.deepEqual(practicalLightRegionIssues(practicalRegions), []);
+  assert.match(
+    practicalLightRegionIssues({
+      ...practicalRegions,
+      bulb: practicalRegions.shadeInterior,
+    }).join("\n"),
+    /distinct/,
+    "encoder parity must reject overlapping bulb/shade region stubs",
+  );
+
+  console.log(
+    "encode-master-shots self-tests passed (media parity plus JOURNAL motion and CONTACT region negatives).",
+  );
 }
 
 function quadPixelWidth(quad, width) {
@@ -484,10 +542,22 @@ function clipPolygonToViewport(points) {
     return [first[0] + (second[0] - first[0]) * ratio, y];
   };
   return [
-    [(point) => point[0] >= 0, (first, second) => interpolateAtX(first, second, 0)],
-    [(point) => point[0] <= 1, (first, second) => interpolateAtX(first, second, 1)],
-    [(point) => point[1] >= 0, (first, second) => interpolateAtY(first, second, 0)],
-    [(point) => point[1] <= 1, (first, second) => interpolateAtY(first, second, 1)],
+    [
+      (point) => point[0] >= 0,
+      (first, second) => interpolateAtX(first, second, 0),
+    ],
+    [
+      (point) => point[0] <= 1,
+      (first, second) => interpolateAtX(first, second, 1),
+    ],
+    [
+      (point) => point[1] >= 0,
+      (first, second) => interpolateAtY(first, second, 0),
+    ],
+    [
+      (point) => point[1] <= 1,
+      (first, second) => interpolateAtY(first, second, 1),
+    ],
   ].reduce(
     (polygon, [inside, intersect]) =>
       polygon.length === 0 ? polygon : clip(polygon, inside, intersect),
@@ -543,6 +613,115 @@ function projectedJournalEndpointMetrics(
       180 - baselineRotationDegrees,
     ),
   };
+}
+
+function cameraPositionStep(left, right) {
+  if (!finiteTuple(left?.position, 3) || !finiteTuple(right?.position, 3)) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return Math.hypot(
+    ...left.position.map((value, index) => value - right.position[index]),
+  );
+}
+
+function cameraAngularStepDegrees(left, right) {
+  if (!finiteTuple(left?.quaternion, 4) || !finiteTuple(right?.quaternion, 4)) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const leftLength = Math.hypot(...left.quaternion);
+  const rightLength = Math.hypot(...right.quaternion);
+  if (leftLength <= 0 || rightLength <= 0) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const dot = Math.abs(
+    left.quaternion.reduce(
+      (sum, value, index) =>
+        sum + (value / leftLength) * (right.quaternion[index] / rightLength),
+      0,
+    ),
+  );
+  return (2 * Math.acos(Math.min(1, dot)) * 180) / Math.PI;
+}
+
+function journalMotionMetrics(frames) {
+  if (
+    !Array.isArray(frames) ||
+    frames.length < 3 ||
+    frames.some(
+      (frame) =>
+        !finiteTuple(frame?.camera?.position, 3) ||
+        !finiteTuple(frame?.camera?.quaternion, 4),
+    )
+  ) {
+    return null;
+  }
+  const steps = frames.slice(1).map((frame, index) => {
+    const previous = frames[index].camera;
+    const current = frame.camera;
+    return {
+      frame: index + 1,
+      translation: cameraPositionStep(previous, current),
+      angleDegrees: cameraAngularStepDegrees(previous, current),
+    };
+  });
+  const firstTranslation = steps.find(
+    ({ translation }) => translation > cameraPositionEpsilon,
+  );
+  const firstOrientation = steps.find(
+    ({ angleDegrees }) => angleDegrees > cameraAngleEpsilonDegrees,
+  );
+  let orientationOnlyPlateau = 0;
+  let maxOrientationOnlyPlateau = 0;
+  for (const step of steps) {
+    if (
+      step.angleDegrees > cameraAngleEpsilonDegrees &&
+      step.translation <= cameraPositionEpsilon
+    ) {
+      orientationOnlyPlateau += 1;
+      maxOrientationOnlyPlateau = Math.max(
+        maxOrientationOnlyPlateau,
+        orientationOnlyPlateau,
+      );
+    } else {
+      orientationOnlyPlateau = 0;
+    }
+  }
+  return {
+    firstTranslationFrame: firstTranslation?.frame ?? Number.POSITIVE_INFINITY,
+    firstOrientationFrame: firstOrientation?.frame ?? Number.POSITIVE_INFINITY,
+    maxAngularStepDegrees: Math.max(
+      ...steps.map(({ angleDegrees }) => angleDegrees),
+    ),
+    maxOrientationOnlyPlateauFrames: maxOrientationOnlyPlateau,
+  };
+}
+
+function journalMotionIssues(frames) {
+  const metrics = journalMotionMetrics(frames);
+  if (!metrics) return ["actual camera samples are incomplete"];
+  const issues = [];
+  if (
+    metrics.firstTranslationFrame > 1 ||
+    metrics.firstOrientationFrame > 1 ||
+    metrics.firstTranslationFrame !== metrics.firstOrientationFrame
+  ) {
+    issues.push(
+      `position and orientation must begin coupled at frame 1; got translation frame ${metrics.firstTranslationFrame} and orientation frame ${metrics.firstOrientationFrame}`,
+    );
+  }
+  if (metrics.maxAngularStepDegrees > maximumJournalAngularStepDegrees) {
+    issues.push(
+      `actual max angular step ${metrics.maxAngularStepDegrees.toFixed(3)}deg exceeds ${maximumJournalAngularStepDegrees}deg`,
+    );
+  }
+  if (
+    metrics.maxOrientationOnlyPlateauFrames > maximumOrientationOnlyPlateauSteps
+  ) {
+    issues.push(
+      `orientation-only plateau lasts ${metrics.maxOrientationOnlyPlateauFrames} frames; maximum is ${maximumOrientationOnlyPlateauSteps}`,
+    );
+  }
+  return issues;
 }
 
 function parseArgs(argv) {
@@ -630,6 +809,50 @@ function finiteTuple(value, length) {
     value.length === length &&
     value.every(Number.isFinite)
   );
+}
+
+function normalizedQuadArea(quad) {
+  if (!finiteTuple(quad, 8)) return 0;
+  let area = 0;
+  for (let index = 0; index < quad.length; index += 2) {
+    const next = (index + 2) % quad.length;
+    area += quad[index] * quad[next + 1] - quad[next] * quad[index + 1];
+  }
+  return Math.abs(area) / 2;
+}
+
+function practicalLightRegionIssues(regions) {
+  const issues = [];
+  if (regions?.authorship !== practicalRegionAuthorship) {
+    issues.push(
+      `practical-light regions must declare ${practicalRegionAuthorship}`,
+    );
+  }
+  if (regions?.camera !== "desk") {
+    issues.push("practical-light regions must be authored for the desk camera");
+  }
+  for (const [label, quad] of [
+    ["bulb", regions?.bulb],
+    ["shade interior", regions?.shadeInterior],
+  ]) {
+    if (
+      !finiteTuple(quad, 8) ||
+      quad.some((value) => value < 0 || value > 1) ||
+      normalizedQuadArea(quad) < 0.00001
+    ) {
+      issues.push(
+        `${label} needs a non-trivial authored normalized screen quad`,
+      );
+    }
+  }
+  if (
+    finiteTuple(regions?.bulb, 8) &&
+    finiteTuple(regions?.shadeInterior, 8) &&
+    JSON.stringify(regions.bulb) === JSON.stringify(regions.shadeInterior)
+  ) {
+    issues.push("bulb and shade interior need distinct authored regions");
+  }
+  return issues;
 }
 
 function validateProjection(frame, label, issues) {
@@ -744,8 +967,7 @@ function validateManifest(manifest) {
     ) ||
     manifest.hero?.verification?.referenceKind !==
       presentedPixelReferenceKind ||
-    manifest.hero?.verification?.regionEncoding !==
-      presentedPixelRegionEncoding
+    manifest.hero?.verification?.regionEncoding !== presentedPixelRegionEncoding
   ) {
     issues.push(
       "manifest hero must use the atomic compositor, calibrated room transfer, authored depth geometry, and captured-pixel references",
@@ -866,16 +1088,17 @@ function validateManifest(manifest) {
     }
 
     const journal = variant.transitions?.["desk-journal"];
-    if (
-      journal?.journalHeadLeadSeconds !== 0 ||
-      !(journal?.translationStartsAtSeconds <= 1 / journal?.fps) ||
-      journal?.motionModel !== "coupled-hip-pivot" ||
-      !(journal?.maxAngularStepDegrees <= 3)
-    ) {
-      issues.push(
-        `${variantId}/desk-journal must use a coupled hip pivot with no head lead and a readable 40-60% notebook endpoint`,
-      );
-    }
+    const journalFrames = journal?.frames ?? [];
+    issues.push(
+      ...journalMotionIssues(journalFrames).map(
+        (issue) => `${variantId}/desk-journal ${issue}`,
+      ),
+    );
+    issues.push(
+      ...practicalLightRegionIssues(variant.contact?.practicalLightRegions).map(
+        (issue) => `${variantId}/contact ${issue}`,
+      ),
+    );
     const contact = variant.transitions?.["desk-contact"];
     const deskCamera = variant.endpoints?.desk?.projection?.camera;
     const filmsCamera = variant.endpoints?.films?.projection?.camera;
@@ -941,7 +1164,6 @@ function validateManifest(manifest) {
         `${variantId}/films must preserve the exact desk position/FOV and change only head rotation`,
       );
     }
-    const journalFrames = journal?.frames ?? [];
     const notebookWorldQuad =
       journal?.notebookWorldQuad ?? variant.journal?.notebookWorldQuad;
     const journalMetrics = projectedJournalEndpointMetrics(
@@ -949,11 +1171,8 @@ function validateManifest(manifest) {
       journalCamera,
       notebookWorldQuad,
     );
-    const firstJournalTranslation = journalFrames.findIndex(
-      (frame) =>
-        JSON.stringify(frame.camera?.position) !==
-        JSON.stringify(deskCamera?.position),
-    );
+    const journalMotion = journalMotionMetrics(journalFrames);
+    const firstJournalTranslation = journalMotion?.firstTranslationFrame ?? -1;
     if (
       firstJournalTranslation < 0 ||
       firstJournalTranslation > 1 ||
