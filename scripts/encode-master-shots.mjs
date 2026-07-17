@@ -43,14 +43,28 @@ const expectedContactCopy = [
 ].join("\n");
 const expectedContactIndentDepth = 0.0003;
 const contactActivationSamples = 31;
-const practicalRegionAuthorship = "authored-screen-quads-v1";
+const practicalAuthoringManifest =
+  "/room/contact/practical-light-authoring-manifest.json";
+const practicalAuthoringGenerator = "blender-background-python";
+const practicalMasterBlend = "build/wo-0117-r/master.blend";
+const practicalRenderScript = "scripts/render-master-shots.py";
+const practicalBulbObject = "ContactPracticalBulb";
+const practicalShadeObject = "ContactPracticalShadeInterior";
+const maximumPracticalAuthoringBytes = 256 * 1024;
+const practicalViewports = {
+  wide: [1280, 720],
+  portrait: [375, 812],
+};
 const maximumJournalAngularStepDegrees = 3;
 const maximumOrientationOnlyPlateauSteps = 0;
 const cameraPositionEpsilon = 1e-7;
 const cameraAngleEpsilonDegrees = 1e-5;
+const declaredMotionTolerance = 1e-6;
 const presentedFrameEvent = "lazy-a:compositor-frame-presented";
 const presentedPixelReferences =
   "/room/hero/hero-presented-pixel-references.json";
+const presentedPixelAuthoringManifest =
+  "/room/hero/hero-presented-authoring-manifest.json";
 const presentedPixelReferenceKind = "authored-presented-pixels-v1";
 const presentedPixelRegionEncoding = "rgb-poster-foreground-treatment";
 const approvedR3ContactPathSha256 = {
@@ -124,6 +138,27 @@ const maximumDecodedMeanError = 8;
 const minimumDecodedMotion = 0.5;
 const generatedManifestMarker = "const generatedPlateManifest = ";
 const generatedManifestTerminator = " as const;";
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) {
+    return `[${value.map(canonicalJson).join(",")}]`;
+  }
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
+function sha256Canonical(value) {
+  return createHash("sha256").update(canonicalJson(value)).digest("hex");
+}
+
+function isSha256(value) {
+  return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
 
 function firstSemanticDifference(expected, actual, path = "$") {
   if (Object.is(expected, actual)) return null;
@@ -405,6 +440,31 @@ async function runSelfTests() {
     [],
     "continuously coupled JOURNAL samples should pass",
   );
+  const coupledMetrics = journalMotionMetrics(coupledFrames);
+  const declaredMotion = {
+    fps: 30,
+    journalHeadLeadSeconds: 0,
+    translationStartsAtSeconds: coupledMetrics.firstTranslationFrame / 30,
+    motionModel: "coupled-hip-pivot",
+    maxAngularStepDegrees: coupledMetrics.maxAngularStepDegrees,
+  };
+  assert.deepEqual(
+    journalDeclaredMotionIssues(declaredMotion, coupledMetrics),
+    [],
+    "sample-matched JOURNAL scalar declarations should pass",
+  );
+  assert.match(
+    journalDeclaredMotionIssues(
+      {
+        ...declaredMotion,
+        translationStartsAtSeconds: 0,
+        maxAngularStepDegrees: 0.1,
+      },
+      coupledMetrics,
+    ).join("\n"),
+    /derived/,
+    "fabricated JOURNAL scalar values must fail sample parity",
+  );
   const discontinuityFrames = structuredClone(coupledFrames);
   discontinuityFrames[3].camera.quaternion = yawQuaternion(12);
   assert.match(
@@ -425,24 +485,90 @@ async function runSelfTests() {
     "staged head-then-body motion must fail from actual camera samples",
   );
 
-  const practicalRegions = {
-    authorship: practicalRegionAuthorship,
-    camera: "desk",
-    bulb: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
-    shadeInterior: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
+  const fixtureHash = (label) =>
+    createHash("sha256").update(label).digest("hex");
+  const practicalGeometry = {
+    bulb: {
+      object: practicalBulbObject,
+      geometrySha256: fixtureHash("bulb-geometry"),
+    },
+    shadeInterior: {
+      object: practicalShadeObject,
+      geometrySha256: fixtureHash("shade-geometry"),
+    },
   };
-  assert.deepEqual(practicalLightRegionIssues(practicalRegions), []);
+  const practicalProfiles = Object.fromEntries(
+    expectedVariants.map((profile) => {
+      const projection = {
+        viewport: practicalViewports[profile],
+        deskCameraSha256: sha256Canonical(
+          approvedR3EndpointCameras[profile].desk,
+        ),
+        bulb: {
+          ...practicalGeometry.bulb,
+          quad: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
+          mask: {
+            path: `${profile}-bulb-mask.png`,
+            sha256: fixtureHash(`${profile}-bulb-mask`),
+          },
+        },
+        shadeInterior: {
+          ...practicalGeometry.shadeInterior,
+          quad: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
+          mask: {
+            path: `${profile}-shade-mask.png`,
+            sha256: fixtureHash(`${profile}-shade-mask`),
+          },
+        },
+      };
+      return [
+        profile,
+        {
+          ...projection,
+          projectionSha256: sha256Canonical(projection),
+        },
+      ];
+    }),
+  );
+  const practicalAuthoring = {
+    version: 1,
+    immutable: true,
+    generator: {
+      identity: practicalAuthoringGenerator,
+      browserRuntime: false,
+    },
+    sources: {
+      masterBlend: {
+        path: practicalMasterBlend,
+        sha256: fixtureHash("master-blend"),
+      },
+      renderScript: {
+        path: practicalRenderScript,
+        sha256: fixtureHash("render-script"),
+      },
+    },
+    geometry: practicalGeometry,
+    profiles: practicalProfiles,
+  };
+  assert.deepEqual(practicalAuthoringContractIssues(practicalAuthoring), []);
+  const mismatchedGeometry = structuredClone(practicalAuthoring);
+  mismatchedGeometry.profiles.wide.bulb.geometrySha256 =
+    fixtureHash("wrong-geometry");
   assert.match(
-    practicalLightRegionIssues({
-      ...practicalRegions,
-      bulb: practicalRegions.shadeInterior,
-    }).join("\n"),
-    /distinct/,
-    "encoder parity must reject overlapping bulb/shade region stubs",
+    practicalAuthoringContractIssues(mismatchedGeometry).join("\n"),
+    /geometry/,
+    "encoder parity must reject mismatched source geometry",
+  );
+  const missingPortrait = structuredClone(practicalAuthoring);
+  delete missingPortrait.profiles.portrait;
+  assert.match(
+    practicalAuthoringContractIssues(missingPortrait).join("\n"),
+    /portrait/,
+    "encoder parity must reject missing portrait practical evidence",
   );
 
   console.log(
-    "encode-master-shots self-tests passed (media parity plus JOURNAL motion and CONTACT region negatives).",
+    "encode-master-shots self-tests passed (media parity, derived JOURNAL scalar negatives, and CONTACT geometry/portrait negatives).",
   );
 }
 
@@ -724,6 +850,51 @@ function journalMotionIssues(frames) {
   return issues;
 }
 
+function journalDeclaredMotionIssues(transition, metrics) {
+  const issues = [];
+  if (
+    transition?.journalHeadLeadSeconds !== 0 ||
+    !Number.isFinite(transition?.fps) ||
+    transition.fps <= 0 ||
+    !Number.isFinite(transition?.translationStartsAtSeconds) ||
+    transition.translationStartsAtSeconds > 1 / transition.fps ||
+    transition?.motionModel !== "coupled-hip-pivot" ||
+    !Number.isFinite(transition?.maxAngularStepDegrees) ||
+    transition.maxAngularStepDegrees > maximumJournalAngularStepDegrees
+  ) {
+    issues.push(
+      "declared motion must use zero head lead, translation by frame 1, coupled-hip-pivot, and <=3 degree steps",
+    );
+  }
+  if (!metrics || !Number.isFinite(transition?.fps) || transition.fps <= 0) {
+    return [
+      ...issues,
+      "declared motion cannot be checked against derived samples",
+    ];
+  }
+  const derivedTranslationStart =
+    metrics.firstTranslationFrame / transition.fps;
+  if (
+    !Number.isFinite(transition.translationStartsAtSeconds) ||
+    Math.abs(transition.translationStartsAtSeconds - derivedTranslationStart) >
+      declaredMotionTolerance
+  ) {
+    issues.push(
+      `declared translation start ${String(transition.translationStartsAtSeconds)} does not match derived ${derivedTranslationStart}`,
+    );
+  }
+  if (
+    !Number.isFinite(transition.maxAngularStepDegrees) ||
+    Math.abs(transition.maxAngularStepDegrees - metrics.maxAngularStepDegrees) >
+      declaredMotionTolerance
+  ) {
+    issues.push(
+      `declared max angular step ${String(transition.maxAngularStepDegrees)} does not match derived ${metrics.maxAngularStepDegrees}`,
+    );
+  }
+  return issues;
+}
+
 function parseArgs(argv) {
   const args = {
     verify: false,
@@ -821,36 +992,110 @@ function normalizedQuadArea(quad) {
   return Math.abs(area) / 2;
 }
 
-function practicalLightRegionIssues(regions) {
+function practicalAuthoringDeclarationIssues(manifest) {
   const issues = [];
-  if (regions?.authorship !== practicalRegionAuthorship) {
+  if (
+    manifest?.verification?.contactPracticalAuthoringManifest !==
+      practicalAuthoringManifest ||
+    !isSha256(manifest?.verification?.contactPracticalAuthoringManifestSha256)
+  ) {
     issues.push(
-      `practical-light regions must declare ${practicalRegionAuthorship}`,
+      "manifest must pin the immutable practical-light authoring manifest by SHA-256",
     );
   }
-  if (regions?.camera !== "desk") {
-    issues.push("practical-light regions must be authored for the desk camera");
+  return issues;
+}
+
+function practicalAuthoringContractIssues(authoring) {
+  const issues = [];
+  if (
+    authoring?.version !== 1 ||
+    authoring?.immutable !== true ||
+    authoring?.generator?.identity !== practicalAuthoringGenerator ||
+    authoring?.generator?.browserRuntime !== false
+  ) {
+    issues.push(
+      "practical-light authoring must be immutable non-browser Blender output",
+    );
   }
-  for (const [label, quad] of [
-    ["bulb", regions?.bulb],
-    ["shade interior", regions?.shadeInterior],
+  for (const [key, expectedPath] of [
+    ["masterBlend", practicalMasterBlend],
+    ["renderScript", practicalRenderScript],
   ]) {
-    if (
-      !finiteTuple(quad, 8) ||
-      quad.some((value) => value < 0 || value > 1) ||
-      normalizedQuadArea(quad) < 0.00001
-    ) {
-      issues.push(
-        `${label} needs a non-trivial authored normalized screen quad`,
-      );
+    const source = authoring?.sources?.[key];
+    if (source?.path !== expectedPath || !isSha256(source?.sha256)) {
+      issues.push(`${key} path and SHA-256 source relationship is invalid`);
     }
   }
-  if (
-    finiteTuple(regions?.bulb, 8) &&
-    finiteTuple(regions?.shadeInterior, 8) &&
-    JSON.stringify(regions.bulb) === JSON.stringify(regions.shadeInterior)
-  ) {
-    issues.push("bulb and shade interior need distinct authored regions");
+  const expectedGeometry = [
+    ["bulb", practicalBulbObject],
+    ["shadeInterior", practicalShadeObject],
+  ];
+  for (const [key, object] of expectedGeometry) {
+    if (
+      authoring?.geometry?.[key]?.object !== object ||
+      !isSha256(authoring?.geometry?.[key]?.geometrySha256)
+    ) {
+      issues.push(`${object} source geometry hash is invalid`);
+    }
+  }
+  for (const profile of expectedVariants) {
+    const projection = authoring?.profiles?.[profile];
+    if (!projection) {
+      issues.push(`${profile} practical-light projection is missing`);
+      continue;
+    }
+    if (
+      JSON.stringify(projection.viewport) !==
+        JSON.stringify(practicalViewports[profile]) ||
+      projection.deskCameraSha256 !==
+        sha256Canonical(approvedR3EndpointCameras[profile].desk)
+    ) {
+      issues.push(
+        `${profile} projection must use the exact immutable desk camera hash`,
+      );
+    }
+    const projectionPayload = { ...projection };
+    delete projectionPayload.projectionSha256;
+    if (
+      !isSha256(projection.projectionSha256) ||
+      projection.projectionSha256 !== sha256Canonical(projectionPayload)
+    ) {
+      issues.push(`${profile} geometry projection hash is invalid`);
+    }
+    for (const [key, object] of expectedGeometry) {
+      const region = projection[key];
+      if (
+        region?.object !== object ||
+        region?.geometrySha256 !== authoring?.geometry?.[key]?.geometrySha256
+      ) {
+        issues.push(`${profile} ${key} geometry hash does not match source`);
+      }
+      if (
+        !finiteTuple(region?.quad, 8) ||
+        region.quad.some((value) => value < 0 || value > 1) ||
+        normalizedQuadArea(region.quad) < 0.00001
+      ) {
+        issues.push(`${profile} ${key} projected quad is invalid`);
+      }
+      if (
+        !/^[a-z0-9][a-z0-9._-]*\.png$/.test(region?.mask?.path ?? "") ||
+        !isSha256(region?.mask?.sha256)
+      ) {
+        issues.push(`${profile} ${key} projected mask relationship is invalid`);
+      }
+    }
+    if (
+      projection.bulb?.mask?.path === projection.shadeInterior?.mask?.path ||
+      projection.bulb?.mask?.sha256 ===
+        projection.shadeInterior?.mask?.sha256 ||
+      JSON.stringify(projection.bulb?.quad) ===
+        JSON.stringify(projection.shadeInterior?.quad)
+    ) {
+      issues.push(
+        `${profile} bulb and shade interior need distinct geometry projections`,
+      );
+    }
   }
   return issues;
 }
@@ -925,8 +1170,18 @@ function exportedNavigationProjection(variant, endpointId) {
   });
 }
 
-function validateManifest(manifest) {
-  const issues = [];
+function validateManifest(
+  manifest,
+  practicalAuthoring = null,
+  practicalAuthoringLoadIssues = [],
+) {
+  const issues = [
+    ...practicalAuthoringDeclarationIssues(manifest),
+    ...practicalAuthoringLoadIssues,
+    ...(practicalAuthoring
+      ? practicalAuthoringContractIssues(practicalAuthoring)
+      : []),
+  ];
   if (manifest.version !== 1) issues.push("manifest version must be 1");
   if (manifest.generatedBy !== "scripts/render-master-shots.py") {
     issues.push("manifest must be generated by scripts/render-master-shots.py");
@@ -962,8 +1217,12 @@ function validateManifest(manifest) {
     !manifest.hero?.geometry?.occluders?.includes("Mesh_31") ||
     manifest.hero?.maskResolution !== undefined ||
     manifest.hero?.verification?.presentationEvent !== presentedFrameEvent ||
-    !manifest.hero?.verification?.presentedPixelReferences?.endsWith(
-      presentedPixelReferences,
+    manifest.hero?.verification?.presentedPixelReferences !==
+      presentedPixelReferences ||
+    manifest.hero?.verification?.presentedPixelAuthoringManifest !==
+      presentedPixelAuthoringManifest ||
+    !isSha256(
+      manifest.hero?.verification?.presentedPixelAuthoringManifestSha256,
     ) ||
     manifest.hero?.verification?.referenceKind !==
       presentedPixelReferenceKind ||
@@ -1093,11 +1352,10 @@ function validateManifest(manifest) {
       ...journalMotionIssues(journalFrames).map(
         (issue) => `${variantId}/desk-journal ${issue}`,
       ),
-    );
-    issues.push(
-      ...practicalLightRegionIssues(variant.contact?.practicalLightRegions).map(
-        (issue) => `${variantId}/contact ${issue}`,
-      ),
+      ...journalDeclaredMotionIssues(
+        journal,
+        journalMotionMetrics(journalFrames),
+      ).map((issue) => `${variantId}/desk-journal ${issue}`),
     );
     const contact = variant.transitions?.["desk-contact"];
     const deskCamera = variant.endpoints?.desk?.projection?.camera;
@@ -1385,6 +1643,93 @@ function validateManifest(manifest) {
 async function loadManifest() {
   const source = await readFile(manifestPath, "utf8");
   return JSON.parse(source);
+}
+
+async function loadPracticalAuthoring(manifest) {
+  const declarationIssues = practicalAuthoringDeclarationIssues(manifest);
+  if (declarationIssues.length > 0) {
+    return { authoring: null, issues: [] };
+  }
+  const path = publicUrlToPath(practicalAuthoringManifest);
+  try {
+    const bytes = await readFile(path);
+    if (bytes.length > maximumPracticalAuthoringBytes) {
+      return {
+        authoring: null,
+        issues: ["practical-light authoring manifest exceeds 256 KiB"],
+      };
+    }
+    const actualSha256 = createHash("sha256").update(bytes).digest("hex");
+    if (
+      actualSha256 !==
+      manifest.verification.contactPracticalAuthoringManifestSha256
+    ) {
+      return {
+        authoring: null,
+        issues: [
+          `practical-light authoring SHA-256 ${actualSha256} does not match the manifest declaration`,
+        ],
+      };
+    }
+    const authoring = JSON.parse(bytes.toString("utf8"));
+    const issues = [];
+    for (const [key, expectedPath] of [
+      ["masterBlend", practicalMasterBlend],
+      ["renderScript", practicalRenderScript],
+    ]) {
+      const source = authoring?.sources?.[key];
+      if (source?.path !== expectedPath || !isSha256(source?.sha256)) continue;
+      try {
+        const sourceBytes = await readFile(
+          resolve(repositoryRoot, source.path),
+        );
+        const sourceSha256 = createHash("sha256")
+          .update(sourceBytes)
+          .digest("hex");
+        if (sourceSha256 !== source.sha256) {
+          issues.push(
+            `${key} SHA-256 ${sourceSha256} does not match ${source.sha256}`,
+          );
+        }
+      } catch (error) {
+        issues.push(`${key} source cannot be read: ${error.message}`);
+      }
+    }
+    for (const profile of expectedVariants) {
+      for (const key of ["bulb", "shadeInterior"]) {
+        const mask = authoring?.profiles?.[profile]?.[key]?.mask;
+        if (
+          !/^[a-z0-9][a-z0-9._-]*\.png$/.test(mask?.path ?? "") ||
+          !isSha256(mask?.sha256)
+        ) {
+          continue;
+        }
+        try {
+          const maskBytes = await readFile(resolve(dirname(path), mask.path));
+          const maskSha256 = createHash("sha256")
+            .update(maskBytes)
+            .digest("hex");
+          if (maskSha256 !== mask.sha256) {
+            issues.push(
+              `${profile} ${key} mask SHA-256 ${maskSha256} does not match ${mask.sha256}`,
+            );
+          }
+        } catch (error) {
+          issues.push(
+            `${profile} ${key} projected mask cannot be read: ${error.message}`,
+          );
+        }
+      }
+    }
+    return { authoring, issues };
+  } catch (error) {
+    return {
+      authoring: null,
+      issues: [
+        `practical-light authoring manifest unavailable: ${error.message}`,
+      ],
+    };
+  }
 }
 
 function selected(args, variantId, transitionId) {
@@ -1727,7 +2072,12 @@ async function verifyMedia(manifest) {
 }
 
 async function verify(manifest) {
-  const issues = validateManifest(manifest);
+  const practicalAuthoring = await loadPracticalAuthoring(manifest);
+  const issues = validateManifest(
+    manifest,
+    practicalAuthoring.authoring,
+    practicalAuthoring.issues,
+  );
   const generatedTypes = await readFile(generatedTypesPath, "utf8");
   issues.push(...generatedManifestIssues(manifest, generatedTypes));
   const media = await verifyMedia(manifest);

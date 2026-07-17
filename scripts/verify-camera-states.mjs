@@ -40,6 +40,7 @@ const MAX_JOURNAL_ANGULAR_STEP_DEGREES = 3;
 const MAX_ORIENTATION_ONLY_PLATEAU_STEPS = 0;
 const CAMERA_POSITION_EPSILON = 1e-7;
 const CAMERA_ANGLE_EPSILON_DEGREES = 1e-5;
+const DECLARED_MOTION_TOLERANCE = 1e-6;
 const MIN_JOURNAL_TRAVEL = 0.05;
 const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
@@ -375,6 +376,51 @@ function journalMotionIssues(frames) {
   return issues;
 }
 
+function journalDeclaredMotionIssues(transition, metrics) {
+  const issues = [];
+  if (
+    transition?.journalHeadLeadSeconds !== 0 ||
+    !Number.isFinite(transition?.fps) ||
+    transition.fps <= 0 ||
+    !Number.isFinite(transition?.translationStartsAtSeconds) ||
+    transition.translationStartsAtSeconds > 1 / transition.fps ||
+    transition?.motionModel !== "coupled-hip-pivot" ||
+    !Number.isFinite(transition?.maxAngularStepDegrees) ||
+    transition.maxAngularStepDegrees > MAX_JOURNAL_ANGULAR_STEP_DEGREES
+  ) {
+    issues.push(
+      "declared motion must use zero head lead, translation by frame 1, coupled-hip-pivot, and <=3 degree steps",
+    );
+  }
+  if (!metrics || !Number.isFinite(transition?.fps) || transition.fps <= 0) {
+    return [
+      ...issues,
+      "declared motion cannot be checked against derived samples",
+    ];
+  }
+  const derivedTranslationStart =
+    metrics.firstTranslationFrame / transition.fps;
+  if (
+    !Number.isFinite(transition.translationStartsAtSeconds) ||
+    Math.abs(transition.translationStartsAtSeconds - derivedTranslationStart) >
+      DECLARED_MOTION_TOLERANCE
+  ) {
+    issues.push(
+      `declared translation start ${String(transition.translationStartsAtSeconds)} does not match derived ${derivedTranslationStart}`,
+    );
+  }
+  if (
+    !Number.isFinite(transition.maxAngularStepDegrees) ||
+    Math.abs(transition.maxAngularStepDegrees - metrics.maxAngularStepDegrees) >
+      DECLARED_MOTION_TOLERANCE
+  ) {
+    issues.push(
+      `declared max angular step ${String(transition.maxAngularStepDegrees)} does not match derived ${metrics.maxAngularStepDegrees}`,
+    );
+  }
+  return issues;
+}
+
 function cameraContractFailures(manifest) {
   const failures = [];
   for (const profile of ["wide", "portrait"]) {
@@ -414,6 +460,9 @@ function cameraContractFailures(manifest) {
     const motionMetrics = journalMotionMetrics(frames);
     failures.push(
       ...journalMotionIssues(frames).map(
+        (issue) => `${profile}: JOURNAL ${issue}`,
+      ),
+      ...journalDeclaredMotionIssues(transition, motionMetrics).map(
         (issue) => `${profile}: JOURNAL ${issue}`,
       ),
     );
@@ -495,6 +544,31 @@ if (selfTest) {
   if (journalMotionIssues(coupledFrames).length > 0) {
     throw new Error("a continuously coupled JOURNAL fixture must pass");
   }
+  const coupledMetrics = journalMotionMetrics(coupledFrames);
+  const declaredMotion = {
+    fps: 30,
+    journalHeadLeadSeconds: 0,
+    translationStartsAtSeconds: coupledMetrics.firstTranslationFrame / 30,
+    motionModel: "coupled-hip-pivot",
+    maxAngularStepDegrees: coupledMetrics.maxAngularStepDegrees,
+  };
+  if (journalDeclaredMotionIssues(declaredMotion, coupledMetrics).length > 0) {
+    throw new Error("sample-matched JOURNAL scalar declarations must pass");
+  }
+  if (
+    !journalDeclaredMotionIssues(
+      {
+        ...declaredMotion,
+        translationStartsAtSeconds: 0,
+        maxAngularStepDegrees: 0.1,
+      },
+      coupledMetrics,
+    ).some((issue) => issue.includes("derived"))
+  ) {
+    throw new Error(
+      "fabricated JOURNAL translation/angular scalars must fail derived parity",
+    );
+  }
 
   const discontinuityFrames = structuredClone(coupledFrames);
   discontinuityFrames[3].camera.quaternion = yawQuaternion(12);
@@ -523,7 +597,7 @@ if (selfTest) {
   }
 
   console.log(
-    "camera-state self-tests passed (clipped coverage plus discontinuity and staged-motion negatives).",
+    "camera-state self-tests passed (fabricated scalar, discontinuity, staged-motion, and clipped-coverage negatives).",
   );
   process.exit(0);
 }
