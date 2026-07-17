@@ -224,6 +224,8 @@ async function installPageProbes(expectedProfile) {
           kind,
           label,
           authored: Array.isArray(authored) ? [...authored] : null,
+          authoredProjectable:
+            Array.isArray(authored) && authored.length === 8,
           profile: window.__lazyAPlateState?.profile ?? null,
           liveObserved: Array.isArray(live),
           occlusionObserved: Boolean(occlusion),
@@ -324,12 +326,21 @@ async function installPageProbes(expectedProfile) {
             .length,
           points: rendered.filter((sample) => sample.kind === "point").length,
           unresolved: rendered.filter(
-            (sample) => !sample.liveObserved || !sample.occlusionObserved,
+            (sample) =>
+              !sample.occlusionObserved ||
+              (sample.authoredProjectable && !sample.liveObserved),
           ).length,
           invalidCorners: rendered.filter(
-            (sample) =>
-              !Array.isArray(sample.cornerErrors) ||
-              sample.cornerErrors.length !== 4,
+            (sample) => {
+              if (!sample.authoredProjectable) return sample.liveObserved;
+              return (
+                !Array.isArray(sample.cornerErrors) ||
+                sample.cornerErrors.length !== 4
+              );
+            },
+          ).length,
+          hiddenOffscreen: rendered.filter(
+            (sample) => !sample.authoredProjectable && !sample.liveObserved,
           ).length,
           profileMismatches: selected.filter(
             (sample) => sample.profile !== profile,
@@ -489,7 +500,8 @@ async function assertRegistrationSegment(viewport, segment, requireDecoded) {
     `rendered=${summary.total} records=${summary.rawTotal} ` +
     `decoded=${summary.decoded} waiting=${summary.waiting} ` +
     `points=${summary.points} ` +
-    `unresolved=${summary.unresolved}`;
+    `unresolved=${summary.unresolved} ` +
+    `hiddenOffscreen=${summary.hiddenOffscreen}`;
   check(
     summary.total > 0 &&
       summary.points > 0 &&

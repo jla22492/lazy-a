@@ -689,6 +689,10 @@ function validateManifest(manifest) {
         "lamp-reactive-compressed-fiber-groove" ||
       variant.contact?.coloredRevealMixCount !== 1 ||
       variant.contact?.fiberResponseAnimated !== true ||
+      variant.contact?.fiberResponseNormalWeighted !== true ||
+      variant.contact?.physicalOcclusionResponse !== true ||
+      !(variant.contact?.fiberResponseFloorPeak <
+        variant.contact?.fiberResponseWallPeak) ||
       variant.contact?.geometryAnimated !== false ||
       variant.contact?.lightInsideShade !== true ||
       variant.contact?.lightIntersectsPaper !== true ||
@@ -897,6 +901,7 @@ async function encode(manifest, args) {
       }
       const output = publicUrlToPath(transition.forward);
       await mkdir(dirname(output), { recursive: true });
+      const crf = transitionId === "opening-desk" ? "26" : "18";
       await run("ffmpeg", [
         "-hide_banner",
         "-loglevel",
@@ -913,7 +918,7 @@ async function encode(manifest, args) {
         "-c:v",
         "libx264",
         "-crf",
-        "18",
+        crf,
         "-pix_fmt",
         "yuv420p",
         "-movflags",
@@ -938,7 +943,7 @@ async function encode(manifest, args) {
         "-c:v",
         "libx264",
         "-crf",
-        "18",
+        crf,
         "-pix_fmt",
         "yuv420p",
         "-movflags",

@@ -354,6 +354,8 @@ export function HeroFilm() {
         positions.needsUpdate = true;
         reciprocalW.needsUpdate = true;
         window.__lazyAHeroProjection = normalized;
+      } else {
+        window.__lazyAHeroProjection = undefined;
       }
       const bufferSize = renderState.gl.getDrawingBufferSize(
         drawingBufferSize.current,

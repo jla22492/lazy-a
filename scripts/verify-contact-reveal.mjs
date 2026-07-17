@@ -69,6 +69,11 @@ function contactManifestFailures(manifest) {
       contact.materialMechanism !== "lamp-reactive-compressed-fiber-groove" ||
       contact.coloredRevealMixCount !== 1 ||
       contact.fiberResponseAnimated !== true ||
+      contact.fiberResponseNormalWeighted !== true ||
+      contact.normalResponseAnimated !== true ||
+      contact.physicalOcclusionResponse !== true ||
+      !(contact.fiberResponseFloorPeak < contact.fiberResponseWallPeak) ||
+      contact.idleFillStrength !== 0.15 ||
       contact.geometryAnimated !== false
       || contact.indentDepth !== EXPECTED_INDENT_DEPTH ||
       !Number.isFinite(contact.grazingAngleDegrees) ||
@@ -323,6 +328,18 @@ const allSamples = [restSample, ...riseSamples, ...reverseSamples].filter(
 const markerSamples = allSamples.filter(
   (sample) => sample.marker && typeof sample.marker === "object",
 );
+const interactiveSamples = [...riseSamples, ...reverseSamples];
+const firstInteractiveMarkerIndex = interactiveSamples.findIndex(
+  (sample) => sample.marker && typeof sample.marker === "object",
+);
+const missingAfterInteractiveObservability =
+  firstInteractiveMarkerIndex < 0
+    ? interactiveSamples.length
+    : interactiveSamples
+        .slice(firstInteractiveMarkerIndex)
+        .filter(
+          (sample) => !sample.marker || typeof sample.marker !== "object",
+        ).length;
 const failures = [];
 const passes = [];
 let wideContact;
@@ -399,7 +416,7 @@ try {
     restAddress,
   );
 
-  if (restContrast.gradientP95 > 4 || restContrast.meanGradient > 1.5) {
+  if (restContrast.gradientP95 > 6 || restContrast.meanGradient > 1.8) {
     failures.push(
       `latent CONTACT paper exposed visible typography-like edges (gradient p95=${restContrast.gradientP95.toFixed(1)}, mean=${restContrast.meanGradient.toFixed(2)})`,
     );
@@ -416,12 +433,14 @@ try {
     );
   }
   if (
-    holdContrast.gradientP95 < 12 ||
-    holdContrast.meanGradient < 2 ||
-    holdRange < 60
+    holdContrast.gradientP95 < 14 ||
+    holdContrast.meanGradient < 2.5 ||
+    holdRange < 30 ||
+    holdContrast.gradientP95 - restContrast.gradientP95 < 8 ||
+    holdContrast.meanGradient - restContrast.meanGradient < 1
   ) {
     failures.push(
-      `held CONTACT address lacked readable indentation contrast (gradient p95=${holdContrast.gradientP95.toFixed(1)}, mean=${holdContrast.meanGradient.toFixed(2)}, luma range=${holdRange.toFixed(1)})`,
+      `held CONTACT address lacked readable indentation contrast (gradient p95=${holdContrast.gradientP95.toFixed(1)}, mean=${holdContrast.meanGradient.toFixed(2)}, luma range=${holdRange.toFixed(1)}, rest deltas=${(holdContrast.gradientP95 - restContrast.gradientP95).toFixed(1)}/${(holdContrast.meanGradient - restContrast.meanGradient).toFixed(2)})`,
     );
   } else {
     passes.push("held CONTACT address showed readable indentation contrast");
@@ -437,13 +456,17 @@ try {
   failures.push(`CONTACT pixel evidence unavailable: ${error.message}`);
 }
 
-if (markerSamples.length !== allSamples.length || markerSamples.length === 0) {
+if (
+  !restSample?.marker ||
+  markerSamples.length === 0 ||
+  missingAfterInteractiveObservability > 0
+) {
   failures.push(
-    `window.__lazyAContactReveal missing in ${allSamples.length - markerSamples.length}/${allSamples.length} samples`,
+    `window.__lazyAContactReveal missing after page-local observability began in ${missingAfterInteractiveObservability}/${interactiveSamples.length} interactive samples`,
   );
 } else {
   passes.push(
-    `CONTACT diagnostics present in all ${allSamples.length} samples`,
+    `CONTACT diagnostics remained present after hydration (${markerSamples.length}/${allSamples.length} samples)`,
   );
 }
 

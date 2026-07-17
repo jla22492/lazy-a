@@ -115,7 +115,10 @@ CONTACT_PAPER_YAW = math.radians(4.5)
 # Mesh_56 retains its authored stock. A shallow 0.30 mm blind deboss remains
 # physically applied; a Cycles bevel normal lets raking light resolve its edge.
 CONTACT_INDENT_DEPTH = 0.00030
-CONTACT_FIBER_RESPONSE_PEAK = 0.88
+CONTACT_FIBER_RESPONSE_PEAK = 1.00
+CONTACT_FIBER_FLOOR_RESPONSE_PEAK = 0.15
+CONTACT_FIBER_COLOR = (0.02, 0.01, 0.005, 1.0)
+CONTACT_IDLE_FILL_STRENGTH = 0.15
 CONTACT_INDENT_VERTEX_INDICES: tuple[int, ...] = ()
 CONTACT_INDENT_TOP_Z = 0.0
 NAV_ROWS = (
@@ -566,15 +569,72 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
     fiber_response.name = "ContactLampFiberResponse"
     fiber_response.label = "Lamp-reactive compressed paper fibers"
     fiber_response.blend_type = "MULTIPLY"
-    fiber_response.inputs["Fac"].default_value = 0.0
-    fiber_response.inputs[2].default_value = (0.18, 0.10, 0.06, 1.0)
+    fiber_response.inputs[2].default_value = CONTACT_FIBER_COLOR
+    host_color_socket = None
     if base_link is not None:
-        source_socket = base_link.from_socket
+        host_color_socket = base_link.from_socket
         groove_material.node_tree.links.remove(base_link)
-        groove_material.node_tree.links.new(source_socket, fiber_response.inputs[1])
+        groove_material.node_tree.links.new(host_color_socket, fiber_response.inputs[1])
     else:
         fiber_response.inputs[1].default_value = base_color.default_value
-    groove_material.node_tree.links.new(fiber_response.outputs["Color"], base_color)
+    geometry = groove_material.node_tree.nodes.new("ShaderNodeNewGeometry")
+    geometry.name = "ContactGrooveGeometry"
+    separate_normal = groove_material.node_tree.nodes.new("ShaderNodeSeparateXYZ")
+    separate_normal.name = "ContactGrooveNormalComponents"
+    abs_normal_z = groove_material.node_tree.nodes.new("ShaderNodeMath")
+    abs_normal_z.name = "ContactGrooveAbsNormalZ"
+    abs_normal_z.operation = "ABSOLUTE"
+    normal_scale = groove_material.node_tree.nodes.new("ShaderNodeMath")
+    normal_scale.name = "ContactGrooveWallWeight"
+    normal_scale.operation = "MULTIPLY_ADD"
+    normal_scale.inputs[1].default_value = -(
+        CONTACT_FIBER_RESPONSE_PEAK - CONTACT_FIBER_FLOOR_RESPONSE_PEAK
+    )
+    normal_scale.inputs[2].default_value = CONTACT_FIBER_RESPONSE_PEAK
+    lamp_level = groove_material.node_tree.nodes.new("ShaderNodeValue")
+    lamp_level.name = "ContactLampLevel"
+    lamp_level.outputs["Value"].default_value = 0.0
+    idle_fill = groove_material.node_tree.nodes.new("ShaderNodeMath")
+    idle_fill.name = "ContactIdleGrooveFill"
+    idle_fill.label = "Ambient paper match; disabled by lamp reveal"
+    idle_fill.operation = "MULTIPLY_ADD"
+    idle_fill.inputs[1].default_value = -CONTACT_IDLE_FILL_STRENGTH
+    idle_fill.inputs[2].default_value = CONTACT_IDLE_FILL_STRENGTH
+    groove_material.node_tree.links.new(lamp_level.outputs["Value"], idle_fill.inputs[0])
+    emission_color = groove_bsdf.inputs.get("Emission Color")
+    emission_strength = groove_bsdf.inputs.get("Emission Strength")
+    if emission_color is not None and emission_strength is not None:
+        if host_color_socket is not None:
+            groove_material.node_tree.links.new(host_color_socket, emission_color)
+        else:
+            emission_color.default_value = base_color.default_value
+        groove_material.node_tree.links.new(idle_fill.outputs[0], emission_strength)
+    response_factor = groove_material.node_tree.nodes.new("ShaderNodeMath")
+    response_factor.name = "ContactNormalWeightedFiberResponse"
+    response_factor.operation = "MULTIPLY"
+    groove_material.node_tree.links.new(geometry.outputs["Normal"], separate_normal.inputs[0])
+    groove_material.node_tree.links.new(separate_normal.outputs["Z"], abs_normal_z.inputs[0])
+    groove_material.node_tree.links.new(abs_normal_z.outputs[0], normal_scale.inputs[0])
+    groove_material.node_tree.links.new(normal_scale.outputs[0], response_factor.inputs[0])
+    groove_material.node_tree.links.new(lamp_level.outputs["Value"], response_factor.inputs[1])
+    groove_material.node_tree.links.new(response_factor.outputs[0], fiber_response.inputs["Fac"])
+    groove_occlusion = groove_material.node_tree.nodes.new("ShaderNodeAmbientOcclusion")
+    groove_occlusion.name = "ContactPhysicalGrooveOcclusion"
+    groove_occlusion.samples = 16
+    groove_occlusion.inputs["Distance"].default_value = 0.003
+    occlusion_response = groove_material.node_tree.nodes.new("ShaderNodeMixRGB")
+    occlusion_response.name = "ContactLampGrooveOcclusionResponse"
+    occlusion_response.blend_type = "MULTIPLY"
+    groove_material.node_tree.links.new(
+        fiber_response.outputs["Color"], occlusion_response.inputs[1]
+    )
+    groove_material.node_tree.links.new(
+        groove_occlusion.outputs["Color"], occlusion_response.inputs[2]
+    )
+    groove_material.node_tree.links.new(
+        lamp_level.outputs["Value"], occlusion_response.inputs["Fac"]
+    )
+    groove_material.node_tree.links.new(occlusion_response.outputs["Color"], base_color)
     # Preserve the host paper network at rest. The lamp response above is
     # confined to the Boolean groove material; it never creates text geometry.
     normal_input = groove_bsdf.inputs["Normal"]
@@ -585,14 +645,32 @@ def create_contact_cutter(sheet: bpy.types.Object) -> bpy.types.Object:
     bevel_normal = groove_material.node_tree.nodes.new("ShaderNodeBevel")
     bevel_normal.name = "ContactPressureEdgeBevel"
     bevel_normal.samples = 8
-    bevel_normal.inputs["Radius"].default_value = 0.00040
+    bevel_normal.inputs["Radius"].default_value = 0.00080
+    host_normal_socket = geometry.outputs["Normal"]
     if normal_link is not None:
-        source_socket = normal_link.from_socket
+        host_normal_socket = normal_link.from_socket
         groove_material.node_tree.links.remove(normal_link)
-        groove_material.node_tree.links.new(source_socket, bevel_normal.inputs["Normal"])
-    groove_material.node_tree.links.new(bevel_normal.outputs["Normal"], normal_input)
+        groove_material.node_tree.links.new(
+            host_normal_socket, bevel_normal.inputs["Normal"]
+        )
+    normal_reveal = groove_material.node_tree.nodes.new("ShaderNodeMixRGB")
+    normal_reveal.name = "ContactLampNormalReveal"
+    normal_reveal.label = "Host paper at rest; pressure edge under lamp"
+    groove_material.node_tree.links.new(
+        lamp_level.outputs["Value"], normal_reveal.inputs["Fac"]
+    )
+    groove_material.node_tree.links.new(host_normal_socket, normal_reveal.inputs[1])
+    groove_material.node_tree.links.new(
+        bevel_normal.outputs["Normal"], normal_reveal.inputs[2]
+    )
+    groove_material.node_tree.links.new(normal_reveal.outputs["Color"], normal_input)
     groove_material["lazy_a_contact_color_parity"] = True
+    groove_material["lazy_a_contact_normal_response_animated"] = True
     groove_material["lazy_a_contact_fiber_response_peak"] = CONTACT_FIBER_RESPONSE_PEAK
+    groove_material["lazy_a_contact_fiber_floor_response_peak"] = (
+        CONTACT_FIBER_FLOOR_RESPONSE_PEAK
+    )
+    groove_material["lazy_a_contact_idle_fill_strength"] = CONTACT_IDLE_FILL_STRENGTH
     groove_index = next(
         (
             index
@@ -766,13 +844,13 @@ def reveal_level(value: float) -> None:
     if bsdf is not None:
         bsdf.inputs["Emission Strength"].default_value = 18.0 * value
     groove_material = bpy.data.materials.get("ContactPressureGroove")
-    fiber_response = (
-        groove_material.node_tree.nodes.get("ContactLampFiberResponse")
+    lamp_level = (
+        groove_material.node_tree.nodes.get("ContactLampLevel")
         if groove_material is not None and groove_material.node_tree is not None
         else None
     )
-    if fiber_response is not None:
-        fiber_response.inputs["Fac"].default_value = CONTACT_FIBER_RESPONSE_PEAK * value
+    if lamp_level is not None:
+        lamp_level.outputs["Value"].default_value = value
     # CONTACT geometry remains fixed. The lamp both lights the paper and reveals
     # density in the compressed fibers on the recessed faces themselves.
 
@@ -1734,6 +1812,7 @@ def configure_render(
     scene.render.image_settings.file_format = "JPEG"
     scene.render.image_settings.quality = 90
     scene.render.film_transparent = False
+    scene.render.use_persistent_data = motion
 
 
 def world_bounds(objects: list[bpy.types.Object]) -> tuple[Vector, Vector]:
@@ -1937,7 +2016,12 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 "materialMechanism": "lamp-reactive-compressed-fiber-groove",
                 "coloredRevealMixCount": 1,
                 "fiberResponseAnimated": True,
-                "fiberResponsePeak": CONTACT_FIBER_RESPONSE_PEAK,
+                "fiberResponseNormalWeighted": True,
+                "normalResponseAnimated": True,
+                "physicalOcclusionResponse": True,
+                "fiberResponseFloorPeak": CONTACT_FIBER_FLOOR_RESPONSE_PEAK,
+                "fiberResponseWallPeak": CONTACT_FIBER_RESPONSE_PEAK,
+                "idleFillStrength": CONTACT_IDLE_FILL_STRENGTH,
                 "geometryAnimated": False,
                 "paperObject": CONTACT_PAPER,
                 "paperWorldQuad": contact_world,
@@ -2067,7 +2151,12 @@ export interface PlateVariant {
     materialMechanism: "lamp-reactive-compressed-fiber-groove";
     coloredRevealMixCount: 1;
     fiberResponseAnimated: true;
-    fiberResponsePeak: number;
+    fiberResponseNormalWeighted: true;
+    normalResponseAnimated: true;
+    physicalOcclusionResponse: true;
+    fiberResponseFloorPeak: number;
+    fiberResponseWallPeak: number;
+    idleFillStrength: number;
     geometryAnimated: false;
     paperObject: string;
     paperWorldQuad: readonly (readonly number[])[];
@@ -2294,20 +2383,65 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         if groove_material is not None and groove_material.node_tree is not None
         else None
     )
+    lamp_level_node = (
+        groove_material.node_tree.nodes.get("ContactLampLevel")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
+    normal_weight_node = (
+        groove_material.node_tree.nodes.get("ContactNormalWeightedFiberResponse")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
+    occlusion_response_node = (
+        groove_material.node_tree.nodes.get("ContactLampGrooveOcclusionResponse")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
+    idle_fill_node = (
+        groove_material.node_tree.nodes.get("ContactIdleGrooveFill")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
+    normal_reveal_node = (
+        groove_material.node_tree.nodes.get("ContactLampNormalReveal")
+        if groove_material is not None and groove_material.node_tree is not None
+        else None
+    )
     if (
         groove_material is None
         or groove_material.node_tree is None
         or groove_material.node_tree.nodes.get("ContactRevealMix") is not None
         or groove_material.node_tree.nodes.get("ContactCompressedPaperFibers") is not None
         or groove_material.get("lazy_a_contact_color_parity") is not True
+        or groove_material.get("lazy_a_contact_normal_response_animated") is not True
         or abs(
             float(groove_material.get("lazy_a_contact_fiber_response_peak", -1.0))
             - CONTACT_FIBER_RESPONSE_PEAK
         )
         > 1e-9
+        or abs(
+            float(
+                groove_material.get(
+                    "lazy_a_contact_fiber_floor_response_peak", -1.0
+                )
+            )
+            - CONTACT_FIBER_FLOOR_RESPONSE_PEAK
+        )
+        > 1e-9
+        or abs(
+            float(groove_material.get("lazy_a_contact_idle_fill_strength", -1.0))
+            - CONTACT_IDLE_FILL_STRENGTH
+        )
+        > 1e-9
         or fiber_response is None
+        or lamp_level_node is None
+        or normal_weight_node is None
+        or occlusion_response_node is None
+        or idle_fill_node is None
+        or normal_reveal_node is None
         or groove_bevel is None
-        or abs(float(groove_bevel.inputs["Radius"].default_value) - 0.00040) > 1e-9
+        or abs(float(groove_bevel.inputs["Radius"].default_value) - 0.00080) > 1e-9
     ):
         issues.append("CONTACT groove must retain idle paper color, lamp fiber response, and fixed pressure-edge bevel")
     if len(authored.get("journalCopy", [])) != len(JOURNAL_COPY):
@@ -2450,6 +2584,14 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             contact_data.get("materialMechanism") != "lamp-reactive-compressed-fiber-groove"
             or contact_data.get("coloredRevealMixCount") != 1
             or contact_data.get("fiberResponseAnimated") is not True
+            or contact_data.get("fiberResponseNormalWeighted") is not True
+            or contact_data.get("normalResponseAnimated") is not True
+            or contact_data.get("physicalOcclusionResponse") is not True
+            or contact_data.get("fiberResponseFloorPeak")
+            != CONTACT_FIBER_FLOOR_RESPONSE_PEAK
+            or contact_data.get("fiberResponseWallPeak")
+            != CONTACT_FIBER_RESPONSE_PEAK
+            or contact_data.get("idleFillStrength") != CONTACT_IDLE_FILL_STRENGTH
             or contact_data.get("geometryAnimated") is not False
             or not 0.0 < contact_data.get("grazingAngleDegrees", 90.0) <= 35.0
             or contact_data.get("lightInsideShade") is not True
@@ -2609,7 +2751,10 @@ def render_transition_frames(
     authored: dict[str, Any],
     samples: int,
     only: set[str],
+    start_frame: int,
 ) -> None:
+    if start_frame and len(only) != 1:
+        raise SystemExit("--start-frame requires exactly one --only transition")
     for profile in PROFILE_IDS:
         set_profile_dressing(authored, profile)
         # Motion plates remain 1080p/full-phone resolution; endpoint handoffs
@@ -2628,9 +2773,14 @@ def render_transition_frames(
             if only and selector not in only:
                 continue
             frame_count = round(duration * FPS) + 1
+            if start_frame >= frame_count:
+                raise SystemExit(
+                    f"--start-frame {start_frame} is outside {selector}'s "
+                    f"0..{frame_count - 1} frame range"
+                )
             output_dir = PUBLIC_ROOT / "_frames" / profile / transition_id
             output_dir.mkdir(parents=True, exist_ok=True)
-            for frame_index in range(frame_count):
+            for frame_index in range(start_frame, frame_count):
                 position, quaternion, lamp_level = transition_sample(
                     profile, destination, frame_index, frame_count
                 )
@@ -2651,9 +2801,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--visual-only",
         action="store_true",
-        help="Skip manifest generation for disposable proof-only iteration",
+        help="Skip manifest generation for disposable proof or transition renders",
     )
     parser.add_argument("--samples", type=int)
+    parser.add_argument(
+        "--start-frame",
+        type=int,
+        default=0,
+        help="Resume one selected transition at this zero-based frame index",
+    )
     parser.add_argument(
         "--only",
         action="append",
@@ -2669,8 +2825,11 @@ def main() -> None:
     authored = author_physical_scene()
     camera = create_camera()
     if args.visual_only:
-        if not args.proof or args.render_stills or args.render_transitions:
-            raise SystemExit("--visual-only is restricted to disposable --proof renders")
+        if not (args.proof or args.render_transitions) or args.render_stills:
+            raise SystemExit(
+                "--visual-only is restricted to disposable --proof or "
+                "--render-transitions renders"
+            )
         print("VISUAL ITERATION ONLY: manifest generation and validation skipped")
     else:
         manifest = build_manifest(scene, camera, authored)
@@ -2694,7 +2853,14 @@ def main() -> None:
     if args.render_stills:
         render_endpoints(scene, camera, authored, proof=False, samples=args.samples or 192, only=only)
     if args.render_transitions:
-        render_transition_frames(scene, camera, authored, samples=args.samples or 192, only=only)
+        render_transition_frames(
+            scene,
+            camera,
+            authored,
+            samples=args.samples or 192,
+            only=only,
+            start_frame=args.start_frame,
+        )
 
 
 if __name__ == "__main__":
