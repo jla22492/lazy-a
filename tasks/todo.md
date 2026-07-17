@@ -12,8 +12,9 @@
 - [x] Lock the CONTACT timing: `1.0s` stationary lamp-on beat, then the approved
   R3 CONTACT camera move and endpoint.
 - [x] Commit the approved design specification (`4c2108d`).
-- [ ] Commit the implementation plan.
-- [ ] Add failing hero physical-continuity gates.
+- [x] Commit the implementation plan (`979e220`).
+- [x] Add failing physical-continuity gates (`f76c07f`..`f65366b`;
+  independent review clean).
 - [ ] Replace the split JOURNAL motion with one readable hip-pivot path.
 - [ ] Re-author CONTACT's visible practical and one-second activation beat.
 - [ ] Replace the non-atomic hero overlay and low-resolution occlusion path.
