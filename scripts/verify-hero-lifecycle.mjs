@@ -19,7 +19,7 @@ const VIEWPORTS = [
 ];
 const DESTINATIONS = ["films", "journal", "contact", "about"];
 const TIME_EPSILON = 0.04;
-const MAX_CORNER_ERROR_CSS_PX = 1;
+const MAX_CORNER_ERROR_CSS_PX = 0.75;
 const MIN_FOREGROUND_OCCLUDERS = 10;
 
 let failures = 0;
@@ -440,6 +440,50 @@ async function conversationState() {
   }));
 }
 
+async function presentedPixelMetrics() {
+  return page.evaluate(() => {
+    const compositor = window.__lazyACompositor ?? null;
+    return {
+      compositor,
+      firstFrame: compositor?.pixels?.firstFrame ?? null,
+      playingFrames: compositor?.pixels?.playingFrames ?? null,
+      motionSamples: compositor?.pixels?.motionSamples ?? null,
+    };
+  });
+}
+
+async function assertPresentedPixelContract(viewport) {
+  const label = viewportLabel(viewport);
+  const { compositor, firstFrame, playingFrames, motionSamples } =
+    await presentedPixelMetrics();
+  check(
+    compositor?.atomic === true &&
+      Number.isFinite(compositor?.plateMediaTime) &&
+      Number.isInteger(compositor?.projectionFrame) &&
+      Number.isInteger(compositor?.heroFramePresented) &&
+      compositor?.treatment === "calibrated-room-transfer" &&
+      compositor?.occlusion === "authored-depth-geometry",
+    `${label} atomic compositor observability`,
+    JSON.stringify(compositor),
+  );
+  check(
+    firstFrame?.meanLumaDelta <= 3 && firstFrame?.meanChannelDelta <= 4,
+    `${label} resting poster matches the first painted live frame`,
+    JSON.stringify(firstFrame),
+  );
+  check(
+    playingFrames?.maxRoomTreatmentDelta <= 6,
+    `${label} representative playing frames retain room treatment`,
+    JSON.stringify(playingFrames),
+  );
+  check(
+    motionSamples?.maxPosterAxisErrorPx <= 0.75 &&
+      motionSamples?.maxForegroundEdgeErrorPx <= 1.0,
+    `${label} presented hero remains registered behind foreground depth`,
+    JSON.stringify(motionSamples),
+  );
+}
+
 async function waitForRestingEndpoint(id) {
   await page.waitForFunction(
     (endpoint) => {
@@ -668,6 +712,7 @@ async function runViewport(viewport) {
         ? `arrivalDone=${firstPlay.arrivalDone} currentTime=${fixed(firstPlay.currentTime)}`
         : `no play event; currentTime=${fixed(started.currentTime)}`,
     );
+    await assertPresentedPixelContract(viewport);
 
     const debug = await conversationState();
     check(

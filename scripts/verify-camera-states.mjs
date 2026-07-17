@@ -38,15 +38,6 @@ const JOURNAL_MAX_COVERAGE = 0.6;
 const MIN_JOURNAL_TRAVEL = 0.05;
 const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
-const MIN_JOURNAL_EYE_HEIGHT = 1.32;
-const MIN_JOURNAL_FORWARD_TRAVEL = 0.3;
-const DESK_PLANE_Y = 0.9;
-const JOURNAL_DESK_FOOTPRINT = {
-  minX: -0.8,
-  maxX: 0.8,
-  minZ: -0.8,
-  maxZ: 0.8,
-};
 const APPROVED_ABOUT_CAMERAS = {
   wide: {
     position: [0.019999999553, 1.580000042915, 1.450000047684],
@@ -69,15 +60,43 @@ function sameTuple(left, right, tolerance = 1e-9) {
   );
 }
 
-function deskIntersection(camera) {
+function sightlineIntersectsNotebook(camera, notebookWorldQuad) {
+  if (
+    !Array.isArray(notebookWorldQuad) ||
+    notebookWorldQuad.length !== 4 ||
+    notebookWorldQuad.some((point) => !isNumberTuple(point, 3))
+  ) {
+    return false;
+  }
   const position = new Vector3(...camera.position);
   const direction = new Vector3(0, 0, -1).applyQuaternion(
     new Quaternion(...camera.quaternion),
   );
-  if (direction.y >= -1e-6) return null;
-  const distance = (DESK_PLANE_Y - position.y) / direction.y;
-  if (distance <= 0) return null;
-  return position.addScaledVector(direction, distance);
+  const [first, second, third, fourth] = notebookWorldQuad.map(
+    (point) => new Vector3(...point),
+  );
+  const normal = second.clone().sub(first).cross(third.clone().sub(first));
+  const denominator = normal.dot(direction);
+  if (Math.abs(denominator) <= 1e-6) return false;
+  const distance = normal.dot(first.clone().sub(position)) / denominator;
+  if (distance <= 0) return false;
+  const hit = position.addScaledVector(direction, distance);
+  const inTriangle = (a, b, c) => {
+    const ab = b.clone().sub(a);
+    const ac = c.clone().sub(a);
+    const ah = hit.clone().sub(a);
+    const dotABAB = ab.dot(ab);
+    const dotABAC = ab.dot(ac);
+    const dotACAC = ac.dot(ac);
+    const dotAHAB = ah.dot(ab);
+    const dotAHAC = ah.dot(ac);
+    const determinant = dotABAB * dotACAC - dotABAC * dotABAC;
+    if (Math.abs(determinant) <= 1e-9) return false;
+    const u = (dotACAC * dotAHAB - dotABAC * dotAHAC) / determinant;
+    const v = (dotABAB * dotAHAC - dotABAC * dotAHAB) / determinant;
+    return u >= -1e-5 && v >= -1e-5 && u + v <= 1 + 1e-5;
+  };
+  return inTriangle(first, second, third) || inTriangle(first, third, fourth);
 }
 
 function cameraContractFailures(manifest) {
@@ -87,11 +106,11 @@ function cameraContractFailures(manifest) {
     const endpoints = variant?.endpoints;
     const desk = endpoints?.desk?.projection?.camera;
     const films = endpoints?.films?.projection?.camera;
-    const journal = endpoints?.journal?.projection?.camera;
+    const journalEndpoint = endpoints?.journal?.projection?.camera;
     const about = endpoints?.about?.projection?.camera;
     const transition = variant?.transitions?.["desk-journal"];
     const frames = transition?.frames ?? [];
-    if (!desk || !films || !journal || !about || frames.length < 3) {
+    if (!desk || !films || !journalEndpoint || !about || frames.length < 3) {
       failures.push(`${profile}: camera manifest is incomplete`);
       continue;
     }
@@ -104,51 +123,35 @@ function cameraContractFailures(manifest) {
         `${profile}: FILMS must preserve the exact desk position/FOV while changing only head rotation`,
       );
     }
-    const forwardTravel = desk.position[2] - journal.position[2];
+    const journal = { ...variant.journal, ...transition };
     if (
-      journal.position[1] < MIN_JOURNAL_EYE_HEIGHT ||
-      forwardTravel < MIN_JOURNAL_FORWARD_TRAVEL
+      journal.journalHeadLeadSeconds !== 0 ||
+      !(journal.translationStartsAtSeconds <= 1 / journal.fps) ||
+      journal.motionModel !== "coupled-hip-pivot" ||
+      !(journal.maxAngularStepDegrees <= 3) ||
+      !(journal.endpointBaselineRotationDegrees <= 12) ||
+      !(journal.endpointCoverage >= 0.4 && journal.endpointCoverage <= 0.6)
     ) {
       failures.push(
-        `${profile}: JOURNAL must keep eye height >=${MIN_JOURNAL_EYE_HEIGHT}m and hinge forward >=${MIN_JOURNAL_FORWARD_TRAVEL}m; got y=${journal.position[1]}, forward=${forwardTravel}`,
+        `${profile}: JOURNAL must use the coupled-hip-pivot path with no head lead, translation by frame 1, <=3 degree steps, <=12 degree baseline, and 40-60% notebook coverage`,
       );
     }
-    if (
-      frames.some(
-        (frame) => frame.camera?.position?.[1] < MIN_JOURNAL_EYE_HEIGHT,
-      )
-    ) {
-      failures.push(`${profile}: JOURNAL transition drops below seated eye height`);
-    }
-    const firstRotation = frames.findIndex(
-      (frame) => !sameTuple(frame.camera?.quaternion, desk.quaternion),
-    );
     const firstTranslation = frames.findIndex(
       (frame) => !sameTuple(frame.camera?.position, desk.position),
     );
-    if (
-      firstRotation < 0 ||
-      firstTranslation < 0 ||
-      firstRotation >= firstTranslation
-    ) {
+    if (firstTranslation < 0 || firstTranslation > 1) {
       failures.push(
-        `${profile}: JOURNAL rotation must begin before body translation; got rotation=${firstRotation}, translation=${firstTranslation}`,
+        `${profile}: JOURNAL translation must begin at authored frame 1 or earlier; got frame ${firstTranslation}`,
       );
     }
-    const postHeadLeadFrames = frames.slice(Math.max(firstTranslation - 1, 0));
-    const missedDeskAt = postHeadLeadFrames.findIndex((frame) => {
-      const hit = deskIntersection(frame.camera);
-      return (
-        !hit ||
-        hit.x < JOURNAL_DESK_FOOTPRINT.minX ||
-        hit.x > JOURNAL_DESK_FOOTPRINT.maxX ||
-        hit.z < JOURNAL_DESK_FOOTPRINT.minZ ||
-        hit.z > JOURNAL_DESK_FOOTPRINT.maxZ
+    const missedNotebookAt = frames
+      .slice(Math.max(firstTranslation, 0))
+      .findIndex((frame) =>
+        !sightlineIntersectsNotebook(frame.camera, journal.notebookWorldQuad),
       );
-    });
-    if (missedDeskAt >= 0) {
+    if (missedNotebookAt >= 0) {
       failures.push(
-        `${profile}: JOURNAL gaze leaves the desktop after the head lead at frame ${Math.max(firstTranslation - 1, 0) + missedDeskAt}`,
+        `${profile}: JOURNAL sightline must intersect notebookWorldQuad at frame ${Math.max(firstTranslation, 0) + missedNotebookAt}`,
       );
     }
     const approvedAbout = APPROVED_ABOUT_CAMERAS[profile];

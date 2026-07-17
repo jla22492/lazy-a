@@ -34,8 +34,6 @@ const OCCLUDER_SLOTS = [
   "Camera_01_strap",
 ];
 const MAX_MANIFEST_BYTES = 1_500_000;
-const MAX_MASK_UPLOAD_BYTES = 1_500_000;
-const AUTHORED_MASK_SIZE = 512;
 const COORDINATE_EPSILON = 2e-5;
 const ROUNDING_DIGITS = 6;
 const viewport = { width: 1280, height: 720 };
@@ -90,43 +88,43 @@ function pairs(values) {
   return points;
 }
 
-function decodeSilhouetteMask(mask, id) {
-  assert.equal(mask?.size, AUTHORED_MASK_SIZE, `${id} mask size`);
-  assert.equal(mask?.encoding, "rle-varint-v1", `${id} mask encoding`);
-  assert.equal(typeof mask?.rle, "string", `${id} mask payload`);
-  const bytes = Buffer.from(mask.rle, "base64");
-  let offset = 0;
-  const readVarint = () => {
-    let value = 0;
-    let shift = 0;
-    while (offset < bytes.length && shift <= 28) {
-      const byte = bytes[offset++];
-      value |= (byte & 0x7f) << shift;
-      if ((byte & 0x80) === 0) return value;
-      shift += 7;
-    }
-    assert.fail(`${id} mask contains a truncated varint`);
+function assertR4HeroSourceContract(hero) {
+  assert.equal(hero?.compositor, "single-webgl-pass");
+  assert.equal(hero?.occlusion, "authored-depth-geometry");
+  assert.equal(hero?.treatment?.kind, "calibrated-room-transfer");
+  assert.ok(hero?.treatment?.source.endsWith("/hero-room-treatment.png"));
+  assert.ok(hero?.geometry?.source.endsWith("/hero-compositor.glb"));
+  assert.ok(hero?.geometry?.occluders.includes("Mesh_31"));
+  assert.equal(hero?.maskResolution, undefined);
+}
+
+function assertR4HeroSourceStubsFail() {
+  const complete = {
+    compositor: "single-webgl-pass",
+    occlusion: "authored-depth-geometry",
+    treatment: {
+      kind: "calibrated-room-transfer",
+      source: "/room/hero/hero-room-treatment.png",
+    },
+    geometry: {
+      source: "/room/hero/hero-compositor.glb",
+      occluders: ["Mesh_31"],
+    },
   };
-  let filledPixels = 0;
-  let rowsWithMultipleRuns = 0;
-  for (let y = 0; y < AUTHORED_MASK_SIZE; y += 1) {
-    const runCount = readVarint();
-    if (runCount > 1) rowsWithMultipleRuns += 1;
-    let previousEnd = -1;
-    for (let run = 0; run < runCount; run += 1) {
-      const gap = readVarint();
-      const length = readVarint();
-      const start = previousEnd + 1 + gap;
-      const end = start + length - 1;
-      assert.ok(start <= end, `${id} row ${y} run ${run} is reversed`);
-      assert.ok(start > previousEnd, `${id} row ${y} runs overlap`);
-      assert.ok(end < AUTHORED_MASK_SIZE, `${id} row ${y} exceeds mask bounds`);
-      filledPixels += end - start + 1;
-      previousEnd = end;
-    }
+  assert.doesNotThrow(() => assertR4HeroSourceContract(complete));
+
+  const stubs = [
+    (hero) => ({ ...hero, compositor: "separate-dom-and-webgl" }),
+    (hero) => ({ ...hero, occlusion: "screen-space-mask" }),
+    (hero) => ({ ...hero, treatment: { ...hero.treatment, kind: "rgb-multiplier" } }),
+    (hero) => ({ ...hero, treatment: { ...hero.treatment, source: "/room/hero/treatment.png" } }),
+    (hero) => ({ ...hero, geometry: { ...hero.geometry, source: "/room/hero/geometry.glb" } }),
+    (hero) => ({ ...hero, geometry: { ...hero.geometry, occluders: ["Mesh_170"] } }),
+    (hero) => ({ ...hero, maskResolution: 512 }),
+  ];
+  for (const stub of stubs) {
+    assert.throws(() => assertR4HeroSourceContract(stub(complete)));
   }
-  assert.equal(offset, bytes.length, `${id} mask has trailing bytes`);
-  return { filledPixels, rowsWithMultipleRuns };
 }
 
 const manifest = JSON.parse(fs.readFileSync(publicManifestPath, "utf8"));
@@ -144,6 +142,16 @@ check("hero remains a treated physical poster before playback", () => {
     "camera-reciprocal-depth-projective",
   );
   return manifest.hero.liveProjection;
+});
+
+check("R4 hero source is one treated WebGL surface with authored depth", () => {
+  assertR4HeroSourceContract(manifest.hero);
+  return `${manifest.hero.compositor}; ${manifest.hero.occlusion}; ${manifest.hero.treatment?.kind}`;
+});
+
+check("R4 hero source contract rejects structural stubs", () => {
+  assertR4HeroSourceStubsFail();
+  return "7 structural stubs rejected";
 });
 
 check("every hero projection carries four reciprocal-depth weights", () => {
@@ -250,17 +258,17 @@ check("occluder coordinates use compact rounding", () => {
   return `${values} coordinates`;
 });
 
-check("every projection carries a decoded evaluated-mesh silhouette", () => {
-  let filledMasks = 0;
-  let concaveMasks = 0;
+check("R4 hero projections do not regress to low-resolution masks", () => {
+  let projections = 0;
   for (const { id, projection } of frames) {
-    const decoded = decodeSilhouetteMask(projection.heroOcclusionMask, id);
-    if (decoded.filledPixels > 0) filledMasks += 1;
-    if (decoded.rowsWithMultipleRuns > 0) concaveMasks += 1;
+    projections += 1;
+    assert.equal(
+      projection.heroOcclusionMask,
+      undefined,
+      `${id} must use authored depth geometry instead of an RLE mask`,
+    );
   }
-  assert.ok(filledMasks >= 100, `${filledMasks} non-empty masks`);
-  assert.ok(concaveMasks >= 20, `${concaveMasks} masks preserve concave gaps`);
-  return `${filledMasks} non-empty; ${concaveMasks} preserve concave gaps`;
+  return `${projections} depth-geometry projections`;
 });
 
 async function analyzeScreenshots(page, first, second) {
@@ -426,7 +434,7 @@ if (!geometryOnly) {
       () =>
         window.__arrivalDone === true &&
         Array.isArray(window.__lazyAHeroProjection) &&
-        window.__lazyAHeroOcclusion?.masked === true,
+        window.__lazyACompositor?.atomic === true,
       null,
       { timeout: 15_000 },
     );
@@ -435,40 +443,25 @@ if (!geometryOnly) {
     await page.waitForTimeout(700);
     const second = await page.screenshot();
     const analysis = await analyzeScreenshots(page, first, second);
+    const compositor = await page.evaluate(
+      () => window.__lazyACompositor ?? null,
+    );
 
-    check("browser mask upload is hero-local and bounded", () => {
-      assert.ok(analysis.marker, "window.__lazyAHeroOcclusion is missing");
-      assert.equal(
-        analysis.marker.heroLocal,
-        true,
-        JSON.stringify(analysis.marker),
-      );
-      assert.ok(
-        analysis.marker.uploadBytes <= MAX_MASK_UPLOAD_BYTES,
-        `${analysis.marker.uploadBytes} bytes exceeds ${MAX_MASK_UPLOAD_BYTES}`,
-      );
-      return `${analysis.marker.textureWidth}x${analysis.marker.textureHeight}, ${analysis.marker.uploadBytes} bytes`;
+    check("browser presents hero and plate from one atomic compositor frame", () => {
+      assert.ok(compositor, "window.__lazyACompositor is missing");
+      assert.equal(compositor.atomic, true);
+      assert.ok(Number.isFinite(compositor.plateMediaTime));
+      assert.ok(Number.isInteger(compositor.projectionFrame));
+      assert.ok(Number.isInteger(compositor.heroFramePresented));
+      assert.equal(compositor.treatment, "calibrated-room-transfer");
+      assert.equal(compositor.occlusion, "authored-depth-geometry");
+      return JSON.stringify(compositor);
     });
     check(
-      "masked hero pixels remain photographic while unmasked pixels change",
+      "browser has retired the legacy RLE hero occlusion marker",
       () => {
-        assert.ok(
-          analysis.maskedSamples >= 20,
-          `${analysis.maskedSamples} masked samples`,
-        );
-        assert.ok(
-          analysis.unmaskedSamples >= 100,
-          `${analysis.unmaskedSamples} unmasked samples`,
-        );
-        assert.ok(
-          analysis.stableMasked / analysis.maskedSamples >= 0.8,
-          `stable masked ratio ${analysis.stableMasked}/${analysis.maskedSamples}; p90=${analysis.maskedP90}`,
-        );
-        assert.ok(
-          analysis.changingUnmasked >= 20 && analysis.unmaskedP90 >= 12,
-          `changing unmasked=${analysis.changingUnmasked}; p90=${analysis.unmaskedP90}`,
-        );
-        return `masked p90=${analysis.maskedP90}; unmasked p90=${analysis.unmaskedP90}`;
+        assert.equal(analysis.marker, null, JSON.stringify(analysis.marker));
+        return "no window.__lazyAHeroOcclusion marker";
       },
     );
   } catch (error) {

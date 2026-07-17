@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { access, mkdir, readFile, readdir, stat } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { spawn } from "node:child_process";
@@ -41,12 +42,11 @@ const expectedContactCopy = [
   "1-310-709-9283",
 ].join("\n");
 const expectedContactIndentDepth = 0.0003;
-const deskPlaneY = 0.9;
-const journalDeskFootprint = {
-  minX: -0.8,
-  maxX: 0.8,
-  minZ: -0.8,
-  maxZ: 0.8,
+const contactActivationSamples = 31;
+const approvedR3ContactPathSha256 = {
+  wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
+  portrait:
+    "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
 };
 const decodedSampleSize = 64;
 const maximumDecodedMeanError = 8;
@@ -333,10 +333,13 @@ function quadIntersectsFrame(quad) {
   );
 }
 
-function journalGazeHitsDesk(camera) {
+function journalGazeHitsNotebook(camera, notebookWorldQuad) {
   if (
     !finiteTuple(camera?.position, 3) ||
-    !finiteTuple(camera?.quaternion, 4)
+    !finiteTuple(camera?.quaternion, 4) ||
+    !Array.isArray(notebookWorldQuad) ||
+    notebookWorldQuad.length !== 4 ||
+    notebookWorldQuad.some((point) => !finiteTuple(point, 3))
   ) {
     return false;
   }
@@ -344,16 +347,31 @@ function journalGazeHitsDesk(camera) {
   const direction = new Vector3(0, 0, -1).applyQuaternion(
     new Quaternion(...camera.quaternion),
   );
-  if (direction.y >= -1e-6) return false;
-  const distance = (deskPlaneY - position.y) / direction.y;
+  const [first, second, third, fourth] = notebookWorldQuad.map(
+    (point) => new Vector3(...point),
+  );
+  const normal = second.clone().sub(first).cross(third.clone().sub(first));
+  const denominator = normal.dot(direction);
+  if (Math.abs(denominator) <= 1e-6) return false;
+  const distance = normal.dot(first.clone().sub(position)) / denominator;
   if (distance <= 0) return false;
   const hit = position.addScaledVector(direction, distance);
-  return (
-    hit.x >= journalDeskFootprint.minX &&
-    hit.x <= journalDeskFootprint.maxX &&
-    hit.z >= journalDeskFootprint.minZ &&
-    hit.z <= journalDeskFootprint.maxZ
-  );
+  const inTriangle = (a, b, c) => {
+    const ab = b.clone().sub(a);
+    const ac = c.clone().sub(a);
+    const ah = hit.clone().sub(a);
+    const dotABAB = ab.dot(ab);
+    const dotABAC = ab.dot(ac);
+    const dotACAC = ac.dot(ac);
+    const dotAHAB = ah.dot(ab);
+    const dotAHAC = ah.dot(ac);
+    const determinant = dotABAB * dotACAC - dotABAC * dotABAC;
+    if (Math.abs(determinant) <= 1e-9) return false;
+    const u = (dotACAC * dotAHAB - dotABAC * dotAHAC) / determinant;
+    const v = (dotABAB * dotAHAC - dotABAC * dotAHAB) / determinant;
+    return u >= -1e-5 && v >= -1e-5 && u + v <= 1 + 1e-5;
+  };
+  return inTriangle(first, second, third) || inTriangle(first, third, fourth);
 }
 
 function parseArgs(argv) {
@@ -365,7 +383,7 @@ function parseArgs(argv) {
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
-    if (value === "--verify") args.verify = true;
+    if (value === "--verify" || value === "--verify-only") args.verify = true;
     else if (value === "--encode") args.encode = true;
     else if (value === "--variant") args.variants.add(argv[++index]);
     else if (value === "--transition") args.transitions.add(argv[++index]);
@@ -467,28 +485,6 @@ function validateProjection(frame, label, issues) {
     issues.push(`${label} hero reciprocal-depth weights are malformed`);
   }
   if (
-    frame.heroOcclusionMask?.size !== 512 ||
-    frame.heroOcclusionMask?.encoding !== "rle-varint-v1" ||
-    typeof frame.heroOcclusionMask?.rle !== "string"
-  ) {
-    issues.push(`${label} hero silhouette must use the 512px varint RLE contract`);
-  }
-  if (
-    !Array.isArray(frame.heroOccluders) ||
-    frame.heroOccluders.length !== 10 ||
-    frame.heroOccluders.some(
-      (polygon) =>
-        !Array.isArray(polygon) ||
-        (polygon.length !== 0 && polygon.length < 6) ||
-        polygon.length % 2 !== 0 ||
-        !polygon.every(Number.isFinite),
-    )
-  ) {
-    issues.push(
-      `${label} must contain ten finite photographic occluder slots`,
-    );
-  }
-  if (
     !Number.isFinite(frame.lampLevel) ||
     !Number.isFinite(frame.revealLevel) ||
     frame.lampLevel < 0 ||
@@ -565,10 +561,16 @@ function validateManifest(manifest) {
     manifest.hero?.restingMechanism !== "baked-physical-poster" ||
     manifest.hero?.liveProjection !==
       "camera-reciprocal-depth-projective" ||
-    manifest.hero?.maskResolution !== 512
+    manifest.hero?.compositor !== "single-webgl-pass" ||
+    manifest.hero?.occlusion !== "authored-depth-geometry" ||
+    manifest.hero?.treatment?.kind !== "calibrated-room-transfer" ||
+    !manifest.hero?.treatment?.source?.endsWith("/hero-room-treatment.png") ||
+    !manifest.hero?.geometry?.source?.endsWith("/hero-compositor.glb") ||
+    !manifest.hero?.geometry?.occluders?.includes("Mesh_31") ||
+    manifest.hero?.maskResolution !== undefined
   ) {
     issues.push(
-      "manifest hero must use the treated physical first frame and reciprocal-depth projection",
+      "manifest hero must use the atomic compositor, calibrated room transfer, and authored depth geometry",
     );
   }
   exactKeys(manifest.variants, expectedVariants, "variants", issues);
@@ -613,7 +615,12 @@ function validateManifest(manifest) {
     for (const transitionId of expectedTransitions) {
       const transition = variant.transitions?.[transitionId];
       if (!transition) continue;
-      const expectedDuration = transitionId === "opening-desk" ? 2.6 : 0.9;
+      const expectedDuration =
+        transitionId === "opening-desk"
+          ? 2.6
+          : transitionId === "desk-contact"
+            ? 1.9
+            : 0.9;
       if (transition.duration !== expectedDuration) {
         issues.push(
           `${variantId}/${transitionId} duration must be ${expectedDuration}s`,
@@ -656,16 +663,59 @@ function validateManifest(manifest) {
 
     const journal = variant.transitions?.["desk-journal"];
     if (
-      journal?.journalHeadLeadSeconds !== 0.3 ||
-      journal?.translationStartsAtSeconds !== 0.3
+      journal?.journalHeadLeadSeconds !== 0 ||
+      !(journal?.translationStartsAtSeconds <= 1 / journal?.fps) ||
+      journal?.motionModel !== "coupled-hip-pivot" ||
+      !(journal?.maxAngularStepDegrees <= 3) ||
+      !(journal?.endpointBaselineRotationDegrees <= 12) ||
+      !(journal?.endpointCoverage >= 0.4 && journal?.endpointCoverage <= 0.6)
     ) {
-      issues.push(`${variantId}/desk-journal must lead with the head for 0.3s`);
+      issues.push(
+        `${variantId}/desk-journal must use a coupled hip pivot with no head lead and a readable 40-60% notebook endpoint`,
+      );
     }
     const contact = variant.transitions?.["desk-contact"];
     const deskCamera = variant.endpoints?.desk?.projection?.camera;
     const filmsCamera = variant.endpoints?.films?.projection?.camera;
-    const journalCamera = variant.endpoints?.journal?.projection?.camera;
     const contactCamera = variant.endpoints?.contact?.projection?.camera;
+    const contactFrames = contact?.frames ?? [];
+    const activationFrames = contactFrames.slice(0, contactActivationSamples);
+    const levelsRise = (property) =>
+      activationFrames.length === contactActivationSamples &&
+      activationFrames.every(
+        (frame, index) =>
+          Number.isFinite(frame[property]) &&
+          (index === 0 || frame[property] >= activationFrames[index - 1][property]),
+      ) &&
+      activationFrames.at(-1)?.[property] > activationFrames[0]?.[property];
+    const postHoldPath = contactFrames
+      .slice(contactActivationSamples)
+      .map(({ camera }) => camera);
+    const postHoldHash = createHash("sha256")
+      .update(JSON.stringify(postHoldPath))
+      .digest("hex");
+    if (
+      variant.contact?.activationHoldSeconds !== 1 ||
+      variant.contact?.visibleBulb !== true ||
+      variant.contact?.visibleShadeInterior !== true ||
+      !(variant.contact?.shadeAxisErrorDegrees <= 12) ||
+      variant.contact?.lightIntersectsPaper !== true ||
+      !deskCamera ||
+      activationFrames.some(
+        (frame) => JSON.stringify(frame.camera) !== JSON.stringify(deskCamera),
+      ) ||
+      !levelsRise("visibleBulbLevel") ||
+      !levelsRise("lampLevel") ||
+      !contactFrames[contactActivationSamples] ||
+      JSON.stringify(contactFrames[contactActivationSamples]?.camera) ===
+        JSON.stringify(deskCamera) ||
+      postHoldPath.length !== 27 ||
+      postHoldHash !== approvedR3ContactPathSha256[variantId]
+    ) {
+      issues.push(
+        `${variantId}/desk-contact must hold the exact desk camera for 1.0s while the visible practical rises, then preserve the approved R3 path`,
+      );
+    }
     if (
       JSON.stringify(contactCamera) === JSON.stringify(deskCamera) ||
       contact?.frames?.every(
@@ -688,32 +738,25 @@ function validateManifest(manifest) {
       );
     }
     const journalFrames = journal?.frames ?? [];
-    const firstJournalRotation = journalFrames.findIndex(
-      (frame) =>
-        JSON.stringify(frame.camera?.quaternion) !==
-        JSON.stringify(deskCamera?.quaternion),
-    );
     const firstJournalTranslation = journalFrames.findIndex(
       (frame) =>
         JSON.stringify(frame.camera?.position) !==
         JSON.stringify(deskCamera?.position),
     );
-    const postHeadLeadFrames = journalFrames.slice(
-      Math.max(firstJournalTranslation - 1, 0),
-    );
     if (
-      journalCamera?.position?.[1] < 1.32 ||
-      deskCamera?.position?.[2] - journalCamera?.position?.[2] < 0.3 ||
-      journalFrames.some((frame) => frame.camera?.position?.[1] < 1.32) ||
-      firstJournalRotation < 0 ||
       firstJournalTranslation < 0 ||
-      firstJournalRotation >= firstJournalTranslation ||
-      postHeadLeadFrames.some(
-        (frame) => !journalGazeHitsDesk(frame.camera),
-      )
+      firstJournalTranslation > 1 ||
+      journalFrames
+        .slice(Math.max(firstJournalTranslation, 0))
+        .some((frame) =>
+          !journalGazeHitsNotebook(
+            frame.camera,
+            journal?.notebookWorldQuad ?? variant.journal?.notebookWorldQuad,
+          ),
+        )
     ) {
       issues.push(
-        `${variantId}/journal must use a head-first seated hinge above 1.32m eye height while keeping its gaze on the desktop`,
+        `${variantId}/journal must translate by frame 1 and keep its sightline on notebookWorldQuad`,
       );
     }
     if (

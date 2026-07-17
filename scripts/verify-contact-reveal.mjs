@@ -18,8 +18,10 @@
  */
 
 import { mkdir, readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
+import assert from "node:assert/strict";
 
 import { chromium } from "playwright";
 import sharp from "sharp";
@@ -46,6 +48,12 @@ const EXPECTED_CONTACT_COPY = [
 ].join("\n");
 const EXPECTED_INDENT_DEPTH = 0.0003;
 const MAX_GRAZING_ANGLE_DEGREES = 35;
+const CONTACT_ACTIVATION_SAMPLES = 31;
+const APPROVED_R3_CONTACT_PATH_SHA256 = {
+  wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
+  portrait:
+    "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
+};
 const MID_LAMP_POOL_REGION = {
   x: 0.28,
   y: 0.22,
@@ -59,6 +67,53 @@ const MID_UNLIT_TABLE_REGION = {
   height: 0.08,
 };
 
+function exactCameraMatch(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function monotonicallyRises(values) {
+  return (
+    values.length > 1 &&
+    values.every(
+      (value, index) =>
+        Number.isFinite(value) && (index === 0 || value >= values[index - 1]),
+    ) &&
+    values.at(-1) > values[0]
+  );
+}
+
+function assertR4ContactContract(contact, transition) {
+  assert.equal(contact.activationHoldSeconds, 1);
+  assert.equal(contact.visibleBulb, true);
+  assert.equal(contact.visibleShadeInterior, true);
+  assert.ok(contact.shadeAxisErrorDegrees <= 12);
+  assert.equal(contact.lightIntersectsPaper, true);
+  assert.equal(transition.duration, 1.9);
+}
+
+function assertR4ContactStubsFail() {
+  const contact = {
+    activationHoldSeconds: 1,
+    visibleBulb: true,
+    visibleShadeInterior: true,
+    shadeAxisErrorDegrees: 12,
+    lightIntersectsPaper: true,
+  };
+  const transition = { duration: 1.9 };
+  assert.doesNotThrow(() => assertR4ContactContract(contact, transition));
+  const stubs = [
+    [{ ...contact, activationHoldSeconds: 0 }, transition],
+    [{ ...contact, visibleBulb: false }, transition],
+    [{ ...contact, visibleShadeInterior: false }, transition],
+    [{ ...contact, shadeAxisErrorDegrees: 13 }, transition],
+    [{ ...contact, lightIntersectsPaper: false }, transition],
+    [contact, { duration: 0.9 }],
+  ];
+  for (const [stubContact, stubTransition] of stubs) {
+    assert.throws(() => assertR4ContactContract(stubContact, stubTransition));
+  }
+}
+
 function contactManifestFailures(manifest) {
   const failures = [];
   for (const [profile, variant] of Object.entries(manifest.variants ?? {})) {
@@ -66,6 +121,14 @@ function contactManifestFailures(manifest) {
     if (!contact) {
       failures.push(`${profile}: CONTACT manifest data missing`);
       continue;
+    }
+    const transition = variant.transitions?.["desk-contact"];
+    try {
+      assertR4ContactContract(contact, transition ?? {});
+    } catch (error) {
+      failures.push(
+        `${profile}: CONTACT requires a visible practical and a 1.0s activation hold (${error.message})`,
+      );
     }
     if (
       contact.materialMechanism !== "lamp-reactive-compressed-fiber-groove" ||
@@ -97,7 +160,7 @@ function contactManifestFailures(manifest) {
         `${profile}: CONTACT light must originate inside the visible lamp shade and intersect the contact paper`,
       );
     }
-    const frames = variant.transitions?.["desk-contact"]?.frames ?? [];
+    const frames = transition?.frames ?? [];
     if (
       frames.length === 0 ||
       frames.some((frame) => frame.contactIndentDepth !== contact.indentDepth)
@@ -106,7 +169,49 @@ function contactManifestFailures(manifest) {
         `${profile}: CONTACT indentation depth must remain physically fixed through the light reveal`,
       );
     }
+    const desk = variant.endpoints?.desk?.projection?.camera;
+    const activationFrames = frames.slice(0, CONTACT_ACTIVATION_SAMPLES);
+    if (
+      !desk ||
+      activationFrames.length !== CONTACT_ACTIVATION_SAMPLES ||
+      activationFrames.some((frame) => !exactCameraMatch(frame.camera, desk))
+    ) {
+      failures.push(
+        `${profile}: CONTACT must hold the exact desk camera for the first ${CONTACT_ACTIVATION_SAMPLES} authored samples`,
+      );
+    }
+    if (
+      !monotonicallyRises(activationFrames.map((frame) => frame.visibleBulbLevel)) ||
+      !monotonicallyRises(activationFrames.map((frame) => frame.lampLevel))
+    ) {
+      failures.push(
+        `${profile}: CONTACT visibleBulbLevel and lampLevel must rise monotonically during the 1.0s activation hold`,
+      );
+    }
+    if (
+      !frames[CONTACT_ACTIVATION_SAMPLES] ||
+      exactCameraMatch(frames[CONTACT_ACTIVATION_SAMPLES].camera, desk)
+    ) {
+      failures.push(
+        `${profile}: CONTACT camera movement must begin at sample ${CONTACT_ACTIVATION_SAMPLES}`,
+      );
+    }
+    const approvedPath = frames
+      .slice(CONTACT_ACTIVATION_SAMPLES)
+      .map(({ camera }) => camera);
+    const approvedHash = createHash("sha256")
+      .update(JSON.stringify(approvedPath))
+      .digest("hex");
+    if (
+      approvedPath.length !== 27 ||
+      approvedHash !== APPROVED_R3_CONTACT_PATH_SHA256[profile]
+    ) {
+      failures.push(
+        `${profile}: CONTACT post-hold normalized camera samples must equal the approved R3 path`,
+      );
+    }
   }
+  assertR4ContactStubsFail();
   return failures;
 }
 
