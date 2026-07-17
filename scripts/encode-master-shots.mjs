@@ -6,7 +6,7 @@ import { constants as fsConstants } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PerspectiveCamera, Vector3 } from "three";
+import { PerspectiveCamera, Quaternion, Vector3 } from "three";
 
 const repositoryRoot = fileURLToPath(new URL("../", import.meta.url));
 const manifestPath = resolve(repositoryRoot, "public/room/manifest.json");
@@ -41,6 +41,13 @@ const expectedContactCopy = [
   "1-310-709-9283",
 ].join("\n");
 const expectedContactIndentDepth = 0.0003;
+const deskPlaneY = 0.9;
+const journalDeskFootprint = {
+  minX: -0.8,
+  maxX: 0.8,
+  minZ: -0.8,
+  maxZ: 0.8,
+};
 const decodedSampleSize = 64;
 const maximumDecodedMeanError = 8;
 const minimumDecodedMotion = 0.5;
@@ -323,6 +330,29 @@ function quadIntersectsFrame(quad) {
     Math.min(...xs) < 1 &&
     Math.max(...ys) > 0 &&
     Math.min(...ys) < 1
+  );
+}
+
+function journalGazeHitsDesk(camera) {
+  if (
+    !finiteTuple(camera?.position, 3) ||
+    !finiteTuple(camera?.quaternion, 4)
+  ) {
+    return false;
+  }
+  const position = new Vector3(...camera.position);
+  const direction = new Vector3(0, 0, -1).applyQuaternion(
+    new Quaternion(...camera.quaternion),
+  );
+  if (direction.y >= -1e-6) return false;
+  const distance = (deskPlaneY - position.y) / direction.y;
+  if (distance <= 0) return false;
+  const hit = position.addScaledVector(direction, distance);
+  return (
+    hit.x >= journalDeskFootprint.minX &&
+    hit.x <= journalDeskFootprint.maxX &&
+    hit.z >= journalDeskFootprint.minZ &&
+    hit.z <= journalDeskFootprint.maxZ
   );
 }
 
@@ -668,16 +698,22 @@ function validateManifest(manifest) {
         JSON.stringify(frame.camera?.position) !==
         JSON.stringify(deskCamera?.position),
     );
+    const postHeadLeadFrames = journalFrames.slice(
+      Math.max(firstJournalTranslation - 1, 0),
+    );
     if (
       journalCamera?.position?.[1] < 1.32 ||
       deskCamera?.position?.[2] - journalCamera?.position?.[2] < 0.3 ||
       journalFrames.some((frame) => frame.camera?.position?.[1] < 1.32) ||
       firstJournalRotation < 0 ||
       firstJournalTranslation < 0 ||
-      firstJournalRotation >= firstJournalTranslation
+      firstJournalRotation >= firstJournalTranslation ||
+      postHeadLeadFrames.some(
+        (frame) => !journalGazeHitsDesk(frame.camera),
+      )
     ) {
       issues.push(
-        `${variantId}/journal must use a head-first seated hinge above 1.32m eye height`,
+        `${variantId}/journal must use a head-first seated hinge above 1.32m eye height while keeping its gaze on the desktop`,
       );
     }
     if (

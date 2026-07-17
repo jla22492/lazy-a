@@ -40,6 +40,13 @@ const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
 const MIN_JOURNAL_EYE_HEIGHT = 1.32;
 const MIN_JOURNAL_FORWARD_TRAVEL = 0.3;
+const DESK_PLANE_Y = 0.9;
+const JOURNAL_DESK_FOOTPRINT = {
+  minX: -0.8,
+  maxX: 0.8,
+  minZ: -0.8,
+  maxZ: 0.8,
+};
 const APPROVED_ABOUT_CAMERAS = {
   wide: {
     position: [0.019999999553, 1.580000042915, 1.450000047684],
@@ -60,6 +67,17 @@ function sameTuple(left, right, tolerance = 1e-9) {
     left.length === right.length &&
     left.every((value, index) => Math.abs(value - right[index]) <= tolerance)
   );
+}
+
+function deskIntersection(camera) {
+  const position = new Vector3(...camera.position);
+  const direction = new Vector3(0, 0, -1).applyQuaternion(
+    new Quaternion(...camera.quaternion),
+  );
+  if (direction.y >= -1e-6) return null;
+  const distance = (DESK_PLANE_Y - position.y) / direction.y;
+  if (distance <= 0) return null;
+  return position.addScaledVector(direction, distance);
 }
 
 function cameraContractFailures(manifest) {
@@ -115,6 +133,22 @@ function cameraContractFailures(manifest) {
     ) {
       failures.push(
         `${profile}: JOURNAL rotation must begin before body translation; got rotation=${firstRotation}, translation=${firstTranslation}`,
+      );
+    }
+    const postHeadLeadFrames = frames.slice(Math.max(firstTranslation - 1, 0));
+    const missedDeskAt = postHeadLeadFrames.findIndex((frame) => {
+      const hit = deskIntersection(frame.camera);
+      return (
+        !hit ||
+        hit.x < JOURNAL_DESK_FOOTPRINT.minX ||
+        hit.x > JOURNAL_DESK_FOOTPRINT.maxX ||
+        hit.z < JOURNAL_DESK_FOOTPRINT.minZ ||
+        hit.z > JOURNAL_DESK_FOOTPRINT.maxZ
+      );
+    });
+    if (missedDeskAt >= 0) {
+      failures.push(
+        `${profile}: JOURNAL gaze leaves the desktop after the head lead at frame ${Math.max(firstTranslation - 1, 0) + missedDeskAt}`,
       );
     }
     const approvedAbout = APPROVED_ABOUT_CAMERAS[profile];

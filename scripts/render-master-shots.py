@@ -107,6 +107,7 @@ NAV_CENTER_X_PORTRAIT = 0.58
 NAV_CENTER_Y = -0.265
 NAV_CENTER_Y_PORTRAIT = 0.15
 DESK_HEIGHT = 0.9
+JOURNAL_DESK_FOOTPRINT = (-0.8, 0.8, -0.8, 0.8)
 HANDWRITING_FONT_PATH = Path("/System/Library/Fonts/Noteworthy.ttc")
 CONTACT_FONT_PATH = Path("/System/Library/Fonts/Supplemental/Arial Narrow Bold.ttf")
 NAV_LABEL_WIDTHS = (0.113, 0.145, 0.155, 0.110)
@@ -1748,15 +1749,22 @@ def transition_sample(
     raw_t = frame_index / max(frame_count - 1, 1)
 
     if destination == "journal":
+        start_target = three_to_blender(
+            tuple(PROFILE_POSES[profile][start_name]["target"])
+        )
+        end_target = three_to_blender(
+            tuple(PROFILE_POSES[profile][destination]["target"])
+        )
         head_fraction = 1.0 / 3.0
         if raw_t <= head_fraction:
             position = start_position.copy()
-            head_t = smoothstep(raw_t / head_fraction) * 0.72
-            quaternion = start_quaternion.slerp(end_quaternion, head_t)
+            head_t = smoothstep(raw_t / head_fraction)
+            target = start_target.lerp(end_target, head_t)
         else:
             body_t = smoothstep((raw_t - head_fraction) / (1.0 - head_fraction))
             position = start_position.lerp(end_position, body_t)
-            quaternion = start_quaternion.slerp(end_quaternion, 0.72 + body_t * 0.28)
+            target = end_target
+        quaternion = (target - position).to_track_quat("-Z", "Y")
     else:
         eased = smoothstep(raw_t)
         position = start_position.lerp(end_position, eased)
@@ -2552,6 +2560,32 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         )
         if first_rotation < 0 or first_translation < 0 or first_rotation >= first_translation:
             issues.append(f"{profile}: JOURNAL head rotation must begin before forward translation")
+        post_head_lead = journal_frames[max(first_translation - 1, 0) :]
+        for frame_index, frame in enumerate(
+            post_head_lead,
+            start=max(first_translation - 1, 0),
+        ):
+            camera_sample_data = frame["camera"]
+            x, y, z, w = camera_sample_data["quaternion"]
+            direction = Quaternion((w, x, y, z)) @ Vector((0.0, 0.0, -1.0))
+            position = Vector(camera_sample_data["position"])
+            if direction.y >= -1e-6:
+                issues.append(
+                    f"{profile}: JOURNAL gaze misses the desktop at frame {frame_index}"
+                )
+                break
+            distance = (DESK_HEIGHT - position.y) / direction.y
+            hit = position + direction * distance
+            min_x, max_x, min_z, max_z = JOURNAL_DESK_FOOTPRINT
+            if (
+                distance <= 0.0
+                or not min_x <= hit.x <= max_x
+                or not min_z <= hit.z <= max_z
+            ):
+                issues.append(
+                    f"{profile}: JOURNAL gaze misses the desktop at frame {frame_index}"
+                )
+                break
         contact_transition = transitions["desk-contact"]
         contact_camera = endpoints["contact"]["projection"]["camera"]
         if contact_camera == desk_camera or all(
