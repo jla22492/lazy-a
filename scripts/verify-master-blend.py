@@ -66,7 +66,8 @@ ASSET_RULES = {
         "center": (-0.55, -0.19),
     },
     "lamp": {
-        "axis": "z",
+        # Articulation changes the world-axis bounds. The disconnected-component
+        # edge signatures below enforce the supplied fixture's 0.48m scale.
         "size": 0.48,
         "contact": "desk",
         "replaces": True,
@@ -310,6 +311,175 @@ def mesh_components_world(obj):
             [obj.matrix_world @ obj.data.vertices[index].co for index in indices]
         )
     return components
+
+
+def mesh_component_edge_signatures(
+    obj, *, scale=1.0, stretch_longest=False
+):
+    adjacency = [[] for _vertex in obj.data.vertices]
+    for edge in obj.data.edges:
+        first, second = edge.vertices
+        adjacency[first].append(second)
+        adjacency[second].append(first)
+
+    components = []
+    unseen = set(range(len(obj.data.vertices)))
+    while unseen:
+        seed = min(unseen)
+        unseen.remove(seed)
+        stack = [seed]
+        indices = [seed]
+        while stack:
+            current = stack.pop()
+            for neighbor in adjacency[current]:
+                if neighbor in unseen:
+                    unseen.remove(neighbor)
+                    stack.append(neighbor)
+                    indices.append(neighbor)
+        index_set = set(indices)
+        edges = [
+            edge
+            for edge in obj.data.edges
+            if edge.vertices[0] in index_set
+            and edge.vertices[1] in index_set
+        ]
+        points = {
+            index: obj.matrix_world @ obj.data.vertices[index].co
+            for index in indices
+        }
+        minimum = Vector(
+            min(point[axis] for point in points.values()) for axis in range(3)
+        )
+        maximum = Vector(
+            max(point[axis] for point in points.values()) for axis in range(3)
+        )
+        components.append(
+            {
+                "indices": indices,
+                "edges": edges,
+                "points": points,
+                "span": max(maximum - minimum),
+            }
+        )
+
+    stretched_component = None
+    if stretch_longest:
+        stretched_component = max(
+            (
+                component
+                for component in components
+                if 100 <= len(component["indices"]) <= 250
+            ),
+            key=lambda component: component["span"],
+        )
+        samples = np.array(
+            [
+                list(stretched_component["points"][index])
+                for index in stretched_component["indices"]
+            ]
+        )
+        center = Vector(samples.mean(axis=0))
+        _eigenvalues, eigenvectors = np.linalg.eigh(
+            np.cov((samples - np.array(center)).T)
+        )
+        stretch_axis = Vector(eigenvectors[:, -1]).normalized()
+
+    signatures = []
+    for component in components:
+        points = component["points"]
+        if component is stretched_component:
+            center = sum(points.values(), Vector()) / len(points)
+            points = {
+                index: center
+                + stretch_axis * (point - center).dot(stretch_axis) * 1.25
+                + (
+                    (point - center)
+                    - stretch_axis * (point - center).dot(stretch_axis)
+                )
+                for index, point in points.items()
+            }
+        lengths = sorted(
+            (
+                points[edge.vertices[0]] - points[edge.vertices[1]]
+            ).length
+            * scale
+            for edge in component["edges"]
+        )
+        signatures.append(
+            {
+                "vertices": len(component["indices"]),
+                "edges": len(component["edges"]),
+                "lengths": lengths,
+            }
+        )
+    return signatures
+
+
+def supplied_lamp_component_signatures():
+    source_path = (
+        REPO_ROOT / "assets/master/scans/desk-lamp/scene.gltf"
+    )
+    existing_objects = set(bpy.data.objects)
+    existing_meshes = set(bpy.data.meshes)
+    try:
+        bpy.ops.import_scene.gltf(filepath=str(source_path))
+        imported = [
+            obj for obj in bpy.data.objects if obj not in existing_objects
+        ]
+        source_fixture = max(
+            (obj for obj in imported if obj.type == "MESH"),
+            key=lambda obj: len(obj.data.vertices),
+        )
+        source_bounds = mesh_world_bounds([source_fixture])
+        if source_bounds is None:
+            return None
+        source_height = source_bounds[1].z - source_bounds[0].z
+        real_world_scale = ASSET_RULES["lamp"]["size"] / source_height
+        return mesh_component_edge_signatures(
+            source_fixture, scale=real_world_scale
+        )
+    finally:
+        for obj in [
+            obj for obj in bpy.data.objects if obj not in existing_objects
+        ]:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        for mesh in [
+            mesh for mesh in bpy.data.meshes if mesh not in existing_meshes
+        ]:
+            bpy.data.meshes.remove(mesh)
+
+
+def rigid_component_signature_issues(actual, expected):
+    if actual is None or expected is None or len(actual) != len(expected):
+        return ["component count/topology differs from the supplied lamp"]
+    failures = []
+    for index, (actual_component, expected_component) in enumerate(
+        zip(actual, expected)
+    ):
+        if (
+            actual_component["vertices"] != expected_component["vertices"]
+            or actual_component["edges"] != expected_component["edges"]
+            or len(actual_component["lengths"])
+            != len(expected_component["lengths"])
+        ):
+            failures.append(f"{index}:topology")
+            continue
+        maximum_error = max(
+            (
+                abs(actual_length - expected_length)
+                / max(expected_length, 1e-8)
+                for actual_length, expected_length in zip(
+                    actual_component["lengths"],
+                    expected_component["lengths"],
+                )
+                if abs(actual_length - expected_length)
+                > max(1e-5, expected_length * 0.0001)
+            ),
+            default=0.0,
+        )
+        if maximum_error > 0.0:
+            failures.append(f"{index}:{maximum_error:.3f}")
+    return failures
 
 
 def measured_lamp_shade_geometry(fixture):
@@ -1192,6 +1362,22 @@ if isinstance(lamp_record, dict):
     if lamp_anchor is None:
         issues.append("scan_lamp root is missing")
     elif len(fixture_meshes) == 1:
+        expected_component_signatures = supplied_lamp_component_signatures()
+        actual_component_signatures = mesh_component_edge_signatures(
+            fixture_meshes[0],
+            stretch_longest=(
+                os.environ.get("LAZY_A_VERIFY_NEGATIVE_CONTROL")
+                == "lamp-stretch"
+            ),
+        )
+        signature_failures = rigid_component_signature_issues(
+            actual_component_signatures, expected_component_signatures
+        )
+        if signature_failures:
+            issues.append(
+                "CONTACT lamp disconnected components are not rigid copies of "
+                f"the supplied fixture: {signature_failures[:8]}"
+            )
         stored_target = vector_json_property(
             lamp_anchor,
             "lazy_a_contact_aim_target",

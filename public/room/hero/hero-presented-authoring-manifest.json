@@ -94,11 +94,11 @@
   "sources": {
     "compositorGlb": {
       "path": "public/room/hero/hero-compositor.glb",
-      "sha256": "19f6269264b8d7229e425068911b67147644b360da80856dab354f93bc8ee18f"
+      "sha256": "2ce0436ebe1167d8e8c07e78e62dbd0522cef2898a6c06217a9edbb639bc51a3"
     },
     "masterBlend": {
       "path": "build/wo-0117-r/master.blend",
-      "sha256": "11065105bad2d41e47d6094585741d172ac5218884db9357cbb562df48dee1ec"
+      "sha256": "713ba379dddbdc774ecf45d538806de13128e0cfd197a73a4b1603c188946469"
     },
     "renderScript": {
       "path": "scripts/render-master-shots.py",

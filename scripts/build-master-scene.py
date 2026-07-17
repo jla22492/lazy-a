@@ -33,11 +33,11 @@ ORIGINAL_LEFT_BOUNDARY_X = -3.2
 EXTENDED_LEFT_BOUNDARY_X = -5.7
 CONTACT_PAPER_CENTER_XY = (-0.35, -0.04)
 CONTACT_SHADE_MAX_ERROR_DEGREES = 12.0
-CONTACT_LAMP_LINK_SCALE = 2.4
-CONTACT_LAMP_LOWER_HINGE_DEGREES = 102.0
-CONTACT_LAMP_ELBOW_HINGE_DEGREES = -94.0
-CONTACT_LAMP_HEAD_HINGE_DEGREES = 89.0
-CONTACT_LAMP_BASE_YAW_DEGREES = -33.0
+CONTACT_LAMP_WHOLE_TRANSLATION = Vector((0.466707, -0.209931, 0.0))
+CONTACT_LAMP_LOWER_HINGE_DEGREES = -33.988
+CONTACT_LAMP_ELBOW_HINGE_DEGREES = -83.859
+CONTACT_LAMP_HEAD_HINGE_DEGREES = 102.555
+CONTACT_LAMP_BASE_YAW_DEGREES = -162.888
 SHELL_OBJECTS = {
     "rear_wall": "Mesh_1",
     "floor": "Mesh_163",
@@ -716,19 +716,12 @@ def lamp_articulation_topology(lamp_objects, base_center, base_min_z):
     }
 
 
-def stretch_relative(relative, axis, factor):
-    parallel = axis * relative.dot(axis)
-    return parallel * factor + (relative - parallel)
-
-
 def articulate_lamp_upper_geometry(lamp_objects, topology):
     lower_center = topology["lower_center"]
     elbow_center = topology["elbow_center"]
     head_center = topology["head_center"]
     hinge_axis = topology["hinge_axis"]
     base_center = topology["base_center"]
-    lower_axis = (elbow_center - lower_center).normalized()
-    upper_axis = (head_center - elbow_center).normalized()
     lower_rotation = Matrix.Rotation(
         math.radians(CONTACT_LAMP_LOWER_HINGE_DEGREES), 4, hinge_axis
     )
@@ -741,9 +734,8 @@ def articulate_lamp_upper_geometry(lamp_objects, topology):
     yaw_rotation = Matrix.Rotation(
         math.radians(CONTACT_LAMP_BASE_YAW_DEGREES), 4, "Z"
     )
-    scale = CONTACT_LAMP_LINK_SCALE
     moved_elbow = lower_center + lower_rotation @ (
-        (elbow_center - lower_center) * scale
+        elbow_center - lower_center
     )
     fixture = topology["fixture"]
     inverse = fixture.matrix_world.inverted()
@@ -757,22 +749,21 @@ def articulate_lamp_upper_geometry(lamp_objects, topology):
                     point - head_center
                 )
                 elbow_point = elbow_center + elbow_rotation @ (
-                    (head_center - elbow_center) * scale
+                    head_center - elbow_center
                     + head_point
                     - head_center
                 )
                 articulated = lower_center + lower_rotation @ (
-                    (elbow_center - lower_center) * scale
+                    elbow_center - lower_center
                     + elbow_point
                     - elbow_center
                 )
             elif component["role"] == "upper-link":
-                upper_relative = stretch_relative(
-                    point - elbow_center, upper_axis, scale
+                elbow_point = elbow_center + elbow_rotation @ (
+                    point - elbow_center
                 )
-                elbow_point = elbow_center + elbow_rotation @ upper_relative
                 articulated = lower_center + lower_rotation @ (
-                    (elbow_center - lower_center) * scale
+                    elbow_center - lower_center
                     + elbow_point
                     - elbow_center
                 )
@@ -781,11 +772,8 @@ def articulate_lamp_upper_geometry(lamp_objects, topology):
                     point - elbow_center
                 )
             else:
-                lower_relative = stretch_relative(
-                    point - lower_center, lower_axis, scale
-                )
-                articulated = (
-                    lower_center + lower_rotation @ lower_relative
+                articulated = lower_center + lower_rotation @ (
+                    point - lower_center
                 )
             rotated = base_center + yaw_rotation @ (
                 articulated - base_center
@@ -811,21 +799,27 @@ def correct_contact_lamp_orientation(anchor, lamp_objects):
     target = Vector((*CONTACT_PAPER_CENTER_XY, desk_top + 0.0016))
 
     articulate_lamp_upper_geometry(lamp_objects, topology)
+    anchor.location += CONTACT_LAMP_WHOLE_TRANSLATION
     bpy.context.view_layer.update()
 
     corrected_base_center, corrected_min_z = measured_lamp_base(lamp_objects)
     base_bounds_after = measured_lamp_base_bounds(lamp_objects)
     corrected_axis, corrected_opening, opening_radius = shade_geometry(lamp_objects)
     corrected_error = angle_degrees(corrected_axis, target - corrected_opening)
-    if (corrected_base_center - base_center).length > 1e-6:
-        raise RuntimeError("Desk-lamp base moved while applying the CONTACT aim")
+    expected_base_center = base_center + CONTACT_LAMP_WHOLE_TRANSLATION
+    if (corrected_base_center - expected_base_center).length > 1e-6:
+        raise RuntimeError(
+            "Desk-lamp base did not follow the authored whole-fixture translation"
+        )
     if abs(corrected_min_z - base_min_z) > 1e-7:
         raise RuntimeError("Desk-lamp support height changed while applying the CONTACT aim")
     if any(
-        (after - before).length > 1e-7
+        (after - before - CONTACT_LAMP_WHOLE_TRANSLATION).length > 1e-7
         for before, after in zip(base_bounds_before, base_bounds_after)
     ):
-        raise RuntimeError("Desk-lamp base bounds changed while applying the CONTACT aim")
+        raise RuntimeError(
+            "Desk-lamp base geometry changed while applying its rigid translation"
+        )
     if corrected_error > CONTACT_SHADE_MAX_ERROR_DEGREES:
         raise RuntimeError(
             f"Desk-lamp shade misses CONTACT by {corrected_error:.3f} degrees"
@@ -848,7 +842,10 @@ def correct_contact_lamp_orientation(anchor, lamp_objects):
     anchor["lazy_a_contact_base_center"] = json.dumps(
         rounded_vector(corrected_base_center)
     )
-    anchor["lazy_a_contact_link_scale"] = CONTACT_LAMP_LINK_SCALE
+    anchor["lazy_a_contact_link_scale"] = 1.0
+    anchor["lazy_a_contact_whole_translation"] = json.dumps(
+        rounded_vector(CONTACT_LAMP_WHOLE_TRANSLATION)
+    )
     anchor["lazy_a_contact_lower_hinge_degrees"] = (
         CONTACT_LAMP_LOWER_HINGE_DEGREES
     )
@@ -869,7 +866,8 @@ def correct_contact_lamp_orientation(anchor, lamp_objects):
     )
     print(
         "CONTACT LAMP AIM:",
-        f"links={CONTACT_LAMP_LINK_SCALE:.3f}x",
+        "rigid-components=true",
+        f"translation={rounded_vector(CONTACT_LAMP_WHOLE_TRANSLATION, 6)}",
         f"lower={CONTACT_LAMP_LOWER_HINGE_DEGREES:.3f}",
         f"elbow={CONTACT_LAMP_ELBOW_HINGE_DEGREES:.3f}",
         f"head={CONTACT_LAMP_HEAD_HINGE_DEGREES:.3f}",
