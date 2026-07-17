@@ -1,4 +1,30 @@
-# WORK ORDER 0117-R3 — Production-Quality Visual Rebuild
+# WORK ORDER 0117-R4 — Physical Continuity Corrections
+
+## Approved Design
+
+- [x] Reproduce hero drift, foreground-mask distortion, split JOURNAL motion,
+  and CONTACT light-without-source in the deployed normal-speed review.
+- [x] Trace the failures to the non-atomic hero layers, fixed color multiplier,
+  512px silhouette, missing leaning-card occluder, staged JOURNAL interpolation,
+  hidden CONTACT bulb, and misaligned lamp/light axes.
+- [x] Receive Jonathan's approval of the atomic hero, hip-pivot JOURNAL, and
+  practical-light CONTACT design.
+- [x] Lock the CONTACT timing: `1.0s` stationary lamp-on beat, then the approved
+  R3 CONTACT camera move and endpoint.
+- [ ] Commit the approved design specification.
+- [ ] Commit the implementation plan.
+- [ ] Add failing hero physical-continuity gates.
+- [ ] Replace the split JOURNAL motion with one readable hip-pivot path.
+- [ ] Re-author CONTACT's visible practical and one-second activation beat.
+- [ ] Replace the non-atomic hero overlay and low-resolution occlusion path.
+- [ ] Regenerate and encode affected wide and portrait room media.
+- [ ] Run full local source, browser, clock, performance, and visual batteries.
+- [ ] Push and verify the deployed Pages candidate.
+- [ ] Receive Jonathan's explicit visual approval before any completion claim.
+
+---
+
+# WORK ORDER 0117-R3 — Superseded Technical Review Candidate
 
 ## Approved Design
 

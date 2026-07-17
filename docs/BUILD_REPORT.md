@@ -1,6 +1,58 @@
 # BUILD REPORT
 
-WORK ORDER 0117-R3 TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
+WORK ORDER 0117-R4 IN PROGRESS — PHYSICAL CONTINUITY CORRECTIONS
+
+Version:
+
+v0.1 — approved design and reproduced failures
+
+Observed Result:
+
+- Jonathan accepted the R3 room rebuild as significant progress but rejected
+  the remaining hero, JOURNAL, and CONTACT motion behavior.
+- Normal-speed deployed review reproduces hero color discontinuity,
+  poster-axis swimming, card overdraw, and pencil-edge mask distortion.
+- JOURNAL visibly performs two mechanical stages and ends in a twisted
+  side-angle view that compromises paragraph readability.
+- CONTACT's indentation and desk pool read well, but the visible lamp does not
+  switch on or credibly aim at the illuminated area.
+
+Root-Cause Verification:
+
+- `HeroFilm.tsx` renders above the DOM plate on an independent WebGL frame,
+  applies a fixed color multiplier, and downsamples authored silhouettes into a
+  compact mask texture.
+- The authored hero mask is fixed at `512px`; its ten-object list omits the
+  leaning logo card while thin pencil edges are blurred and resampled.
+- `render-master-shots.py` fixes JOURNAL position for the first third of the
+  transition, then moves toward a target nearly under the eye, causing the
+  staged motion and late twist.
+- CONTACT creates an emissive bulb but sets `hide_render = True`; its spot is
+  aimed independently from the visible shade axis.
+- Existing gates validate coordinates, metadata, generic desk intersection,
+  and desk-pool activation. They do not validate cross-layer presented pixels,
+  reading-angle quality, visible practical luminance, or optical-axis
+  alignment.
+
+Approved Result:
+
+- Hero still and film retain identical room lighting and are drawn atomically
+  with delivery-resolution foreground mattes.
+- JOURNAL is one continuous hip hinge into a readable downward notebook POV.
+- CONTACT holds the desk camera for `1.0s` while the visible lamp turns on and
+  lights the desk, then performs the unchanged R3 move to its unchanged
+  endpoint.
+
+Verification Status:
+
+- Design and acceptance criteria — APPROVED.
+- Implementation, regenerated media, browser battery, deployment, and
+  Jonathan's final visual approval — OPEN.
+- No completion claim is made.
+
+---
+
+WORK ORDER 0117-R3 TECHNICAL REVIEW CANDIDATE — REJECTED BY JONATHAN
 
 Version:
 

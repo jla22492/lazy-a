@@ -14,40 +14,40 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R3 TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING. Jonathan rejected the 0117-R2 review candidate after
-full-frame visual review. Coordinate and nominal-scale gates passed while the
-photographic result still contained misplaced books, a floating lamp and light
-source, duplicate camera geometry, a missing blanket, weak CONTACT indentation,
-toy-like basketball staging, low-resolution logo/tape/pencil artifacts, and an
-ungraded hero layer that appeared, sheared, and drifted independently of its
-poster. FILMS and JOURNAL also violated the intended seated-body choreography,
-and ABOUT exposed the room's left boundary.
+0117-R4 IN PROGRESS — PHYSICAL CONTINUITY CORRECTIONS. Jonathan's full-motion
+review accepted the room's substantial R3 progress but rejected three remaining
+behaviors. The living hero changes saturation, drifts against its poster during
+camera motion, draws over the leaning card, and tears around pencil silhouettes.
+JOURNAL is visibly split into a head move and a body move, then twists into a
+side-angle reading pose. CONTACT illuminates the indentation without showing a
+credible practical source in the lamp.
 
-The approved R3 design rebuilds the physical master before touching the live
-experience: corrected shelf/desk/right-corner dressing, restored blanket,
-single photographic camera, shade-origin CONTACT light, high-resolution plates,
-perspective-correct treated hero compositing, a forward-hinge JOURNAL lean, and
-an extended left room carrying Jonathan's supplied leather armchair, coffee
-table, and floor lamp. The written design is
-`docs/superpowers/specs/2026-07-15-0117-r3-production-quality-rebuild-design.md`.
+Source inspection confirms that the failures were certified by incomplete
+contracts: the photographic plate and hero are presented on separate render
+clocks; the hero uses a fixed RGB multiplier and a `512px` silhouette that omits
+the leaning card; JOURNAL explicitly reserves its first third for a stationary
+head turn before a linear dolly; and CONTACT hides its emissive bulb while an
+independently aimed spot creates the desk pool.
 
-R3 is now a deployed technical review candidate. The final wide/portrait stills
-and 20 transition MP4s derive from the rebuilt saved master; desktop,
-tall-desktop, and phone journeys have been inspected at normal speed. That
-review caught and rejected an endpoint-correct but floorward JOURNAL
-intermediate, which is now covered by a desk-footprint sightline gate and has
-been corrected and rerendered. The five-viewport arrival, 310/310 hero
-lifecycle, physical navigation, CONTACT reveal, camera, dwell, clock,
-performance, fallback, saved-master, media, and build batteries all pass
-locally. GitHub Pages workflow `29573534853` deployed commit `f88194a`; the
-public five-viewport arrival, hero `310/310`, camera, navigation, CONTACT,
-dwell, fallback, clock, performance, and normal-speed film review all pass.
-Jonathan's explicit visual approval remains open; no completion claim is made.
+Jonathan approved the R4 correction design on 2026-07-17. The hero becomes one
+atomically composited physical surface with room-consistent treatment and
+delivery-resolution foreground mattes. JOURNAL becomes one continuous hip-pivot
+move that settles into a readable downward notebook POV. CONTACT holds the desk
+camera for exactly `1.0s` while the visible practical turns on and illuminates
+the desk, then preserves the approved R3 CONTACT move and endpoint. The written
+design is
+`docs/superpowers/specs/2026-07-17-0117-r4-physical-continuity-design.md`.
+R3's prior automated passes remain historical evidence, not acceptance.
 
 ---
 
 ## Completed
 
+- WORK ORDER 0117-R3 — REJECTED IN FULL-MOTION REVIEW: the rebuilt room and
+  object composition were substantial progress, but the hero still behaved as
+  a separately timed graphic, JOURNAL remained a staged mechanical move, and
+  CONTACT's visible lamp did not originate its own reveal. Superseded by
+  0117-R4.
 - WORK ORDER 0117-R — REJECTED AFTER IMPLEMENTATION: its automated gates passed at two exact viewports, but the live experience changed the approved camera, broke hero-to-print registration at ordinary intermediate aspect ratios, and remained visibly below the creative quality bar. Superseded by 0117-R2.
 - WORK ORDER 0117 — Physical navigation refinement: removed the floating website label layer, moved the logo into the room as a desk/wall identity proof, added the pencil-written production note as explicit navigation, implemented CONTACT as a latent pressure-impression reveal, added ABOUT's leftward room-history turn, and reverified the live 4/5/6 clock at settle 3.41s / magic 4.72s / physical JOURNAL target 0.08s.
 - Repository initialized and connected to GitHub
