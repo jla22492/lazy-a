@@ -283,9 +283,29 @@ function expectedArrival(profile) {
   return transition;
 }
 
+function expectedArrivalForTarget(profile, basePath = targetBasePath) {
+  const authored = expectedArrival(profile);
+  return {
+    ...authored,
+    forward: `${basePath}${authored.forward}`,
+  };
+}
+
 function runAntiStubSelfTest() {
   const viewport = VIEWPORTS[0];
   const expected = expectedArrival(viewport.profile);
+  const authoredForward = expected.forward;
+  const firstResolved = expectedArrivalForTarget(viewport.profile, "/lazy-a");
+  const secondResolved = expectedArrivalForTarget(viewport.profile, "/lazy-a");
+  if (
+    expectedArrival(viewport.profile).forward !== authoredForward ||
+    firstResolved.forward !== `/lazy-a${authoredForward}` ||
+    secondResolved.forward !== firstResolved.forward
+  ) {
+    throw new Error(
+      "arrival target-path resolution mutated or compounded the authored manifest",
+    );
+  }
   const staticFrame = {
     presentedFrames: 1,
     mediaTime: 0,
@@ -318,6 +338,9 @@ function runAntiStubSelfTest() {
   }
   console.log(
     `PASS anti-stub self-test: rejected constant diagnostics with ${result.issues.length} independent acceptance failures`,
+  );
+  console.log(
+    "PASS target-path self-test: repeated deployed resolution remained immutable",
   );
 }
 
@@ -601,8 +624,7 @@ try {
     ({ name }) => !requestedViewport || name === requestedViewport,
   )) {
     const label = `${viewport.name} ${viewport.width}x${viewport.height}`;
-    const expected = expectedArrival(viewport.profile);
-    expected.forward = `${targetBasePath}${expected.forward}`;
+    const expected = expectedArrivalForTarget(viewport.profile);
     const expectedProfile =
       viewport.width <= cameraContract.selection.phoneMaxWidth
         ? "portrait"

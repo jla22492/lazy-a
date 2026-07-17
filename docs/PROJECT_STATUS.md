@@ -31,7 +31,7 @@ an extended left room carrying Jonathan's supplied leather armchair, coffee
 table, and floor lamp. The written design is
 `docs/superpowers/specs/2026-07-15-0117-r3-production-quality-rebuild-design.md`.
 
-R3 is now a local technical review candidate. The final wide/portrait stills
+R3 is now a deployed technical review candidate. The final wide/portrait stills
 and 20 transition MP4s derive from the rebuilt saved master; desktop,
 tall-desktop, and phone journeys have been inspected at normal speed. That
 review caught and rejected an endpoint-correct but floorward JOURNAL
@@ -39,8 +39,10 @@ intermediate, which is now covered by a desk-footprint sightline gate and has
 been corrected and rerendered. The five-viewport arrival, 310/310 hero
 lifecycle, physical navigation, CONTACT reveal, camera, dwell, clock,
 performance, fallback, saved-master, media, and build batteries all pass
-locally. Deployed Pages verification and Jonathan's explicit visual approval
-remain open; no completion claim is made.
+locally. GitHub Pages workflow `29573534853` deployed commit `f88194a`; the
+public five-viewport arrival, hero `310/310`, camera, navigation, CONTACT,
+dwell, fallback, clock, performance, and normal-speed film review all pass.
+Jonathan's explicit visual approval remains open; no completion claim is made.
 
 ---
 
@@ -197,10 +199,9 @@ remain open; no completion claim is made.
 
 ## In Progress
 
-WORK ORDER 0117-R3 — local technical review candidate. The corrected master,
+WORK ORDER 0117-R3 — deployed technical review candidate. The corrected master,
 high-resolution media, physical interactions, normal-speed review films, and
-local behavioral/source batteries are ready. Push, deployed Pages verification,
-and Jonathan's visual decision remain.
+local/deployed batteries are ready. Jonathan's visual decision remains.
 
 ---
 

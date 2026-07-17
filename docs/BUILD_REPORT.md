@@ -68,16 +68,36 @@ Behavioral Verification:
 - Fallback behavior — PASS on desktop and phone: blocked endpoint/transition
   requests retain photographic markers with no primitive, loading, or error UI.
 - TypeScript, targeted ESLint, and production build — PASS.
+- Deployed Pages workflow `29573534853` — PASS at commit `f88194a`.
+- Deployed arrival — PASS at all five viewport classes with exact camera
+  samples and pixel-stable endpoint retention.
+- Deployed hero lifecycle — PASS `310/310`.
+- Deployed camera states, dense-grid physical navigation, dwell x4, and
+  photographic fallbacks — PASS.
+- Deployed CONTACT — PASS through the actual physical row: mid lamp-pool luma
+  lift `67.2`, readable exact-copy indentation, `5939ms` observed hold, no
+  standalone plane, and clean reverse.
+- Deployed clock — PASS: settle `3.35s`; magic `5.15s`; JOURNAL target `0.08s`.
+- Deployed performance — PASS: median `59.9fps`; `2.92MB` pre-settle;
+  `10.61MB` total; no reverse-arrival preload.
+- Deployed normal-speed film — PASS after visual inspection of arrival, desk,
+  FILMS, corrected JOURNAL, CONTACT, ABOUT, all desk returns, hero end, and
+  final hold.
 
 Review Evidence:
 
 - `docs/progress/0117-r3-review-desktop.webm`
 - `docs/progress/0117-r3-review-tall.webm`
 - `docs/progress/0117-r3-review-phone.webm`
+- `docs/progress/0117-r3-review-deployed.webm`
 - `docs/progress/0117-r3-contact-live/contact-rest.png`
 - `docs/progress/0117-r3-contact-live/contact-reveal-mid.png`
 - `docs/progress/0117-r3-contact-live/contact-hold.png`
 - `docs/progress/0117-r3-contact-live/contact-reversed.png`
+- `docs/progress/0117-r3-contact-live-deployed/contact-rest.png`
+- `docs/progress/0117-r3-contact-live-deployed/contact-reveal-mid.png`
+- `docs/progress/0117-r3-contact-live-deployed/contact-hold.png`
+- `docs/progress/0117-r3-contact-live-deployed/contact-reversed.png`
 - `docs/progress/0117-r3-master-opening.jpg`
 - `docs/progress/0117-r3-master-desk.jpg`
 - `docs/progress/0117-r3-master-about.jpg`
@@ -121,9 +141,10 @@ Enumerated 0117-R3 Audit:
     a puzzle or pasted website controls + dense-grid and dwell gates.
 19. ✅ CONTACT copy matches Jonathan's final three-line ruling exactly +
     manifest, geometry, DOM-absence, and live-pixel gates.
-20. ⚠️ Deployed Pages verification and Jonathan's explicit visual approval are
-    still open. This candidate cannot be called complete until both are
-    observed.
+20. ✅ Deployed Pages verification shipped + workflow, five-viewport, lifecycle,
+    interaction, clock, performance, fallback, and normal-speed film evidence.
+21. ⚠️ Jonathan's explicit visual approval is still open. This candidate cannot
+    be called complete until that human acceptance is observed.
 
 ---
 

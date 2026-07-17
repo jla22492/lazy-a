@@ -37,6 +37,8 @@ const outDir = resolve(
 );
 const viewport = { width: 1280, height: 720 };
 const SAMPLE_INTERVAL_MS = 100;
+const MID_REVEAL_MIN = 0.68;
+const MID_REVEAL_MAX = 0.82;
 const EXPECTED_CONTACT_COPY = [
   "Jonathan Adelson",
   "JonathanAdelson1@gmail.com",
@@ -45,16 +47,16 @@ const EXPECTED_CONTACT_COPY = [
 const EXPECTED_INDENT_DEPTH = 0.0003;
 const MAX_GRAZING_ANGLE_DEGREES = 35;
 const MID_LAMP_POOL_REGION = {
-  x: 0.3,
-  y: 0.52,
+  x: 0.28,
+  y: 0.22,
   width: 0.05,
-  height: 0.1,
+  height: 0.08,
 };
 const MID_UNLIT_TABLE_REGION = {
-  x: 0.48,
-  y: 0.52,
+  x: 0.72,
+  y: 0.22,
   width: 0.05,
-  height: 0.1,
+  height: 0.08,
 };
 
 function contactManifestFailures(manifest) {
@@ -122,12 +124,6 @@ if (manifestOnly) {
   process.exit(failures.length === 0 ? 0 : 1);
 }
 
-function withContactRequest(url) {
-  const target = new URL(url);
-  target.searchParams.set("talk", "contact");
-  return target.href;
-}
-
 function inspectContact() {
   const marker = window.__lazyAContactReveal ?? null;
   const visible = (element) => {
@@ -184,6 +180,33 @@ async function collect(page, durationMs, onSample) {
     await page.waitForTimeout(SAMPLE_INTERVAL_MS);
   }
   return samples;
+}
+
+async function activatePhysicalContact(page) {
+  await page.waitForFunction(() => window.__arrivalDone === true, null, {
+    timeout: 15_000,
+  });
+  const screen = await page.evaluate(() => {
+    const debug = window.__lazyANavigationDebug;
+    const row = debug?.sheet?.rows?.find(({ id }) => id === "contact");
+    if (!row || typeof debug?.projectSheetPoint !== "function") return null;
+    return debug.projectSheetPoint(
+      row.rect.x + row.rect.width / 2,
+      row.rect.y + row.rect.height / 2,
+    );
+  });
+  if (!screen || !Number.isFinite(screen.x) || !Number.isFinite(screen.y)) {
+    throw new Error("CONTACT physical row center is unavailable");
+  }
+  await page.mouse.move(screen.x, screen.y, { steps: 4 });
+  await page.waitForTimeout(120);
+  const candidate = await page.evaluate(
+    () => window.__lazyANavCandidate ?? null,
+  );
+  if (candidate !== "contact") {
+    throw new Error(`CONTACT physical row resolved to ${String(candidate)}`);
+  }
+  await page.mouse.click(screen.x, screen.y);
 }
 
 async function readGrayImage(path) {
@@ -297,15 +320,16 @@ try {
   await restPage.close();
 
   const page = await browser.newPage({ viewport });
-  await page.goto(withContactRequest(baseUrl), { waitUntil: "load" });
+  await page.goto(baseUrl, { waitUntil: "load" });
+  await activatePhysicalContact(page);
   let midCaptured = false;
   riseSamples = await collect(page, 7000, async (sample) => {
     const revealLevel = sample.marker?.revealLevel;
     if (
       !midCaptured &&
       isFiniteLevel(revealLevel) &&
-      revealLevel >= 0.25 &&
-      revealLevel <= 0.75
+      revealLevel >= MID_REVEAL_MIN &&
+      revealLevel <= MID_REVEAL_MAX
     ) {
       midCaptured = true;
       await page.screenshot({ path: evidence.mid });

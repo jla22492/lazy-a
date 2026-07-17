@@ -20,7 +20,7 @@
 - [x] Render and encode high-resolution wide and portrait media.
 - [x] Run full automated, full-motion visual, and local-production
   verification.
-- [ ] Run the deployed Pages verification battery against the pushed candidate.
+- [x] Run the deployed Pages verification battery against the pushed candidate.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
 
 ## Master-Scene Checkpoint
@@ -59,6 +59,13 @@
   `docs/progress/0117-r3-review-desktop.webm`,
   `docs/progress/0117-r3-review-tall.webm`, and
   `docs/progress/0117-r3-review-phone.webm`.
+- Deployed Pages workflow `29573534853` passed. Public verification passes:
+  five-viewport arrival; hero `310/310`; camera states; dense-grid navigation;
+  physical-click CONTACT; dwell x4; fallbacks; clock `3.35s` / `5.15s` /
+  `0.08s`; performance `59.9fps` / `2.92MB` / `10.61MB`.
+- Deployed normal-speed review:
+  `docs/progress/0117-r3-review-deployed.webm`; public CONTACT captures:
+  `docs/progress/0117-r3-contact-live-deployed/`.
 - Human acceptance remains open. This is a technical review candidate, not a
   completion claim.
 
