@@ -471,6 +471,98 @@ async function runSelfTests() {
     const radians = (degrees * Math.PI) / 180;
     return [0, Math.sin(radians / 2), 0, Math.cos(radians / 2)];
   };
+  const physicalNotebookWorldQuad = [
+    [-0.7, 0.5, 0],
+    [0.7, 0.5, 0],
+    [0.7, -0.5, 0],
+    [-0.7, -0.5, 0],
+  ];
+  const readableApproachFrames = Array.from({ length: 24 }, (_, index) => {
+    const progress = index / 23;
+    const position = [0, 0, 2 - 1.2 * progress];
+    const camera = new PerspectiveCamera(90, 1, 0.1, 200);
+    camera.position.set(...position);
+    camera.lookAt(1 - progress, 0, 0);
+    return {
+      camera: {
+        position,
+        quaternion: camera.quaternion.toArray(),
+        fov: 90,
+      },
+    };
+  });
+  const readingHalfStart = Math.ceil((readableApproachFrames.length - 1) / 2);
+  assert.equal(
+    journalGazeHitsNotebook(
+      readableApproachFrames[0].camera,
+      physicalNotebookWorldQuad,
+    ),
+    false,
+    "the readable JOURNAL fixture must miss during approach",
+  );
+  assert.deepEqual(
+    journalMotionIssues(readableApproachFrames),
+    [],
+    "the readable JOURNAL fixture must begin coupled and stay below 3 degree steps",
+  );
+  const readableEndpointMetrics = projectedJournalEndpointMetrics(
+    { width: 100, height: 100 },
+    readableApproachFrames.at(-1).camera,
+    physicalNotebookWorldQuad,
+  );
+  assert.deepEqual(
+    journalDeclaredEndpointIssues(
+      readableEndpointMetrics,
+      readableEndpointMetrics,
+    ),
+    [],
+    "the readable JOURNAL fixture endpoint must pass",
+  );
+  assert.deepEqual(
+    journalReadingSightlineIssues(
+      readableApproachFrames,
+      physicalNotebookWorldQuad,
+      physicalNotebookWorldQuad,
+    ),
+    [],
+    "a coupled JOURNAL approach may miss early and must pass once every reading-half sample hits",
+  );
+  const lateLockFrames = structuredClone(readableApproachFrames);
+  lateLockFrames[readingHalfStart].camera = readableApproachFrames[0].camera;
+  assert.match(
+    journalReadingSightlineIssues(
+      lateLockFrames,
+      physicalNotebookWorldQuad,
+      physicalNotebookWorldQuad,
+    ).join("\n"),
+    /missed authored frame 12 \(reading half starts at 12\)/,
+    "a JOURNAL path that locks after the reading half must fail",
+  );
+  const fabricatedNotebookWorldQuad = physicalNotebookWorldQuad.map(
+    ([x, y, z]) => [x + 1, y, z],
+  );
+  assert.match(
+    journalReadingSightlineIssues(
+      readableApproachFrames,
+      physicalNotebookWorldQuad,
+      fabricatedNotebookWorldQuad,
+    ).join("\n"),
+    /declared notebookWorldQuad/,
+    "a fabricated JOURNAL notebookWorldQuad must fail",
+  );
+  const unreadableEndpointMetrics = projectedJournalEndpointMetrics(
+    { width: 100, height: 100 },
+    readableApproachFrames[0].camera,
+    physicalNotebookWorldQuad,
+  );
+  assert.match(
+    journalDeclaredEndpointIssues(
+      unreadableEndpointMetrics,
+      unreadableEndpointMetrics,
+    ).join("\n"),
+    /endpointCoverage/,
+    "an unreadable JOURNAL endpoint must fail",
+  );
   const coupledFrames = Array.from({ length: 6 }, (_, index) => ({
     camera: {
       position: [0, -index * 0.01, -index * 0.02],
@@ -611,7 +703,7 @@ async function runSelfTests() {
   );
 
   console.log(
-    "encode-master-shots self-tests passed (media parity, missing/fabricated JOURNAL endpoint declarations, derived motion scalar negatives, and CONTACT geometry/portrait negatives).",
+    "encode-master-shots self-tests passed (media parity, reading-half physical sightline, missing/fabricated JOURNAL endpoint declarations, derived motion scalar negatives, unreadable endpoint, and CONTACT geometry/portrait negatives).",
   );
 }
 
@@ -685,6 +777,59 @@ function journalGazeHitsNotebook(camera, notebookWorldQuad) {
     return u >= -1e-5 && v >= -1e-5 && u + v <= 1 + 1e-5;
   };
   return inTriangle(first, second, third) || inTriangle(first, third, fourth);
+}
+
+function journalReadingSightlineIssues(
+  frames,
+  physicalNotebookWorldQuad,
+  declaredNotebookWorldQuad,
+) {
+  if (
+    !Array.isArray(physicalNotebookWorldQuad) ||
+    physicalNotebookWorldQuad.length !== 4 ||
+    physicalNotebookWorldQuad.some((point) => !finiteTuple(point, 3))
+  ) {
+    return ["physical notebookWorldQuad is incomplete"];
+  }
+  const issues = [];
+  if (
+    !Array.isArray(declaredNotebookWorldQuad) ||
+    declaredNotebookWorldQuad.length !== physicalNotebookWorldQuad.length ||
+    declaredNotebookWorldQuad.some(
+      (point, index) =>
+        !finiteTuple(point, 3) ||
+        point.some(
+          (value, valueIndex) =>
+            value !== physicalNotebookWorldQuad[index][valueIndex],
+        ),
+    )
+  ) {
+    issues.push("declared notebookWorldQuad must match physical geometry");
+  }
+  if (
+    !Array.isArray(frames) ||
+    frames.length < 3 ||
+    frames.some(
+      (frame) =>
+        !finiteTuple(frame?.camera?.position, 3) ||
+        !finiteTuple(frame?.camera?.quaternion, 4),
+    )
+  ) {
+    return [...issues, "actual camera samples are incomplete"];
+  }
+  const readingHalfStart = Math.ceil((frames.length - 1) / 2);
+  const missedReadingFrame = frames
+    .slice(readingHalfStart)
+    .findIndex(
+      (frame) =>
+        !journalGazeHitsNotebook(frame.camera, physicalNotebookWorldQuad),
+    );
+  if (missedReadingFrame >= 0) {
+    issues.push(
+      `sightline must intersect physical notebookWorldQuad throughout the reading half; missed authored frame ${readingHalfStart + missedReadingFrame} (reading half starts at ${readingHalfStart})`,
+    );
+  }
+  return issues;
 }
 
 function clipPolygonToViewport(points) {
@@ -1504,8 +1649,7 @@ function validateManifest(
         `${variantId}/films must preserve the exact desk position/FOV and change only head rotation`,
       );
     }
-    const notebookWorldQuad =
-      journal?.notebookWorldQuad ?? variant.journal?.notebookWorldQuad;
+    const notebookWorldQuad = variant.journal?.notebookWorldQuad;
     const journalMetrics = projectedJournalEndpointMetrics(
       variant,
       journalCamera,
@@ -1515,6 +1659,11 @@ function validateManifest(
       ...journalDeclaredEndpointIssues(journal, journalMetrics).map(
         (issue) => `${variantId}/desk-journal ${issue}`,
       ),
+      ...journalReadingSightlineIssues(
+        journalFrames,
+        notebookWorldQuad,
+        journal?.notebookWorldQuad,
+      ).map((issue) => `${variantId}/desk-journal ${issue}`),
     );
     const journalMotion = journalMotionMetrics(journalFrames);
     const firstJournalTranslation = journalMotion?.firstTranslationFrame ?? -1;
@@ -1525,15 +1674,10 @@ function validateManifest(
       journalMetrics.endpointBaselineRotationDegrees >
         maximumJournalBaselineRotationDegrees ||
       journalMetrics.endpointCoverage < minimumJournalEndpointCoverage ||
-      journalMetrics.endpointCoverage > maximumJournalEndpointCoverage ||
-      journalFrames
-        .slice(Math.max(firstJournalTranslation, 0))
-        .some(
-          (frame) => !journalGazeHitsNotebook(frame.camera, notebookWorldQuad),
-        )
+      journalMetrics.endpointCoverage > maximumJournalEndpointCoverage
     ) {
       issues.push(
-        `${variantId}/journal must translate by frame 1 and keep its sightline on notebookWorldQuad`,
+        `${variantId}/journal must translate by frame 1 and end with readable physical notebook framing`,
       );
     }
     if (
