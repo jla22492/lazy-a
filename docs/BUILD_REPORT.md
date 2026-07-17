@@ -1,54 +1,129 @@
 # BUILD REPORT
 
-WORK ORDER 0117-R3 MASTER CHECKPOINT — FINAL MEDIA OPEN
+WORK ORDER 0117-R3 TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
 
 Version:
 
-v0.1 — Work Order 0117-R3 partial checkpoint
+v0.1 — Work Order 0117-R3 technical review candidate
 
 Observed Result:
 
-- The deterministic Blender master passes support, replacement, duplicate,
-  real-world scale, seating-coherence, left-shell, lighting-source, and current
-  provenance contracts for every supplied room asset.
-- Independent review found no P1/P2 issue in the 12 current static proof frames.
-  CONTACT is readable as a recessed same-paper impression, the supplied seating
-  remains peripheral, the floor-lamp practical warms ABOUT from a physical
-  source, and the approved portrait ABOUT camera remains unchanged.
-- The physical hero first frame, reciprocal-depth projection, ten evaluated
-  foreground occluders, and 512px concave silhouette masks pass the generated
-  wide/portrait contract. Delta-varint encoding keeps the manifest at 1.10MB.
-- `docs/progress/0117-r3-proof-provenance.json` binds all 12 reviewed proofs to
-  the current master, builder invocation, renderer, and output hashes.
+- One reproducible Blender master now supplies every wide and portrait room
+  state. The books are on the left shelf; the desk lamp, frame, headphones,
+  mug, and single photographed camera sit on the desk; the trash can, blanket,
+  plant, basketball, and peripheral seating are supported at measured scale.
+- The exact existing logo card and tape remain part of the photograph. No new
+  card, duplicate camera, ceiling pendant, primitive fallback, or floating
+  website label survives.
+- The hero is a treated print before playback, remains projectively fixed to
+  that paper through arrival and every turn, passes behind ten evaluated
+  foreground silhouettes, plays once after settle, continues during
+  navigation, and holds its final decoded frame.
+- FILMS is a seated head turn. JOURNAL is a forward/downward seated lean that
+  keeps the point of regard on the desk throughout. ABOUT turns into an
+  open-ended left continuation where only the back edge of the supplied
+  seating area implies more room beyond frame.
+- CONTACT stays at the desk: the physical desk lamp rises, its shade-origin
+  raking pool reveals a fixed 0.30mm same-paper indentation, holds, and reverses
+  cleanly. The copy is exactly `Jonathan Adelson`,
+  `JonathanAdelson1@gmail.com`, and `1-310-709-9283`.
+- Normal-speed desktop, tall-desktop, and phone films were visually inspected.
+  Their first JOURNAL render was rejected because the intermediate gaze dipped
+  below the desk despite valid endpoints. A new desk-footprint sightline gate
+  reproduced the defect; the path was rebuilt and the corrected films keep the
+  gaze on the work surface through the full lean.
+- `docs/progress/0117-r3-proof-provenance.json` binds all reviewed static proofs
+  to the current master, renderer, camera contract, and output hashes.
 
 Behavioral Verification:
 
-- `scripts/verify-master-blend.py` — PASS on the saved master. Four negative
-  controls independently reject wrong logo ownership, missing seating lamp,
-  colliding seating furniture, and a dark/detached card-tape artifact.
-- `verify-camera-states.mjs --manifest-only` — PASS: locked FILMS, JOURNAL, and
-  ABOUT choreography.
-- `verify-contact-reveal.mjs --manifest-only` — PASS: exact fixed 0.30mm
-  indentation and shade-origin lamp only.
-- `verify-contact-proof.mjs` — PASS: wide and portrait illuminated copy exceed
-  measured contrast/edge thresholds; blank-paper negative controls fail.
-- `verify-hero-occlusion-contract.mjs --geometry-only` — PASS: 394 projection
-  samples, 386 visible projective frames, and 280 non-empty evaluated masks.
-- TypeScript and targeted ESLint — PASS.
+- Saved Blender master/provenance — PASS: 13 tracked scene assets, physical
+  supports, dimensions, replacements, practical sources, left-shell extension,
+  and Cycles 192 / AgX 0.25 / denoising contracts.
+- Asset inventory — PASS: 14 durable project-owned entries and 14 credit
+  records.
+- Media parity — PASS: 2 profiles, 12 endpoints, 10 forward/reverse paths, 32
+  media files, 22 decoded source relationships, and 0 pending.
+- Arrival continuity — PASS at 1280x720, 1316x1329, 1024x768, 768x1024, and
+  375x812: 77/79 decoded arrival frames, exact camera samples, and pixel-stable
+  retained endpoints.
+- Hero lifecycle — PASS `310/310`: frozen before settle, one start, uninterrupted
+  playback through all destinations, `0.000px` corner error, foreground
+  occlusion, one end event, and final-frame hold.
+- Hero geometry — PASS: 389 visible projective frames, 394 projections, ten
+  named occluders per projection, 311 non-empty evaluated silhouettes, and 308
+  masks preserving concave gaps.
+- Camera states — PASS: JOURNAL reaches a `1.346m` desktop / `1.915m` phone
+  lean; ABOUT reaches a leftward `-0.689rad` / `-0.679rad` turn; every routed
+  return restores the exact desk camera.
+- Physical navigation — PASS: no DOM labels; a 2,501-point grid per profile has
+  no overlap or false selection; every row center opens only its destination;
+  every margin and inter-row gap selects nothing.
+- CONTACT — PASS: exact copy, fixed physical indentation, visually clean rest,
+  lamp-pool luma lift `62.0`, readable hold, `3029ms` dwell, no standalone
+  plane, fixed paper opacity, and clean reverse.
+- Clock — PASS: settle `3.05s`; magic `4.83s`; physical JOURNAL target `0.08s`.
+- Performance — PASS: median `59.9fps`; `2.93MB` pre-settle; `10.62MB` total;
+  no reverse-arrival preload.
+- Fallback behavior — PASS on desktop and phone: blocked endpoint/transition
+  requests retain photographic markers with no primitive, loading, or error UI.
+- TypeScript, targeted ESLint, and production build — PASS.
 
-Enumerated Checkpoint Audit:
+Review Evidence:
 
-1. ✅ Master props, proportions, support, duplicates, blanket, room extension,
-   logo/tape, and practical lighting shipped + saved-scene behavioral gates.
-2. ✅ FILMS/JOURNAL/CONTACT/ABOUT endpoint composition shipped + generated
-   camera and proof-image behavioral gates.
-3. ✅ Physical hero/poster compositing contract shipped + reciprocal-depth and
-   evaluated-mask decoder gates.
-4. ⚠️ Final endpoint stills and 20 forward/reverse transition MP4s not yet
-   replaced; the existing files are deliberately rejected as stale dimensions.
-5. ⚠️ Local production, full-motion viewport battery, deployed Pages battery,
-   and Jonathan's explicit visual approval remain assigned to this order's
-   final-media successor checkpoint.
+- `docs/progress/0117-r3-review-desktop.webm`
+- `docs/progress/0117-r3-review-tall.webm`
+- `docs/progress/0117-r3-review-phone.webm`
+- `docs/progress/0117-r3-contact-live/contact-rest.png`
+- `docs/progress/0117-r3-contact-live/contact-reveal-mid.png`
+- `docs/progress/0117-r3-contact-live/contact-hold.png`
+- `docs/progress/0117-r3-contact-live/contact-reversed.png`
+- `docs/progress/0117-r3-master-opening.jpg`
+- `docs/progress/0117-r3-master-desk.jpg`
+- `docs/progress/0117-r3-master-about.jpg`
+
+Enumerated 0117-R3 Audit:
+
+1. ✅ Books moved to the left bookshelf + saved-master bounds/support gate and
+   opening/ABOUT proof.
+2. ✅ CONTACT indentation restored + topology, exact-copy, rest/mid/hold/reverse
+   pixel, and no-overlay gates.
+3. ✅ Desk lamp supported on the desk and reveal light sourced inside its shade
+   + saved-master support/source and browser lamp-pool gates.
+4. ✅ Rendered camera removed; only the photographic replacement remains +
+   replacement/duplicate gate and desk proof.
+5. ✅ Pencil, card, tape, logo, and foreground edges rerendered at final
+   resolution + proof provenance and normal-speed motion review.
+6. ✅ Basketball placed at real `0.239m` diameter in front of the right-corner
+   plant + exact-scale/support gate and opening proof.
+7. ✅ Picture frame placed right of the lamp and angled toward desk center +
+   position/support gate and desk proof.
+8. ✅ Hero restored as a shaded physical poster before playback and held on its
+   axis through motion + 310/310 lifecycle/registration and geometry gates.
+9. ✅ Logo retained on the exact existing card with the tape artifact intact +
+   ownership/duplicate/contrast gates.
+10. ✅ Blanket restored to the chair + support gate and opening proof.
+11. ✅ Plant moved to the right corner behind the basketball + bounds/support
+    gate and opening proof.
+12. ✅ Ceiling pendant removed + saved-master absence gate and opening proof.
+13. ✅ Supplied armchair/table/floor-lamp set placed barely on the left edge,
+    facing into an unseen continuation; ABOUT cannot expose a left corner +
+    collision, practical-light, room-shell, and ABOUT framing gates.
+14. ✅ FILMS uses a seated head-only turn + generated-camera and lifecycle gates.
+15. ✅ JOURNAL uses a human forward/downward lean while looking at the notebook;
+    the initially rendered floorward intermediate was rejected, behaviorally
+    pinned, corrected, rerendered, and inspected at normal speed.
+16. ✅ ABOUT preserves the approved left pan into an open room + endpoint,
+    shell, framing, and normal-speed review.
+17. ✅ Hero plays once only after settle, continues exactly as at the desk while
+    navigating, and remains paused on its last frame + 310/310 browser gate.
+18. ✅ FILMS/JOURNAL/CONTACT/ABOUT are immediately separable physical rows, not
+    a puzzle or pasted website controls + dense-grid and dwell gates.
+19. ✅ CONTACT copy matches Jonathan's final three-line ruling exactly +
+    manifest, geometry, DOM-absence, and live-pixel gates.
+20. ⚠️ Deployed Pages verification and Jonathan's explicit visual approval are
+    still open. This candidate cannot be called complete until both are
+    observed.
 
 ---
 

@@ -1,61 +1,61 @@
 {
-  "generatedAt": "2026-07-15T23:57:48.097282+00:00",
-  "masterBuildInvocationId": "34ec3533-0b29-46f6-a692-bd2cf6c9de8e",
-  "masterBuilderSha256": "344fc964072d5420ffbb9233a446a7628bb8341124c9a5b11745e98997b86c7d",
+  "generatedAt": "2026-07-17T08:47:34.652063+00:00",
+  "masterBuildInvocationId": "3e4fdac0-d535-4da8-b2a0-6de3eb714bd1",
+  "masterBuilderSha256": "51b8532806d86cdd991e96d81e8905f29dcf0c9ad20edc49fb8c15837347c152",
   "outputs": {
     "portrait-about.jpg": {
-      "bytes": 34223,
-      "sha256": "d87c9b2323b55309c5257cd76cf5e7b63cfa928c9d8ff52ce14dac82f90e645a"
+      "bytes": 34159,
+      "sha256": "0f5a087b9e8246866e4695c8a2ad6d0003b6a6d64bd937f0d7cd06eae1b02771"
     },
     "portrait-contact.jpg": {
-      "bytes": 39283,
-      "sha256": "9037b31976cb224eeaeb1453f1aed091d54944f5d29dda5541aeb6952efb7daa"
+      "bytes": 41477,
+      "sha256": "bf468ff5b398a6fe7d8255b5a06abd830cc7ebf5bec8820849d33d0bfb94ec49"
     },
     "portrait-desk.jpg": {
-      "bytes": 41644,
-      "sha256": "aec2bb3362c16d69fa9b05eb6d5cf56b307a53c50bcd51d1822ffc3d96651899"
+      "bytes": 41637,
+      "sha256": "f59350d55fd341930d7dfe728c72660e1ccae7da2108166a8736bfe077c7e53b"
     },
     "portrait-films.jpg": {
-      "bytes": 42833,
-      "sha256": "32a1f6804587fc140b9cb132c04b85c59ebb2f132aa7eae92b90d7246b0890da"
+      "bytes": 42817,
+      "sha256": "e60502ed86463251373f4d7f8bdf89dd6256ffd4e03e17b819637f4f65d1967c"
     },
     "portrait-journal.jpg": {
-      "bytes": 33829,
-      "sha256": "17336f318969564c67dcdcb7a4d0d5c1d3a43f8ccfc77d78943e4b13df754720"
+      "bytes": 33818,
+      "sha256": "1ffc8bcf2498eadab5575714da9e549a61cb04f22cc1b743caf67b0d4387fce0"
     },
     "portrait-opening.jpg": {
-      "bytes": 32955,
-      "sha256": "653d0922777b33cc0afcad8d6ff1c36a56cadec69a343f4961b66b94ba8ca3ac"
+      "bytes": 32957,
+      "sha256": "2e03324537761cdc06042322154c624ba4e85a12354cf0bdc9de2d89a76b79a4"
     },
     "wide-about.jpg": {
-      "bytes": 94329,
-      "sha256": "89f1178d792ab158e72c1bf7356335b38f8480b7668fb1de16de2e77bdd63fa5"
+      "bytes": 93833,
+      "sha256": "45c6cea04aff544dfecf440a07399d3e40b7dd6abddf8dbcf968b67467f7fda0"
     },
     "wide-contact.jpg": {
-      "bytes": 108464,
-      "sha256": "bdf6c1107db9b854778bc350ffb912974ae2142d90787575535814b030f76473"
+      "bytes": 113796,
+      "sha256": "6571ea145d92f65e50ec6ba4d19441716f264772587901cab17dde5d295cb15c"
     },
     "wide-desk.jpg": {
-      "bytes": 125370,
-      "sha256": "e9f699361a1efd94409f8ca63b7dc518cbf66ba6edb371e8a4c1dba8e4f16ff7"
+      "bytes": 124398,
+      "sha256": "8fc2961ce7244d8b0dad4fe3a060976954f6ef82516bb686846a26f54391a5aa"
     },
     "wide-films.jpg": {
-      "bytes": 96474,
-      "sha256": "3b1672f4dd53daef9e50c0467a1ac0402c605221d006671ca311043770760fb4"
+      "bytes": 96402,
+      "sha256": "3cd6d61a61444ebc0ee22a275c7edba11b91854958376bd94f89963a554f9b58"
     },
     "wide-journal.jpg": {
-      "bytes": 93215,
-      "sha256": "6c27fe74ff5e843e0189f882d7a9585d20e3275e86f9e1c1733be8b6591fd806"
+      "bytes": 93202,
+      "sha256": "03efbb4fd4ce4cacfcfbebbea7d80d72de0e39970f0f54ae7a8cd5b30272d05f"
     },
     "wide-opening.jpg": {
-      "bytes": 93470,
-      "sha256": "d4bd1db42221a9a65968fed1281233d354fc1455629a0e1183ad47565ed24946"
+      "bytes": 93513,
+      "sha256": "cd6c90fd6a34e3693d23d94e996f947b12353a004a9b87a1d4dde573a0f2a975"
     }
   },
   "renderer": "scripts/render-master-shots.py",
-  "rendererSha256": "86754bdbe789165dfb78a63019e46cc18fca68a5205a1e0032b9eb3febc44d86",
+  "rendererSha256": "4dc33c7fd41bae58b7389619ef62d34995fed8e9212d330906cc26ccd9b87202",
   "samples": 8,
   "selectors": [],
   "sourceBlend": "build/wo-0117-r/master.blend",
-  "sourceBlendSha256": "015a72c5e12f49c5681148e39aa7f89a4c037e020644bdd5f85952a977461d28"
+  "sourceBlendSha256": "94af2f844cd63b62ba9451c1e6bb6da98a938510dd4390c4186289e01f9bd74d"
 }

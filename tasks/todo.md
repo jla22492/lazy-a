@@ -17,9 +17,10 @@
 - [x] Correct CONTACT indentation and lamp-origin light.
 - [x] Correct FILMS, JOURNAL, and room-supported ABOUT choreography.
 - [x] Replace the hero's affine/raw-video/low-resolution-mask pipeline.
-- [ ] Render and encode high-resolution wide and portrait media.
-- [ ] Run full automated, full-motion visual, local-production, and deployed
+- [x] Render and encode high-resolution wide and portrait media.
+- [x] Run full automated, full-motion visual, and local-production
   verification.
+- [ ] Run the deployed Pages verification battery against the pushed candidate.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
 
 ## Master-Scene Checkpoint
@@ -37,6 +38,29 @@
   `docs/progress/0117-r3-master-opening.jpg`,
   `docs/progress/0117-r3-master-desk.jpg`, and
   `docs/progress/0117-r3-master-about.jpg`.
+
+## Technical Review Candidate
+
+- Rejected the first rendered JOURNAL transition after its normal-speed film
+  exposed an under-desk sightline between the valid endpoints.
+- Added a behavioral sightline gate, rebuilt the transition around a moving
+  desk-to-notebook point of regard, rerendered the affected wide/portrait
+  frames, and confirmed the corrected seated lean in all three review films.
+- Local production battery passes: five-viewport arrival continuity; hero
+  lifecycle `310/310`; dense-grid physical navigation; exact physical CONTACT
+  reveal and reverse; all four dwell targets; responsive camera endpoints;
+  plate fallbacks; settle `3.05s`; magic `4.83s`; JOURNAL target `0.08s`;
+  median `59.9fps`; `2.93MB` pre-settle; `10.62MB` total.
+- Source and media battery passes: Blender master/provenance; 14 durable assets
+  and credits; 32 media files and 22 decoded source relationships; treated
+  physical hero with reciprocal-depth projection and evaluated foreground
+  occlusion; TypeScript, targeted ESLint, and production build.
+- Normal-speed review films:
+  `docs/progress/0117-r3-review-desktop.webm`,
+  `docs/progress/0117-r3-review-tall.webm`, and
+  `docs/progress/0117-r3-review-phone.webm`.
+- Human acceptance remains open. This is a technical review candidate, not a
+  completion claim.
 
 ---
 

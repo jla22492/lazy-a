@@ -14,7 +14,7 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R3 IN PROGRESS — Jonathan rejected the 0117-R2 review candidate after
+0117-R3 TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING. Jonathan rejected the 0117-R2 review candidate after
 full-frame visual review. Coordinate and nominal-scale gates passed while the
 photographic result still contained misplaced books, a floating lamp and light
 source, duplicate camera geometry, a missing blanket, weak CONTACT indentation,
@@ -31,15 +31,16 @@ an extended left room carrying Jonathan's supplied leather armchair, coffee
 table, and floor lamp. The written design is
 `docs/superpowers/specs/2026-07-15-0117-r3-production-quality-rebuild-design.md`.
 
-R3 master checkpoint accepted internally on 2026-07-15: the rebuilt saved
-scene, 12 hashed proof frames, camera/contact/hero contracts, and independent
-review carry no open P1/P2 static finding. The supplied seating area now lights
-ABOUT from its own floor lamp; CONTACT passes both geometry and final-pixel
-readability gates; the treated poster and live hero share projective depth and
-512px evaluated masks. This is a partial milestone only. The 20 runtime
-transition MP4s are still stale low-resolution media and are rejected by the
-encoder verifier; final rendering, encoding, live browser proof, deployed proof,
-and Jonathan's explicit approval remain open.
+R3 is now a local technical review candidate. The final wide/portrait stills
+and 20 transition MP4s derive from the rebuilt saved master; desktop,
+tall-desktop, and phone journeys have been inspected at normal speed. That
+review caught and rejected an endpoint-correct but floorward JOURNAL
+intermediate, which is now covered by a desk-footprint sightline gate and has
+been corrected and rerendered. The five-viewport arrival, 310/310 hero
+lifecycle, physical navigation, CONTACT reveal, camera, dwell, clock,
+performance, fallback, saved-master, media, and build batteries all pass
+locally. Deployed Pages verification and Jonathan's explicit visual approval
+remain open; no completion claim is made.
 
 ---
 
@@ -196,10 +197,10 @@ and Jonathan's explicit approval remain open.
 
 ## In Progress
 
-WORK ORDER 0117-R3 — rebuilding the rejected photographic composition and hero
-pipeline from the saved master. Root causes are confirmed and Jonathan has
-approved the unified correction design; implementation planning and failing
-behavioral gates are next.
+WORK ORDER 0117-R3 — local technical review candidate. The corrected master,
+high-resolution media, physical interactions, normal-speed review films, and
+local behavioral/source batteries are ready. Push, deployed Pages verification,
+and Jonathan's visual decision remain.
 
 ---
 
