@@ -11,7 +11,7 @@
   practical-light CONTACT design.
 - [x] Lock the CONTACT timing: `1.0s` stationary lamp-on beat, then the approved
   R3 CONTACT camera move and endpoint.
-- [ ] Commit the approved design specification.
+- [x] Commit the approved design specification (`4c2108d`).
 - [ ] Commit the implementation plan.
 - [ ] Add failing hero physical-continuity gates.
 - [ ] Replace the split JOURNAL motion with one readable hip-pivot path.
