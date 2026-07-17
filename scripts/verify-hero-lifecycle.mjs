@@ -7,7 +7,10 @@
  *   node scripts/verify-hero-lifecycle.mjs [url]
  */
 
+import assert from "node:assert/strict";
+
 import { chromium } from "playwright";
+import sharp from "sharp";
 
 const url = process.argv[2] ?? "http://localhost:3000/";
 const VIEWPORTS = [
@@ -21,6 +24,7 @@ const DESTINATIONS = ["films", "journal", "contact", "about"];
 const TIME_EPSILON = 0.04;
 const MAX_CORNER_ERROR_CSS_PX = 0.75;
 const MIN_FOREGROUND_OCCLUDERS = 10;
+const selfTest = process.argv.includes("--self-test");
 
 let failures = 0;
 let checks = 0;
@@ -38,6 +42,209 @@ function fixed(value) {
 
 function viewportLabel(viewport) {
   return `${viewport.name} ${viewport.width}x${viewport.height}`;
+}
+
+function pointInPolygon(x, y, polygon) {
+  let inside = false;
+  for (
+    let index = 0, previous = polygon.length - 1;
+    index < polygon.length;
+    previous = index++
+  ) {
+    const [currentX, currentY] = polygon[index];
+    const [previousX, previousY] = polygon[previous];
+    const crosses =
+      currentY > y !== previousY > y &&
+      x <
+        ((previousX - currentX) * (y - currentY)) / (previousY - currentY) +
+          currentX;
+    if (crosses) inside = !inside;
+  }
+  return inside;
+}
+
+function pixelAt(frame, x, y) {
+  const offset = (y * frame.width + x) * 4;
+  return [frame.data[offset], frame.data[offset + 1], frame.data[offset + 2]];
+}
+
+function luma([red, green, blue]) {
+  return red * 0.2126 + green * 0.7152 + blue * 0.0722;
+}
+
+function pixelDelta(first, second, quad, borderOnly = false) {
+  const polygon = quad.map(([x, y]) => [Math.round(x), Math.round(y)]);
+  const xs = polygon.map(([x]) => x);
+  const ys = polygon.map(([, y]) => y);
+  const minX = Math.max(1, Math.min(...xs));
+  const maxX = Math.min(first.width - 2, Math.max(...xs));
+  const minY = Math.max(1, Math.min(...ys));
+  const maxY = Math.min(first.height - 2, Math.max(...ys));
+  let lumaDelta = 0;
+  let channelDelta = 0;
+  let samples = 0;
+  const insetX = (maxX - minX) * 0.12;
+  const insetY = (maxY - minY) * 0.12;
+  for (let y = minY; y <= maxY; y += 2) {
+    for (let x = minX; x <= maxX; x += 2) {
+      if (!pointInPolygon(x, y, polygon)) continue;
+      if (
+        borderOnly &&
+        x > minX + insetX &&
+        x < maxX - insetX &&
+        y > minY + insetY &&
+        y < maxY - insetY
+      ) {
+        continue;
+      }
+      const firstPixel = pixelAt(first, x, y);
+      const secondPixel = pixelAt(second, x, y);
+      lumaDelta += Math.abs(luma(firstPixel) - luma(secondPixel));
+      channelDelta += Math.max(
+        ...firstPixel.map((value, index) =>
+          Math.abs(value - secondPixel[index]),
+        ),
+      );
+      samples += 1;
+    }
+  }
+  return {
+    meanLumaDelta: samples ? lumaDelta / samples : Number.POSITIVE_INFINITY,
+    meanChannelDelta: samples
+      ? channelDelta / samples
+      : Number.POSITIVE_INFINITY,
+  };
+}
+
+function gradient(frame, x, y) {
+  const horizontal = Math.abs(
+    luma(pixelAt(frame, x + 1, y)) - luma(pixelAt(frame, x - 1, y)),
+  );
+  const vertical = Math.abs(
+    luma(pixelAt(frame, x, y + 1)) - luma(pixelAt(frame, x, y - 1)),
+  );
+  return horizontal + vertical;
+}
+
+function edgeAlignmentError(frame, quad) {
+  let maximum = 0;
+  for (let index = 0; index < quad.length; index += 1) {
+    const [startX, startY] = quad[index];
+    const [endX, endY] = quad[(index + 1) % quad.length];
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    const length = Math.hypot(deltaX, deltaY);
+    if (length < 1) return Number.POSITIVE_INFINITY;
+    const normalX = -deltaY / length;
+    const normalY = deltaX / length;
+    for (let step = 1; step < 8; step += 1) {
+      const ratio = step / 8;
+      const pointX = startX + deltaX * ratio;
+      const pointY = startY + deltaY * ratio;
+      let best = { offset: 0, strength: -1 };
+      for (let offset = -3; offset <= 3; offset += 1) {
+        const x = Math.round(pointX + normalX * offset);
+        const y = Math.round(pointY + normalY * offset);
+        if (x < 1 || y < 1 || x >= frame.width - 1 || y >= frame.height - 1)
+          continue;
+        const strength = gradient(frame, x, y);
+        if (
+          strength > best.strength ||
+          (strength === best.strength &&
+            Math.abs(offset) < Math.abs(best.offset))
+        ) {
+          best = { offset, strength };
+        }
+      }
+      maximum = Math.max(maximum, Math.abs(best.offset));
+    }
+  }
+  return maximum;
+}
+
+function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
+  const firstFrame = pixelDelta(resting, firstPainted, firstPainted.quad);
+  const treatmentDeltas = playingFrames.map(
+    (frame) =>
+      pixelDelta(firstPainted, frame, firstPainted.quad, true).meanChannelDelta,
+  );
+  const edgeErrors = [firstPainted, ...playingFrames].map((frame) =>
+    edgeAlignmentError(frame, frame.quad),
+  );
+  return {
+    firstFrame,
+    playingFrames: {
+      maxRoomTreatmentDelta: Math.max(...treatmentDeltas),
+    },
+    motionSamples: {
+      maxPosterAxisErrorPx: Math.max(...edgeErrors),
+      maxForegroundEdgeErrorPx: Math.max(...edgeErrors),
+    },
+  };
+}
+
+function fixtureFrame(fill = 0, paper = 220) {
+  const width = 16;
+  const height = 16;
+  const data = Buffer.alloc(width * height * 4, fill);
+  for (let y = 4; y <= 11; y += 1) {
+    for (let x = 4; x <= 11; x += 1) {
+      const offset = (y * width + x) * 4;
+      data[offset] = paper;
+      data[offset + 1] = paper;
+      data[offset + 2] = paper;
+      data[offset + 3] = 255;
+    }
+  }
+  return {
+    data,
+    width,
+    height,
+    quad: [
+      [4, 4],
+      [11, 4],
+      [11, 11],
+      [4, 11],
+    ],
+  };
+}
+
+function runSelfTests() {
+  const resting = fixtureFrame();
+  const firstPainted = fixtureFrame();
+  const good = measuredPresentedPixelMetrics(resting, firstPainted, [
+    fixtureFrame(),
+  ]);
+  assert.ok(good.firstFrame.meanLumaDelta <= 3);
+  assert.ok(good.firstFrame.meanChannelDelta <= 4);
+  assert.ok(good.playingFrames.maxRoomTreatmentDelta <= 6);
+  assert.ok(good.motionSamples.maxPosterAxisErrorPx <= 0.75);
+
+  const fabricatedDiagnostics = {
+    pixels: {
+      firstFrame: { meanLumaDelta: 0, meanChannelDelta: 0 },
+      playingFrames: { maxRoomTreatmentDelta: 0 },
+      motionSamples: { maxPosterAxisErrorPx: 0, maxForegroundEdgeErrorPx: 0 },
+    },
+  };
+  const corrupted = fixtureFrame(255, 0);
+  const negative = measuredPresentedPixelMetrics(resting, corrupted, [
+    corrupted,
+  ]);
+  assert.ok(
+    negative.firstFrame.meanLumaDelta > 3 ||
+      negative.firstFrame.meanChannelDelta > 4,
+    "fabricated compositor diagnostics cannot change captured pixel metrics",
+  );
+  assert.equal(fabricatedDiagnostics.pixels.firstFrame.meanLumaDelta, 0);
+  console.log(
+    "hero lifecycle self-tests passed (captured pixels reject fabricated diagnostics).",
+  );
+}
+
+if (selfTest) {
+  runSelfTests();
+  process.exit(0);
 }
 
 const browser = await chromium.launch({
@@ -180,12 +387,18 @@ async function installPageProbes(expectedProfile) {
       };
 
       const maskHasRuns = (mask) => {
-        if (!mask || !Number.isInteger(mask.size) || typeof mask.rle !== "string") {
+        if (
+          !mask ||
+          !Number.isInteger(mask.size) ||
+          typeof mask.rle !== "string"
+        ) {
           return null;
         }
         try {
           const binary = atob(mask.rle);
-          const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+          const bytes = Uint8Array.from(binary, (character) =>
+            character.charCodeAt(0),
+          );
           let offset = 0;
           let hasRuns = false;
           const readVarint = () => {
@@ -224,8 +437,7 @@ async function installPageProbes(expectedProfile) {
           kind,
           label,
           authored: Array.isArray(authored) ? [...authored] : null,
-          authoredProjectable:
-            Array.isArray(authored) && authored.length === 8,
+          authoredProjectable: Array.isArray(authored) && authored.length === 8,
           profile: window.__lazyAPlateState?.profile ?? null,
           liveObserved: Array.isArray(live),
           occlusionObserved: Boolean(occlusion),
@@ -269,7 +481,9 @@ async function installPageProbes(expectedProfile) {
               if (lastWaitingProjection.get(activeSegment) !== projection) {
                 recordWaitingProjection(projection);
               }
-            } else if (lastSampledProjection.get(activeSegment) !== projection) {
+            } else if (
+              lastSampledProjection.get(activeSegment) !== projection
+            ) {
               lastSampledProjection.set(activeSegment, projection);
               createRegistrationSample("rendered", "post-render state");
             }
@@ -330,15 +544,13 @@ async function installPageProbes(expectedProfile) {
               !sample.occlusionObserved ||
               (sample.authoredProjectable && !sample.liveObserved),
           ).length,
-          invalidCorners: rendered.filter(
-            (sample) => {
-              if (!sample.authoredProjectable) return sample.liveObserved;
-              return (
-                !Array.isArray(sample.cornerErrors) ||
-                sample.cornerErrors.length !== 4
-              );
-            },
-          ).length,
+          invalidCorners: rendered.filter((sample) => {
+            if (!sample.authoredProjectable) return sample.liveObserved;
+            return (
+              !Array.isArray(sample.cornerErrors) ||
+              sample.cornerErrors.length !== 4
+            );
+          }).length,
           hiddenOffscreen: rendered.filter(
             (sample) => !sample.authoredProjectable && !sample.liveObserved,
           ).length,
@@ -440,22 +652,37 @@ async function conversationState() {
   }));
 }
 
-async function presentedPixelMetrics() {
-  return page.evaluate(() => {
-    const compositor = window.__lazyACompositor ?? null;
-    return {
-      compositor,
-      firstFrame: compositor?.pixels?.firstFrame ?? null,
-      playingFrames: compositor?.pixels?.playingFrames ?? null,
-      motionSamples: compositor?.pixels?.motionSamples ?? null,
-    };
-  });
+async function capturePresentedFrame() {
+  const [png, compositor, quad] = await Promise.all([
+    page.screenshot(),
+    page.evaluate(() => window.__lazyACompositor ?? null),
+    page.evaluate(() => window.__lazyAHeroProjection ?? null),
+  ]);
+  const { data, info } = await sharp(png)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  if (!Array.isArray(quad) || quad.length !== 8) {
+    throw new Error(
+      "captured presented frame is missing the authored hero quad",
+    );
+  }
+  return {
+    data,
+    width: info.width,
+    height: info.height,
+    quad: quad.reduce((points, value, index, values) => {
+      if (index % 2 === 0) {
+        points.push([value * info.width, values[index + 1] * info.height]);
+      }
+      return points;
+    }, []),
+    compositor,
+  };
 }
 
-async function assertPresentedPixelContract(viewport) {
+function assertAtomicCompositor(viewport, compositor) {
   const label = viewportLabel(viewport);
-  const { compositor, firstFrame, playingFrames, motionSamples } =
-    await presentedPixelMetrics();
   check(
     compositor?.atomic === true &&
       Number.isFinite(compositor?.plateMediaTime) &&
@@ -466,15 +693,29 @@ async function assertPresentedPixelContract(viewport) {
     `${label} atomic compositor observability`,
     JSON.stringify(compositor),
   );
+}
+
+function assertPresentedPixelContract(
+  viewport,
+  resting,
+  firstPainted,
+  playingFrames,
+) {
+  const label = viewportLabel(viewport);
+  const {
+    firstFrame,
+    playingFrames: treatment,
+    motionSamples,
+  } = measuredPresentedPixelMetrics(resting, firstPainted, playingFrames);
   check(
     firstFrame?.meanLumaDelta <= 3 && firstFrame?.meanChannelDelta <= 4,
     `${label} resting poster matches the first painted live frame`,
     JSON.stringify(firstFrame),
   );
   check(
-    playingFrames?.maxRoomTreatmentDelta <= 6,
+    treatment?.maxRoomTreatmentDelta <= 6,
     `${label} representative playing frames retain room treatment`,
-    JSON.stringify(playingFrames),
+    JSON.stringify(treatment),
   );
   check(
     motionSamples?.maxPosterAxisErrorPx <= 0.75 &&
@@ -691,6 +932,7 @@ async function runViewport(viewport) {
       `${label} looping is disabled`,
       `loop=${settled.loop}`,
     );
+    const restingPoster = await capturePresentedFrame();
 
     const started = await waitForHero(
       (snapshot) => snapshot.playStarts >= 1,
@@ -712,7 +954,16 @@ async function runViewport(viewport) {
         ? `arrivalDone=${firstPlay.arrivalDone} currentTime=${fixed(firstPlay.currentTime)}`
         : `no play event; currentTime=${fixed(started.currentTime)}`,
     );
-    await assertPresentedPixelContract(viewport);
+    const firstPaintedLiveFrame = await capturePresentedFrame();
+    await page.waitForTimeout(120);
+    const representativePlayingFrame = await capturePresentedFrame();
+    assertAtomicCompositor(viewport, firstPaintedLiveFrame.compositor);
+    assertPresentedPixelContract(
+      viewport,
+      restingPoster,
+      firstPaintedLiveFrame,
+      [representativePlayingFrame],
+    );
 
     const debug = await conversationState();
     check(

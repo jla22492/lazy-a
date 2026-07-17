@@ -19,7 +19,7 @@
 import { readFile } from "node:fs/promises";
 
 import { chromium } from "playwright";
-import { Quaternion, Vector3 } from "three";
+import { PerspectiveCamera, Quaternion, Vector3 } from "three";
 
 const args = process.argv.slice(2);
 const manifestOnly = args.includes("--manifest-only");
@@ -38,16 +38,80 @@ const JOURNAL_MAX_COVERAGE = 0.6;
 const MIN_JOURNAL_TRAVEL = 0.05;
 const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
-const APPROVED_ABOUT_CAMERAS = {
+const APPROVED_R3_ENDPOINT_CAMERAS = {
   wide: {
-    position: [0.019999999553, 1.580000042915, 1.450000047684],
-    quaternion: [-0.083158425987, 0.343562364578, 0.030558215454, 0.934941589832],
-    fov: 35,
+    opening: {
+      position: [-0.600000023842, 1.600000023842, 4.900000095367],
+      quaternion: [
+        -0.068154491484, -0.065739862621, -0.004500729963, 0.995496332645,
+      ],
+      fov: 35,
+    },
+    desk: {
+      position: [0.050000000745, 1.600000023842, 1.450000047684],
+      quaternion: [
+        -0.142799422145, 0.007813094184, 0.001127292984, 0.989720225334,
+      ],
+      fov: 35,
+    },
+    films: {
+      position: [0.050000000745, 1.600000023842, 1.450000047684],
+      quaternion: [
+        -0.082423180342, -0.127863273025, -0.010663641617, 0.988303422928,
+      ],
+      fov: 35,
+    },
+    contact: {
+      position: [-0.449999988079, 1.580000042915, 0.319999992847],
+      quaternion: [
+        -0.528137803078, 0.012861071154, 0.008000271395, 0.849023580551,
+      ],
+      fov: 35,
+    },
+    about: {
+      position: [0.019999999553, 1.580000042915, 1.450000047684],
+      quaternion: [
+        -0.083158425987, 0.343562364578, 0.030558215454, 0.934941589832,
+      ],
+      fov: 35,
+    },
   },
   portrait: {
-    position: [0.219999998808, 1.580000042915, 2.269999980927],
-    quaternion: [-0.105192042887, 0.311378329992, 0.034704685211, 0.943808138371],
-    fov: 35,
+    opening: {
+      position: [-0.600000023842, 1.600000023842, 4.900000095367],
+      quaternion: [
+        -0.068154491484, -0.065739862621, -0.004500729963, 0.995496332645,
+      ],
+      fov: 35,
+    },
+    desk: {
+      position: [0.299162566662, 1.600000023842, 2.349999904633],
+      quaternion: [
+        -0.098435617983, -0.020484184846, -0.002026646631, 0.994930505753,
+      ],
+      fov: 35,
+    },
+    films: {
+      position: [0.299162566662, 1.600000023842, 2.349999904633],
+      quaternion: [
+        -0.058334533125, -0.044582102448, -0.002607719041, 0.99729770422,
+      ],
+      fov: 35,
+    },
+    contact: {
+      position: [-0.40000000596, 2.25, 0.850000023842],
+      quaternion: [
+        -0.476842790842, 0.020944772288, 0.011366510764, 0.87866550684,
+      ],
+      fov: 35,
+    },
+    about: {
+      position: [0.219999998808, 1.580000042915, 2.269999980927],
+      quaternion: [
+        -0.105192042887, 0.311378329992, 0.034704685211, 0.943808138371,
+      ],
+      fov: 35,
+    },
   },
 };
 
@@ -58,6 +122,49 @@ function sameTuple(left, right, tolerance = 1e-9) {
     left.length === right.length &&
     left.every((value, index) => Math.abs(value - right[index]) <= tolerance)
   );
+}
+
+function projectedJournalEndpointMetrics(
+  variant,
+  cameraSample,
+  notebookWorldQuad,
+) {
+  if (
+    !cameraSample ||
+    !Array.isArray(notebookWorldQuad) ||
+    notebookWorldQuad.length !== 4 ||
+    notebookWorldQuad.some((point) => !isNumberTuple(point, 3))
+  ) {
+    return null;
+  }
+  const camera = new PerspectiveCamera(
+    cameraSample.fov,
+    variant.width / variant.height,
+    0.1,
+    200,
+  );
+  camera.position.set(...cameraSample.position);
+  camera.quaternion.set(...cameraSample.quaternion);
+  camera.updateMatrixWorld(true);
+  const points = notebookWorldQuad.map((point) => {
+    const projected = new Vector3(...point).project(camera);
+    return [projected.x * 0.5 + 0.5, 0.5 - projected.y * 0.5];
+  });
+  const signedArea = points.reduce((area, [x, y], index) => {
+    const [nextX, nextY] = points[(index + 1) % points.length];
+    return area + x * nextY - y * nextX;
+  }, 0);
+  const [start, end] = points;
+  const baselineRotationDegrees =
+    (Math.abs(Math.atan2(end[1] - start[1], end[0] - start[0])) * 180) /
+    Math.PI;
+  return {
+    endpointCoverage: Math.abs(signedArea) / 2,
+    endpointBaselineRotationDegrees: Math.min(
+      baselineRotationDegrees,
+      180 - baselineRotationDegrees,
+    ),
+  };
 }
 
 function sightlineIntersectsNotebook(camera, notebookWorldQuad) {
@@ -114,6 +221,17 @@ function cameraContractFailures(manifest) {
       failures.push(`${profile}: camera manifest is incomplete`);
       continue;
     }
+    for (const endpointId of ["opening", "desk", "films", "contact"]) {
+      const expected = APPROVED_R3_ENDPOINT_CAMERAS[profile][endpointId];
+      const actual = endpoints?.[endpointId]?.projection?.camera;
+      if (
+        !sameTuple(actual?.position, expected.position) ||
+        !sameTuple(actual?.quaternion, expected.quaternion) ||
+        actual?.fov !== expected.fov
+      ) {
+        failures.push(`${profile}: approved R3 ${endpointId} endpoint changed`);
+      }
+    }
     if (
       !sameTuple(films.position, desk.position) ||
       films.fov !== desk.fov ||
@@ -128,12 +246,25 @@ function cameraContractFailures(manifest) {
       journal.journalHeadLeadSeconds !== 0 ||
       !(journal.translationStartsAtSeconds <= 1 / journal.fps) ||
       journal.motionModel !== "coupled-hip-pivot" ||
-      !(journal.maxAngularStepDegrees <= 3) ||
-      !(journal.endpointBaselineRotationDegrees <= 12) ||
-      !(journal.endpointCoverage >= 0.4 && journal.endpointCoverage <= 0.6)
+      !(journal.maxAngularStepDegrees <= 3)
     ) {
       failures.push(
         `${profile}: JOURNAL must use the coupled-hip-pivot path with no head lead, translation by frame 1, <=3 degree steps, <=12 degree baseline, and 40-60% notebook coverage`,
+      );
+    }
+    const journalMetrics = projectedJournalEndpointMetrics(
+      variant,
+      journalEndpoint,
+      journal.notebookWorldQuad,
+    );
+    if (
+      !journalMetrics ||
+      journalMetrics.endpointBaselineRotationDegrees > 12 ||
+      journalMetrics.endpointCoverage < 0.4 ||
+      journalMetrics.endpointCoverage > 0.6
+    ) {
+      failures.push(
+        `${profile}: JOURNAL notebookWorldQuad projection must produce <=12 degree paragraph baseline rotation and 40-60% notebook coverage`,
       );
     }
     const firstTranslation = frames.findIndex(
@@ -146,15 +277,16 @@ function cameraContractFailures(manifest) {
     }
     const missedNotebookAt = frames
       .slice(Math.max(firstTranslation, 0))
-      .findIndex((frame) =>
-        !sightlineIntersectsNotebook(frame.camera, journal.notebookWorldQuad),
+      .findIndex(
+        (frame) =>
+          !sightlineIntersectsNotebook(frame.camera, journal.notebookWorldQuad),
       );
     if (missedNotebookAt >= 0) {
       failures.push(
         `${profile}: JOURNAL sightline must intersect notebookWorldQuad at frame ${Math.max(firstTranslation, 0) + missedNotebookAt}`,
       );
     }
-    const approvedAbout = APPROVED_ABOUT_CAMERAS[profile];
+    const approvedAbout = APPROVED_R3_ENDPOINT_CAMERAS[profile].about;
     if (
       !sameTuple(about.position, approvedAbout.position) ||
       !sameTuple(about.quaternion, approvedAbout.quaternion) ||

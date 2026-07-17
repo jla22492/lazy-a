@@ -45,8 +45,69 @@ const expectedContactIndentDepth = 0.0003;
 const contactActivationSamples = 31;
 const approvedR3ContactPathSha256 = {
   wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
-  portrait:
-    "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
+  portrait: "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
+};
+const approvedR3EndpointCameras = {
+  wide: {
+    opening: {
+      position: [-0.600000023842, 1.600000023842, 4.900000095367],
+      quaternion: [
+        -0.068154491484, -0.065739862621, -0.004500729963, 0.995496332645,
+      ],
+      fov: 35,
+    },
+    desk: {
+      position: [0.050000000745, 1.600000023842, 1.450000047684],
+      quaternion: [
+        -0.142799422145, 0.007813094184, 0.001127292984, 0.989720225334,
+      ],
+      fov: 35,
+    },
+    films: {
+      position: [0.050000000745, 1.600000023842, 1.450000047684],
+      quaternion: [
+        -0.082423180342, -0.127863273025, -0.010663641617, 0.988303422928,
+      ],
+      fov: 35,
+    },
+    contact: {
+      position: [-0.449999988079, 1.580000042915, 0.319999992847],
+      quaternion: [
+        -0.528137803078, 0.012861071154, 0.008000271395, 0.849023580551,
+      ],
+      fov: 35,
+    },
+  },
+  portrait: {
+    opening: {
+      position: [-0.600000023842, 1.600000023842, 4.900000095367],
+      quaternion: [
+        -0.068154491484, -0.065739862621, -0.004500729963, 0.995496332645,
+      ],
+      fov: 35,
+    },
+    desk: {
+      position: [0.299162566662, 1.600000023842, 2.349999904633],
+      quaternion: [
+        -0.098435617983, -0.020484184846, -0.002026646631, 0.994930505753,
+      ],
+      fov: 35,
+    },
+    films: {
+      position: [0.299162566662, 1.600000023842, 2.349999904633],
+      quaternion: [
+        -0.058334533125, -0.044582102448, -0.002607719041, 0.99729770422,
+      ],
+      fov: 35,
+    },
+    contact: {
+      position: [-0.40000000596, 2.25, 0.850000023842],
+      quaternion: [
+        -0.476842790842, 0.020944772288, 0.011366510764, 0.87866550684,
+      ],
+      fov: 35,
+    },
+  },
 };
 const decodedSampleSize = 64;
 const maximumDecodedMeanError = 8;
@@ -374,6 +435,51 @@ function journalGazeHitsNotebook(camera, notebookWorldQuad) {
   return inTriangle(first, second, third) || inTriangle(first, third, fourth);
 }
 
+function projectedJournalEndpointMetrics(
+  variant,
+  cameraSample,
+  notebookWorldQuad,
+) {
+  if (
+    !finiteTuple(cameraSample?.position, 3) ||
+    !finiteTuple(cameraSample?.quaternion, 4) ||
+    !Number.isFinite(cameraSample?.fov) ||
+    !Array.isArray(notebookWorldQuad) ||
+    notebookWorldQuad.length !== 4 ||
+    notebookWorldQuad.some((point) => !finiteTuple(point, 3))
+  ) {
+    return null;
+  }
+  const camera = new PerspectiveCamera(
+    cameraSample.fov,
+    variant.width / variant.height,
+    0.1,
+    200,
+  );
+  camera.position.set(...cameraSample.position);
+  camera.quaternion.set(...cameraSample.quaternion);
+  camera.updateMatrixWorld(true);
+  const points = notebookWorldQuad.map((point) => {
+    const projected = new Vector3(...point).project(camera);
+    return [projected.x * 0.5 + 0.5, 0.5 - projected.y * 0.5];
+  });
+  const signedArea = points.reduce((area, [x, y], index) => {
+    const [nextX, nextY] = points[(index + 1) % points.length];
+    return area + x * nextY - y * nextX;
+  }, 0);
+  const [start, end] = points;
+  const baselineRotationDegrees =
+    (Math.abs(Math.atan2(end[1] - start[1], end[0] - start[0])) * 180) /
+    Math.PI;
+  return {
+    endpointCoverage: Math.abs(signedArea) / 2,
+    endpointBaselineRotationDegrees: Math.min(
+      baselineRotationDegrees,
+      180 - baselineRotationDegrees,
+    ),
+  };
+}
+
 function parseArgs(argv) {
   const args = {
     verify: false,
@@ -559,8 +665,7 @@ function validateManifest(manifest) {
     manifest.hero?.firstFrameSource !==
       "assets/master/hero/hero-print-first-frame.png" ||
     manifest.hero?.restingMechanism !== "baked-physical-poster" ||
-    manifest.hero?.liveProjection !==
-      "camera-reciprocal-depth-projective" ||
+    manifest.hero?.liveProjection !== "camera-reciprocal-depth-projective" ||
     manifest.hero?.compositor !== "single-webgl-pass" ||
     manifest.hero?.occlusion !== "authored-depth-geometry" ||
     manifest.hero?.treatment?.kind !== "calibrated-room-transfer" ||
@@ -610,6 +715,13 @@ function validateManifest(manifest) {
       issues.push(
         `${variantId} must keep one constant ${variant.fov}-degree lens`,
       );
+    }
+    for (const endpointId of ["opening", "desk", "films", "contact"]) {
+      const expected = approvedR3EndpointCameras[variantId][endpointId];
+      const actual = variant.endpoints?.[endpointId]?.projection?.camera;
+      if (firstSemanticDifference(expected, actual)) {
+        issues.push(`${variantId}/${endpointId} approved R3 endpoint changed`);
+      }
     }
 
     for (const transitionId of expectedTransitions) {
@@ -666,9 +778,7 @@ function validateManifest(manifest) {
       journal?.journalHeadLeadSeconds !== 0 ||
       !(journal?.translationStartsAtSeconds <= 1 / journal?.fps) ||
       journal?.motionModel !== "coupled-hip-pivot" ||
-      !(journal?.maxAngularStepDegrees <= 3) ||
-      !(journal?.endpointBaselineRotationDegrees <= 12) ||
-      !(journal?.endpointCoverage >= 0.4 && journal?.endpointCoverage <= 0.6)
+      !(journal?.maxAngularStepDegrees <= 3)
     ) {
       issues.push(
         `${variantId}/desk-journal must use a coupled hip pivot with no head lead and a readable 40-60% notebook endpoint`,
@@ -677,6 +787,7 @@ function validateManifest(manifest) {
     const contact = variant.transitions?.["desk-contact"];
     const deskCamera = variant.endpoints?.desk?.projection?.camera;
     const filmsCamera = variant.endpoints?.films?.projection?.camera;
+    const journalCamera = variant.endpoints?.journal?.projection?.camera;
     const contactCamera = variant.endpoints?.contact?.projection?.camera;
     const contactFrames = contact?.frames ?? [];
     const activationFrames = contactFrames.slice(0, contactActivationSamples);
@@ -685,7 +796,8 @@ function validateManifest(manifest) {
       activationFrames.every(
         (frame, index) =>
           Number.isFinite(frame[property]) &&
-          (index === 0 || frame[property] >= activationFrames[index - 1][property]),
+          (index === 0 ||
+            frame[property] >= activationFrames[index - 1][property]),
       ) &&
       activationFrames.at(-1)?.[property] > activationFrames[0]?.[property];
     const postHoldPath = contactFrames
@@ -738,6 +850,13 @@ function validateManifest(manifest) {
       );
     }
     const journalFrames = journal?.frames ?? [];
+    const notebookWorldQuad =
+      journal?.notebookWorldQuad ?? variant.journal?.notebookWorldQuad;
+    const journalMetrics = projectedJournalEndpointMetrics(
+      variant,
+      journalCamera,
+      notebookWorldQuad,
+    );
     const firstJournalTranslation = journalFrames.findIndex(
       (frame) =>
         JSON.stringify(frame.camera?.position) !==
@@ -746,13 +865,14 @@ function validateManifest(manifest) {
     if (
       firstJournalTranslation < 0 ||
       firstJournalTranslation > 1 ||
+      !journalMetrics ||
+      journalMetrics.endpointBaselineRotationDegrees > 12 ||
+      journalMetrics.endpointCoverage < 0.4 ||
+      journalMetrics.endpointCoverage > 0.6 ||
       journalFrames
         .slice(Math.max(firstJournalTranslation, 0))
-        .some((frame) =>
-          !journalGazeHitsNotebook(
-            frame.camera,
-            journal?.notebookWorldQuad ?? variant.journal?.notebookWorldQuad,
-          ),
+        .some(
+          (frame) => !journalGazeHitsNotebook(frame.camera, notebookWorldQuad),
         )
     ) {
       issues.push(
@@ -770,8 +890,10 @@ function validateManifest(manifest) {
       variant.contact?.fiberResponseAnimated !== true ||
       variant.contact?.fiberResponseNormalWeighted !== true ||
       variant.contact?.physicalOcclusionResponse !== true ||
-      !(variant.contact?.fiberResponseFloorPeak <
-        variant.contact?.fiberResponseWallPeak) ||
+      !(
+        variant.contact?.fiberResponseFloorPeak <
+        variant.contact?.fiberResponseWallPeak
+      ) ||
       variant.contact?.geometryAnimated !== false ||
       variant.contact?.lightInsideShade !== true ||
       variant.contact?.lightIntersectsPaper !== true ||

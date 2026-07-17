@@ -51,8 +51,23 @@ const MAX_GRAZING_ANGLE_DEGREES = 35;
 const CONTACT_ACTIVATION_SAMPLES = 31;
 const APPROVED_R3_CONTACT_PATH_SHA256 = {
   wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
-  portrait:
-    "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
+  portrait: "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
+};
+const APPROVED_R3_DESK_CAMERAS = {
+  wide: {
+    position: [0.050000000745, 1.600000023842, 1.450000047684],
+    quaternion: [
+      -0.142799422145, 0.007813094184, 0.001127292984, 0.989720225334,
+    ],
+    fov: 35,
+  },
+  portrait: {
+    position: [0.299162566662, 1.600000023842, 2.349999904633],
+    quaternion: [
+      -0.098435617983, -0.020484184846, -0.002026646631, 0.994930505753,
+    ],
+    fov: 35,
+  },
 };
 const MID_LAMP_POOL_REGION = {
   x: 0.28,
@@ -139,8 +154,8 @@ function contactManifestFailures(manifest) {
       contact.physicalOcclusionResponse !== true ||
       !(contact.fiberResponseFloorPeak < contact.fiberResponseWallPeak) ||
       contact.idleFillStrength !== 0.15 ||
-      contact.geometryAnimated !== false
-      || contact.indentDepth !== EXPECTED_INDENT_DEPTH ||
+      contact.geometryAnimated !== false ||
+      contact.indentDepth !== EXPECTED_INDENT_DEPTH ||
       !Number.isFinite(contact.grazingAngleDegrees) ||
       contact.grazingAngleDegrees > MAX_GRAZING_ANGLE_DEGREES
     ) {
@@ -170,18 +185,22 @@ function contactManifestFailures(manifest) {
       );
     }
     const desk = variant.endpoints?.desk?.projection?.camera;
+    const approvedDesk = APPROVED_R3_DESK_CAMERAS[profile];
     const activationFrames = frames.slice(0, CONTACT_ACTIVATION_SAMPLES);
     if (
       !desk ||
+      !exactCameraMatch(desk, approvedDesk) ||
       activationFrames.length !== CONTACT_ACTIVATION_SAMPLES ||
       activationFrames.some((frame) => !exactCameraMatch(frame.camera, desk))
     ) {
       failures.push(
-        `${profile}: CONTACT must hold the exact desk camera for the first ${CONTACT_ACTIVATION_SAMPLES} authored samples`,
+        `${profile}: CONTACT must hold the approved R3 desk camera for the first ${CONTACT_ACTIVATION_SAMPLES} authored samples`,
       );
     }
     if (
-      !monotonicallyRises(activationFrames.map((frame) => frame.visibleBulbLevel)) ||
+      !monotonicallyRises(
+        activationFrames.map((frame) => frame.visibleBulbLevel),
+      ) ||
       !monotonicallyRises(activationFrames.map((frame) => frame.lampLevel))
     ) {
       failures.push(
@@ -466,9 +485,8 @@ const missingAfterInteractiveObservability =
     ? interactiveSamples.length
     : interactiveSamples
         .slice(firstInteractiveMarkerIndex)
-        .filter(
-          (sample) => !sample.marker || typeof sample.marker !== "object",
-        ).length;
+        .filter((sample) => !sample.marker || typeof sample.marker !== "object")
+        .length;
 const failures = [];
 const passes = [];
 let wideContact;
