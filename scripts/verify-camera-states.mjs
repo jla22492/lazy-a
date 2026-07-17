@@ -36,11 +36,12 @@ const ARRIVAL_TIMEOUT_MS = 12_000;
 const TRANSITION_TIMEOUT_MS = 12_000;
 const JOURNAL_MIN_COVERAGE = 0.4;
 const JOURNAL_MAX_COVERAGE = 0.6;
+const MAX_JOURNAL_BASELINE_ROTATION_DEGREES = 12;
 const MAX_JOURNAL_ANGULAR_STEP_DEGREES = 3;
 const MAX_ORIENTATION_ONLY_PLATEAU_STEPS = 0;
 const CAMERA_POSITION_EPSILON = 1e-7;
 const CAMERA_ANGLE_EPSILON_DEGREES = 1e-5;
-const DECLARED_MOTION_TOLERANCE = 1e-6;
+const DECLARED_METRIC_TOLERANCE = 1e-6;
 const MIN_JOURNAL_TRAVEL = 0.05;
 const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
@@ -403,7 +404,7 @@ function journalDeclaredMotionIssues(transition, metrics) {
   if (
     !Number.isFinite(transition.translationStartsAtSeconds) ||
     Math.abs(transition.translationStartsAtSeconds - derivedTranslationStart) >
-      DECLARED_MOTION_TOLERANCE
+      DECLARED_METRIC_TOLERANCE
   ) {
     issues.push(
       `declared translation start ${String(transition.translationStartsAtSeconds)} does not match derived ${derivedTranslationStart}`,
@@ -412,11 +413,50 @@ function journalDeclaredMotionIssues(transition, metrics) {
   if (
     !Number.isFinite(transition.maxAngularStepDegrees) ||
     Math.abs(transition.maxAngularStepDegrees - metrics.maxAngularStepDegrees) >
-      DECLARED_MOTION_TOLERANCE
+      DECLARED_METRIC_TOLERANCE
   ) {
     issues.push(
       `declared max angular step ${String(transition.maxAngularStepDegrees)} does not match derived ${metrics.maxAngularStepDegrees}`,
     );
+  }
+  return issues;
+}
+
+function journalDeclaredEndpointIssues(transition, metrics) {
+  const issues = [];
+  if (
+    !Number.isFinite(transition?.endpointBaselineRotationDegrees) ||
+    transition.endpointBaselineRotationDegrees >
+      MAX_JOURNAL_BASELINE_ROTATION_DEGREES
+  ) {
+    issues.push(
+      `endpointBaselineRotationDegrees must be finite and <=${MAX_JOURNAL_BASELINE_ROTATION_DEGREES}`,
+    );
+  }
+  if (
+    !Number.isFinite(transition?.endpointCoverage) ||
+    transition.endpointCoverage < JOURNAL_MIN_COVERAGE ||
+    transition.endpointCoverage > JOURNAL_MAX_COVERAGE
+  ) {
+    issues.push(
+      `endpointCoverage must be finite and within ${JOURNAL_MIN_COVERAGE}..${JOURNAL_MAX_COVERAGE}`,
+    );
+  }
+  if (!metrics) {
+    return [
+      ...issues,
+      "declared endpoint values cannot be checked against projected metrics",
+    ];
+  }
+  for (const key of ["endpointBaselineRotationDegrees", "endpointCoverage"]) {
+    if (
+      !Number.isFinite(transition?.[key]) ||
+      Math.abs(transition[key] - metrics[key]) > DECLARED_METRIC_TOLERANCE
+    ) {
+      issues.push(
+        `declared ${key} ${String(transition?.[key])} does not match projected ${metrics[key]}`,
+      );
+    }
   }
   return issues;
 }
@@ -471,11 +511,17 @@ function cameraContractFailures(manifest) {
       journalEndpoint,
       journal.notebookWorldQuad,
     );
+    failures.push(
+      ...journalDeclaredEndpointIssues(transition, journalMetrics).map(
+        (issue) => `${profile}: JOURNAL ${issue}`,
+      ),
+    );
     if (
       !journalMetrics ||
-      journalMetrics.endpointBaselineRotationDegrees > 12 ||
-      journalMetrics.endpointCoverage < 0.4 ||
-      journalMetrics.endpointCoverage > 0.6
+      journalMetrics.endpointBaselineRotationDegrees >
+        MAX_JOURNAL_BASELINE_ROTATION_DEGREES ||
+      journalMetrics.endpointCoverage < JOURNAL_MIN_COVERAGE ||
+      journalMetrics.endpointCoverage > JOURNAL_MAX_COVERAGE
     ) {
       failures.push(
         `${profile}: JOURNAL notebookWorldQuad projection must produce <=12 degree paragraph baseline rotation and 40-60% notebook coverage`,
@@ -529,6 +575,55 @@ if (selfTest) {
     throw new Error(
       `projected JOURNAL coverage must clip to the viewport; got ${metrics.endpointCoverage}`,
     );
+  }
+  const endpointMetrics = {
+    endpointBaselineRotationDegrees: 6,
+    endpointCoverage: 0.5,
+  };
+  const declaredEndpoint = { ...endpointMetrics };
+  if (
+    journalDeclaredEndpointIssues(declaredEndpoint, endpointMetrics).length > 0
+  ) {
+    throw new Error("sample-matched JOURNAL endpoint declarations must pass");
+  }
+  const missingEndpointIssues = journalDeclaredEndpointIssues(
+    {},
+    endpointMetrics,
+  ).join("\n");
+  if (
+    !missingEndpointIssues.includes("endpointBaselineRotationDegrees") ||
+    !missingEndpointIssues.includes("endpointCoverage")
+  ) {
+    throw new Error("missing JOURNAL endpoint declarations must fail");
+  }
+  if (
+    !journalDeclaredEndpointIssues(
+      {
+        endpointBaselineRotationDegrees: 5,
+        endpointCoverage: 0.55,
+      },
+      endpointMetrics,
+    ).some((issue) => issue.includes("projected"))
+  ) {
+    throw new Error(
+      "fabricated JOURNAL endpoint declarations must fail projected parity",
+    );
+  }
+  const outOfRangeEndpointIssues = journalDeclaredEndpointIssues(
+    {
+      endpointBaselineRotationDegrees: 13,
+      endpointCoverage: 0.7,
+    },
+    {
+      endpointBaselineRotationDegrees: 13,
+      endpointCoverage: 0.7,
+    },
+  ).join("\n");
+  if (
+    !outOfRangeEndpointIssues.includes("<=12") ||
+    !outOfRangeEndpointIssues.includes("0.4..0.6")
+  ) {
+    throw new Error("out-of-range JOURNAL endpoint declarations must fail");
   }
   const yawQuaternion = (degrees) => {
     const radians = (degrees * Math.PI) / 180;
@@ -597,7 +692,7 @@ if (selfTest) {
   }
 
   console.log(
-    "camera-state self-tests passed (fabricated scalar, discontinuity, staged-motion, and clipped-coverage negatives).",
+    "camera-state self-tests passed (missing/fabricated endpoint declarations, fabricated motion scalars, discontinuity, staged-motion, and clipped-coverage negatives).",
   );
   process.exit(0);
 }
