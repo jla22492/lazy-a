@@ -23,6 +23,7 @@ import { PerspectiveCamera, Quaternion, Vector3 } from "three";
 
 const args = process.argv.slice(2);
 const manifestOnly = args.includes("--manifest-only");
+const selfTest = args.includes("--self-test");
 const url =
   args.find((argument) => !argument.startsWith("--")) ??
   "http://localhost:3000/";
@@ -124,6 +125,50 @@ function sameTuple(left, right, tolerance = 1e-9) {
   );
 }
 
+function clipPolygonToViewport(points) {
+  const clip = (polygon, inside, intersect) => {
+    const clipped = [];
+    for (let index = 0; index < polygon.length; index += 1) {
+      const current = polygon[index];
+      const previous = polygon[(index + polygon.length - 1) % polygon.length];
+      const currentInside = inside(current);
+      const previousInside = inside(previous);
+      if (currentInside !== previousInside) {
+        clipped.push(intersect(previous, current));
+      }
+      if (currentInside) clipped.push(current);
+    }
+    return clipped;
+  };
+  const interpolateAtX = (first, second, x) => {
+    const ratio = (x - first[0]) / (second[0] - first[0]);
+    return [x, first[1] + (second[1] - first[1]) * ratio];
+  };
+  const interpolateAtY = (first, second, y) => {
+    const ratio = (y - first[1]) / (second[1] - first[1]);
+    return [first[0] + (second[0] - first[0]) * ratio, y];
+  };
+  return [
+    [(point) => point[0] >= 0, (first, second) => interpolateAtX(first, second, 0)],
+    [(point) => point[0] <= 1, (first, second) => interpolateAtX(first, second, 1)],
+    [(point) => point[1] >= 0, (first, second) => interpolateAtY(first, second, 0)],
+    [(point) => point[1] <= 1, (first, second) => interpolateAtY(first, second, 1)],
+  ].reduce(
+    (polygon, [inside, intersect]) =>
+      polygon.length === 0 ? polygon : clip(polygon, inside, intersect),
+    points,
+  );
+}
+
+function polygonArea(points) {
+  if (points.length < 3) return 0;
+  const signedArea = points.reduce((area, [x, y], index) => {
+    const [nextX, nextY] = points[(index + 1) % points.length];
+    return area + x * nextY - y * nextX;
+  }, 0);
+  return Math.abs(signedArea) / 2;
+}
+
 function projectedJournalEndpointMetrics(
   variant,
   cameraSample,
@@ -150,16 +195,12 @@ function projectedJournalEndpointMetrics(
     const projected = new Vector3(...point).project(camera);
     return [projected.x * 0.5 + 0.5, 0.5 - projected.y * 0.5];
   });
-  const signedArea = points.reduce((area, [x, y], index) => {
-    const [nextX, nextY] = points[(index + 1) % points.length];
-    return area + x * nextY - y * nextX;
-  }, 0);
   const [start, end] = points;
   const baselineRotationDegrees =
     (Math.abs(Math.atan2(end[1] - start[1], end[0] - start[0])) * 180) /
     Math.PI;
   return {
-    endpointCoverage: Math.abs(signedArea) / 2,
+    endpointCoverage: polygonArea(clipPolygonToViewport(points)),
     endpointBaselineRotationDegrees: Math.min(
       baselineRotationDegrees,
       180 - baselineRotationDegrees,
@@ -296,6 +337,30 @@ function cameraContractFailures(manifest) {
     }
   }
   return failures;
+}
+
+if (selfTest) {
+  const metrics = projectedJournalEndpointMetrics(
+    { width: 100, height: 100 },
+    {
+      position: [0, 0, 0],
+      quaternion: [0, 0, 0, 1],
+      fov: 90,
+    },
+    [
+      [-2, 2, -1],
+      [2, 2, -1],
+      [2, -2, -1],
+      [-2, -2, -1],
+    ],
+  );
+  if (Math.abs(metrics.endpointCoverage - 1) > 1e-9) {
+    throw new Error(
+      `projected JOURNAL coverage must clip to the viewport; got ${metrics.endpointCoverage}`,
+    );
+  }
+  console.log("camera-state self-tests passed (viewport-clipped coverage).");
+  process.exit(0);
 }
 
 if (manifestOnly) {

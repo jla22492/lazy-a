@@ -17,25 +17,18 @@ const publicManifestPath = path.join(root, "public/room/manifest.json");
 const typescriptManifestPath = path.join(root, "three/scene/plateManifest.ts");
 const args = process.argv.slice(2);
 const geometryOnly = args.includes("--geometry-only");
+const selfTest = args.includes("--self-test");
 const url =
   args.find((argument) => !argument.startsWith("--")) ??
   "http://localhost:3000/";
 
-const OCCLUDER_SLOTS = [
-  "ceramic_vase_02",
-  "Mesh_38",
-  "Mesh_39",
-  "Mesh_40",
-  "Mesh_41",
-  "Mesh_42",
-  "Mesh_43",
-  "ProductionNavigationSheet",
-  "Camera_01",
-  "Camera_01_strap",
-];
 const MAX_MANIFEST_BYTES = 1_500_000;
-const COORDINATE_EPSILON = 2e-5;
-const ROUNDING_DIGITS = 6;
+const PRESENTED_FRAME_EVENT = "lazy-a:compositor-frame-presented";
+const PRESENTED_PIXEL_REFERENCES =
+  "/room/hero/hero-presented-pixel-references.json";
+const PRESENTED_PIXEL_REFERENCE_KIND = "authored-presented-pixels-v1";
+const PRESENTED_PIXEL_REGION_ENCODING =
+  "rgb-poster-foreground-treatment";
 const viewport = { width: 1280, height: 720 };
 const failures = [];
 
@@ -64,30 +57,6 @@ function projectionFrames(manifest) {
   ]);
 }
 
-function pointInConvexPolygon(point, polygon, epsilon = 0) {
-  let sign = 0;
-  for (let index = 0; index < polygon.length; index += 1) {
-    const first = polygon[index];
-    const second = polygon[(index + 1) % polygon.length];
-    const cross =
-      (second[0] - first[0]) * (point[1] - first[1]) -
-      (second[1] - first[1]) * (point[0] - first[0]);
-    if (Math.abs(cross) <= epsilon) continue;
-    const nextSign = Math.sign(cross);
-    if (sign !== 0 && nextSign !== sign) return false;
-    sign = nextSign;
-  }
-  return true;
-}
-
-function pairs(values) {
-  const points = [];
-  for (let index = 0; index < values.length; index += 2) {
-    points.push([values[index], values[index + 1]]);
-  }
-  return points;
-}
-
 function assertR4HeroSourceContract(hero) {
   assert.equal(hero?.compositor, "single-webgl-pass");
   assert.equal(hero?.occlusion, "authored-depth-geometry");
@@ -96,6 +65,23 @@ function assertR4HeroSourceContract(hero) {
   assert.ok(hero?.geometry?.source.endsWith("/hero-compositor.glb"));
   assert.ok(hero?.geometry?.occluders.includes("Mesh_31"));
   assert.equal(hero?.maskResolution, undefined);
+  assert.equal(
+    hero?.verification?.presentationEvent,
+    PRESENTED_FRAME_EVENT,
+  );
+  assert.ok(
+    hero?.verification?.presentedPixelReferences.endsWith(
+      PRESENTED_PIXEL_REFERENCES,
+    ),
+  );
+  assert.equal(
+    hero?.verification?.referenceKind,
+    PRESENTED_PIXEL_REFERENCE_KIND,
+  );
+  assert.equal(
+    hero?.verification?.regionEncoding,
+    PRESENTED_PIXEL_REGION_ENCODING,
+  );
 }
 
 function assertR4HeroSourceStubsFail() {
@@ -110,6 +96,12 @@ function assertR4HeroSourceStubsFail() {
       source: "/room/hero/hero-compositor.glb",
       occluders: ["Mesh_31"],
     },
+    verification: {
+      presentationEvent: PRESENTED_FRAME_EVENT,
+      presentedPixelReferences: PRESENTED_PIXEL_REFERENCES,
+      referenceKind: PRESENTED_PIXEL_REFERENCE_KIND,
+      regionEncoding: PRESENTED_PIXEL_REGION_ENCODING,
+    },
   };
   assert.doesNotThrow(() => assertR4HeroSourceContract(complete));
 
@@ -121,10 +113,44 @@ function assertR4HeroSourceStubsFail() {
     (hero) => ({ ...hero, geometry: { ...hero.geometry, source: "/room/hero/geometry.glb" } }),
     (hero) => ({ ...hero, geometry: { ...hero.geometry, occluders: ["Mesh_170"] } }),
     (hero) => ({ ...hero, maskResolution: 512 }),
+    (hero) => ({
+      ...hero,
+      verification: {
+        ...hero.verification,
+        presentationEvent: "lazy-a:frame",
+      },
+    }),
+    (hero) => ({
+      ...hero,
+      verification: {
+        ...hero.verification,
+        presentedPixelReferences: "/room/hero/references.json",
+      },
+    }),
+    (hero) => ({
+      ...hero,
+      verification: {
+        ...hero.verification,
+        referenceKind: "runtime-scalars-v1",
+      },
+    }),
+    (hero) => ({
+      ...hero,
+      verification: {
+        ...hero.verification,
+        regionEncoding: "rgb-combined-edges",
+      },
+    }),
   ];
   for (const stub of stubs) {
     assert.throws(() => assertR4HeroSourceContract(stub(complete)));
   }
+}
+
+if (selfTest) {
+  assertR4HeroSourceStubsFail();
+  console.log("hero occlusion self-tests passed (11 structural stubs).");
+  process.exit(0);
 }
 
 const manifest = JSON.parse(fs.readFileSync(publicManifestPath, "utf8"));
@@ -151,7 +177,28 @@ check("R4 hero source is one treated WebGL surface with authored depth", () => {
 
 check("R4 hero source contract rejects structural stubs", () => {
   assertR4HeroSourceStubsFail();
-  return "7 structural stubs rejected";
+  return "11 structural stubs rejected";
+});
+
+check("R4 hero declares captured per-frame pixel references", () => {
+  assert.equal(
+    manifest.hero?.verification?.presentationEvent,
+    PRESENTED_FRAME_EVENT,
+  );
+  assert.ok(
+    manifest.hero?.verification?.presentedPixelReferences?.endsWith(
+      PRESENTED_PIXEL_REFERENCES,
+    ),
+  );
+  assert.equal(
+    manifest.hero?.verification?.referenceKind,
+    PRESENTED_PIXEL_REFERENCE_KIND,
+  );
+  assert.equal(
+    manifest.hero?.verification?.regionEncoding,
+    PRESENTED_PIXEL_REGION_ENCODING,
+  );
+  return manifest.hero.verification.presentedPixelReferences;
 });
 
 check("every hero projection carries four reciprocal-depth weights", () => {
@@ -186,239 +233,21 @@ check("generated manifests stay materially compact", () => {
   return sizes.map(({ file, bytes }) => `${file}=${bytes}`).join(", ");
 });
 
-check("every projection preserves the ten named occluder slots", () => {
-  for (const { id, projection } of frames) {
-    assert.equal(
-      projection.heroOccluders.length,
-      OCCLUDER_SLOTS.length,
-      `${id} slot count`,
-    );
-  }
-  return `${frames.length} projections x ${OCCLUDER_SLOTS.length} slots`;
-});
-
-check("occluder vertices are clipped to the visible physical hero", () => {
-  let vertices = 0;
-  let emptySlots = 0;
-  for (const { id, projection } of frames) {
-    if (projection.hero === null) {
-      assert.ok(
-        projection.heroOccluders.every((polygon) => polygon.length === 0),
-        `${id} hidden hero must not export occluders`,
-      );
-      emptySlots += projection.heroOccluders.length;
-      continue;
-    }
-    assert.equal(projection.hero.length, 8, `${id} hero quad`);
-    const hero = pairs(projection.hero);
-    for (let slot = 0; slot < projection.heroOccluders.length; slot += 1) {
-      const polygon = projection.heroOccluders[slot];
-      if (polygon.length === 0) {
-        emptySlots += 1;
-        continue;
-      }
-      assert.ok(
-        polygon.length >= 6 && polygon.length % 2 === 0,
-        `${id} ${OCCLUDER_SLOTS[slot]} polygon shape`,
-      );
-      for (const point of pairs(polygon)) {
-        vertices += 1;
-        assert.ok(
-          point.every(
-            (value) =>
-              Number.isFinite(value) &&
-              value >= -COORDINATE_EPSILON &&
-              value <= 1 + COORDINATE_EPSILON,
-          ),
-          `${id} ${OCCLUDER_SLOTS[slot]} has off-screen vertex ${point}`,
-        );
-        assert.ok(
-          pointInConvexPolygon(point, hero, COORDINATE_EPSILON),
-          `${id} ${OCCLUDER_SLOTS[slot]} has out-of-hero vertex ${point}`,
-        );
-      }
-    }
-  }
-  return `${vertices} vertices; ${emptySlots} empty slots`;
-});
-
-check("occluder coordinates use compact rounding", () => {
-  let values = 0;
-  for (const { id, projection } of frames) {
-    for (const polygon of projection.heroOccluders) {
-      for (const value of polygon) {
-        values += 1;
-        assert.ok(
-          Math.abs(value - Number(value.toFixed(ROUNDING_DIGITS))) <= 1e-10,
-          `${id} coordinate ${value} exceeds ${ROUNDING_DIGITS} decimals`,
-        );
-      }
-    }
-  }
-  return `${values} coordinates`;
-});
-
-check("R4 hero projections do not regress to low-resolution masks", () => {
+check("R4 hero projections contain no legacy screen-space occlusion payload", () => {
   let projections = 0;
   for (const { id, projection } of frames) {
     projections += 1;
-    assert.equal(
-      projection.heroOcclusionMask,
-      undefined,
+    assert.ok(
+      !Object.hasOwn(projection, "heroOcclusionMask"),
       `${id} must use authored depth geometry instead of an RLE mask`,
+    );
+    assert.ok(
+      !Object.hasOwn(projection, "heroOccluders"),
+      `${id} must use authored depth geometry instead of projected polygons`,
     );
   }
   return `${projections} depth-geometry projections`;
 });
-
-async function analyzeScreenshots(page, first, second) {
-  return page.evaluate(
-    async ({ firstPng, secondPng }) => {
-      const decode = async (base64) => {
-        const response = await fetch(`data:image/png;base64,${base64}`);
-        return createImageBitmap(await response.blob());
-      };
-      const [firstImage, secondImage] = await Promise.all([
-        decode(firstPng),
-        decode(secondPng),
-      ]);
-      const canvas = document.createElement("canvas");
-      canvas.width = firstImage.width;
-      canvas.height = firstImage.height;
-      const context = canvas.getContext("2d", { willReadFrequently: true });
-      context.drawImage(firstImage, 0, 0);
-      const firstPixels = context.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      ).data;
-      context.clearRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(secondImage, 0, 0);
-      const secondPixels = context.getImageData(
-        0,
-        0,
-        canvas.width,
-        canvas.height,
-      ).data;
-
-      const hero = (window.__lazyAHeroProjection ?? []).reduce(
-        (points, value, index, values) => {
-          if (index % 2 === 0) {
-            points.push([value * innerWidth, values[index + 1] * innerHeight]);
-          }
-          return points;
-        },
-        [],
-      );
-      const profile = window.__lazyAPlateState?.profile ?? "wide";
-      const source =
-        profile === "portrait"
-          ? { width: 375, height: 812 }
-          : { width: 1280, height: 720 };
-      const scale = Math.max(
-        innerWidth / source.width,
-        innerHeight / source.height,
-      );
-      const offsetX = (innerWidth - source.width * scale) / 2;
-      const offsetY = (innerHeight - source.height * scale) / 2;
-      const slots = (window.__lazyAPlateProjection?.heroOccluders ?? []).map(
-        (polygon) => {
-          const points = [];
-          for (let index = 0; index < polygon.length; index += 2) {
-            points.push([
-              offsetX + polygon[index] * source.width * scale,
-              offsetY + polygon[index + 1] * source.height * scale,
-            ]);
-          }
-          return points;
-        },
-      );
-
-      const inside = (point, polygon) => {
-        if (polygon.length < 3) return false;
-        let sign = 0;
-        for (let index = 0; index < polygon.length; index += 1) {
-          const first = polygon[index];
-          const second = polygon[(index + 1) % polygon.length];
-          const cross =
-            (second[0] - first[0]) * (point[1] - first[1]) -
-            (second[1] - first[1]) * (point[0] - first[0]);
-          if (Math.abs(cross) < 0.5) continue;
-          const nextSign = Math.sign(cross);
-          if (sign !== 0 && nextSign !== sign) return false;
-          sign = nextSign;
-        }
-        return true;
-      };
-      const difference = (x, y) => {
-        const index = (y * canvas.width + x) * 4;
-        return Math.max(
-          Math.abs(firstPixels[index] - secondPixels[index]),
-          Math.abs(firstPixels[index + 1] - secondPixels[index + 1]),
-          Math.abs(firstPixels[index + 2] - secondPixels[index + 2]),
-        );
-      };
-
-      const masked = [];
-      const unmasked = [];
-      const bySlot = slots.map(() => []);
-      const minX = Math.max(0, Math.floor(Math.min(...hero.map(([x]) => x))));
-      const maxX = Math.min(
-        canvas.width - 1,
-        Math.ceil(Math.max(...hero.map(([x]) => x))),
-      );
-      const minY = Math.max(0, Math.floor(Math.min(...hero.map(([, y]) => y))));
-      const maxY = Math.min(
-        canvas.height - 1,
-        Math.ceil(Math.max(...hero.map(([, y]) => y))),
-      );
-      for (let y = minY + 3; y <= maxY - 3; y += 3) {
-        for (let x = minX + 3; x <= maxX - 3; x += 3) {
-          const point = [x, y];
-          if (!inside(point, hero)) continue;
-          const coveringSlots = slots.flatMap((slot, index) =>
-            inside(point, slot) ? [index] : [],
-          );
-          const sample = { x, y, difference: difference(x, y) };
-          if (coveringSlots.length > 0) {
-            masked.push(sample);
-            for (const index of coveringSlots) bySlot[index].push(sample);
-          } else {
-            unmasked.push(sample);
-          }
-        }
-      }
-      const percentile = (samples, fraction) => {
-        const values = samples
-          .map(({ difference: value }) => value)
-          .sort((a, b) => a - b);
-        return (
-          values[
-            Math.min(values.length - 1, Math.floor(values.length * fraction))
-          ] ?? null
-        );
-      };
-      return {
-        marker: window.__lazyAHeroOcclusion ?? null,
-        maskedSamples: masked.length,
-        unmaskedSamples: unmasked.length,
-        maskedP90: percentile(masked, 0.9),
-        unmaskedP90: percentile(unmasked, 0.9),
-        changingUnmasked: unmasked.filter(
-          ({ difference: value }) => value >= 12,
-        ).length,
-        stableMasked: masked.filter(({ difference: value }) => value <= 4)
-          .length,
-        slotSamples: bySlot.map((samples) => samples.length),
-      };
-    },
-    {
-      firstPng: first.toString("base64"),
-      secondPng: second.toString("base64"),
-    },
-  );
-}
 
 if (!geometryOnly) {
   let browser;
@@ -433,21 +262,17 @@ if (!geometryOnly) {
     await page.waitForFunction(
       () =>
         window.__arrivalDone === true &&
-        Array.isArray(window.__lazyAHeroProjection) &&
         window.__lazyACompositor?.atomic === true,
       null,
       { timeout: 15_000 },
     );
-    await page.waitForTimeout(2_100);
-    const first = await page.screenshot();
-    await page.waitForTimeout(700);
-    const second = await page.screenshot();
-    const analysis = await analyzeScreenshots(page, first, second);
-    const compositor = await page.evaluate(
-      () => window.__lazyACompositor ?? null,
-    );
+    const browserState = await page.evaluate(() => ({
+      compositor: window.__lazyACompositor ?? null,
+      legacyOcclusionMarkerPresent: "__lazyAHeroOcclusion" in window,
+    }));
 
     check("browser presents hero and plate from one atomic compositor frame", () => {
+      const { compositor } = browserState;
       assert.ok(compositor, "window.__lazyACompositor is missing");
       assert.equal(compositor.atomic, true);
       assert.ok(Number.isFinite(compositor.plateMediaTime));
@@ -460,7 +285,11 @@ if (!geometryOnly) {
     check(
       "browser has retired the legacy RLE hero occlusion marker",
       () => {
-        assert.equal(analysis.marker, null, JSON.stringify(analysis.marker));
+        assert.equal(
+          browserState.legacyOcclusionMarkerPresent,
+          false,
+          JSON.stringify(browserState),
+        );
         return "no window.__lazyAHeroOcclusion marker";
       },
     );

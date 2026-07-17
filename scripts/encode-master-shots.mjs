@@ -43,6 +43,12 @@ const expectedContactCopy = [
 ].join("\n");
 const expectedContactIndentDepth = 0.0003;
 const contactActivationSamples = 31;
+const presentedFrameEvent = "lazy-a:compositor-frame-presented";
+const presentedPixelReferences =
+  "/room/hero/hero-presented-pixel-references.json";
+const presentedPixelReferenceKind = "authored-presented-pixels-v1";
+const presentedPixelRegionEncoding =
+  "rgb-poster-foreground-treatment";
 const approvedR3ContactPathSha256 = {
   wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
   portrait: "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
@@ -360,7 +366,26 @@ async function runSelfTests() {
     "a static stub clip should fail sampled source relationships",
   );
 
-  console.log("encode-master-shots self-tests passed (4 behavioral checks). ");
+  const clippedJournalMetrics = projectedJournalEndpointMetrics(
+    { width: 100, height: 100 },
+    {
+      position: [0, 0, 0],
+      quaternion: [0, 0, 0, 1],
+      fov: 90,
+    },
+    [
+      [-2, 2, -1],
+      [2, 2, -1],
+      [2, -2, -1],
+      [-2, -2, -1],
+    ],
+  );
+  assert.ok(
+    Math.abs(clippedJournalMetrics.endpointCoverage - 1) <= 1e-9,
+    `projected JOURNAL coverage must clip to the viewport; got ${clippedJournalMetrics.endpointCoverage}`,
+  );
+
+  console.log("encode-master-shots self-tests passed (5 behavioral checks). ");
 }
 
 function quadPixelWidth(quad, width) {
@@ -435,6 +460,50 @@ function journalGazeHitsNotebook(camera, notebookWorldQuad) {
   return inTriangle(first, second, third) || inTriangle(first, third, fourth);
 }
 
+function clipPolygonToViewport(points) {
+  const clip = (polygon, inside, intersect) => {
+    const clipped = [];
+    for (let index = 0; index < polygon.length; index += 1) {
+      const current = polygon[index];
+      const previous = polygon[(index + polygon.length - 1) % polygon.length];
+      const currentInside = inside(current);
+      const previousInside = inside(previous);
+      if (currentInside !== previousInside) {
+        clipped.push(intersect(previous, current));
+      }
+      if (currentInside) clipped.push(current);
+    }
+    return clipped;
+  };
+  const interpolateAtX = (first, second, x) => {
+    const ratio = (x - first[0]) / (second[0] - first[0]);
+    return [x, first[1] + (second[1] - first[1]) * ratio];
+  };
+  const interpolateAtY = (first, second, y) => {
+    const ratio = (y - first[1]) / (second[1] - first[1]);
+    return [first[0] + (second[0] - first[0]) * ratio, y];
+  };
+  return [
+    [(point) => point[0] >= 0, (first, second) => interpolateAtX(first, second, 0)],
+    [(point) => point[0] <= 1, (first, second) => interpolateAtX(first, second, 1)],
+    [(point) => point[1] >= 0, (first, second) => interpolateAtY(first, second, 0)],
+    [(point) => point[1] <= 1, (first, second) => interpolateAtY(first, second, 1)],
+  ].reduce(
+    (polygon, [inside, intersect]) =>
+      polygon.length === 0 ? polygon : clip(polygon, inside, intersect),
+    points,
+  );
+}
+
+function polygonArea(points) {
+  if (points.length < 3) return 0;
+  const signedArea = points.reduce((area, [x, y], index) => {
+    const [nextX, nextY] = points[(index + 1) % points.length];
+    return area + x * nextY - y * nextX;
+  }, 0);
+  return Math.abs(signedArea) / 2;
+}
+
 function projectedJournalEndpointMetrics(
   variant,
   cameraSample,
@@ -463,16 +532,12 @@ function projectedJournalEndpointMetrics(
     const projected = new Vector3(...point).project(camera);
     return [projected.x * 0.5 + 0.5, 0.5 - projected.y * 0.5];
   });
-  const signedArea = points.reduce((area, [x, y], index) => {
-    const [nextX, nextY] = points[(index + 1) % points.length];
-    return area + x * nextY - y * nextX;
-  }, 0);
   const [start, end] = points;
   const baselineRotationDegrees =
     (Math.abs(Math.atan2(end[1] - start[1], end[0] - start[0])) * 180) /
     Math.PI;
   return {
-    endpointCoverage: Math.abs(signedArea) / 2,
+    endpointCoverage: polygonArea(clipPolygonToViewport(points)),
     endpointBaselineRotationDegrees: Math.min(
       baselineRotationDegrees,
       180 - baselineRotationDegrees,
@@ -672,10 +737,18 @@ function validateManifest(manifest) {
     !manifest.hero?.treatment?.source?.endsWith("/hero-room-treatment.png") ||
     !manifest.hero?.geometry?.source?.endsWith("/hero-compositor.glb") ||
     !manifest.hero?.geometry?.occluders?.includes("Mesh_31") ||
-    manifest.hero?.maskResolution !== undefined
+    manifest.hero?.maskResolution !== undefined ||
+    manifest.hero?.verification?.presentationEvent !== presentedFrameEvent ||
+    !manifest.hero?.verification?.presentedPixelReferences?.endsWith(
+      presentedPixelReferences,
+    ) ||
+    manifest.hero?.verification?.referenceKind !==
+      presentedPixelReferenceKind ||
+    manifest.hero?.verification?.regionEncoding !==
+      presentedPixelRegionEncoding
   ) {
     issues.push(
-      "manifest hero must use the atomic compositor, calibrated room transfer, and authored depth geometry",
+      "manifest hero must use the atomic compositor, calibrated room transfer, authored depth geometry, and captured-pixel references",
     );
   }
   exactKeys(manifest.variants, expectedVariants, "variants", issues);
@@ -697,6 +770,25 @@ function validateManifest(manifest) {
       `${variantId} transitions`,
       issues,
     );
+    const variantProjections = [
+      ...Object.values(variant.endpoints ?? {}).map(
+        (endpoint) => endpoint.projection,
+      ),
+      ...Object.values(variant.transitions ?? {}).flatMap(
+        (transition) => transition.frames ?? [],
+      ),
+    ];
+    if (
+      variantProjections.some(
+        (projection) =>
+          Object.hasOwn(projection ?? {}, "heroOcclusionMask") ||
+          Object.hasOwn(projection ?? {}, "heroOccluders"),
+      )
+    ) {
+      issues.push(
+        `${variantId} projections must omit legacy RLE and polygon occlusion payloads`,
+      );
+    }
 
     const endpointFovs = new Set();
     for (const endpointId of expectedEndpoints) {

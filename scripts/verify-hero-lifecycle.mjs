@@ -23,12 +23,20 @@ const VIEWPORTS = [
 const DESTINATIONS = ["films", "journal", "contact", "about"];
 const TIME_EPSILON = 0.04;
 const MAX_CORNER_ERROR_CSS_PX = 0.75;
-const MIN_FOREGROUND_OCCLUDERS = 10;
+const MIN_CAPTURED_EDGE_STRENGTH = 24;
+const EDGE_SEARCH_RADIUS_PX = 4;
+const PRESENTED_FRAME_EVENT = "lazy-a:compositor-frame-presented";
+const PRESENTED_PIXEL_REFERENCES =
+  "/room/hero/hero-presented-pixel-references.json";
+const PRESENTED_PIXEL_REFERENCE_KIND = "authored-presented-pixels-v1";
+const PRESENTED_PIXEL_REGION_ENCODING =
+  "rgb-poster-foreground-treatment";
 const selfTest = process.argv.includes("--self-test");
 
 let failures = 0;
 let checks = 0;
 let page;
+const decodedReferenceCache = new Map();
 
 function check(ok, name, detail) {
   checks += 1;
@@ -44,25 +52,6 @@ function viewportLabel(viewport) {
   return `${viewport.name} ${viewport.width}x${viewport.height}`;
 }
 
-function pointInPolygon(x, y, polygon) {
-  let inside = false;
-  for (
-    let index = 0, previous = polygon.length - 1;
-    index < polygon.length;
-    previous = index++
-  ) {
-    const [currentX, currentY] = polygon[index];
-    const [previousX, previousY] = polygon[previous];
-    const crosses =
-      currentY > y !== previousY > y &&
-      x <
-        ((previousX - currentX) * (y - currentY)) / (previousY - currentY) +
-          currentX;
-    if (crosses) inside = !inside;
-  }
-  return inside;
-}
-
 function pixelAt(frame, x, y) {
   const offset = (y * frame.width + x) * 4;
   return [frame.data[offset], frame.data[offset + 1], frame.data[offset + 2]];
@@ -72,37 +61,32 @@ function luma([red, green, blue]) {
   return red * 0.2126 + green * 0.7152 + blue * 0.0722;
 }
 
-function pixelDelta(first, second, quad, borderOnly = false) {
-  const polygon = quad.map(([x, y]) => [Math.round(x), Math.round(y)]);
-  const xs = polygon.map(([x]) => x);
-  const ys = polygon.map(([, y]) => y);
-  const minX = Math.max(1, Math.min(...xs));
-  const maxX = Math.min(first.width - 2, Math.max(...xs));
-  const minY = Math.max(1, Math.min(...ys));
-  const maxY = Math.min(first.height - 2, Math.max(...ys));
+function maskedPixelDelta(actual, reference, regions, maskChannel) {
+  if (
+    actual.width !== reference.width ||
+    actual.height !== reference.height ||
+    actual.width !== regions.width ||
+    actual.height !== regions.height
+  ) {
+    return {
+      meanLumaDelta: Number.POSITIVE_INFINITY,
+      meanChannelDelta: Number.POSITIVE_INFINITY,
+      samples: 0,
+    };
+  }
   let lumaDelta = 0;
   let channelDelta = 0;
   let samples = 0;
-  const insetX = (maxX - minX) * 0.12;
-  const insetY = (maxY - minY) * 0.12;
-  for (let y = minY; y <= maxY; y += 2) {
-    for (let x = minX; x <= maxX; x += 2) {
-      if (!pointInPolygon(x, y, polygon)) continue;
-      if (
-        borderOnly &&
-        x > minX + insetX &&
-        x < maxX - insetX &&
-        y > minY + insetY &&
-        y < maxY - insetY
-      ) {
-        continue;
-      }
-      const firstPixel = pixelAt(first, x, y);
-      const secondPixel = pixelAt(second, x, y);
-      lumaDelta += Math.abs(luma(firstPixel) - luma(secondPixel));
+  for (let y = 1; y < actual.height - 1; y += 1) {
+    for (let x = 1; x < actual.width - 1; x += 1) {
+      const offset = (y * actual.width + x) * 4;
+      if (regions.data[offset + maskChannel] < 128) continue;
+      const actualPixel = pixelAt(actual, x, y);
+      const referencePixel = pixelAt(reference, x, y);
+      lumaDelta += Math.abs(luma(actualPixel) - luma(referencePixel));
       channelDelta += Math.max(
-        ...firstPixel.map((value, index) =>
-          Math.abs(value - secondPixel[index]),
+        ...actualPixel.map((value, index) =>
+          Math.abs(value - referencePixel[index]),
         ),
       );
       samples += 1;
@@ -113,112 +97,325 @@ function pixelDelta(first, second, quad, borderOnly = false) {
     meanChannelDelta: samples
       ? channelDelta / samples
       : Number.POSITIVE_INFINITY,
+    samples,
   };
 }
 
-function gradient(frame, x, y) {
-  const horizontal = Math.abs(
-    luma(pixelAt(frame, x + 1, y)) - luma(pixelAt(frame, x - 1, y)),
-  );
-  const vertical = Math.abs(
-    luma(pixelAt(frame, x, y + 1)) - luma(pixelAt(frame, x, y - 1)),
-  );
-  return horizontal + vertical;
+function maskValue(regions, x, y, maskChannel) {
+  return regions.data[(y * regions.width + x) * 4 + maskChannel];
 }
 
-function edgeAlignmentError(frame, quad) {
-  let maximum = 0;
-  for (let index = 0; index < quad.length; index += 1) {
-    const [startX, startY] = quad[index];
-    const [endX, endY] = quad[(index + 1) % quad.length];
-    const deltaX = endX - startX;
-    const deltaY = endY - startY;
-    const length = Math.hypot(deltaX, deltaY);
-    if (length < 1) return Number.POSITIVE_INFINITY;
-    const normalX = -deltaY / length;
-    const normalY = deltaX / length;
-    for (let step = 1; step < 8; step += 1) {
-      const ratio = step / 8;
-      const pointX = startX + deltaX * ratio;
-      const pointY = startY + deltaY * ratio;
-      let best = { offset: 0, strength: -1 };
-      for (let offset = -3; offset <= 3; offset += 1) {
-        const x = Math.round(pointX + normalX * offset);
-        const y = Math.round(pointY + normalY * offset);
-        if (x < 1 || y < 1 || x >= frame.width - 1 || y >= frame.height - 1)
-          continue;
-        const strength = gradient(frame, x, y);
-        if (
-          strength > best.strength ||
-          (strength === best.strength &&
-            Math.abs(offset) < Math.abs(best.offset))
-        ) {
-          best = { offset, strength };
-        }
+function referenceEdgeNormal(regions, x, y, maskChannel) {
+  let xx = 0;
+  let xy = 0;
+  let yy = 0;
+  let neighbors = 0;
+  for (let offsetY = -3; offsetY <= 3; offsetY += 1) {
+    for (let offsetX = -3; offsetX <= 3; offsetX += 1) {
+      if (
+        (offsetX === 0 && offsetY === 0) ||
+        Math.hypot(offsetX, offsetY) > 3 ||
+        maskValue(regions, x + offsetX, y + offsetY, maskChannel) < 128
+      ) {
+        continue;
       }
-      maximum = Math.max(maximum, Math.abs(best.offset));
+      xx += offsetX * offsetX;
+      xy += offsetX * offsetY;
+      yy += offsetY * offsetY;
+      neighbors += 1;
     }
   }
-  return maximum;
+  if (neighbors === 0) return null;
+  const tangentAngle = Math.atan2(2 * xy, xx - yy) / 2;
+  return [-Math.sin(tangentAngle), Math.cos(tangentAngle)];
+}
+
+function referenceEdgePoints(regions, maskChannel) {
+  const points = [];
+  for (let y = 4; y < regions.height - 4; y += 1) {
+    for (let x = 4; x < regions.width - 4; x += 1) {
+      if (maskValue(regions, x, y, maskChannel) < 128) continue;
+      const normal = referenceEdgeNormal(regions, x, y, maskChannel);
+      if (normal) points.push({ x, y, normal });
+    }
+  }
+  return points;
+}
+
+function directionalGradient(frame, x, y, normal) {
+  const firstX = Math.round(x - normal[0]);
+  const firstY = Math.round(y - normal[1]);
+  const secondX = Math.round(x + normal[0]);
+  const secondY = Math.round(y + normal[1]);
+  return Math.abs(
+    luma(pixelAt(frame, secondX, secondY)) -
+      luma(pixelAt(frame, firstX, firstY)),
+  );
+}
+
+function measureEdgeAlignment(frame, regions, maskChannel) {
+  if (frame.width !== regions.width || frame.height !== regions.height) {
+    return {
+      maxErrorPx: Number.POSITIVE_INFINITY,
+      minStrength: 0,
+      samples: 0,
+      weakSamples: 0,
+    };
+  }
+  const points = referenceEdgePoints(regions, maskChannel);
+  let maxErrorPx = 0;
+  let minStrength = Number.POSITIVE_INFINITY;
+  let weakSamples = 0;
+  for (const { x: expectedX, y: expectedY, normal } of points) {
+    let bestStrength = -1;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (
+      let offset = -EDGE_SEARCH_RADIUS_PX;
+      offset <= EDGE_SEARCH_RADIUS_PX;
+      offset += 0.25
+    ) {
+      const x = Math.round(expectedX + normal[0] * offset);
+      const y = Math.round(expectedY + normal[1] * offset);
+      if (x < 1 || y < 1 || x >= frame.width - 1 || y >= frame.height - 1)
+        continue;
+      const distance = Math.abs(offset);
+      const strength = directionalGradient(frame, x, y, normal);
+      if (
+        strength > bestStrength ||
+        (strength === bestStrength && distance < bestDistance)
+      ) {
+        bestStrength = strength;
+        bestDistance = distance;
+      }
+    }
+    minStrength = Math.min(minStrength, bestStrength);
+    if (bestStrength < MIN_CAPTURED_EDGE_STRENGTH) {
+      weakSamples += 1;
+    } else {
+      maxErrorPx = Math.max(maxErrorPx, bestDistance);
+    }
+  }
+  if (points.length === 0 || weakSamples > 0) {
+    maxErrorPx = Number.POSITIVE_INFINITY;
+  }
+  return {
+    maxErrorPx,
+    minStrength: points.length ? minStrength : 0,
+    samples: points.length,
+    weakSamples,
+  };
 }
 
 function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
-  const firstFrame = pixelDelta(resting, firstPainted, firstPainted.quad);
-  const treatmentDeltas = playingFrames.map(
-    (frame) =>
-      pixelDelta(firstPainted, frame, firstPainted.quad, true).meanChannelDelta,
+  const presentedFrames = [firstPainted, ...playingFrames];
+  const treatment = presentedFrames.map((frame) =>
+    maskedPixelDelta(
+      frame,
+      frame.reference?.composite ?? {},
+      frame.reference?.regions ?? {},
+      2,
+    ),
   );
-  const edgeErrors = [firstPainted, ...playingFrames].map((frame) =>
-    edgeAlignmentError(frame, frame.quad),
+  const posterAxis = presentedFrames.map((frame) =>
+    measureEdgeAlignment(frame, frame.reference?.regions ?? {}, 0),
+  );
+  const foreground = presentedFrames.map((frame) =>
+    measureEdgeAlignment(frame, frame.reference?.regions ?? {}, 1),
   );
   return {
-    firstFrame,
+    firstFrame: maskedPixelDelta(
+      firstPainted,
+      resting,
+      firstPainted.reference?.regions ?? {},
+      2,
+    ),
     playingFrames: {
-      maxRoomTreatmentDelta: Math.max(...treatmentDeltas),
+      maxRoomTreatmentDelta: Math.max(
+        ...treatment.map(({ meanChannelDelta }) => meanChannelDelta),
+      ),
+      minimumTreatmentSamples: Math.min(
+        ...treatment.map(({ samples }) => samples),
+      ),
     },
     motionSamples: {
-      maxPosterAxisErrorPx: Math.max(...edgeErrors),
-      maxForegroundEdgeErrorPx: Math.max(...edgeErrors),
+      maxPosterAxisErrorPx: Math.max(
+        ...posterAxis.map(({ maxErrorPx }) => maxErrorPx),
+      ),
+      minPosterAxisEdgeStrength: Math.min(
+        ...posterAxis.map(({ minStrength }) => minStrength),
+      ),
+      posterAxisSamples: Math.min(
+        ...posterAxis.map(({ samples }) => samples),
+      ),
+      posterAxisWeakSamples: Math.max(
+        ...posterAxis.map(({ weakSamples }) => weakSamples),
+      ),
+      maxForegroundEdgeErrorPx: Math.max(
+        ...foreground.map(({ maxErrorPx }) => maxErrorPx),
+      ),
+      minForegroundEdgeStrength: Math.min(
+        ...foreground.map(({ minStrength }) => minStrength),
+      ),
+      foregroundSamples: Math.min(
+        ...foreground.map(({ samples }) => samples),
+      ),
+      foregroundWeakSamples: Math.max(
+        ...foreground.map(({ weakSamples }) => weakSamples),
+      ),
     },
   };
 }
 
-function fixtureFrame(fill = 0, paper = 220) {
-  const width = 16;
-  const height = 16;
-  const data = Buffer.alloc(width * height * 4, fill);
-  for (let y = 4; y <= 11; y += 1) {
-    for (let x = 4; x <= 11; x += 1) {
+function fixtureFrame({
+  background = 20,
+  paper = 220,
+  foreground = 40,
+  foregroundX = 16,
+  drawForeground = true,
+} = {}) {
+  const width = 32;
+  const height = 32;
+  const data = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
       const offset = (y * width + x) * 4;
-      data[offset] = paper;
-      data[offset + 1] = paper;
-      data[offset + 2] = paper;
+      const value = x >= 6 && x <= 25 && y >= 6 && y <= 25
+        ? paper
+        : background;
+      data[offset] = value;
+      data[offset + 1] = value;
+      data[offset + 2] = value;
       data[offset + 3] = 255;
+    }
+  }
+  if (drawForeground) {
+    for (let y = 10; y <= 21; y += 1) {
+      const offset = (y * width + foregroundX) * 4;
+      data[offset] = foreground;
+      data[offset + 1] = foreground;
+      data[offset + 2] = foreground;
     }
   }
   return {
     data,
     width,
     height,
-    quad: [
-      [4, 4],
-      [11, 4],
-      [11, 11],
-      [4, 11],
-    ],
+  };
+}
+
+function fixtureRegions() {
+  const width = 32;
+  const height = 32;
+  const data = Buffer.alloc(width * height * 4);
+  const mark = (x, y, channel) => {
+    data[(y * width + x) * 4 + channel] = 255;
+    data[(y * width + x) * 4 + 3] = 255;
+  };
+  for (let value = 7; value <= 24; value += 1) {
+    mark(value, 6, 0);
+    mark(value, 25, 0);
+    mark(6, value, 0);
+    mark(25, value, 0);
+  }
+  for (let y = 10; y <= 21; y += 1) {
+    mark(15, y, 1);
+    mark(17, y, 1);
+  }
+  for (let y = 8; y <= 23; y += 1) {
+    for (let x = 8; x <= 23; x += 1) {
+      if (x < 14 || x > 18) mark(x, y, 2);
+    }
+  }
+  return { data, width, height };
+}
+
+function withFixtureReference(frame, composite = frame) {
+  return {
+    ...frame,
+    reference: {
+      composite,
+      regions: fixtureRegions(),
+    },
   };
 }
 
 function runSelfTests() {
   const resting = fixtureFrame();
-  const firstPainted = fixtureFrame();
-  const good = measuredPresentedPixelMetrics(resting, firstPainted, [
-    fixtureFrame(),
-  ]);
+  const firstPainted = withFixtureReference(fixtureFrame());
+  const changedContent = fixtureFrame({ paper: 110 });
+  const good = measuredPresentedPixelMetrics(
+    resting,
+    firstPainted,
+    [withFixtureReference(changedContent)],
+  );
   assert.ok(good.firstFrame.meanLumaDelta <= 3);
   assert.ok(good.firstFrame.meanChannelDelta <= 4);
-  assert.ok(good.playingFrames.maxRoomTreatmentDelta <= 6);
+  assert.ok(
+    good.playingFrames.maxRoomTreatmentDelta <= 6,
+    "changing content must compare with its matching authored frame",
+  );
+  assert.ok(good.playingFrames.minimumTreatmentSamples > 0);
   assert.ok(good.motionSamples.maxPosterAxisErrorPx <= 0.75);
+  assert.ok(good.motionSamples.maxForegroundEdgeErrorPx <= 1);
+  assert.ok(
+    good.motionSamples.minPosterAxisEdgeStrength >=
+      MIN_CAPTURED_EDGE_STRENGTH,
+  );
+  assert.ok(
+    good.motionSamples.minForegroundEdgeStrength >=
+      MIN_CAPTURED_EDGE_STRENGTH,
+  );
+
+  const flat = fixtureFrame({
+    background: 80,
+    paper: 80,
+    foreground: 80,
+  });
+  const flatMetrics = measuredPresentedPixelMetrics(
+    flat,
+    withFixtureReference(flat),
+    [],
+  );
+  assert.equal(
+    flatMetrics.motionSamples.maxPosterAxisErrorPx,
+    Number.POSITIVE_INFINITY,
+    "flat frames must not pass poster-axis alignment",
+  );
+
+  const missingForeground = fixtureFrame({ drawForeground: false });
+  const missingMetrics = measuredPresentedPixelMetrics(
+    missingForeground,
+    withFixtureReference(missingForeground),
+    [],
+  );
+  assert.ok(missingMetrics.motionSamples.maxPosterAxisErrorPx <= 0.75);
+  assert.equal(
+    missingMetrics.motionSamples.maxForegroundEdgeErrorPx,
+    Number.POSITIVE_INFINITY,
+    "missing foreground edges must fail independently of poster edges",
+  );
+
+  const shiftedForeground = fixtureFrame({ foregroundX: 19 });
+  const shiftedMetrics = measuredPresentedPixelMetrics(
+    shiftedForeground,
+    withFixtureReference(shiftedForeground),
+    [],
+  );
+  assert.ok(
+    shiftedMetrics.motionSamples.maxForegroundEdgeErrorPx > 1,
+    "shifted foreground edges must exceed the R4 alignment threshold",
+  );
+
+  const wrongTreatment = fixtureFrame({ paper: 70 });
+  const wrongTreatmentMetrics = measuredPresentedPixelMetrics(
+    resting,
+    firstPainted,
+    [withFixtureReference(wrongTreatment, changedContent)],
+  );
+  assert.ok(
+    wrongTreatmentMetrics.playingFrames.maxRoomTreatmentDelta > 6,
+    "captured pixels must reject a mismatched per-frame treatment reference",
+  );
 
   const fabricatedDiagnostics = {
     pixels: {
@@ -227,10 +424,10 @@ function runSelfTests() {
       motionSamples: { maxPosterAxisErrorPx: 0, maxForegroundEdgeErrorPx: 0 },
     },
   };
-  const corrupted = fixtureFrame(255, 0);
-  const negative = measuredPresentedPixelMetrics(resting, corrupted, [
-    corrupted,
-  ]);
+  const corrupted = withFixtureReference(
+    fixtureFrame({ background: 255, paper: 0, foreground: 0 }),
+  );
+  const negative = measuredPresentedPixelMetrics(resting, corrupted, []);
   assert.ok(
     negative.firstFrame.meanLumaDelta > 3 ||
       negative.firstFrame.meanChannelDelta > 4,
@@ -238,7 +435,7 @@ function runSelfTests() {
   );
   assert.equal(fabricatedDiagnostics.pixels.firstFrame.meanLumaDelta, 0);
   console.log(
-    "hero lifecycle self-tests passed (captured pixels reject fabricated diagnostics).",
+    "hero lifecycle self-tests passed (per-frame references and independent captured edges reject stubs).",
   );
 }
 
@@ -260,10 +457,12 @@ const closeBrowser = () =>
 
 async function installPageProbes(expectedProfile) {
   await page.addInitScript(
-    ({ profile, minimumOccluders }) => {
+    ({ profile, presentedFrameEvent }) => {
       const records = [];
       const tracked = new WeakMap();
       const events = [];
+      const pendingHeroPlays = [];
+      let heroPlaybackReleased = false;
 
       const eventSnapshot = (type, video) => ({
         type,
@@ -321,6 +520,15 @@ async function installPageProbes(expectedProfile) {
           record.playCalls += 1;
           events.push(eventSnapshot("play-call", this));
         }
+        if (
+          this instanceof HTMLVideoElement &&
+          this.dataset.lazyAHero === "true" &&
+          !heroPlaybackReleased
+        ) {
+          return new Promise((resolve, reject) => {
+            pendingHeroPlays.push({ element: this, resolve, reject });
+          });
+        }
         return nativePlay.call(this);
       };
 
@@ -340,13 +548,23 @@ async function installPageProbes(expectedProfile) {
 
       Object.defineProperty(window, "__heroLifecycleProbe", {
         configurable: false,
-        value: { records, events },
+        value: {
+          records,
+          events,
+          releasePlayback() {
+            heroPlaybackReleased = true;
+            for (const { element, resolve, reject } of pendingHeroPlays.splice(
+              0,
+            )) {
+              nativePlay.call(element).then(resolve, reject);
+            }
+          },
+        },
       });
 
       const values = {
         authored: null,
         live: null,
-        occlusion: null,
       };
       const samples = [];
       let activeSegment = "arrival opening -> desk";
@@ -386,51 +604,11 @@ async function installPageProbes(expectedProfile) {
         );
       };
 
-      const maskHasRuns = (mask) => {
-        if (
-          !mask ||
-          !Number.isInteger(mask.size) ||
-          typeof mask.rle !== "string"
-        ) {
-          return null;
-        }
-        try {
-          const binary = atob(mask.rle);
-          const bytes = Uint8Array.from(binary, (character) =>
-            character.charCodeAt(0),
-          );
-          let offset = 0;
-          let hasRuns = false;
-          const readVarint = () => {
-            let value = 0;
-            let shift = 0;
-            while (offset < bytes.length && shift <= 28) {
-              const byte = bytes[offset++];
-              value |= (byte & 0x7f) << shift;
-              if ((byte & 0x80) === 0) return value;
-              shift += 7;
-            }
-            return null;
-          };
-          for (let y = 0; y < mask.size; y += 1) {
-            const runCount = readVarint();
-            if (runCount === null) return null;
-            hasRuns ||= runCount > 0;
-            for (let run = 0; run < runCount; run += 1) {
-              if (readVarint() === null || readVarint() === null) return null;
-            }
-          }
-          return offset === bytes.length ? hasRuns : null;
-        } catch {
-          return null;
-        }
-      };
-
       const createRegistrationSample = (kind, label) => {
         if (!activeSegment) return;
         const authored = values.authored?.hero;
         const live = values.live;
-        const occlusion = values.occlusion;
+        const compositor = window.__lazyACompositor ?? null;
         samples.push({
           id: ++sampleId,
           segment: activeSegment,
@@ -440,11 +618,10 @@ async function installPageProbes(expectedProfile) {
           authoredProjectable: Array.isArray(authored) && authored.length === 8,
           profile: window.__lazyAPlateState?.profile ?? null,
           liveObserved: Array.isArray(live),
-          occlusionObserved: Boolean(occlusion),
+          occlusionObserved:
+            compositor?.occlusion === "authored-depth-geometry",
+          legacyOcclusionMarkerPresent: "__lazyAHeroOcclusion" in window,
           cornerErrors: cornerErrors(live, authored),
-          occluders: occlusion?.polygonCount ?? null,
-          masked: occlusion?.masked ?? null,
-          expectedMasked: maskHasRuns(values.authored?.heroOcclusionMask),
         });
       };
 
@@ -477,7 +654,16 @@ async function installPageProbes(expectedProfile) {
           setTimeout(() => {
             const projection = values.authored;
             if (!activeSegment || !projection) return;
-            if (!Array.isArray(values.live) || !values.occlusion) {
+            const authoredProjectable =
+              Array.isArray(projection.hero) && projection.hero.length === 8;
+            const compositorReady =
+              window.__lazyACompositor?.atomic === true &&
+              window.__lazyACompositor?.occlusion ===
+                "authored-depth-geometry";
+            if (
+              !compositorReady ||
+              (authoredProjectable && !Array.isArray(values.live))
+            ) {
               if (lastWaitingProjection.get(activeSegment) !== projection) {
                 recordWaitingProjection(projection);
               }
@@ -504,7 +690,120 @@ async function installPageProbes(expectedProfile) {
       };
       publishProperty("__lazyAPlateProjection", "authored");
       publishProperty("__lazyAHeroProjection", "live");
-      publishProperty("__lazyAHeroOcclusion", "occlusion");
+
+      const presented = {
+        targetFrame: null,
+        capture: null,
+        latestFrame: 0,
+        overlay: null,
+        slowedVideo: null,
+        armedAt: 0,
+        videoFrames: new Map(),
+        compositorFrames: new Map(),
+      };
+      const restorePlaybackRate = () => {
+        if (!presented.slowedVideo) return;
+        presented.slowedVideo.element.playbackRate =
+          presented.slowedVideo.playbackRate;
+        presented.slowedVideo = null;
+      };
+      const removeOverlay = () => {
+        presented.overlay?.remove();
+        presented.overlay = null;
+      };
+      const freezePresentedCanvas = () => {
+        const source = [...document.querySelectorAll("canvas")]
+          .map((canvas) => ({
+            canvas,
+            bounds: canvas.getBoundingClientRect(),
+          }))
+          .filter(({ bounds }) => bounds.width > 0 && bounds.height > 0)
+          .sort(
+            (left, right) =>
+              right.bounds.width * right.bounds.height -
+              left.bounds.width * left.bounds.height,
+          )[0];
+        if (!source) return null;
+        removeOverlay();
+        const overlay = document.createElement("canvas");
+        overlay.width = innerWidth;
+        overlay.height = innerHeight;
+        Object.assign(overlay.style, {
+          position: "fixed",
+          inset: "0",
+          width: `${innerWidth}px`,
+          height: `${innerHeight}px`,
+          pointerEvents: "none",
+          zIndex: "2147483647",
+        });
+        const context = overlay.getContext("2d");
+        context.drawImage(
+          source.canvas,
+          source.bounds.left,
+          source.bounds.top,
+          source.bounds.width,
+          source.bounds.height,
+        );
+        document.documentElement.append(overlay);
+        presented.overlay = overlay;
+        const heroVideo = records.find(
+          ({ element }) => element.dataset.lazyAHero === "true",
+        )?.element;
+        if (heroVideo && !presented.slowedVideo) {
+          presented.slowedVideo = {
+            element: heroVideo,
+            playbackRate: heroVideo.playbackRate,
+          };
+          heroVideo.playbackRate = 0.0625;
+        }
+        return source.bounds.toJSON();
+      };
+      const tryCapturePresentedFrame = (frameNumber) => {
+        if (
+          presented.capture ||
+          presented.targetFrame !== frameNumber ||
+          !presented.videoFrames.has(frameNumber) ||
+          !presented.compositorFrames.has(frameNumber) ||
+          presented.compositorFrames.get(frameNumber).at < presented.armedAt ||
+          !presented.compositorFrames.get(frameNumber).heroPlaying
+        ) {
+          return;
+        }
+        const canvasBounds = freezePresentedCanvas();
+        if (!canvasBounds) return;
+        presented.capture = {
+          compositor: presented.compositorFrames.get(frameNumber),
+          nativeVideoFrame: presented.videoFrames.get(frameNumber),
+          canvasBounds,
+          legacyOcclusionMarkerPresent: "__lazyAHeroOcclusion" in window,
+        };
+      };
+      window.addEventListener(presentedFrameEvent, (event) => {
+        const detail = event.detail;
+        if (!Number.isInteger(detail?.heroFramePresented)) return;
+        const heroRecord = records.find(
+          ({ element }) => element.dataset.lazyAHero === "true",
+        );
+        const snapshot = {
+          at: performance.now(),
+          atomic: detail.atomic,
+          plateMediaTime: detail.plateMediaTime,
+          projectionFrame: detail.projectionFrame,
+          heroFramePresented: detail.heroFramePresented,
+          treatment: detail.treatment,
+          occlusion: detail.occlusion,
+          heroPlaying:
+            Boolean(heroRecord) &&
+            heroRecord.playStarts > 0 &&
+            !heroRecord.element.paused,
+        };
+        presented.latestFrame = Math.max(
+          presented.latestFrame,
+          detail.heroFramePresented,
+        );
+        presented.compositorFrames.set(detail.heroFramePresented, snapshot);
+        tryCapturePresentedFrame(detail.heroFramePresented);
+      });
 
       const nativeVideoFrameCallback =
         HTMLVideoElement.prototype.requestVideoFrameCallback;
@@ -513,6 +812,18 @@ async function installPageProbes(expectedProfile) {
           callback,
         ) {
           return nativeVideoFrameCallback.call(this, (now, metadata) => {
+            if (this.dataset.lazyAHero === "true") {
+              presented.latestFrame = Math.max(
+                presented.latestFrame,
+                metadata.presentedFrames,
+              );
+              presented.videoFrames.set(metadata.presentedFrames, {
+                mediaTime: metadata.mediaTime,
+                presentedFrames: metadata.presentedFrames,
+                expectedDisplayTime: metadata.expectedDisplayTime,
+              });
+              tryCapturePresentedFrame(metadata.presentedFrames);
+            }
             callback(now, metadata);
             if (this.closest('[data-room-renderer="plate"]')) {
               recordDecodedFrame(metadata);
@@ -527,9 +838,6 @@ async function installPageProbes(expectedProfile) {
           (sample) => sample.kind !== "decoded" && sample.kind !== "waiting",
         );
         const errors = rendered.flatMap((sample) => sample.cornerErrors ?? []);
-        const occluders = rendered
-          .map((sample) => sample.occluders)
-          .filter(Number.isFinite);
         return {
           segment,
           total: rendered.length,
@@ -558,13 +866,10 @@ async function installPageProbes(expectedProfile) {
             (sample) => sample.profile !== profile,
           ).length,
           maxCornerError: errors.length ? Math.max(...errors) : null,
-          minOccluders: occluders.length ? Math.min(...occluders) : null,
           occlusionFailures: rendered.filter(
             (sample) =>
-              typeof sample.expectedMasked !== "boolean" ||
-              sample.masked !== sample.expectedMasked ||
-              !Number.isFinite(sample.occluders) ||
-              sample.occluders < minimumOccluders,
+              !sample.occlusionObserved ||
+              sample.legacyOcclusionMarkerPresent,
           ).length,
         };
       };
@@ -581,10 +886,36 @@ async function installPageProbes(expectedProfile) {
           summarize,
         },
       });
+
+      Object.defineProperty(window, "__heroPresentedFrameProbe", {
+        configurable: false,
+        value: {
+          arm(frameNumber) {
+            removeOverlay();
+            presented.capture = null;
+            presented.targetFrame = frameNumber;
+            presented.armedAt = performance.now();
+            tryCapturePresentedFrame(frameNumber);
+          },
+          snapshot() {
+            return {
+              capture: presented.capture,
+              latestFrame: presented.latestFrame,
+              targetFrame: presented.targetFrame,
+            };
+          },
+          release() {
+            removeOverlay();
+            restorePlaybackRate();
+            presented.capture = null;
+            presented.targetFrame = null;
+          },
+        },
+      });
     },
     {
       profile: expectedProfile,
-      minimumOccluders: MIN_FOREGROUND_OCCLUDERS,
+      presentedFrameEvent: PRESENTED_FRAME_EVENT,
     },
   );
 }
@@ -652,46 +983,237 @@ async function conversationState() {
   }));
 }
 
-async function capturePresentedFrame() {
-  const [png, compositor, quad] = await Promise.all([
-    page.screenshot(),
-    page.evaluate(() => window.__lazyACompositor ?? null),
-    page.evaluate(() => window.__lazyAHeroProjection ?? null),
-  ]);
+async function decodePng(png) {
   const { data, info } = await sharp(png)
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  if (!Array.isArray(quad) || quad.length !== 8) {
-    throw new Error(
-      "captured presented frame is missing the authored hero quad",
-    );
-  }
+  return { data, width: info.width, height: info.height };
+}
+
+async function captureCurrentFrame() {
+  const [png, compositor] = await Promise.all([
+    page.screenshot(),
+    page.evaluate(() => window.__lazyACompositor ?? null),
+  ]);
+  const frame = await decodePng(png);
   return {
-    data,
-    width: info.width,
-    height: info.height,
-    quad: quad.reduce((points, value, index, values) => {
-      if (index % 2 === 0) {
-        points.push([value * info.width, values[index + 1] * info.height]);
-      }
-      return points;
-    }, []),
+    ...frame,
     compositor,
   };
 }
 
-function assertAtomicCompositor(viewport, compositor) {
+async function loadPresentedPixelReferenceCatalog(viewport) {
+  return page.evaluate(
+    async ({
+      eventName,
+      referenceSuffix,
+      referenceKind,
+      regionEncoding,
+      viewportKey,
+    }) => {
+      const manifestUrl = new URL("room/manifest.json", document.baseURI);
+      const manifestResponse = await fetch(manifestUrl);
+      if (!manifestResponse.ok) {
+        throw new Error(
+          `could not load hero manifest (${manifestResponse.status})`,
+        );
+      }
+      const manifest = await manifestResponse.json();
+      const verification = manifest.hero?.verification;
+      if (
+        verification?.presentationEvent !== eventName ||
+        !verification?.presentedPixelReferences?.endsWith(referenceSuffix) ||
+        verification?.referenceKind !== referenceKind ||
+        verification?.regionEncoding !== regionEncoding
+      ) {
+        throw new Error(
+          "R4 hero verification must declare the compositor presentation event and authored pixel-reference catalog",
+        );
+      }
+      const catalogUrl = new URL(
+        verification.presentedPixelReferences,
+        document.baseURI,
+      );
+      const catalogResponse = await fetch(catalogUrl);
+      if (!catalogResponse.ok) {
+        throw new Error(
+          `could not load ${catalogUrl.pathname} (${catalogResponse.status})`,
+        );
+      }
+      const catalog = await catalogResponse.json();
+      const frames = catalog.viewports?.[viewportKey]?.frames;
+      if (
+        catalog.version !== 1 ||
+        catalog.presentationEvent !== eventName ||
+        !Array.isArray(frames) ||
+        frames.length < 2
+      ) {
+        throw new Error(
+          `${viewportKey} must provide at least two version-1 presented-pixel references`,
+        );
+      }
+      if (
+        catalog.kind !== referenceKind ||
+        catalog.regionEncoding !== regionEncoding ||
+        frames.some(
+          (frame) =>
+            typeof frame?.composite !== "string" ||
+            typeof frame?.regions !== "string",
+        )
+      ) {
+        throw new Error(
+          `${viewportKey} must use ${referenceKind} with ${regionEncoding} region maps`,
+        );
+      }
+      const normalized = frames
+        .map((frame) => ({
+          heroFramePresented: frame.heroFramePresented,
+          composite: new URL(frame.composite, catalogUrl).href,
+          regions: new URL(frame.regions, catalogUrl).href,
+        }))
+        .sort(
+          (left, right) =>
+            left.heroFramePresented - right.heroFramePresented,
+        );
+      if (
+        normalized[0]?.heroFramePresented !== 1 ||
+        normalized.some(
+          (frame, index) =>
+            !Number.isInteger(frame.heroFramePresented) ||
+            frame.heroFramePresented < 1 ||
+            !frame.composite ||
+            !frame.regions ||
+            (index > 0 &&
+              frame.heroFramePresented ===
+                normalized[index - 1].heroFramePresented),
+        )
+      ) {
+        throw new Error(
+          `${viewportKey} references must start at presented frame 1 and use unique integer frame ids`,
+        );
+      }
+      return normalized;
+    },
+    {
+      eventName: PRESENTED_FRAME_EVENT,
+      referenceSuffix: PRESENTED_PIXEL_REFERENCES,
+      referenceKind: PRESENTED_PIXEL_REFERENCE_KIND,
+      regionEncoding: PRESENTED_PIXEL_REGION_ENCODING,
+      viewportKey: `${viewport.width}x${viewport.height}`,
+    },
+  );
+}
+
+async function loadReferenceAsset(source) {
+  if (!decodedReferenceCache.has(source)) {
+    decodedReferenceCache.set(
+      source,
+      (async () => {
+        const response = await fetch(source);
+        if (!response.ok) {
+          throw new Error(
+            `could not load presented-pixel reference ${source} (${response.status})`,
+          );
+        }
+        return decodePng(Buffer.from(await response.arrayBuffer()));
+      })(),
+    );
+  }
+  return decodedReferenceCache.get(source);
+}
+
+async function loadPresentedPixelReference(reference, viewport) {
+  const [composite, regions] = await Promise.all([
+    loadReferenceAsset(reference.composite),
+    loadReferenceAsset(reference.regions),
+  ]);
+  for (const [kind, frame] of [
+    ["composite", composite],
+    ["regions", regions],
+  ]) {
+    if (frame.width !== viewport.width || frame.height !== viewport.height) {
+      throw new Error(
+        `${kind} reference for frame ${reference.heroFramePresented} is ${frame.width}x${frame.height}; expected ${viewport.width}x${viewport.height}`,
+      );
+    }
+  }
+  return { composite, regions };
+}
+
+async function armPresentedFrameCapture(frameNumber) {
+  await page.evaluate(
+    (target) => window.__heroPresentedFrameProbe.arm(target),
+    frameNumber,
+  );
+}
+
+async function releaseHeroPlayback() {
+  await page.evaluate(() => window.__heroLifecycleProbe.releasePlayback());
+}
+
+async function captureArmedPresentedFrame(
+  reference,
+  decodedReference,
+  nextFrameNumber = null,
+) {
+  await page.waitForFunction(
+    (target) =>
+      window.__heroPresentedFrameProbe.snapshot().capture?.compositor
+        ?.heroFramePresented === target,
+    reference.heroFramePresented,
+    { timeout: 8_000 },
+  );
+  const [png, probe] = await Promise.all([
+    page.screenshot(),
+    page.evaluate(() => window.__heroPresentedFrameProbe.snapshot()),
+  ]);
+  await page.evaluate((nextTarget) => {
+    window.__heroPresentedFrameProbe.release();
+    if (Number.isInteger(nextTarget)) {
+      window.__heroPresentedFrameProbe.arm(nextTarget);
+    }
+  }, nextFrameNumber);
+  const frame = await decodePng(png);
+  const capture = probe.capture;
+  if (
+    capture?.nativeVideoFrame?.presentedFrames !==
+      reference.heroFramePresented ||
+    capture?.compositor?.heroFramePresented !== reference.heroFramePresented
+  ) {
+    throw new Error(
+      `frame callback/compositor mismatch for reference ${reference.heroFramePresented}: ${JSON.stringify(capture)}`,
+    );
+  }
+  return {
+    ...frame,
+    compositor: capture.compositor,
+    nativeVideoFrame: capture.nativeVideoFrame,
+    legacyOcclusionMarkerPresent: capture.legacyOcclusionMarkerPresent,
+    reference: decodedReference,
+  };
+}
+
+function assertAtomicCompositor(viewport, capturedFrame) {
   const label = viewportLabel(viewport);
+  const { compositor } = capturedFrame;
   check(
     compositor?.atomic === true &&
       Number.isFinite(compositor?.plateMediaTime) &&
       Number.isInteger(compositor?.projectionFrame) &&
       Number.isInteger(compositor?.heroFramePresented) &&
       compositor?.treatment === "calibrated-room-transfer" &&
-      compositor?.occlusion === "authored-depth-geometry",
+      compositor?.occlusion === "authored-depth-geometry" &&
+      capturedFrame.nativeVideoFrame?.presentedFrames ===
+        compositor.heroFramePresented &&
+      capturedFrame.legacyOcclusionMarkerPresent === false,
     `${label} atomic compositor observability`,
-    JSON.stringify(compositor),
+    JSON.stringify({
+      compositor,
+      nativeVideoFrame: capturedFrame.nativeVideoFrame,
+      legacyOcclusionMarkerPresent:
+        capturedFrame.legacyOcclusionMarkerPresent,
+    }),
   );
 }
 
@@ -713,14 +1235,27 @@ function assertPresentedPixelContract(
     JSON.stringify(firstFrame),
   );
   check(
-    treatment?.maxRoomTreatmentDelta <= 6,
-    `${label} representative playing frames retain room treatment`,
+    treatment?.minimumTreatmentSamples > 0 &&
+      treatment?.maxRoomTreatmentDelta <= 6,
+    `${label} representative playing frames match authored per-frame room treatment`,
     JSON.stringify(treatment),
   );
   check(
-    motionSamples?.maxPosterAxisErrorPx <= 0.75 &&
-      motionSamples?.maxForegroundEdgeErrorPx <= 1.0,
-    `${label} presented hero remains registered behind foreground depth`,
+    motionSamples?.posterAxisSamples > 0 &&
+      motionSamples?.posterAxisWeakSamples === 0 &&
+      motionSamples?.minPosterAxisEdgeStrength >=
+        MIN_CAPTURED_EDGE_STRENGTH &&
+      motionSamples?.maxPosterAxisErrorPx <= 0.75,
+    `${label} captured poster-axis edges stay registered`,
+    JSON.stringify(motionSamples),
+  );
+  check(
+    motionSamples?.foregroundSamples > 0 &&
+      motionSamples?.foregroundWeakSamples === 0 &&
+      motionSamples?.minForegroundEdgeStrength >=
+        MIN_CAPTURED_EDGE_STRENGTH &&
+      motionSamples?.maxForegroundEdgeErrorPx <= 1,
+    `${label} captured foreground occlusion edges stay registered`,
     JSON.stringify(motionSamples),
   );
 }
@@ -810,13 +1345,9 @@ async function assertRegistrationSegment(viewport, segment, requireDecoded) {
       : `corner samples unavailable; invalid=${summary.invalidCorners}`,
   );
   check(
-    summary.occlusionFailures === 0 &&
-      Number.isFinite(summary.minOccluders) &&
-      summary.minOccluders >= MIN_FOREGROUND_OCCLUDERS,
+    summary.occlusionFailures === 0,
     `${label} ${segment} foreground occlusion`,
-    Number.isFinite(summary.minOccluders)
-      ? `min=${summary.minOccluders} required=${MIN_FOREGROUND_OCCLUDERS} failures=${summary.occlusionFailures}`
-      : `occlusion samples unavailable; failures=${summary.occlusionFailures}`,
+    `authored-depth failures=${summary.occlusionFailures}`,
   );
 }
 
@@ -932,13 +1463,21 @@ async function runViewport(viewport) {
       `${label} looping is disabled`,
       `loop=${settled.loop}`,
     );
-    const restingPoster = await capturePresentedFrame();
+    const references = await loadPresentedPixelReferenceCatalog(viewport);
+    const [firstReference, representativeReference] = references;
+    const [firstDecodedReference, representativeDecodedReference] =
+      await Promise.all([
+        loadPresentedPixelReference(firstReference, viewport),
+        loadPresentedPixelReference(representativeReference, viewport),
+      ]);
+    await armPresentedFrameCapture(firstReference.heroFramePresented);
+    const restingPoster = await captureCurrentFrame();
+    await releaseHeroPlayback();
 
     const started = await waitForHero(
       (snapshot) => snapshot.playStarts >= 1,
       8_000,
     );
-    await page.waitForTimeout(150);
     const afterStart = await heroSnapshot();
     const firstPlay = afterStart.playEvents[0];
     check(
@@ -954,10 +1493,16 @@ async function runViewport(viewport) {
         ? `arrivalDone=${firstPlay.arrivalDone} currentTime=${fixed(firstPlay.currentTime)}`
         : `no play event; currentTime=${fixed(started.currentTime)}`,
     );
-    const firstPaintedLiveFrame = await capturePresentedFrame();
-    await page.waitForTimeout(120);
-    const representativePlayingFrame = await capturePresentedFrame();
-    assertAtomicCompositor(viewport, firstPaintedLiveFrame.compositor);
+    const firstPaintedLiveFrame = await captureArmedPresentedFrame(
+      firstReference,
+      firstDecodedReference,
+      representativeReference.heroFramePresented,
+    );
+    const representativePlayingFrame = await captureArmedPresentedFrame(
+      representativeReference,
+      representativeDecodedReference,
+    );
+    assertAtomicCompositor(viewport, firstPaintedLiveFrame);
     assertPresentedPixelContract(
       viewport,
       restingPoster,

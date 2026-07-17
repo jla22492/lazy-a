@@ -28,6 +28,7 @@ import sharp from "sharp";
 
 const args = process.argv.slice(2);
 const manifestOnly = args.includes("--manifest-only");
+const selfTest = args.includes("--self-test");
 const baseUrl =
   args.find((argument) => !argument.startsWith("--")) ??
   "http://localhost:3000/";
@@ -232,6 +233,12 @@ function contactManifestFailures(manifest) {
   }
   assertR4ContactStubsFail();
   return failures;
+}
+
+if (selfTest) {
+  assertR4ContactStubsFail();
+  console.log("contact-reveal self-tests passed (6 structural stubs).");
+  process.exit(0);
 }
 
 if (manifestOnly) {
