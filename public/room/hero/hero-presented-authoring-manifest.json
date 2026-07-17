@@ -1,0 +1,109 @@
+{
+  "generator": {
+    "browserRuntime": false,
+    "identity": "blender-background-python"
+  },
+  "geometry": {
+    "heroLiveSurface": {
+      "geometrySha256": "557b2829e757609d5dfa10f0250621559cf67412f35a144955fa0d150c6167cd",
+      "object": "HeroLiveSurface"
+    },
+    "heroOccluders": [
+      {
+        "geometrySha256": "9b3698490f6435d45364f1ce59c3ad5c6ada90818622d785cdb855a4d1492fb1",
+        "object": "HeroOccluder_Mesh_31",
+        "sourceObject": "Mesh_31"
+      },
+      {
+        "geometrySha256": "030e614f3970e4f27c0ee1e3bee14ad63893e8eb5b7dc7958c7d9fad1363881e",
+        "object": "HeroOccluder_Mesh_33",
+        "sourceObject": "Mesh_33"
+      },
+      {
+        "geometrySha256": "7fb76f83d4f7c895e6a34160dd0fbab6ec2b7c47e6ff28faa116225aff266116",
+        "object": "HeroOccluder_ceramic_vase_02",
+        "sourceObject": "ceramic_vase_02"
+      },
+      {
+        "geometrySha256": "ecf9d97c1a4e85acbdbfdef7b6f025d2bb9a979f1557518ac6abef973ff44f3c",
+        "object": "HeroOccluder_Mesh_38",
+        "sourceObject": "Mesh_38"
+      },
+      {
+        "geometrySha256": "f400337553c5086b254fc1e3b01ce0dcdb5dcbfc5e4b9dabaefbee34361da1d5",
+        "object": "HeroOccluder_Mesh_39",
+        "sourceObject": "Mesh_39"
+      },
+      {
+        "geometrySha256": "dd94087020a0c5c4e836176f1e0a76088904833f0151a27d3d4bf1723774e666",
+        "object": "HeroOccluder_Mesh_40",
+        "sourceObject": "Mesh_40"
+      },
+      {
+        "geometrySha256": "02c0516d486bc2f2c47ab884189ece88629cf7a383883812d8c9860027857f7c",
+        "object": "HeroOccluder_Mesh_41",
+        "sourceObject": "Mesh_41"
+      },
+      {
+        "geometrySha256": "566bf4ef543e13f5b2bac866e714b0599cb2f1ba5b75135f0ed30ff49dd9a9e3",
+        "object": "HeroOccluder_Mesh_42",
+        "sourceObject": "Mesh_42"
+      },
+      {
+        "geometrySha256": "83c3bfa56e11edc85dd48fb54df8470583fd7c634520b3505dcdc913469bb888",
+        "object": "HeroOccluder_Mesh_43",
+        "sourceObject": "Mesh_43"
+      },
+      {
+        "geometrySha256": "02e876c09902bd2dd13e17e6aba61e6258709f9b2ba92cf8429d72988260bb63",
+        "object": "HeroOccluder_ProductionNavigationSheet",
+        "sourceObject": "ProductionNavigationSheet"
+      },
+      {
+        "geometrySha256": "c328c268cc730ff74d6d4112039891bde0be287489369041ae23a7cb93baf210",
+        "object": "HeroOccluder_Camera_01",
+        "sourceObject": "Camera_01"
+      },
+      {
+        "geometrySha256": "4e591a7f903b1023a487a0c21cc4fa540bb391d228c915ff2e2073e2e8264372",
+        "object": "HeroOccluder_Camera_01_strap",
+        "sourceObject": "Camera_01_strap"
+      }
+    ]
+  },
+  "immutable": true,
+  "referenceGeneration": {
+    "catalog": "/room/hero/hero-presented-pixel-references.json",
+    "kind": "authored-presented-pixels-v1",
+    "projectionSource": "evaluated-world-space-triangles",
+    "regionEncoding": "rgb-poster-foreground-treatment",
+    "requiredViewports": [
+      "1280x720",
+      "1316x1329",
+      "1024x768",
+      "768x1024",
+      "375x812"
+    ]
+  },
+  "references": {},
+  "regionSemantics": {
+    "blue": "HeroLiveSurface-treatment-interior",
+    "green": "projected-named-HeroOccluder-boundaries",
+    "red": "projected-HeroLiveSurface-boundary"
+  },
+  "sources": {
+    "compositorGlb": {
+      "path": "public/room/hero/hero-compositor.glb",
+      "sha256": "19f6269264b8d7229e425068911b67147644b360da80856dab354f93bc8ee18f"
+    },
+    "masterBlend": {
+      "path": "build/wo-0117-r/master.blend",
+      "sha256": "11065105bad2d41e47d6094585741d172ac5218884db9357cbb562df48dee1ec"
+    },
+    "renderScript": {
+      "path": "scripts/render-master-shots.py",
+      "sha256": "1d34f23cde4fa22d9a51d93972169a29280a5ba5fabb9112cff961c2fc4d40b5"
+    }
+  },
+  "version": 1
+}

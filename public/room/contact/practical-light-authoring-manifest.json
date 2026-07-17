@@ -1,0 +1,118 @@
+{
+  "generator": {
+    "browserRuntime": false,
+    "identity": "blender-background-python"
+  },
+  "geometry": {
+    "bulb": {
+      "geometrySha256": "bfe2cbca12cdb90e41cbb735db9183840df628c31db5f7d6a54941065a5f9d9f",
+      "object": "ContactPracticalBulb"
+    },
+    "shadeInterior": {
+      "geometrySha256": "8c691cd23d3d8ad9317483caa2ccf7f2e18e949c50b776b9b2cc7d1c43b2fdac",
+      "object": "ContactPracticalShadeInterior"
+    }
+  },
+  "immutable": true,
+  "profiles": {
+    "portrait": {
+      "bulb": {
+        "geometrySha256": "bfe2cbca12cdb90e41cbb735db9183840df628c31db5f7d6a54941065a5f9d9f",
+        "mask": {
+          "path": "portrait-bulb-mask.png",
+          "sha256": "3773260c1ddeea2bf1c24da98ccce625014faa696058907c337127497f7787ff"
+        },
+        "object": "ContactPracticalBulb",
+        "quad": [
+          0.012234591822,
+          0.445980120175,
+          0.077841139455,
+          0.445980120175,
+          0.077841139455,
+          0.478779625423,
+          0.012234591822,
+          0.478779625423
+        ]
+      },
+      "deskCameraSha256": "969217371d633580f644da5bc97cbbe63da803de7c212b784d58d6ba0628d8ec",
+      "projectionSha256": "b509a4295330cebdeb451304647e0739d3b505eb792e4bb3d0dc9205d7502cf2",
+      "shadeInterior": {
+        "geometrySha256": "8c691cd23d3d8ad9317483caa2ccf7f2e18e949c50b776b9b2cc7d1c43b2fdac",
+        "mask": {
+          "path": "portrait-shade-interior-mask.png",
+          "sha256": "d9e05815b751130dba954219048f1d26593e5c4b92eac76295b864d53e88fdc0"
+        },
+        "object": "ContactPracticalShadeInterior",
+        "quad": [
+          0.0,
+          0.417985666268,
+          0.139476745446,
+          0.417985666268,
+          0.139476745446,
+          0.514758181102,
+          0.0,
+          0.514758181102
+        ]
+      },
+      "viewport": [
+        375,
+        812
+      ]
+    },
+    "wide": {
+      "bulb": {
+        "geometrySha256": "bfe2cbca12cdb90e41cbb735db9183840df628c31db5f7d6a54941065a5f9d9f",
+        "mask": {
+          "path": "wide-bulb-mask.png",
+          "sha256": "d03583e01dc89a228dfd46ed0beda7e48ecba9516289ddf9d5851263c42b4984"
+        },
+        "object": "ContactPracticalBulb",
+        "quad": [
+          0.536304986477,
+          0.483212329281,
+          0.562059724331,
+          0.483212329281,
+          0.562059724331,
+          0.537920437919,
+          0.536304986477,
+          0.537920437919
+        ]
+      },
+      "deskCameraSha256": "a87b85373fdfdf98442f7eeba3f0b9d5c2984d9759823272ccf061974328e18e",
+      "projectionSha256": "28d75ac5033b539b94684f1452cc26291e96dcf965f558f33c82dd7c31a20310",
+      "shadeInterior": {
+        "geometrySha256": "8c691cd23d3d8ad9317483caa2ccf7f2e18e949c50b776b9b2cc7d1c43b2fdac",
+        "mask": {
+          "path": "wide-shade-interior-mask.png",
+          "sha256": "ae64df5b6f1a5e204fd208770343601d254920bf903a965d4986fe6d4287f5fd"
+        },
+        "object": "ContactPracticalShadeInterior",
+        "quad": [
+          0.492537653446,
+          0.430528141392,
+          0.584800446033,
+          0.430528141392,
+          0.584800446033,
+          0.607397847043,
+          0.492537653446,
+          0.607397847043
+        ]
+      },
+      "viewport": [
+        1280,
+        720
+      ]
+    }
+  },
+  "sources": {
+    "masterBlend": {
+      "path": "build/wo-0117-r/master.blend",
+      "sha256": "11065105bad2d41e47d6094585741d172ac5218884db9357cbb562df48dee1ec"
+    },
+    "renderScript": {
+      "path": "scripts/render-master-shots.py",
+      "sha256": "1d34f23cde4fa22d9a51d93972169a29280a5ba5fabb9112cff961c2fc4d40b5"
+    }
+  },
+  "version": 1
+}

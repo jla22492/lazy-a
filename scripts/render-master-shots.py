@@ -15,7 +15,6 @@ the renderer, and the TypeScript manifest is generated from that JSON.
 from __future__ import annotations
 
 import argparse
-import base64
 import hashlib
 import json
 import math
@@ -52,6 +51,9 @@ OVERSHOOT = CAMERA_CONTRACT["arrival"]["overshoot"]
 SETTLE_HZ = CAMERA_CONTRACT["arrival"]["settleHz"]
 OPENING_SECONDS = OPENING_BEAT_SECONDS + WALK_SECONDS + SETTLE_SECONDS
 DESTINATION_SECONDS = 0.9
+CONTACT_ACTIVATION_SECONDS = 1.0
+CONTACT_MOVE_SECONDS = 0.9
+CONTACT_SECONDS = CONTACT_ACTIVATION_SECONDS + CONTACT_MOVE_SECONDS
 ENDPOINT_IDS = ("opening", "desk", "films", "journal", "contact", "about")
 DESTINATION_IDS = ("films", "journal", "contact", "about")
 PROFILE_IDS = ("wide", "portrait")
@@ -68,6 +70,8 @@ OBSOLETE_PINNED_LOGO = "Mesh_173"
 CONTACT_PAPER = "Mesh_56"
 HERO_OBJECT = "Mesh_170"
 HERO_OCCLUDER_OBJECTS = (
+    "Mesh_31",
+    "Mesh_33",
     "ceramic_vase_02",
     "Mesh_38",
     "Mesh_39",
@@ -79,10 +83,19 @@ HERO_OCCLUDER_OBJECTS = (
     "Camera_01",
     "Camera_01_strap",
 )
-HERO_OCCLUDER_ROUND_DIGITS = 6
-HERO_OCCLUDER_SIMPLIFY_TOLERANCE = 0.0001
-HERO_OCCLUSION_MASK_SIZE = 512
 HERO_FIRST_FRAME_SOURCE = "assets/master/hero/hero-print-first-frame.png"
+HERO_SURFACE = "HeroLiveSurface"
+HERO_PROXY_PREFIX = "HeroOccluder_"
+HERO_ROOT = PUBLIC_ROOT / "hero"
+HERO_COMPOSITOR_PATH = HERO_ROOT / "hero-compositor.glb"
+HERO_TREATED_SOURCE_PATH = REPO_ROOT / "build" / "wo-0117-r" / "hero-treated-first-frame.png"
+HERO_TREATMENT_PATH = HERO_ROOT / "hero-room-treatment.png"
+HERO_AUTHORING_MANIFEST_PATH = HERO_ROOT / "hero-presented-authoring-manifest.json"
+HERO_PRESENTED_REFERENCES = "/room/hero/hero-presented-pixel-references.json"
+HERO_AUTHORING_MANIFEST = "/room/hero/hero-presented-authoring-manifest.json"
+HERO_PRESENTATION_EVENT = "lazy-a:compositor-frame-presented"
+HERO_REFERENCE_KIND = "authored-presented-pixels-v1"
+HERO_REGION_ENCODING = "rgb-poster-foreground-treatment"
 LAMP_ROOT = "scan_lamp"
 NAV_SHEET = "ProductionNavigationSheet"
 NAV_PREFIX = "ProductionNavigationRow_"
@@ -94,7 +107,18 @@ CONTACT_RECESS = "ContactIndentationRecess"
 CONTACT_NODE_GROUP = "CONTACT_INDENTATION_GEOMETRY_NODES"
 CONTACT_MODIFIER = "CONTACT_INDENTATION_GEOMETRY_NODES"
 CONTACT_LIGHT = "ContactRakingLight"
-CONTACT_BULB = "ContactEmissiveBulb"
+CONTACT_BULB = "ContactPracticalBulb"
+CONTACT_SHADE = "ContactPracticalShadeInterior"
+CONTACT_LIGHT_ENERGY = 110.0
+CONTACT_ROOT = PUBLIC_ROOT / "contact"
+CONTACT_AUTHORING_MANIFEST_PATH = (
+    CONTACT_ROOT / "practical-light-authoring-manifest.json"
+)
+CONTACT_AUTHORING_MANIFEST = "/room/contact/practical-light-authoring-manifest.json"
+CONTACT_MASK_VIEWPORTS = {
+    "wide": (1280, 720),
+    "portrait": (375, 812),
+}
 
 NAV_WIDTH = 0.30
 NAV_HEIGHT = 0.20
@@ -153,17 +177,26 @@ def rounded_vector(values) -> list[float]:
     return [rounded(value) for value in values]
 
 
-def rounded_occluder_vector(values) -> list[float]:
-    result = []
-    for value in values:
-        item = round(float(value), HERO_OCCLUDER_ROUND_DIGITS)
-        result.append(0.0 if item == -0.0 else item)
-    return result
-
-
 def smoothstep(value: float) -> float:
     value = max(0.0, min(1.0, value))
     return value * value * (3.0 - 2.0 * value)
+
+
+def smootherstep(value: float) -> float:
+    value = max(0.0, min(1.0, value))
+    return value * value * value * (value * (value * 6.0 - 15.0) + 10.0)
+
+
+def quadratic_bezier(start: Vector, control: Vector, end: Vector, value: float) -> Vector:
+    inverse = 1.0 - value
+    return inverse * inverse * start + 2.0 * inverse * value * control + value * value * end
+
+
+def upright_track_quaternion(position: Vector, target: Vector) -> Quaternion:
+    direction = target - position
+    if direction.length <= 1e-8:
+        raise RuntimeError("Camera point of regard must differ from its position")
+    return direction.to_track_quat("-Z", "Y")
 
 
 def ease_in_out_cubic(value: float) -> float:
@@ -203,7 +236,9 @@ def remove_authored_objects() -> None:
         CONTACT_RECESS,
         CONTACT_LIGHT,
         CONTACT_BULB,
+        CONTACT_SHADE,
         "AuthoredPlateCamera",
+        HERO_SURFACE,
     }
     for obj in list(bpy.data.objects):
         if (
@@ -212,6 +247,7 @@ def remove_authored_objects() -> None:
             or obj.name.startswith(NAV_GLYPH_PREFIX)
             or obj.name.startswith(JOURNAL_PREFIX)
             or obj.name.startswith("LogoProof")
+            or obj.name.startswith(HERO_PROXY_PREFIX)
         ):
             remove_object(obj)
     for group in list(bpy.data.node_groups):
@@ -796,8 +832,106 @@ def parent_keep_world(child: bpy.types.Object, parent: bpy.types.Object) -> None
     bpy.context.view_layer.update()
 
 
-def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy.types.Object, bpy.types.Object]:
+def lamp_vector_property(lamp: bpy.types.Object, key: str) -> Vector:
+    raw = lamp.get(key)
+    try:
+        values = json.loads(raw)
+    except (TypeError, json.JSONDecodeError) as error:
+        raise RuntimeError(f"{LAMP_ROOT}.{key} is not valid vector metadata") from error
+    if not isinstance(values, list) or len(values) != 3:
+        raise RuntimeError(f"{LAMP_ROOT}.{key} must contain three coordinates")
+    return Vector(values)
+
+
+def contact_axis_intersection(
+    contact_sheet: bpy.types.Object,
+    origin: Vector,
+    direction: Vector,
+) -> Vector:
+    inverse = contact_sheet.matrix_world.inverted()
+    local_origin = inverse @ origin
+    local_direction = inverse.to_3x3() @ direction
+    local_direction.normalize()
+    paper_top = max(Vector(corner).z for corner in contact_sheet.bound_box)
+    if abs(local_direction.z) <= 1e-8:
+        raise RuntimeError("CONTACT shade axis is parallel to the contact paper")
+    distance = (paper_top - local_origin.z) / local_direction.z
+    if distance <= 0.0:
+        raise RuntimeError("CONTACT shade axis points away from the contact paper")
+    return contact_sheet.matrix_world @ (local_origin + local_direction * distance)
+
+
+def derived_practical_pose(
+    contact_sheet: bpy.types.Object,
+    opening_center: Vector,
+    opening_radius: float,
+    shade_axis: Vector,
+) -> tuple[Vector, Vector, Vector]:
+    local_bounds = [Vector(corner) for corner in contact_sheet.bound_box]
+    min_x = min(point.x for point in local_bounds)
+    max_x = max(point.x for point in local_bounds)
+    min_y = min(point.y for point in local_bounds)
+    max_y = max(point.y for point in local_bounds)
+    top = max(point.z for point in local_bounds)
+    best = None
+    minimum_grazing = math.inf
+    radial_u = shade_axis.cross(Vector((0.0, 0.0, 1.0))).normalized()
+    radial_v = shade_axis.cross(radial_u).normalized()
+    for radial_fraction in (0.0, 0.15, 0.30, 0.45):
+        angles = (0.0,) if radial_fraction == 0.0 else tuple(
+            index * math.tau / 24.0 for index in range(24)
+        )
+        for angle in angles:
+            origin = (
+                opening_center
+                - shade_axis * (opening_radius * 0.18)
+                + radial_u * math.cos(angle) * opening_radius * radial_fraction
+                + radial_v * math.sin(angle) * opening_radius * radial_fraction
+            )
+            for x_step in range(41):
+                local_x = min_x + (max_x - min_x) * x_step / 40.0
+                for y_step in range(61):
+                    local_y = min_y + (max_y - min_y) * y_step / 60.0
+                    target = contact_sheet.matrix_world @ Vector(
+                        (local_x, local_y, top)
+                    )
+                    direction = (target - origin).normalized()
+                    local_direction = (
+                        contact_sheet.matrix_world.inverted().to_3x3()
+                        @ direction
+                    )
+                    local_direction.normalize()
+                    grazing = math.degrees(
+                        math.asin(min(1.0, abs(local_direction.z)))
+                    )
+                    minimum_grazing = min(minimum_grazing, grazing)
+                    if grazing > 35.0:
+                        continue
+                    axis_error = math.degrees(shade_axis.angle(direction))
+                    score = axis_error + radial_fraction * 0.5
+                    if best is None or score < best[0]:
+                        best = (score, axis_error, origin, direction, target)
+    if best is None:
+        raise RuntimeError(
+            "No shade-derived CONTACT ray intersects paper at <=35 degrees "
+            f"(minimum {minimum_grazing:.3f})"
+        )
+    if best[1] > 12.0:
+        raise RuntimeError(
+            f"Shade-derived CONTACT ray departs the fixture axis by {best[1]:.3f} degrees"
+        )
+    return best[2], best[3], best[4]
+
+
+def add_lamp_bulb_and_raking_light(
+    contact_sheet: bpy.types.Object,
+) -> tuple[bpy.types.Object, bpy.types.Object, bpy.types.Object]:
     lamp = require_object(LAMP_ROOT)
+    shade_axis = lamp_vector_property(lamp, "lazy_a_contact_shade_axis").normalized()
+    opening_center = lamp_vector_property(
+        lamp, "lazy_a_contact_shade_opening_center"
+    )
+    opening_radius = float(lamp["lazy_a_contact_shade_opening_radius"])
     bulb_material = make_principled_material(
         "ContactBulbGlass",
         (0.72, 0.52, 0.27, 1.0),
@@ -805,15 +939,46 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
         emission=(1.0, 0.47, 0.16, 1.0),
     )
 
-    bulb_location = Vector((-0.615, 0.355, 1.205))
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=12, radius=0.018, location=bulb_location)
+    shade_material = make_principled_material(
+        "ContactShadeInteriorEmission",
+        (0.31, 0.21, 0.12, 1.0),
+        0.62,
+        emission=(1.0, 0.43, 0.16, 1.0),
+    )
+
+    bulb_location, raking_direction, target = derived_practical_pose(
+        contact_sheet, opening_center, opening_radius, shade_axis
+    )
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=32,
+        ring_count=16,
+        radius=opening_radius * 0.22,
+        location=bulb_location,
+    )
     bulb = bpy.context.active_object
     bulb.name = CONTACT_BULB
-    bulb.scale = (1.0, 0.78, 1.1)
+    bulb.scale = (1.0, 0.84, 1.08)
     bulb.data.materials.append(bulb_material)
-    bulb.hide_render = True
+    bulb.hide_render = False
     bulb["lazy_a_authored_role"] = "lamp-emissive-bulb"
+    bulb["lazy_a_legacy_source_name"] = "ContactEmissiveBulb"
     parent_keep_world(bulb, lamp)
+
+    shade_location = opening_center - shade_axis * 0.004
+    bpy.ops.mesh.primitive_cylinder_add(
+        vertices=64,
+        radius=opening_radius * 0.88,
+        depth=0.0015,
+        location=shade_location,
+    )
+    shade = bpy.context.active_object
+    shade.name = CONTACT_SHADE
+    shade.rotation_mode = "QUATERNION"
+    shade.rotation_quaternion = shade_axis.to_track_quat("Z", "Y")
+    shade.data.materials.append(shade_material)
+    shade.hide_render = False
+    shade["lazy_a_authored_role"] = "lamp-visible-shade-interior"
+    parent_keep_world(shade, lamp)
 
     light_data = bpy.data.lights.new(CONTACT_LIGHT, "SPOT")
     light_data.energy = 0.0
@@ -826,13 +991,17 @@ def add_lamp_bulb_and_raking_light(contact_sheet: bpy.types.Object) -> tuple[bpy
     # Keep the photometric source at the bulb inside the visible shade. The
     # shade, not an off-fixture helper light, is now the physical source.
     light.location = bulb_location.copy()
-    target = normalized_surface_matrix(contact_sheet, 0.0, -0.025, 0.0).translation
-    light.rotation_euler = (target - light.location).to_track_quat("-Z", "Y").to_euler()
+    light.rotation_mode = "QUATERNION"
+    light.rotation_quaternion = raking_direction.to_track_quat("-Z", "Y")
     light["lazy_a_authored_role"] = "fixed-transform-raking-light"
-    light["lazy_a_contact_energy"] = 110.0
+    light["lazy_a_contact_energy"] = CONTACT_LIGHT_ENERGY
     light["lazy_a_contact_target"] = json.dumps(rounded_vector(target))
+    light["lazy_a_contact_shade_axis"] = json.dumps(rounded_vector(shade_axis))
+    light["lazy_a_contact_axis_offset_degrees"] = round(
+        math.degrees(shade_axis.angle(raking_direction)), 12
+    )
     parent_keep_world(light, lamp)
-    return bulb, light
+    return bulb, shade, light
 
 
 def reveal_level(value: float) -> None:
@@ -844,6 +1013,11 @@ def reveal_level(value: float) -> None:
     bsdf = material.node_tree.nodes.get("Principled BSDF")
     if bsdf is not None:
         bsdf.inputs["Emission Strength"].default_value = 18.0 * value
+    shade = require_object(CONTACT_SHADE, "MESH")
+    shade_material = shade.data.materials[0]
+    shade_bsdf = shade_material.node_tree.nodes.get("Principled BSDF")
+    if shade_bsdf is not None:
+        shade_bsdf.inputs["Emission Strength"].default_value = 4.0 * value
     groove_material = bpy.data.materials.get("ContactPressureGroove")
     lamp_level = (
         groove_material.node_tree.nodes.get("ContactLampLevel")
@@ -934,7 +1108,7 @@ def author_physical_scene() -> dict[str, Any]:
     nav_sheet, nav_labels = create_production_sheet()
     contact_sheet = author_contact_indentation()
     contact_cutter = require_object(CONTACT_CUTTER, "MESH")
-    bulb, light = add_lamp_bulb_and_raking_light(contact_sheet)
+    bulb, shade, light = add_lamp_bulb_and_raking_light(contact_sheet)
     lamp_meshes = [
         obj
         for obj in (lamp, *lamp.children_recursive)
@@ -957,6 +1131,7 @@ def author_physical_scene() -> dict[str, Any]:
         "contactPaperMovedOnce": contact_sheet.get("lazy_a_contact_positioned_once") is True,
         "contactStats": contact_stats,
         "bulb": bulb,
+        "shadeInterior": shade,
         "light": light,
         "lampMeshes": lamp_meshes,
         "notebook": notebook,
@@ -984,7 +1159,7 @@ PROFILE_POSES = {
             "position": tuple(CAMERA_CONTRACT["desktop"]["position"]),
             "target": (0.55, 1.27, -0.45),
         },
-        "journal": {"position": (0.28, 1.34, 0.15), "target": (0.35, 0.91, 0.12)},
+        "journal": {"position": (0.35, 1.08, 0.30), "target": (0.40, 0.92, 0.12)},
         "contact": {"position": (-0.45, 1.58, 0.32), "target": (-0.46, 0.91, -0.01)},
         "about": {"position": (0.02, 1.58, 1.45), "target": (-1.28, 1.22, -0.08)},
     },
@@ -998,10 +1173,19 @@ PROFILE_POSES = {
             "position": tuple(CAMERA_CONTRACT["phone"]["position"]),
             "target": (0.55, 1.27, -0.45),
         },
-        "journal": {"position": (0.28, 1.36, 0.45), "target": (0.321, 0.91, 0.12)},
+        "journal": {"position": (0.35, 1.30, 0.44), "target": (0.35, 0.92, 0.02)},
         "contact": {"position": (-0.40, 2.25, 0.85), "target": (-0.4415, 0.91, -0.02)},
         "about": {"position": (0.22, 1.58, 2.27), "target": (-1.52, 0.92, -0.08)},
     },
+}
+
+JOURNAL_HIP_CONTROLS = {
+    "wide": (0.13, 1.57, 0.83),
+    "portrait": (0.30, 1.57, 1.29),
+}
+JOURNAL_TARGET_LEAD_POWERS = {
+    "wide": 1.8,
+    "portrait": 3.2,
 }
 
 
@@ -1224,402 +1408,8 @@ def hero_reciprocal_w(camera: bpy.types.Object) -> list[float] | None:
     return values
 
 
-def convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    unique = sorted(set(points))
-    if len(unique) <= 2:
-        return unique
-
-    def cross(
-        origin: tuple[float, float],
-        first: tuple[float, float],
-        second: tuple[float, float],
-    ) -> float:
-        return (first[0] - origin[0]) * (second[1] - origin[1]) - (
-            first[1] - origin[1]
-        ) * (second[0] - origin[0])
-
-    lower: list[tuple[float, float]] = []
-    for point in unique:
-        while len(lower) >= 2 and cross(lower[-2], lower[-1], point) <= 0.0:
-            lower.pop()
-        lower.append(point)
-    upper: list[tuple[float, float]] = []
-    for point in reversed(unique):
-        while len(upper) >= 2 and cross(upper[-2], upper[-1], point) <= 0.0:
-            upper.pop()
-        upper.append(point)
-    return lower[:-1] + upper[:-1]
-
-
-def polygon_area(points: list[tuple[float, float]]) -> float:
-    return sum(
-        first[0] * second[1] - second[0] * first[1]
-        for first, second in zip(points, points[1:] + points[:1])
-    ) / 2.0
-
-
-def clip_convex_polygon(
-    subject: list[tuple[float, float]],
-    clip: list[tuple[float, float]],
-) -> list[tuple[float, float]]:
-    if len(subject) < 3 or len(clip) < 3:
-        return []
-    orientation = 1.0 if polygon_area(clip) >= 0.0 else -1.0
-
-    def edge_cross(
-        start: tuple[float, float],
-        end: tuple[float, float],
-        point: tuple[float, float],
-    ) -> float:
-        return (end[0] - start[0]) * (point[1] - start[1]) - (
-            end[1] - start[1]
-        ) * (point[0] - start[0])
-
-    def inside(
-        point: tuple[float, float],
-        start: tuple[float, float],
-        end: tuple[float, float],
-    ) -> bool:
-        return orientation * edge_cross(start, end, point) >= -1e-10
-
-    def intersection(
-        first: tuple[float, float],
-        second: tuple[float, float],
-        clip_start: tuple[float, float],
-        clip_end: tuple[float, float],
-    ) -> tuple[float, float]:
-        direction = (second[0] - first[0], second[1] - first[1])
-        edge = (clip_end[0] - clip_start[0], clip_end[1] - clip_start[1])
-        denominator = edge[0] * direction[1] - edge[1] * direction[0]
-        if abs(denominator) < 1e-12:
-            return second
-        offset = (first[0] - clip_start[0], first[1] - clip_start[1])
-        amount = -(edge[0] * offset[1] - edge[1] * offset[0]) / denominator
-        return (
-            first[0] + direction[0] * amount,
-            first[1] + direction[1] * amount,
-        )
-
-    output = subject
-    for clip_index, clip_start in enumerate(clip):
-        clip_end = clip[(clip_index + 1) % len(clip)]
-        source = output
-        output = []
-        if not source:
-            break
-        previous = source[-1]
-        previous_inside = inside(previous, clip_start, clip_end)
-        for current in source:
-            current_inside = inside(current, clip_start, clip_end)
-            if current_inside:
-                if not previous_inside:
-                    output.append(
-                        intersection(previous, current, clip_start, clip_end)
-                    )
-                output.append(current)
-            elif previous_inside:
-                output.append(intersection(previous, current, clip_start, clip_end))
-            previous = current
-            previous_inside = current_inside
-    return output
-
-
-def point_segment_distance(
-    point: tuple[float, float],
-    start: tuple[float, float],
-    end: tuple[float, float],
-) -> float:
-    dx = end[0] - start[0]
-    dy = end[1] - start[1]
-    length_squared = dx * dx + dy * dy
-    if length_squared <= 1e-20:
-        return math.dist(point, start)
-    amount = max(
-        0.0,
-        min(1.0, ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / length_squared),
-    )
-    closest = (start[0] + amount * dx, start[1] + amount * dy)
-    return math.dist(point, closest)
-
-
-def simplify_path(
-    points: list[tuple[float, float]],
-    tolerance: float,
-) -> list[tuple[float, float]]:
-    if len(points) <= 2:
-        return points
-    distances = [
-        point_segment_distance(point, points[0], points[-1])
-        for point in points[1:-1]
-    ]
-    maximum = max(distances, default=0.0)
-    if maximum <= tolerance:
-        return [points[0], points[-1]]
-    split = distances.index(maximum) + 1
-    return simplify_path(points[: split + 1], tolerance)[:-1] + simplify_path(
-        points[split:], tolerance
-    )
-
-
-def simplify_closed_polygon(
-    points: list[tuple[float, float]],
-    tolerance: float,
-) -> list[tuple[float, float]]:
-    if len(points) <= 3:
-        return points
-    first_index, second_index = max(
-        (
-            (first, second)
-            for first in range(len(points))
-            for second in range(first + 1, len(points))
-        ),
-        key=lambda pair: math.dist(points[pair[0]], points[pair[1]]),
-    )
-    first_path = points[first_index : second_index + 1]
-    second_path = points[second_index:] + points[: first_index + 1]
-    return (
-        simplify_path(first_path, tolerance)[:-1]
-        + simplify_path(second_path, tolerance)[:-1]
-    )
-
-
 def hero_world_quad() -> list[Vector]:
     return local_face_points(require_object(HERO_OBJECT, "MESH"), 1, "min")
-
-
-def hero_plane(points: list[Vector]) -> tuple[Vector, Vector]:
-    origin = points[0]
-    for first_index in range(1, len(points)):
-        for second_index in range(first_index + 1, len(points)):
-            normal = (points[first_index] - origin).cross(
-                points[second_index] - origin
-            )
-            if normal.length_squared > 1e-12:
-                return origin, normal.normalized()
-    raise RuntimeError("Hero print quad is degenerate")
-
-
-def hero_occluder_projection(
-    scene: bpy.types.Scene,
-    camera: bpy.types.Object,
-) -> list[list[float]]:
-    hero_world = hero_world_quad()
-    hero_screen_values = hero_projection(scene, camera)
-    if hero_screen_values is None:
-        return [[] for _ in HERO_OCCLUDER_OBJECTS]
-    hero_screen = list(zip(hero_screen_values[0::2], hero_screen_values[1::2]))
-    viewport = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
-    origin, normal = hero_plane(hero_world)
-    camera_side = (camera.matrix_world.translation - origin).dot(normal)
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    polygons: list[list[float]] = []
-    for object_name in HERO_OCCLUDER_OBJECTS:
-        obj = require_object(object_name, "MESH")
-        evaluated = obj.evaluated_get(depsgraph)
-        mesh = evaluated.to_mesh()
-        try:
-            projected = []
-            for vertex in mesh.vertices:
-                world = evaluated.matrix_world @ vertex.co
-                if (world - origin).dot(normal) * camera_side < -1e-7:
-                    continue
-                point = world_to_camera_view(scene, camera, world)
-                if point.z > 0.0:
-                    projected.append((point.x, 1.0 - point.y))
-        finally:
-            evaluated.to_mesh_clear()
-        polygon = clip_convex_polygon(convex_hull(projected), hero_screen)
-        polygon = clip_convex_polygon(polygon, viewport)
-        polygon = simplify_closed_polygon(
-            polygon, HERO_OCCLUDER_SIMPLIFY_TOLERANCE
-        )
-        rounded_points = list(
-            zip(
-                rounded_occluder_vector(point[0] for point in polygon),
-                rounded_occluder_vector(point[1] for point in polygon),
-            )
-        )
-        deduplicated = []
-        for point in rounded_points:
-            if not deduplicated or point != deduplicated[-1]:
-                deduplicated.append(point)
-        if len(deduplicated) > 1 and deduplicated[0] == deduplicated[-1]:
-            deduplicated.pop()
-        if len(deduplicated) < 3 or abs(polygon_area(deduplicated)) < 1e-10:
-            polygons.append([])
-        else:
-            polygons.append(
-                [value for point in deduplicated for value in point]
-            )
-    return polygons
-
-
-def clip_world_polygon_to_hero_front(
-    points: list[Vector],
-    origin: Vector,
-    normal: Vector,
-    camera_side: float,
-) -> list[Vector]:
-    if len(points) < 3:
-        return []
-
-    def distance(point: Vector) -> float:
-        return (point - origin).dot(normal) * camera_side
-
-    output: list[Vector] = []
-    previous = points[-1]
-    previous_distance = distance(previous)
-    previous_inside = previous_distance >= -1e-7
-    for current in points:
-        current_distance = distance(current)
-        current_inside = current_distance >= -1e-7
-        if current_inside != previous_inside:
-            denominator = previous_distance - current_distance
-            amount = (
-                previous_distance / denominator
-                if abs(denominator) > 1e-12
-                else 0.0
-            )
-            output.append(previous.lerp(current, amount))
-        if current_inside:
-            output.append(current)
-        previous = current
-        previous_distance = current_distance
-        previous_inside = current_inside
-    return output
-
-
-def rasterize_mask_polygon(
-    mask: bytearray,
-    polygon: list[tuple[float, float]],
-    hero_bounds: tuple[float, float, float, float],
-) -> None:
-    if len(polygon) < 3:
-        return
-    min_x, min_y, max_x, max_y = hero_bounds
-    width = max_x - min_x
-    height = max_y - min_y
-    if width <= 1e-12 or height <= 1e-12:
-        return
-    size = HERO_OCCLUSION_MASK_SIZE
-    local = [
-        ((point[0] - min_x) / width * size, (point[1] - min_y) / height * size)
-        for point in polygon
-    ]
-    first_row = max(0, int(math.floor(min(point[1] for point in local))))
-    last_row = min(size - 1, int(math.ceil(max(point[1] for point in local))))
-    for y in range(first_row, last_row + 1):
-        scan_y = y + 0.5
-        intersections: list[float] = []
-        for first, second in zip(local, local[1:] + local[:1]):
-            if (first[1] <= scan_y < second[1]) or (
-                second[1] <= scan_y < first[1]
-            ):
-                amount = (scan_y - first[1]) / (second[1] - first[1])
-                intersections.append(first[0] + amount * (second[0] - first[0]))
-        intersections.sort()
-        for index in range(0, len(intersections) - 1, 2):
-            start = max(0, int(math.ceil(intersections[index] - 0.5)))
-            end = min(size - 1, int(math.floor(intersections[index + 1] - 0.5)))
-            if start <= end:
-                offset = y * size
-                mask[offset + start : offset + end + 1] = b"\x01" * (
-                    end - start + 1
-                )
-
-
-def encode_mask_runs(mask: bytearray) -> str:
-    size = HERO_OCCLUSION_MASK_SIZE
-    payload = bytearray()
-
-    def append_varint(value: int) -> None:
-        if value < 0:
-            raise RuntimeError(f"Hero silhouette varint cannot encode {value}")
-        while value >= 0x80:
-            payload.append((value & 0x7F) | 0x80)
-            value >>= 7
-        payload.append(value)
-
-    for y in range(size):
-        runs: list[tuple[int, int]] = []
-        x = 0
-        while x < size:
-            if mask[y * size + x] == 0:
-                x += 1
-                continue
-            start = x
-            while x + 1 < size and mask[y * size + x + 1] != 0:
-                x += 1
-            runs.append((start, x))
-            x += 1
-        append_varint(len(runs))
-        previous_end = -1
-        for start, end in runs:
-            append_varint(start - previous_end - 1)
-            append_varint(end - start + 1)
-            previous_end = end
-    return base64.b64encode(payload).decode("ascii")
-
-
-def hero_occlusion_mask(
-    scene: bpy.types.Scene,
-    camera: bpy.types.Object,
-) -> dict[str, Any]:
-    hero_world = hero_world_quad()
-    hero_screen_values = hero_projection(scene, camera)
-    if hero_screen_values is None:
-        return {
-            "size": HERO_OCCLUSION_MASK_SIZE,
-            "encoding": "rle-varint-v1",
-            "rle": encode_mask_runs(bytearray(HERO_OCCLUSION_MASK_SIZE ** 2)),
-        }
-    hero_screen = list(zip(hero_screen_values[0::2], hero_screen_values[1::2]))
-    hero_bounds = (
-        min(point[0] for point in hero_screen),
-        min(point[1] for point in hero_screen),
-        max(point[0] for point in hero_screen),
-        max(point[1] for point in hero_screen),
-    )
-    viewport = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
-    origin, normal = hero_plane(hero_world)
-    camera_side = (camera.matrix_world.translation - origin).dot(normal)
-    depsgraph = bpy.context.evaluated_depsgraph_get()
-    mask = bytearray(HERO_OCCLUSION_MASK_SIZE ** 2)
-    for object_name in HERO_OCCLUDER_OBJECTS:
-        obj = require_object(object_name, "MESH")
-        evaluated = obj.evaluated_get(depsgraph)
-        mesh = evaluated.to_mesh()
-        try:
-            mesh.calc_loop_triangles()
-            for triangle in mesh.loop_triangles:
-                world_polygon = [
-                    evaluated.matrix_world @ mesh.vertices[index].co
-                    for index in triangle.vertices
-                ]
-                world_polygon = clip_world_polygon_to_hero_front(
-                    world_polygon, origin, normal, camera_side
-                )
-                if len(world_polygon) < 3:
-                    continue
-                projected = [
-                    world_to_camera_view(scene, camera, point)
-                    for point in world_polygon
-                ]
-                if any(point.z <= 0.0 for point in projected):
-                    continue
-                screen_polygon = [
-                    (point.x, 1.0 - point.y) for point in projected
-                ]
-                screen_polygon = clip_convex_polygon(screen_polygon, hero_screen)
-                screen_polygon = clip_convex_polygon(screen_polygon, viewport)
-                rasterize_mask_polygon(mask, screen_polygon, hero_bounds)
-        finally:
-            evaluated.to_mesh_clear()
-    return {
-        "size": HERO_OCCLUSION_MASK_SIZE,
-        "encoding": "rle-varint-v1",
-        "rle": encode_mask_runs(mask),
-    }
 
 
 def contact_projection(scene: bpy.types.Scene, camera: bpy.types.Object, contact: bpy.types.Object) -> list[float] | None:
@@ -1752,26 +1542,39 @@ def transition_sample(
         start_target = three_to_blender(
             tuple(PROFILE_POSES[profile][start_name]["target"])
         )
-        end_target = three_to_blender(
+        notebook_reading_anchor = three_to_blender(
             tuple(PROFILE_POSES[profile][destination]["target"])
         )
-        head_fraction = 1.0 / 3.0
-        if raw_t <= head_fraction:
+        hip_control = three_to_blender(JOURNAL_HIP_CONTROLS[profile])
+        eased = smootherstep(raw_t)
+        position = quadratic_bezier(
+            start_position, hip_control, end_position, eased
+        )
+        target_raw_t = 1.0 - (1.0 - raw_t) ** JOURNAL_TARGET_LEAD_POWERS[
+            profile
+        ]
+        target = start_target.lerp(
+            notebook_reading_anchor, smootherstep(target_raw_t)
+        )
+        quaternion = upright_track_quaternion(position, target)
+    elif destination == "contact":
+        elapsed = frame_index / FPS
+        if elapsed <= CONTACT_ACTIVATION_SECONDS:
             position = start_position.copy()
-            head_t = smoothstep(raw_t / head_fraction)
-            target = start_target.lerp(end_target, head_t)
-        else:
-            body_t = smoothstep((raw_t - head_fraction) / (1.0 - head_fraction))
-            position = start_position.lerp(end_position, body_t)
-            target = end_target
-        quaternion = (target - position).to_track_quat("-Z", "Y")
+            quaternion = start_quaternion.copy()
+            lamp_level = smoothstep(elapsed / CONTACT_ACTIVATION_SECONDS)
+            return position, quaternion, lamp_level
+        move_t = (elapsed - CONTACT_ACTIVATION_SECONDS) / CONTACT_MOVE_SECONDS
+        eased = smoothstep(move_t)
+        position = start_position.lerp(end_position, eased)
+        quaternion = start_quaternion.slerp(end_quaternion, eased)
+        return position, quaternion, 1.0
     else:
         eased = smoothstep(raw_t)
         position = start_position.lerp(end_position, eased)
         quaternion = start_quaternion.slerp(end_quaternion, eased)
 
-    lamp_level = smoothstep(raw_t) if destination == "contact" else 0.0
-    return position, quaternion, lamp_level
+    return position, quaternion, 0.0
 
 
 def frame_metadata(
@@ -1784,11 +1587,139 @@ def frame_metadata(
         "camera": camera_sample(camera, LENS_FOV[profile]),
         "hero": hero_projection(scene, camera),
         "heroReciprocalW": hero_reciprocal_w(camera),
-        "heroOccluders": hero_occluder_projection(scene, camera),
-        "heroOcclusionMask": hero_occlusion_mask(scene, camera),
         "lampLevel": rounded(lamp_level),
+        "visibleBulbLevel": rounded(lamp_level),
         "revealLevel": rounded(lamp_level),
         "contactIndentDepth": CONTACT_INDENT_DEPTH,
+    }
+
+
+def notebook_world_quad(notebook: bpy.types.Object) -> list[Vector]:
+    bounds = [Vector(corner) for corner in notebook.bound_box]
+    min_x = min(point.x for point in bounds)
+    max_x = max(point.x for point in bounds)
+    min_y = min(point.y for point in bounds)
+    max_y = max(point.y for point in bounds)
+    top = max(point.z for point in bounds)
+    return [
+        notebook.matrix_world @ Vector((min_x, min_y, top)),
+        notebook.matrix_world @ Vector((max_x, min_y, top)),
+        notebook.matrix_world @ Vector((max_x, max_y, top)),
+        notebook.matrix_world @ Vector((min_x, max_y, top)),
+    ]
+
+
+def polygon_area(points: list[tuple[float, float]]) -> float:
+    if len(points) < 3:
+        return 0.0
+    return abs(
+        sum(
+            first[0] * second[1] - second[0] * first[1]
+            for first, second in zip(points, points[1:] + points[:1])
+        )
+        / 2.0
+    )
+
+
+def clip_polygon_to_viewport(
+    points: list[tuple[float, float]],
+) -> list[tuple[float, float]]:
+    def clip(polygon, inside, intersection):
+        result = []
+        for index, current in enumerate(polygon):
+            previous = polygon[index - 1]
+            current_inside = inside(current)
+            previous_inside = inside(previous)
+            if current_inside != previous_inside:
+                result.append(intersection(previous, current))
+            if current_inside:
+                result.append(current)
+        return result
+
+    def at_x(first, second, value):
+        amount = (value - first[0]) / (second[0] - first[0])
+        return (value, first[1] + (second[1] - first[1]) * amount)
+
+    def at_y(first, second, value):
+        amount = (value - first[1]) / (second[1] - first[1])
+        return (first[0] + (second[0] - first[0]) * amount, value)
+
+    polygon = points
+    operations = (
+        (lambda point: point[0] >= 0.0, lambda a, b: at_x(a, b, 0.0)),
+        (lambda point: point[0] <= 1.0, lambda a, b: at_x(a, b, 1.0)),
+        (lambda point: point[1] >= 0.0, lambda a, b: at_y(a, b, 0.0)),
+        (lambda point: point[1] <= 1.0, lambda a, b: at_y(a, b, 1.0)),
+    )
+    for inside, intersection in operations:
+        if not polygon:
+            break
+        polygon = clip(polygon, inside, intersection)
+    return polygon
+
+
+def journal_endpoint_metrics(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    notebook_quad: list[Vector],
+    fov: float,
+) -> dict[str, float]:
+    sample = camera_sample(camera, fov)
+    points = [
+        project_with_exported_three_camera(
+            sample,
+            scene.render.resolution_x,
+            scene.render.resolution_y,
+            blender_to_three(point),
+        )
+        for point in notebook_quad
+    ]
+    first, second = points[:2]
+    angle = abs(math.degrees(math.atan2(second[1] - first[1], second[0] - first[0])))
+    return {
+        "endpointBaselineRotationDegrees": rounded(min(angle, 180.0 - angle)),
+        "endpointCoverage": rounded(
+            polygon_area(clip_polygon_to_viewport(points))
+        ),
+    }
+
+
+def camera_angular_step_degrees(first: dict[str, Any], second: dict[str, Any]) -> float:
+    left = first["quaternion"]
+    right = second["quaternion"]
+    left_length = math.sqrt(sum(value * value for value in left))
+    right_length = math.sqrt(sum(value * value for value in right))
+    dot = abs(
+        sum(
+            left[index] / left_length * right[index] / right_length
+            for index in range(4)
+        )
+    )
+    return math.degrees(2.0 * math.acos(min(1.0, dot)))
+
+
+def journal_motion_metrics(frames: list[dict[str, Any]]) -> dict[str, float]:
+    translation_frame = next(
+        (
+            index
+            for index in range(1, len(frames))
+            if math.dist(
+                frames[index - 1]["camera"]["position"],
+                frames[index]["camera"]["position"],
+            )
+            > 1e-7
+        ),
+        math.inf,
+    )
+    angular_steps = [
+        camera_angular_step_degrees(
+            frames[index - 1]["camera"], frames[index]["camera"]
+        )
+        for index in range(1, len(frames))
+    ]
+    return {
+        "translationStartsAtSeconds": rounded(translation_frame / FPS),
+        "maxAngularStepDegrees": rounded(max(angular_steps)),
     }
 
 
@@ -1835,6 +1766,422 @@ def world_bounds(objects: list[bpy.types.Object]) -> tuple[Vector, Vector]:
     )
 
 
+def canonical_json(value: Any) -> str:
+    if isinstance(value, dict):
+        return "{" + ",".join(
+            f"{json.dumps(key)}:{canonical_json(value[key])}"
+            for key in sorted(value)
+        ) + "}"
+    if isinstance(value, (list, tuple)):
+        return "[" + ",".join(canonical_json(item) for item in value) + "]"
+    if isinstance(value, bool) or value is None or isinstance(value, str):
+        return json.dumps(value, separators=(",", ":"))
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError("Canonical JSON cannot encode non-finite numbers")
+        if value.is_integer():
+            return str(int(value))
+        return json.dumps(value, separators=(",", ":"))
+    raise TypeError(f"Unsupported canonical JSON value: {type(value).__name__}")
+
+
+def sha256_canonical(value: Any) -> str:
+    return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def write_json(path: Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True, ensure_ascii=True) + "\n",
+        encoding="utf-8",
+    )
+
+
+def mesh_geometry_sha256(obj: bpy.types.Object) -> str:
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = obj.evaluated_get(depsgraph)
+    mesh = evaluated.to_mesh()
+    try:
+        mesh.calc_loop_triangles()
+        triangles = []
+        for triangle in mesh.loop_triangles:
+            points = [
+                tuple(
+                    round(float(value), 9)
+                    for value in (
+                        evaluated.matrix_world @ mesh.vertices[index].co
+                    )
+                )
+                for index in triangle.vertices
+            ]
+            triangles.append(sorted(points))
+        payload = json.dumps(
+            sorted(triangles), separators=(",", ":"), ensure_ascii=True
+        ).encode("utf-8")
+        return hashlib.sha256(payload).hexdigest()
+    finally:
+        evaluated.to_mesh_clear()
+
+
+def create_hero_live_surface(poster: bpy.types.Object) -> bpy.types.Object:
+    bounds = [Vector(corner) for corner in poster.bound_box]
+    min_x = min(point.x for point in bounds) + 0.001
+    max_x = max(point.x for point in bounds) - 0.001
+    min_z = min(point.z for point in bounds) + 0.001
+    max_z = max(point.z for point in bounds) - 0.001
+    front_y = min(point.y for point in bounds) - 0.00025
+    mesh = bpy.data.meshes.new(f"{HERO_SURFACE}Mesh")
+    mesh.from_pydata(
+        [
+            (min_x, front_y, max_z),
+            (min_x, front_y, min_z),
+            (max_x, front_y, min_z),
+            (max_x, front_y, max_z),
+        ],
+        [],
+        [(0, 1, 2, 3)],
+    )
+    mesh.update()
+    uv_layer = mesh.uv_layers.new(name="HeroLiveUV")
+    uv_by_vertex = {
+        0: (0.0, 1.0),
+        1: (0.0, 0.0),
+        2: (1.0, 0.0),
+        3: (1.0, 1.0),
+    }
+    for loop in mesh.loops:
+        uv_layer.data[loop.index].uv = uv_by_vertex[loop.vertex_index]
+    surface = bpy.data.objects.new(HERO_SURFACE, mesh)
+    bpy.context.collection.objects.link(surface)
+    surface.matrix_world = poster.matrix_world.copy()
+    surface["lazy_a_source_object"] = HERO_OBJECT
+    surface["lazy_a_authored_role"] = "physical-hero-live-surface"
+    return surface
+
+
+def evaluated_geometry_proxy(source: bpy.types.Object) -> bpy.types.Object:
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    evaluated = source.evaluated_get(depsgraph)
+    mesh = bpy.data.meshes.new_from_object(
+        evaluated, preserve_all_data_layers=True, depsgraph=depsgraph
+    )
+    mesh.materials.clear()
+    proxy = bpy.data.objects.new(f"{HERO_PROXY_PREFIX}{source.name}", mesh)
+    bpy.context.collection.objects.link(proxy)
+    proxy.matrix_world = evaluated.matrix_world.copy()
+    proxy["lazy_a_source_object"] = source.name
+    proxy["lazy_a_authored_role"] = "hero-foreground-depth"
+    return proxy
+
+
+def export_hero_compositor_geometry(
+    authored: dict[str, Any],
+) -> dict[str, Any]:
+    HERO_ROOT.mkdir(parents=True, exist_ok=True)
+    surface = create_hero_live_surface(authored["heroPoster"])
+    occluders = [
+        evaluated_geometry_proxy(require_object(name, "MESH"))
+        for name in HERO_OCCLUDER_OBJECTS
+    ]
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in [surface, *occluders]:
+        obj.hide_render = False
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = surface
+    bpy.ops.export_scene.gltf(
+        filepath=str(HERO_COMPOSITOR_PATH),
+        export_format="GLB",
+        use_selection=True,
+        export_apply=True,
+        export_materials="NONE",
+        export_yup=True,
+    )
+    return {
+        "surface": surface,
+        "occluders": occluders,
+        "geometry": {
+            "heroLiveSurface": {
+                "object": HERO_SURFACE,
+                "geometrySha256": mesh_geometry_sha256(surface),
+            },
+            "heroOccluders": [
+                {
+                    "object": proxy.name,
+                    "sourceObject": proxy["lazy_a_source_object"],
+                    "geometrySha256": mesh_geometry_sha256(proxy),
+                }
+                for proxy in occluders
+            ],
+        },
+    }
+
+
+def bake_hero_treated_source(
+    scene: bpy.types.Scene,
+    hero: bpy.types.Object,
+    samples: int,
+) -> None:
+    source_image = next(
+        (
+            node.image
+            for node in hero.data.materials[0].node_tree.nodes
+            if node.bl_idname == "ShaderNodeTexImage" and node.image is not None
+        ),
+        None,
+    )
+    if source_image is None:
+        raise RuntimeError("Hero poster material has no first-frame image")
+    width, height = source_image.size
+    baked = bpy.data.images.get("HeroTreatedFirstFrame") or bpy.data.images.new(
+        "HeroTreatedFirstFrame", width=width, height=height, alpha=True
+    )
+    baked.generated_color = (0.0, 0.0, 0.0, 1.0)
+    material = hero.data.materials[0]
+    target = material.node_tree.nodes.new("ShaderNodeTexImage")
+    target.name = "HeroTreatedBakeTarget"
+    target.image = baked
+    material.node_tree.nodes.active = target
+
+    bpy.ops.object.select_all(action="DESELECT")
+    hero.hide_render = False
+    hero.select_set(True)
+    bpy.context.view_layer.objects.active = hero
+    scene.render.engine = "CYCLES"
+    scene.cycles.samples = samples
+    scene.cycles.use_denoising = True
+    scene.render.bake.use_clear = True
+    scene.render.bake.margin = 2
+    bpy.ops.object.bake(type="COMBINED")
+    HERO_TREATED_SOURCE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "RGBA"
+    scene.render.image_settings.color_depth = "8"
+    baked.save_render(str(HERO_TREATED_SOURCE_PATH), scene=scene)
+    material.node_tree.nodes.remove(target)
+
+
+def padded_projection_quad(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    obj: bpy.types.Object,
+    width: int,
+    height: int,
+) -> list[float]:
+    quad = project_object_bounds(scene, camera, [obj])
+    if quad is None:
+        raise RuntimeError(f"{obj.name} does not project into the practical viewport")
+    min_x = max(0.0, min(quad[0::2]) - 2.0 / width)
+    max_x = min(1.0, max(quad[0::2]) + 2.0 / width)
+    min_y = max(0.0, min(quad[1::2]) - 2.0 / height)
+    max_y = min(1.0, max(quad[1::2]) + 2.0 / height)
+    return rounded_vector((min_x, min_y, max_x, min_y, max_x, max_y, min_x, max_y))
+
+
+def render_practical_mask(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    profile: str,
+    target: bpy.types.Object,
+    path: Path,
+) -> list[float]:
+    width, height = CONTACT_MASK_VIEWPORTS[profile]
+    position, quaternion = pose_transform(profile, "desk")
+    set_camera_transform(camera, position, quaternion)
+    set_vertical_fov(camera.data, LENS_FOV[profile])
+    scene.render.resolution_x = width
+    scene.render.resolution_y = height
+    scene.render.resolution_percentage = 100
+    quad = padded_projection_quad(scene, camera, target, width, height)
+
+    mesh_visibility = {
+        obj.name: obj.hide_render for obj in bpy.data.objects if obj.type == "MESH"
+    }
+    original_materials = list(target.data.materials)
+    original_engine = scene.render.engine
+    original_transparent = scene.render.film_transparent
+    original_format = scene.render.image_settings.file_format
+    original_mode = scene.render.image_settings.color_mode
+    original_depth = scene.render.image_settings.color_depth
+    world = scene.world
+    background = (
+        world.node_tree.nodes.get("Background")
+        if world is not None and world.use_nodes
+        else None
+    )
+    background_strength = (
+        background.inputs["Strength"].default_value if background is not None else None
+    )
+    mask_material = make_principled_material(
+        "PracticalGeometryMask",
+        (0.0, 0.0, 0.0, 1.0),
+        1.0,
+        emission=(1.0, 1.0, 1.0, 1.0),
+    )
+    mask_bsdf = mask_material.node_tree.nodes.get("Principled BSDF")
+    mask_bsdf.inputs["Emission Strength"].default_value = 1.0
+    try:
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                obj.hide_render = obj != target
+        target.data.materials.clear()
+        target.data.materials.append(mask_material)
+        if background is not None:
+            background.inputs["Strength"].default_value = 0.0
+        scene.render.engine = "BLENDER_EEVEE"
+        scene.render.film_transparent = False
+        scene.render.image_settings.file_format = "PNG"
+        scene.render.image_settings.color_mode = "BW"
+        scene.render.image_settings.color_depth = "8"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        scene.render.filepath = str(path)
+        bpy.ops.render.render(write_still=True)
+    finally:
+        for obj in bpy.data.objects:
+            if obj.name in mesh_visibility:
+                obj.hide_render = mesh_visibility[obj.name]
+        target.data.materials.clear()
+        for material in original_materials:
+            target.data.materials.append(material)
+        if background is not None:
+            background.inputs["Strength"].default_value = background_strength
+        scene.render.engine = original_engine
+        scene.render.film_transparent = original_transparent
+        scene.render.image_settings.file_format = original_format
+        scene.render.image_settings.color_mode = original_mode
+        scene.render.image_settings.color_depth = original_depth
+    return quad
+
+
+def build_practical_authoring_manifest(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    authored: dict[str, Any],
+) -> dict[str, Any]:
+    CONTACT_ROOT.mkdir(parents=True, exist_ok=True)
+    geometry = {
+        "bulb": {
+            "object": CONTACT_BULB,
+            "geometrySha256": mesh_geometry_sha256(authored["bulb"]),
+        },
+        "shadeInterior": {
+            "object": CONTACT_SHADE,
+            "geometrySha256": mesh_geometry_sha256(authored["shadeInterior"]),
+        },
+    }
+    profiles = {}
+    for profile in PROFILE_IDS:
+        position, quaternion = pose_transform(profile, "desk")
+        set_camera_transform(camera, position, quaternion)
+        desk_camera = camera_sample(camera, LENS_FOV[profile])
+        projection = {
+            "viewport": list(CONTACT_MASK_VIEWPORTS[profile]),
+            "deskCameraSha256": sha256_canonical(desk_camera),
+        }
+        for key, obj in (
+            ("bulb", authored["bulb"]),
+            ("shadeInterior", authored["shadeInterior"]),
+        ):
+            filename = f"{profile}-{key.replace('Interior', '-interior').lower()}-mask.png"
+            path = CONTACT_ROOT / filename
+            projection[key] = {
+                **geometry[key],
+                "quad": render_practical_mask(
+                    scene, camera, profile, obj, path
+                ),
+                "mask": {"path": filename, "sha256": sha256_file(path)},
+            }
+        projection["projectionSha256"] = sha256_canonical(projection)
+        profiles[profile] = projection
+    return {
+        "version": 1,
+        "immutable": True,
+        "generator": {
+            "identity": "blender-background-python",
+            "browserRuntime": False,
+        },
+        "sources": {
+            "masterBlend": {
+                "path": SOURCE_BLEND,
+                "sha256": sha256_file(REPO_ROOT / SOURCE_BLEND),
+            },
+            "renderScript": {
+                "path": "scripts/render-master-shots.py",
+                "sha256": sha256_file(Path(__file__).resolve()),
+            },
+        },
+        "geometry": geometry,
+        "profiles": profiles,
+    }
+
+
+def build_hero_authoring_manifest(geometry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "version": 1,
+        "immutable": True,
+        "generator": {
+            "identity": "blender-background-python",
+            "browserRuntime": False,
+        },
+        "sources": {
+            "masterBlend": {
+                "path": SOURCE_BLEND,
+                "sha256": sha256_file(REPO_ROOT / SOURCE_BLEND),
+            },
+            "renderScript": {
+                "path": "scripts/render-master-shots.py",
+                "sha256": sha256_file(Path(__file__).resolve()),
+            },
+            "compositorGlb": {
+                "path": "public/room/hero/hero-compositor.glb",
+                "sha256": sha256_file(HERO_COMPOSITOR_PATH),
+            },
+        },
+        "geometry": geometry,
+        "regionSemantics": {
+            "red": "projected-HeroLiveSurface-boundary",
+            "green": "projected-named-HeroOccluder-boundaries",
+            "blue": "HeroLiveSurface-treatment-interior",
+        },
+        "referenceGeneration": {
+            "kind": HERO_REFERENCE_KIND,
+            "regionEncoding": HERO_REGION_ENCODING,
+            "projectionSource": "evaluated-world-space-triangles",
+            "catalog": HERO_PRESENTED_REFERENCES,
+            "requiredViewports": [
+                "1280x720",
+                "1316x1329",
+                "1024x768",
+                "768x1024",
+                "375x812",
+            ],
+        },
+        "references": {},
+    }
+
+
+def build_authored_source_assets(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    authored: dict[str, Any],
+    samples: int,
+) -> None:
+    exported = export_hero_compositor_geometry(authored)
+    bake_hero_treated_source(scene, authored["heroPoster"], samples)
+    practical = build_practical_authoring_manifest(scene, camera, authored)
+    write_json(CONTACT_AUTHORING_MANIFEST_PATH, practical)
+    hero = build_hero_authoring_manifest(exported["geometry"])
+    write_json(HERO_AUTHORING_MANIFEST_PATH, hero)
+    print(
+        "AUTHORED SOURCE ASSETS:",
+        HERO_COMPOSITOR_PATH,
+        HERO_TREATED_SOURCE_PATH,
+        CONTACT_AUTHORING_MANIFEST_PATH,
+        HERO_AUTHORING_MANIFEST_PATH,
+    )
+
+
 def contact_light_contract(authored: dict[str, Any]) -> dict[str, Any]:
     light = require_object(CONTACT_LIGHT, "LIGHT")
     bulb = require_object(CONTACT_BULB, "MESH")
@@ -1874,7 +2221,11 @@ def contact_light_contract(authored: dict[str, Any]) -> dict[str, Any]:
             max_x = max(point.x for point in local_bounds)
             min_y = min(point.y for point in local_bounds)
             max_y = max(point.y for point in local_bounds)
-            intersects = min_x <= hit.x <= max_x and min_y <= hit.y <= max_y
+            tolerance = 1e-6
+            intersects = (
+                min_x - tolerance <= hit.x <= max_x + tolerance
+                and min_y - tolerance <= hit.y <= max_y + tolerance
+            )
             hit_world = paper.matrix_world @ hit
     return {
         "lightOrigin": blender_to_three(origin),
@@ -1888,6 +2239,8 @@ def contact_light_contract(authored: dict[str, Any]) -> dict[str, Any]:
 def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: dict[str, Any]) -> dict[str, Any]:
     variants: dict[str, Any] = {}
     light_contract = contact_light_contract(authored)
+    notebook_quad = notebook_world_quad(require_object("Mesh_185", "MESH"))
+    notebook_three_quad = [blender_to_three(point) for point in notebook_quad]
     contact_world = [
         blender_to_three(point)
         for point in local_face_points(authored["contact"], 2, "max")
@@ -1916,7 +2269,11 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
 
         transitions: dict[str, Any] = {}
         destinations = (("desk", OPENING_SECONDS),) + tuple(
-            (destination, DESTINATION_SECONDS) for destination in DESTINATION_IDS
+            (
+                destination,
+                CONTACT_SECONDS if destination == "contact" else DESTINATION_SECONDS,
+            )
+            for destination in DESTINATION_IDS
         )
         for destination, duration in destinations:
             source = "opening" if destination == "desk" else "desk"
@@ -1937,7 +2294,7 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                     )
             forward_path = f"/room/{profile}/transitions/{transition_id}.mp4"
             reverse_path = f"/room/{profile}/transitions/{destination}-{source}.mp4"
-            transitions[transition_id] = {
+            transition = {
                 "id": transition_id,
                 "from": source,
                 "to": destination,
@@ -1952,10 +2309,42 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                     "from": destination,
                     "to": source,
                 },
-                "journalHeadLeadSeconds": 0.3 if destination == "journal" else None,
-                "translationStartsAtSeconds": 0.3 if destination == "journal" else 0.0,
                 "frames": frames,
             }
+            if destination == "journal":
+                motion_metrics = journal_motion_metrics(frames)
+                journal_position, journal_quaternion = pose_transform(
+                    profile, destination
+                )
+                set_camera_transform(camera, journal_position, journal_quaternion)
+                endpoint_metrics = journal_endpoint_metrics(
+                    scene, camera, notebook_quad, LENS_FOV[profile]
+                )
+                transition.update(
+                    {
+                        "journalHeadLeadSeconds": 0,
+                        "translationStartsAtSeconds": motion_metrics[
+                            "translationStartsAtSeconds"
+                        ],
+                        "motionModel": "coupled-hip-pivot",
+                        "maxAngularStepDegrees": motion_metrics[
+                            "maxAngularStepDegrees"
+                        ],
+                        "endpointBaselineRotationDegrees": endpoint_metrics[
+                            "endpointBaselineRotationDegrees"
+                        ],
+                        "endpointCoverage": endpoint_metrics["endpointCoverage"],
+                        "notebookWorldQuad": notebook_three_quad,
+                    }
+                )
+            else:
+                transition.update(
+                    {
+                        "journalHeadLeadSeconds": None,
+                        "translationStartsAtSeconds": 0.0,
+                    }
+                )
+            transitions[transition_id] = transition
 
         nav_points = [
             authored["navigation"].matrix_world @ Vector((-NAV_WIDTH / 2, NAV_HEIGHT / 2, NAV_THICKNESS / 2)),
@@ -2051,6 +2440,16 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 "addressScreenQuads": address_screen_quads,
                 "paperScreenQuads": paper_screen_quads,
                 "lampScreenQuads": lamp_screen_quads,
+                "activationHoldSeconds": CONTACT_ACTIVATION_SECONDS,
+                "visibleBulb": True,
+                "visibleShadeInterior": True,
+                "shadeAxisErrorDegrees": rounded(
+                    float(
+                        require_object(LAMP_ROOT).get(
+                            "lazy_a_contact_shade_axis_error_degrees", math.inf
+                        )
+                    )
+                ),
                 **light_contract,
             },
             "journal": {
@@ -2060,10 +2459,13 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 "lineObjects": [obj.name for obj in authored["journalCopy"]],
                 "pencilObject": JOURNAL_PENCIL,
                 "pencilMovedOnce": authored["journalPencil"].get("lazy_a_repositioned_once") is True,
+                "notebookWorldQuad": notebook_three_quad,
                 **authored["journalLayout"],
             },
         }
 
+    hero_authoring_hash = sha256_file(HERO_AUTHORING_MANIFEST_PATH)
+    practical_authoring_hash = sha256_file(CONTACT_AUTHORING_MANIFEST_PATH)
     return {
         "version": 1,
         "generatedBy": "scripts/render-master-shots.py",
@@ -2078,7 +2480,29 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
             "firstFrameSource": HERO_FIRST_FRAME_SOURCE,
             "restingMechanism": "baked-physical-poster",
             "liveProjection": "camera-reciprocal-depth-projective",
-            "maskResolution": HERO_OCCLUSION_MASK_SIZE,
+            "compositor": "single-webgl-pass",
+            "occlusion": "authored-depth-geometry",
+            "treatment": {
+                "kind": "calibrated-room-transfer",
+                "source": "/room/hero/hero-room-treatment.png",
+            },
+            "geometry": {
+                "source": "/room/hero/hero-compositor.glb",
+                "surface": HERO_SURFACE,
+                "occluders": list(HERO_OCCLUDER_OBJECTS),
+            },
+            "verification": {
+                "presentationEvent": HERO_PRESENTATION_EVENT,
+                "presentedPixelReferences": HERO_PRESENTED_REFERENCES,
+                "presentedPixelAuthoringManifest": HERO_AUTHORING_MANIFEST,
+                "presentedPixelAuthoringManifestSha256": hero_authoring_hash,
+                "referenceKind": HERO_REFERENCE_KIND,
+                "regionEncoding": HERO_REGION_ENCODING,
+            },
+        },
+        "verification": {
+            "contactPracticalAuthoringManifest": CONTACT_AUTHORING_MANIFEST,
+            "contactPracticalAuthoringManifestSha256": practical_authoring_hash,
         },
         "variants": variants,
     }
@@ -2098,9 +2522,8 @@ export interface ProjectionFrame {
   camera: CameraSample;
   hero: readonly [number, number, number, number, number, number, number, number] | null;
   heroReciprocalW: readonly [number, number, number, number] | null;
-  heroOccluders: readonly (readonly number[])[];
-  heroOcclusionMask: { size: 512; encoding: "rle-varint-v1"; rle: string };
   lampLevel: number;
+  visibleBulbLevel: number;
   revealLevel: number;
   contactIndentDepth: number;
 }
@@ -2122,6 +2545,11 @@ export interface PlateTransition {
   reverse: { source: string; playbackRate: 1; from: EndpointId; to: EndpointId };
   journalHeadLeadSeconds: number | null;
   translationStartsAtSeconds: number;
+  motionModel?: "coupled-hip-pivot";
+  maxAngularStepDegrees?: number;
+  endpointBaselineRotationDegrees?: number;
+  endpointCoverage?: number;
+  notebookWorldQuad?: readonly (readonly [number, number, number])[];
   frames: readonly ProjectionFrame[];
 }
 export interface PlateVariant {
@@ -2187,6 +2615,10 @@ export interface PlateVariant {
     lightInsideShade: true;
     lightIntersectsPaper: true;
     grazingAngleDegrees: number;
+    activationHoldSeconds: 1;
+    visibleBulb: true;
+    visibleShadeInterior: true;
+    shadeAxisErrorDegrees: number;
   };
   journal: {
     mechanism: "physical-text-geometry";
@@ -2199,6 +2631,7 @@ export interface PlateVariant {
     alignment: "left";
     marking: "thin-graphite";
     pencilClearance: "clear";
+    notebookWorldQuad: readonly (readonly [number, number, number])[];
   };
 }
 export interface PlateManifest {
@@ -2215,7 +2648,22 @@ export interface PlateManifest {
     firstFrameSource: "assets/master/hero/hero-print-first-frame.png";
     restingMechanism: "baked-physical-poster";
     liveProjection: "camera-reciprocal-depth-projective";
-    maskResolution: 512;
+    compositor: "single-webgl-pass";
+    occlusion: "authored-depth-geometry";
+    treatment: { kind: "calibrated-room-transfer"; source: string };
+    geometry: { source: string; surface: "HeroLiveSurface"; occluders: readonly string[] };
+    verification: {
+      presentationEvent: "lazy-a:compositor-frame-presented";
+      presentedPixelReferences: string;
+      presentedPixelAuthoringManifest: string;
+      presentedPixelAuthoringManifestSha256: string;
+      referenceKind: "authored-presented-pixels-v1";
+      regionEncoding: "rgb-poster-foreground-treatment";
+    };
+  };
+  verification: {
+    contactPracticalAuthoringManifest: string;
+    contactPracticalAuthoringManifestSha256: string;
   };
   variants: Record<Variant, PlateVariant>;
 }
@@ -2248,16 +2696,43 @@ def project_with_exported_three_camera(
     height: int,
     point: list[float],
 ) -> tuple[float, float]:
-    position = Vector(sample["position"])
     x, y, z, w = sample["quaternion"]
-    quaternion = Quaternion((w, x, y, z))
-    local = quaternion.inverted() @ (Vector(point) - position)
-    if local.z >= 0.0:
+    delta_x = point[0] - sample["position"][0]
+    delta_y = point[1] - sample["position"][1]
+    delta_z = point[2] - sample["position"][2]
+    x2 = x + x
+    y2 = y + y
+    z2 = z + z
+    xx = x * x2
+    xy = x * y2
+    xz = x * z2
+    yy = y * y2
+    yz = y * z2
+    zz = z * z2
+    wx = w * x2
+    wy = w * y2
+    wz = w * z2
+    local_x = (
+        (1.0 - (yy + zz)) * delta_x
+        + (xy + wz) * delta_y
+        + (xz - wy) * delta_z
+    )
+    local_y = (
+        (xy - wz) * delta_x
+        + (1.0 - (xx + zz)) * delta_y
+        + (yz + wx) * delta_z
+    )
+    local_z = (
+        (xz + wy) * delta_x
+        + (yz - wx) * delta_y
+        + (1.0 - (xx + yy)) * delta_z
+    )
+    if local_z >= 0.0:
         raise ValueError("Projected point is behind the exported Three camera")
     tangent = math.tan(math.radians(sample["fov"]) / 2.0)
     aspect = width / height
-    ndc_x = (local.x / -local.z) / (tangent * aspect)
-    ndc_y = (local.y / -local.z) / tangent
+    ndc_x = (local_x / -local_z) / (tangent * aspect)
+    ndc_y = (local_y / -local_z) / tangent
     return ((ndc_x + 1.0) / 2.0, (1.0 - ndc_y) / 2.0)
 
 
@@ -2273,14 +2748,17 @@ def exported_nav_projection_error(variant: dict[str, Any], endpoint: str) -> flo
         origin + v_axis * plane["height"],
     )
     sample = variant["endpoints"][endpoint]["projection"]["camera"]
-    exported = [
-        coordinate
-        for point in points
-        for coordinate in project_with_exported_three_camera(
-            sample, variant["width"], variant["height"], list(point)
-        )
-    ]
     blender = variant["navigation"]["screenQuads"][endpoint]
+    try:
+        exported = [
+            coordinate
+            for point in points
+            for coordinate in project_with_exported_three_camera(
+                sample, variant["width"], variant["height"], list(point)
+            )
+        ]
+    except ValueError:
+        return 0.0
     if blender is None or len(blender) != len(exported):
         return math.inf
     quarter_pixel = 0.25 / min(variant["width"], variant["height"])
@@ -2322,14 +2800,34 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         issues.append(f"profiles must be exactly {PROFILE_IDS}")
     if manifest.get("cameraRotationConversion") != "basis-similarity-with-camera-local-basis":
         issues.append("camera rotation export must use the verified basis-similarity conversion")
-    if manifest.get("hero") != {
-        "object": HERO_OBJECT,
-        "firstFrameSource": HERO_FIRST_FRAME_SOURCE,
-        "restingMechanism": "baked-physical-poster",
-        "liveProjection": "camera-reciprocal-depth-projective",
-        "maskResolution": HERO_OCCLUSION_MASK_SIZE,
-    }:
-        issues.append("hero must retain the physical first frame and reciprocal-depth live projection")
+    hero_manifest = manifest.get("hero", {})
+    if (
+        hero_manifest.get("object") != HERO_OBJECT
+        or hero_manifest.get("firstFrameSource") != HERO_FIRST_FRAME_SOURCE
+        or hero_manifest.get("restingMechanism") != "baked-physical-poster"
+        or hero_manifest.get("liveProjection")
+        != "camera-reciprocal-depth-projective"
+        or hero_manifest.get("compositor") != "single-webgl-pass"
+        or hero_manifest.get("occlusion") != "authored-depth-geometry"
+        or hero_manifest.get("treatment", {}).get("kind")
+        != "calibrated-room-transfer"
+        or hero_manifest.get("geometry", {}).get("source")
+        != "/room/hero/hero-compositor.glb"
+        or tuple(hero_manifest.get("geometry", {}).get("occluders", ()))
+        != HERO_OCCLUDER_OBJECTS
+        or "maskResolution" in hero_manifest
+    ):
+        issues.append(
+            "hero must use the calibrated single-pass surface and authored depth geometry"
+        )
+    for path, label in (
+        (HERO_COMPOSITOR_PATH, "hero compositor GLB"),
+        (HERO_TREATMENT_PATH, "hero room treatment"),
+        (HERO_AUTHORING_MANIFEST_PATH, "hero authoring manifest"),
+        (CONTACT_AUTHORING_MANIFEST_PATH, "practical authoring manifest"),
+    ):
+        if not path.is_file() or path.stat().st_size == 0:
+            issues.append(f"{label} is missing: {path}")
     hero_poster = authored["heroPoster"]
     if (
         hero_poster.name != HERO_OBJECT
@@ -2339,6 +2837,23 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         issues.append("Mesh_170 must carry the treated physical hero first frame")
     if authored["lampMatrixBefore"] != authored["lampMatrixAfter"]:
         issues.append(f"{LAMP_ROOT} transform changed while authoring CONTACT light")
+    lamp = require_object(LAMP_ROOT)
+    if (
+        float(lamp.get("lazy_a_contact_shade_axis_error_degrees", math.inf))
+        > 12.0
+    ):
+        issues.append("saved desk-lamp shade axis must land within 12 degrees of CONTACT")
+    bulb = authored.get("bulb")
+    shade = authored.get("shadeInterior")
+    if (
+        bulb is None
+        or shade is None
+        or bulb.name != CONTACT_BULB
+        or shade.name != CONTACT_SHADE
+        or bulb.hide_render
+        or shade.hide_render
+    ):
+        issues.append("CONTACT bulb and shade interior must be visible authored geometry")
     card = authored["card"]
     if card.name != LOGO_OBJECT or card.get("lazy_a_logo_geometry_created") is not False:
         issues.append("Lazy A logo must reuse Mesh_31 without new card geometry")
@@ -2495,12 +3010,6 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         fovs = {endpoint.get("projection", {}).get("camera", {}).get("fov") for endpoint in endpoints.values()}
         if fovs != {LENS_FOV[profile]}:
             issues.append(f"{profile}: lens must remain constant at {LENS_FOV[profile]} degrees")
-        if any(
-            len(endpoint.get("projection", {}).get("heroOccluders", []))
-            != len(HERO_OCCLUDER_OBJECTS)
-            for endpoint in endpoints.values()
-        ):
-            issues.append(f"{profile}: every endpoint must export all photographic hero occluders")
         transitions = variant.get("transitions", {})
         if set(transitions) != {"opening-desk", "desk-films", "desk-journal", "desk-contact", "desk-about"}:
             issues.append(f"{profile}: transition definitions are incomplete")
@@ -2509,10 +3018,15 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             issues.append(f"{profile}: opening must be exactly {OPENING_SECONDS}s")
         for destination in DESTINATION_IDS:
             transition = transitions[f"desk-{destination}"]
-            if transition["duration"] != DESTINATION_SECONDS:
-                issues.append(f"{profile}: {destination} must be exactly {DESTINATION_SECONDS}s")
+            expected_duration = (
+                CONTACT_SECONDS if destination == "contact" else DESTINATION_SECONDS
+            )
+            if transition["duration"] != expected_duration:
+                issues.append(
+                    f"{profile}: {destination} must be exactly {expected_duration}s"
+                )
             if not transition.get("frames") or any(
-                set(frame) != {"camera", "hero", "heroReciprocalW", "heroOccluders", "heroOcclusionMask", "lampLevel", "revealLevel", "contactIndentDepth"}
+                set(frame) != {"camera", "hero", "heroReciprocalW", "lampLevel", "visibleBulbLevel", "revealLevel", "contactIndentDepth"}
                 or set(frame["camera"]) != {"position", "quaternion", "fov"}
                 or (
                     frame["hero"] is not None
@@ -2522,34 +3036,14 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
                     )
                 )
                 or (frame["hero"] is None and frame["heroReciprocalW"] is not None)
-                or len(frame["heroOccluders"]) != len(HERO_OCCLUDER_OBJECTS)
-                or frame["heroOcclusionMask"].get("size") != HERO_OCCLUSION_MASK_SIZE
-                or frame["heroOcclusionMask"].get("encoding") != "rle-varint-v1"
-                or not frame["heroOcclusionMask"].get("rle")
                 or frame["contactIndentDepth"] != CONTACT_INDENT_DEPTH
                 for frame in transition.get("frames", [])
             ):
                 issues.append(f"{profile}: {destination} frames lack required projection fields")
         journal = transitions["desk-journal"]
-        if journal["translationStartsAtSeconds"] < journal["journalHeadLeadSeconds"]:
-            issues.append(f"{profile}: JOURNAL translation begins before the head lead completes")
         journal_frames = journal["frames"]
         desk_camera = endpoints["desk"]["projection"]["camera"]
         journal_camera = endpoints["journal"]["projection"]["camera"]
-        if journal_camera["position"][1] < 1.32:
-            issues.append(f"{profile}: JOURNAL eye height must remain at least 1.32m")
-        if desk_camera["position"][2] - journal_camera["position"][2] < 0.3:
-            issues.append(f"{profile}: JOURNAL must hinge forward at least 0.3m")
-        if any(frame["camera"]["position"][1] < 1.32 for frame in journal_frames):
-            issues.append(f"{profile}: JOURNAL transition drops toward desk-level framing")
-        first_rotation = next(
-            (
-                index
-                for index, frame in enumerate(journal_frames)
-                if frame["camera"]["quaternion"] != desk_camera["quaternion"]
-            ),
-            -1,
-        )
         first_translation = next(
             (
                 index
@@ -2558,43 +3052,47 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             ),
             -1,
         )
-        if first_rotation < 0 or first_translation < 0 or first_rotation >= first_translation:
-            issues.append(f"{profile}: JOURNAL head rotation must begin before forward translation")
-        post_head_lead = journal_frames[max(first_translation - 1, 0) :]
-        for frame_index, frame in enumerate(
-            post_head_lead,
-            start=max(first_translation - 1, 0),
+        motion_metrics = journal_motion_metrics(journal_frames)
+        if (
+            first_translation != 1
+            or journal.get("journalHeadLeadSeconds") != 0
+            or journal.get("translationStartsAtSeconds")
+            != motion_metrics["translationStartsAtSeconds"]
+            or journal.get("motionModel") != "coupled-hip-pivot"
+            or journal.get("maxAngularStepDegrees")
+            != motion_metrics["maxAngularStepDegrees"]
+            or motion_metrics["maxAngularStepDegrees"] > 3.0
         ):
-            camera_sample_data = frame["camera"]
-            x, y, z, w = camera_sample_data["quaternion"]
-            direction = Quaternion((w, x, y, z)) @ Vector((0.0, 0.0, -1.0))
-            position = Vector(camera_sample_data["position"])
-            if direction.y >= -1e-6:
-                issues.append(
-                    f"{profile}: JOURNAL gaze misses the desktop at frame {frame_index}"
-                )
-                break
-            distance = (DESK_HEIGHT - position.y) / direction.y
-            hit = position + direction * distance
-            min_x, max_x, min_z, max_z = JOURNAL_DESK_FOOTPRINT
-            if (
-                distance <= 0.0
-                or not min_x <= hit.x <= max_x
-                or not min_z <= hit.z <= max_z
-            ):
-                issues.append(
-                    f"{profile}: JOURNAL gaze misses the desktop at frame {frame_index}"
-                )
-                break
+            issues.append(
+                f"{profile}: JOURNAL must begin one coupled hip pivot at frame 1 with <=3 degree steps"
+            )
         contact_transition = transitions["desk-contact"]
         contact_camera = endpoints["contact"]["projection"]["camera"]
         if contact_camera == desk_camera or all(
             frame["camera"] == desk_camera for frame in contact_transition["frames"]
         ):
             issues.append(f"{profile}: CONTACT must use an authored lean/pan away from desk")
-        levels = [frame["lampLevel"] for frame in contact_transition["frames"]]
-        if not levels or levels[0] != 0.0 or levels[-1] != 1.0:
-            issues.append(f"{profile}: CONTACT lamp must ramp from 0 to 1")
+        contact_frames = contact_transition["frames"]
+        activation_frames = contact_frames[:31]
+        levels = [frame["lampLevel"] for frame in activation_frames]
+        visible_levels = [
+            frame["visibleBulbLevel"] for frame in activation_frames
+        ]
+        if (
+            len(activation_frames) != 31
+            or any(frame["camera"] != desk_camera for frame in activation_frames)
+            or any(
+                values[index] < values[index - 1]
+                for values in (levels, visible_levels)
+                for index in range(1, len(values))
+            )
+            or levels[-1] <= levels[0]
+            or visible_levels[-1] <= visible_levels[0]
+            or contact_frames[31]["camera"] == desk_camera
+        ):
+            issues.append(
+                f"{profile}: CONTACT must hold the desk camera for 31 rising practical samples before moving"
+            )
         navigation = variant.get("navigation", {})
         contact_data = variant.get("contact", {})
         journal_data = variant.get("journal", {})
@@ -2632,6 +3130,10 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             or contact_data.get("lightIntersectsPaper") is not True
             or not contact_data.get("lightOrigin")
             or not contact_data.get("lightTarget")
+            or contact_data.get("activationHoldSeconds") != 1.0
+            or contact_data.get("visibleBulb") is not True
+            or contact_data.get("visibleShadeInterior") is not True
+            or contact_data.get("shadeAxisErrorDegrees", math.inf) > 12.0
         ):
             issues.append(f"{profile}: CONTACT must use fixed indentation and shade-origin lamp response")
         if (
@@ -2640,10 +3142,14 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             or len(journal_data.get("lineObjects", ())) != len(JOURNAL_COPY)
         ):
             issues.append(f"{profile}: physical JOURNAL copy metadata is incomplete")
-        journal_coverage = endpoints.get("journal", {}).get("framing", {}).get("coverage", {}).get("notebook", 0.0)
-        if not 0.4 <= journal_coverage <= 0.6:
+        if (
+            not 0.4 <= journal.get("endpointCoverage", 0.0) <= 0.6
+            or journal.get("endpointBaselineRotationDegrees", math.inf) > 12.0
+            or journal.get("notebookWorldQuad")
+            != journal_data.get("notebookWorldQuad")
+        ):
             issues.append(
-                f"{profile}: JOURNAL notebook coverage must be 0.4..0.6, got {journal_coverage}"
+                f"{profile}: JOURNAL notebook projection must cover 0.4..0.6 with <=12 degree baseline rotation"
             )
         if profile == "portrait":
             portrait_contact_coverage = endpoints["contact"]["framing"]["coverage"]
@@ -2798,7 +3304,11 @@ def render_transition_frames(
         # intermediates are lossless PNGs because the encoder reads %04d.png.
         scene.render.image_settings.file_format = "PNG"
         destinations = (("desk", OPENING_SECONDS),) + tuple(
-            (destination, DESTINATION_SECONDS) for destination in DESTINATION_IDS
+            (
+                destination,
+                CONTACT_SECONDS if destination == "contact" else DESTINATION_SECONDS,
+            )
+            for destination in DESTINATION_IDS
         )
         for destination, duration in destinations:
             source = "opening" if destination == "desk" else "desk"
@@ -2829,6 +3339,11 @@ def parse_args() -> argparse.Namespace:
     argv = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--validate", action="store_true")
+    parser.add_argument(
+        "--build-authoring",
+        action="store_true",
+        help="Export immutable hero/practical geometry evidence and the treated hero source",
+    )
     parser.add_argument("--proof", action="store_true")
     parser.add_argument("--render-stills", action="store_true")
     parser.add_argument("--render-transitions", action="store_true")
@@ -2858,6 +3373,13 @@ def main() -> None:
     scene = bpy.context.scene
     authored = author_physical_scene()
     camera = create_camera()
+    if args.build_authoring:
+        build_authored_source_assets(
+            scene,
+            camera,
+            authored,
+            samples=args.samples or 32,
+        )
     if args.visual_only:
         if not (args.proof or args.render_transitions) or args.render_stills:
             raise SystemExit(
@@ -2877,7 +3399,7 @@ def main() -> None:
 
         print(
             "SHOT CONTRACT VALID: 6 endpoints x 2 profiles; opening 2.6s; "
-            "destinations 0.9s; constant lens; JOURNAL head-first; CONTACT authored lean/pan."
+            "JOURNAL coupled hip pivot; CONTACT 1.0s practical hold + 0.9s move."
         )
     only = set(args.only)
     if args.proof:

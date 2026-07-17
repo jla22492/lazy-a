@@ -6,10 +6,11 @@ import os
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from uuid import UUID
+from uuid import NAMESPACE_URL, UUID, uuid5
 
+import numpy as np
 from bpy_extras.object_utils import world_to_camera_view
-from mathutils import Vector
+from mathutils import Matrix, Quaternion, Vector
 from mathutils.bvhtree import BVHTree
 
 
@@ -152,6 +153,33 @@ ABOUT_POSES = {
         "target": (-1.52, 0.92, -0.08),
     },
 }
+CONTACT_DESK_CAMERAS = {
+    "wide": {
+        "viewport": (1280, 720),
+        "position": (0.050000000745, 1.600000023842, 1.450000047684),
+        "quaternion": (
+            -0.142799422145,
+            0.007813094184,
+            0.001127292984,
+            0.989720225334,
+        ),
+        "fov": 35.0,
+    },
+    "portrait": {
+        "viewport": (375, 812),
+        "position": (0.299162566662, 1.600000023842, 2.349999904633),
+        "quaternion": (
+            -0.098435617983,
+            -0.020484184846,
+            -0.002026646631,
+            0.994930505753,
+        ),
+        "fov": 35.0,
+    },
+}
+THREE_TO_BLENDER_BASIS = Matrix(
+    ((1.0, 0.0, 0.0), (0.0, 0.0, -1.0), (0.0, 1.0, 0.0))
+)
 
 
 def close(actual, expected, tolerance=1e-6):
@@ -193,6 +221,33 @@ def bounds_vectors(bounds):
     return Vector(bounds["min"]), Vector(bounds["max"])
 
 
+def vector_json_property(owner, key, issues, label):
+    raw = owner.get(key)
+    try:
+        values = json.loads(raw)
+    except (TypeError, json.JSONDecodeError):
+        issues.append(f"{label} metadata is not valid JSON")
+        return None
+    if (
+        not isinstance(values, list)
+        or len(values) != 3
+        or any(not isinstance(value, (int, float)) for value in values)
+    ):
+        issues.append(f"{label} metadata must contain three numeric coordinates")
+        return None
+    return Vector(values)
+
+
+def angle_degrees(first, second):
+    if first.length <= 1e-8 or second.length <= 1e-8:
+        return math.inf
+    return math.degrees(
+        math.acos(
+            max(-1.0, min(1.0, first.normalized().dot(second.normalized())))
+        )
+    )
+
+
 def world_bounds(objects):
     minimum = Vector((math.inf, math.inf, math.inf))
     maximum = Vector((-math.inf, -math.inf, -math.inf))
@@ -230,6 +285,67 @@ def mesh_world_bounds(objects):
         Vector(min(point[index] for point in points) for index in range(3)),
         Vector(max(point[index] for point in points) for index in range(3)),
     )
+
+
+def mesh_components_world(obj):
+    adjacency = [set() for _vertex in obj.data.vertices]
+    for edge in obj.data.edges:
+        first, second = edge.vertices
+        adjacency[first].add(second)
+        adjacency[second].add(first)
+    components = []
+    unseen = set(range(len(obj.data.vertices)))
+    while unseen:
+        seed = unseen.pop()
+        stack = [seed]
+        indices = [seed]
+        while stack:
+            current = stack.pop()
+            for neighbor in adjacency[current]:
+                if neighbor in unseen:
+                    unseen.remove(neighbor)
+                    stack.append(neighbor)
+                    indices.append(neighbor)
+        components.append(
+            [obj.matrix_world @ obj.data.vertices[index].co for index in indices]
+        )
+    return components
+
+
+def measured_lamp_shade_geometry(fixture):
+    candidates = []
+    for points in mesh_components_world(fixture):
+        minimum = Vector(
+            min(point[index] for point in points) for index in range(3)
+        )
+        maximum = Vector(
+            max(point[index] for point in points) for index in range(3)
+        )
+        dimensions = maximum - minimum
+        if (
+            len(points) >= 300
+            and minimum.z > 1.1
+            and max(dimensions) > 0.12
+        ):
+            candidates.append(points)
+    if not candidates:
+        return None
+    points = max(candidates, key=len)
+    samples = np.array([[point.x, point.y, point.z] for point in points])
+    center = samples.mean(axis=0)
+    _eigenvalues, eigenvectors = np.linalg.eigh(
+        np.cov((samples - center).T)
+    )
+    axis = Vector(eigenvectors[:, 0])
+    if axis.z > 0.0:
+        axis.negate()
+    projections = (samples - center) @ np.array(axis)
+    opening_samples = samples[projections >= np.quantile(projections, 0.95)]
+    opening = Vector(opening_samples.mean(axis=0))
+    radial = opening_samples - np.array(opening)
+    radial -= np.outer(radial @ np.array(axis), np.array(axis))
+    radius = float(np.median(np.linalg.norm(radial, axis=1)))
+    return axis.normalized(), opening, radius
 
 
 def oriented_mesh_dimensions(objects):
@@ -474,6 +590,75 @@ def mesh_geometry_fingerprint(obj):
 
 def three_to_blender(value):
     return Vector((value[0], -value[2], value[1]))
+
+
+def project_points_with_camera_sample(points, sample):
+    data = bpy.data.cameras.new("ContactVerificationCameraData")
+    data.sensor_fit = "VERTICAL"
+    data.sensor_height = 36.0
+    data.lens = data.sensor_height / (
+        2.0 * math.tan(math.radians(sample["fov"]) / 2.0)
+    )
+    camera = bpy.data.objects.new("ContactVerificationCamera", data)
+    bpy.context.collection.objects.link(camera)
+    camera.location = three_to_blender(sample["position"])
+    three_quaternion = Quaternion(
+        (
+            sample["quaternion"][3],
+            sample["quaternion"][0],
+            sample["quaternion"][1],
+            sample["quaternion"][2],
+        )
+    )
+    camera.rotation_mode = "QUATERNION"
+    camera.rotation_quaternion = (
+        THREE_TO_BLENDER_BASIS @ three_quaternion.to_matrix()
+    ).to_quaternion()
+    previous_resolution = (scene.render.resolution_x, scene.render.resolution_y)
+    scene.render.resolution_x, scene.render.resolution_y = sample["viewport"]
+    bpy.context.view_layer.update()
+    projected = [
+        world_to_camera_view(scene, camera, point) for point in points
+    ]
+    visible = [point for point in projected if point.z > 0.0]
+    scene.render.resolution_x, scene.render.resolution_y = previous_resolution
+    bpy.data.objects.remove(camera, do_unlink=True)
+    bpy.data.cameras.remove(data)
+    if not visible:
+        return None
+    minimum_x = min(point.x for point in visible)
+    maximum_x = max(point.x for point in visible)
+    minimum_y = 1.0 - max(point.y for point in visible)
+    maximum_y = 1.0 - min(point.y for point in visible)
+    clipped_width = max(
+        0.0, min(1.0, maximum_x) - max(0.0, minimum_x)
+    )
+    clipped_height = max(
+        0.0, min(1.0, maximum_y) - max(0.0, minimum_y)
+    )
+    return {
+        "projected_bounds": (
+            minimum_x,
+            minimum_y,
+            maximum_x,
+            maximum_y,
+        ),
+        "clipped_area": clipped_width * clipped_height,
+    }
+
+
+def shade_opening_points(axis, opening, radius):
+    radial_u = axis.cross(Vector((0.0, 0.0, 1.0)))
+    if radial_u.length <= 1e-8:
+        radial_u = axis.cross(Vector((0.0, 1.0, 0.0)))
+    radial_u.normalize()
+    radial_v = axis.cross(radial_u).normalized()
+    return [opening] + [
+        opening
+        + radial_u * math.cos(index * math.tau / 32.0) * radius
+        + radial_v * math.sin(index * math.tau / 32.0) * radius
+        for index in range(32)
+    ]
 
 
 def project_bounds(objects, pose):
@@ -915,7 +1100,7 @@ if books:
         "books", inventory.get("books", {}), LEGACY_BOOK_MESHES, issues
     )
 
-for asset_id in ("pictureFrame", "lamp"):
+for asset_id in ("pictureFrame",):
     bounds = asset_bounds.get(asset_id)
     if bounds is None:
         continue
@@ -1003,6 +1188,125 @@ if isinstance(lamp_record, dict):
         )
     check_unique_component("lamp", fixture_meshes, issues)
     check_hidden_replacements("lamp", lamp_record, LEGACY_LAMP_MESHES, issues)
+    lamp_anchor = bpy.data.objects.get("scan_lamp")
+    if lamp_anchor is None:
+        issues.append("scan_lamp root is missing")
+    elif len(fixture_meshes) == 1:
+        stored_target = vector_json_property(
+            lamp_anchor,
+            "lazy_a_contact_aim_target",
+            issues,
+            "CONTACT lamp aim target",
+        )
+        stored_axis = vector_json_property(
+            lamp_anchor,
+            "lazy_a_contact_shade_axis",
+            issues,
+            "CONTACT lamp shade axis",
+        )
+        stored_opening = vector_json_property(
+            lamp_anchor,
+            "lazy_a_contact_shade_opening_center",
+            issues,
+            "CONTACT lamp shade opening",
+        )
+        stored_base = vector_json_property(
+            lamp_anchor,
+            "lazy_a_contact_base_center",
+            issues,
+            "CONTACT lamp base center",
+        )
+        expected_target = Vector((-0.35, -0.04, DESK_MAX.z + 0.0016))
+        if stored_target is None or (stored_target - expected_target).length > 1e-6:
+            issues.append(
+                "CONTACT lamp aim target must be the exact contact-paper center"
+            )
+
+        measured_shade = measured_lamp_shade_geometry(fixture_meshes[0])
+        if measured_shade is None:
+            issues.append("CONTACT lamp shade geometry could not be measured")
+        elif stored_axis is not None and stored_opening is not None:
+            measured_axis, measured_opening, measured_radius = measured_shade
+            if os.environ.get("LAZY_A_VERIFY_NEGATIVE_CONTROL") == "lamp-axis":
+                stored_axis.negate()
+            if angle_degrees(stored_axis, measured_axis) > 0.01:
+                issues.append("CONTACT lamp shade-axis metadata differs from geometry")
+            if (stored_opening - measured_opening).length > 1e-5:
+                issues.append("CONTACT lamp shade-opening metadata differs from geometry")
+            if not close(
+                float(
+                    lamp_anchor.get(
+                        "lazy_a_contact_shade_opening_radius", math.inf
+                    )
+                ),
+                measured_radius,
+                1e-5,
+            ):
+                issues.append("CONTACT lamp shade-opening radius differs from geometry")
+            measured_error = angle_degrees(
+                stored_axis, stored_target - stored_opening
+            ) if stored_target is not None else math.inf
+            recorded_error = float(
+                lamp_anchor.get(
+                    "lazy_a_contact_shade_axis_error_degrees", math.inf
+                )
+            )
+            if measured_error > 12.0:
+                issues.append(
+                    f"CONTACT lamp shade misses paper by {measured_error:.3f} degrees"
+                )
+            if not close(measured_error, recorded_error, 1e-5):
+                issues.append(
+                    "CONTACT lamp recorded shade-axis error differs from geometry"
+                )
+            opening_points = shade_opening_points(
+                measured_axis, measured_opening, measured_radius
+            )
+            for profile, desk_camera in CONTACT_DESK_CAMERAS.items():
+                opening_projection = project_points_with_camera_sample(
+                    opening_points, desk_camera
+                )
+                if (
+                    opening_projection is None
+                    or opening_projection["clipped_area"] < 0.00001
+                ):
+                    issues.append(
+                        f"CONTACT lamp practical remains offscreen in the exact approved {profile} desk camera"
+                    )
+
+        lamp_points = mesh_world_points(fixture_meshes)
+        minimum_z = min((point.z for point in lamp_points), default=math.inf)
+        base_points = [
+            point for point in lamp_points if point.z <= minimum_z + 0.03
+        ]
+        measured_base = (
+            Vector(
+                (
+                    sum(point.x for point in base_points) / len(base_points),
+                    sum(point.y for point in base_points) / len(base_points),
+                    minimum_z,
+                )
+            )
+            if base_points
+            else None
+        )
+        if (
+            stored_base is None
+            or measured_base is None
+            or (stored_base - measured_base).length > 1e-6
+        ):
+            issues.append("CONTACT lamp base-center metadata differs from geometry")
+        if base_points:
+            base_min = Vector(
+                min(point[index] for point in base_points) for index in range(3)
+            )
+            base_max = Vector(
+                max(point[index] for point in base_points) for index in range(3)
+            )
+            if not horizontal_contains(
+                DESK_MIN, DESK_MAX, base_min, base_max, CONTACT_TOLERANCE
+            ):
+                issues.append("desk lamp planted base is not supported by Mesh_26")
 
 blanket_bounds = asset_bounds.get("blanket")
 chair_bounds = asset_bounds.get("chair")
@@ -1638,6 +1942,16 @@ if provenance:
                 "build provenance input manifest differs from current build inputs "
                 f"(missing={missing_inputs}, unexpected={unexpected_inputs}, stale={stale_inputs})"
             )
+    fingerprint_payload = json.dumps(
+        expected_inputs, separators=(",", ":"), sort_keys=True
+    )
+    expected_fingerprint = hashlib.sha256(
+        fingerprint_payload.encode("utf-8")
+    ).hexdigest()
+    if provenance.get("build_fingerprint") != expected_fingerprint:
+        issues.append("build provenance fingerprint is not derived from current inputs")
+    if provenance.get("identity_scheme") != "sha256-input-manifest+uuid5":
+        issues.append("build provenance identity scheme is not deterministic")
     if provenance.get("blender_version") != bpy.app.version_string:
         issues.append(
             f"build provenance blender_version={provenance.get('blender_version')} "
@@ -1656,6 +1970,11 @@ if provenance:
         UUID(invocation_id)
     except (ValueError, TypeError, AttributeError):
         issues.append(f"build provenance invocation_id={invocation_id} is not a UUID")
+    expected_invocation_id = str(
+        uuid5(NAMESPACE_URL, f"lazy-a/master/{expected_fingerprint}")
+    )
+    if invocation_id != expected_invocation_id:
+        issues.append("build provenance invocation UUID is not input-derived")
     build_timestamp = provenance.get("build_timestamp")
     try:
         parsed_timestamp = datetime.fromisoformat(build_timestamp.replace("Z", "+00:00"))
@@ -1664,8 +1983,11 @@ if provenance:
         newest_input = max(
             (REPO_ROOT / path).stat().st_mtime for path in expected_inputs
         )
-        if parsed_timestamp.timestamp() + 1.0 < newest_input:
-            issues.append("build provenance timestamp predates a current build input")
+        expected_timestamp = datetime.fromtimestamp(
+            newest_input, timezone.utc
+        ).isoformat().replace("+00:00", "Z")
+        if build_timestamp != expected_timestamp:
+            issues.append("build provenance timestamp is not input-derived")
         if parsed_timestamp > datetime.now(timezone.utc):
             issues.append("build provenance timestamp is in the future")
     except (ValueError, TypeError, AttributeError):
@@ -1765,5 +2087,5 @@ if issues:
 print(
     "MASTER BLEND VERIFIED:",
     ", ".join(sorted(inventory)),
-    "| R3 physical contracts | provenance current | Cycles 192 | AgX 0.25",
+    "| R4 lamp aim | deterministic provenance | Cycles 192 | AgX 0.25",
 )
