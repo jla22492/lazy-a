@@ -65,6 +65,10 @@
 - [x] Independent review correction: post-start transition errors, aborts, and
       stalls retain the photographic endpoint and complete navigation instead
       of leaving the room indefinitely transitioning.
+- [x] Atomic clock hardening: compositor camera and physical hero projection
+      follow decoded plate `mediaTime` only, never the independently advancing
+      media-element clock; a real-Chrome frame-clock gate measures zero active
+      motion delta.
 - [x] Independent review correction: missing pixel-catalog evidence records its
       own failure without skipping the catalog-independent one-shot lifecycle
       behavior; delayed surface, profile swap, and media-fault RED cases pass.

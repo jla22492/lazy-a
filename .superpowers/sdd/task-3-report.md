@@ -129,6 +129,15 @@
   replacement has decoded and is ready to hand off. Its RED compares the last
   actually presented old-profile frame with the first new-profile frame under
   an injected `900ms` delay, separately for forward and reverse motion.
+- Normal-speed desktop film inspection prompted an additional moving-frame
+  alignment audit. Exact GLB projection against authored transition frames
+  confirmed the physical surface corners remain aligned; the apparent extra
+  edge is the print's modeled backing, and the red upper-left shape is real
+  placeholder-film content. The audit still found an avoidable dual-clock risk:
+  camera selection chose the maximum of callback `mediaTime` and element
+  `currentTime`. Camera, projection, and responsive resume now use decoded
+  `mediaTime` exclusively, the compositor callback registers before
+  `VideoTexture`, and the active-motion clock gate measures `0.0000s` delta.
 
 ## Verification
 
@@ -190,8 +199,9 @@
 - `node scripts/verify-compositor-resilience.mjs`: PASS. Delayed hero assets
   remain at frame zero until the physical surface is ready; desktop/phone
   breakpoint swaps preserve atomic profile/media ownership plus forward/reverse
-  in-motion progress; and a post-start plate-video fault retains the photographic
-  endpoint and completes navigation.
+  in-motion progress; camera selection follows the decoded plate clock; and a
+  post-start plate-video fault retains the photographic endpoint and completes
+  navigation.
 - `node scripts/verify-hero-lifecycle.mjs --runtime-only`: PASS `75/75`
   across desktop, tall desktop, landscape tablet, portrait tablet, and phone.
   Every viewport starts once from frame zero after settle, advances through all

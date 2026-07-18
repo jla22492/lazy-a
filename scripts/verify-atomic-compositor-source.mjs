@@ -268,6 +268,16 @@ assert.match(
   /typeof startTime\s*===\s*"function"\s*\?\s*startTime\(\)\s*:\s*startTime/,
   "replacement media must sample transition progress when it is ready to hand off",
 );
+assert.doesNotMatch(
+  sources.compositor,
+  /Math\.max\(\s*media\.mediaTime\.current,\s*media\.video\.currentTime\s*\)/,
+  "camera selection must never run ahead of the decoded plate frame",
+);
+assert.match(
+  sources.compositor,
+  /requestVideoFrameCallback\(observeFrame\)[\s\S]*new VideoTexture\(video\)/,
+  "decoded camera time must register before the video texture presentation callback",
+);
 assert.match(
   sources.compositor,
   /video\.addEventListener\("error",\s*failed\)/,

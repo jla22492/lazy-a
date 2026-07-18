@@ -197,13 +197,15 @@ function loadVideoMedia(
         videoFrameCallback = video.requestVideoFrameCallback(observeFrame);
       }
     };
+    if ("requestVideoFrameCallback" in video) {
+      // Register before VideoTexture so camera/projection time advances before
+      // Three marks the corresponding decoded texture frame for presentation.
+      videoFrameCallback = video.requestVideoFrameCallback(observeFrame);
+    }
     const texture = prepareTexture(new VideoTexture(video));
     const finish = () => {
       resolved = true;
       mediaTime.current = video.currentTime;
-      if ("requestVideoFrameCallback" in video) {
-        videoFrameCallback = video.requestVideoFrameCallback(observeFrame);
-      }
       resolve({
         asset,
         texture,
@@ -402,7 +404,7 @@ export function PlateCompositor({
     const resumeTime = () =>
       previous?.video &&
       previous.asset.id === compactTransitionId(state.transition)
-        ? Math.max(previous.mediaTime.current, previous.video.currentTime)
+        ? previous.mediaTime.current
         : 0;
     const run = ++runRef.current;
     const transition = transitionAsset(manifest, variant, state.transition);
@@ -494,9 +496,7 @@ export function PlateCompositor({
     }
     const frames = media.asset.projectionFrames;
     const activeProfileSize = plateManifest.variants[media.variant];
-    const mediaTime = media.video
-      ? Math.max(media.mediaTime.current, media.video.currentTime)
-      : 0;
+    const mediaTime = media.mediaTime.current;
     const frameIndex = frames?.length
       ? Math.min(
           Math.round(mediaTime * (media.asset.fps ?? 30)),

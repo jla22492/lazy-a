@@ -302,6 +302,93 @@ async function verifyBreakpointTransitionContinuity() {
   );
 }
 
+async function verifyDecodedPlateClock() {
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 720 },
+  });
+  const page = await context.newPage();
+  await page.addInitScript(
+    ({ eventName }) => {
+      window.__decodedPlateTimes = {};
+      window.__decodedPlateClockProbe = [];
+      const nativeRequestVideoFrameCallback =
+        HTMLVideoElement.prototype.requestVideoFrameCallback;
+      HTMLVideoElement.prototype.requestVideoFrameCallback = function request(
+        callback,
+      ) {
+        return nativeRequestVideoFrameCallback.call(this, (now, metadata) => {
+          if (this.dataset.lazyAPlate) {
+            window.__decodedPlateTimes[this.dataset.lazyAPlate] =
+              metadata.mediaTime;
+          }
+          callback(now, metadata);
+        });
+      };
+      window.addEventListener(eventName, (event) => {
+        const detail = event.detail;
+        const transition = detail?.plateSource
+          ?.split("/")
+          .at(-1)
+          ?.replace(/\.mp4$/, "");
+        const decoded = window.__decodedPlateTimes[transition];
+        if (transition === "desk-films" && Number.isFinite(decoded)) {
+          window.__decodedPlateClockProbe.push({
+            decoded,
+            selected: detail.plateMediaTime,
+          });
+        }
+      });
+    },
+    { eventName: compositorEvent },
+  );
+  try {
+    await page.goto(url, { waitUntil: "load" });
+    await waitForDesk(page);
+    await page.evaluate(() =>
+      window.__lazyACameraDebug.requestDestination("films"),
+    );
+    await page.waitForFunction(
+      () => {
+        const snapshot = window.__lazyACameraDebug?.snapshot?.();
+        return snapshot?.endpoint === "films" && snapshot?.phase === "resting";
+      },
+      null,
+      { timeout: 6_000 },
+    );
+    const samples = await page.evaluate(() => window.__decodedPlateClockProbe);
+    const terminalDecodedTime = Math.max(
+      ...samples.map(({ decoded }) => decoded),
+    );
+    const activeSamples = samples.filter(
+      ({ decoded }) => decoded < terminalDecodedTime - 1e-6,
+    );
+    const deltas = activeSamples.map(
+      ({ decoded, selected }) => selected - decoded,
+    );
+    const maximumError = Math.max(...deltas.map(Math.abs));
+    const worst =
+      activeSamples[
+        deltas.findIndex((delta) => Math.abs(delta) === maximumError)
+      ];
+    const mismatches = activeSamples
+      .filter(({ decoded, selected }) => Math.abs(selected - decoded) > 1 / 60)
+      .slice(0, 8);
+    assert.ok(
+      activeSamples.length >= 12,
+      `active decoded clock samples=${activeSamples.length}`,
+    );
+    assert.ok(
+      maximumError <= 1 / 60,
+      `camera/decoded plate mismatch ${maximumError.toFixed(4)}s: ${JSON.stringify({ worst, mismatches })}`,
+    );
+    console.log(
+      `PASS compositor camera follows decoded plate time (max ${maximumError.toFixed(4)}s)`,
+    );
+  } finally {
+    await context.close();
+  }
+}
+
 async function verifyPostStartMediaFault() {
   const context = await browser.newContext({
     viewport: { width: 1280, height: 720 },
@@ -357,6 +444,7 @@ const cases = [
   ["surface", verifyDelayedHeroSurface],
   ["breakpoint", verifyBreakpointProfileSwap],
   ["motion", verifyBreakpointTransitionContinuity],
+  ["clock", verifyDecodedPlateClock],
   ["fault", verifyPostStartMediaFault],
 ];
 try {
