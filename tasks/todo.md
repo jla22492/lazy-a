@@ -28,8 +28,8 @@
 - [x] Replace the split JOURNAL motion with one readable hip-pivot path.
 - [x] Re-author CONTACT's visible practical and one-second activation beat.
 - [x] Replace the non-atomic hero overlay and low-resolution occlusion path.
-- [ ] Regenerate and encode affected wide and portrait room media.
-- [ ] Run full local source, browser, clock, performance, and visual batteries.
+- [x] Regenerate and encode affected wide and portrait room media.
+- [x] Run full local source, browser, clock, performance, and visual batteries.
 - [ ] Push and verify the deployed Pages candidate.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
 
@@ -72,17 +72,53 @@
 - [x] Independent review correction: missing pixel-catalog evidence records its
       own failure without skipping the catalog-independent one-shot lifecycle
       behavior; delayed surface, profile swap, and media-fault RED cases pass.
-- [ ] The complete five-viewport desk plus FILMS/JOURNAL/CONTACT/ABOUT
+- [x] The complete five-viewport desk plus FILMS/JOURNAL/CONTACT/ABOUT
       forward/reverse early/mid/late browser-presented reference catalog is
-      generated and cryptographically pinned to immutable offline authoring assets;
-      blocked on Task 4's final 58-frame CONTACT media.
-- [ ] The final catalog-backed lifecycle gate passes. Build, TypeScript, targeted
-      lint, source/geometry, real-Chrome occlusion, arrival continuity, resilience,
-      and desktop/phone visual inspection pass; the catalog-independent lifecycle
-      is `75/75` and the default gate remains at the expected catalog-only boundary.
+      generated and cryptographically pinned to immutable offline authoring assets:
+      130 bindings, 390 reference images, and 12 active depth occluders per profile.
+- [x] The final catalog-backed lifecycle gate passes `465/465` across desktop,
+      tall-desktop, landscape tablet, portrait tablet, and phone. Build,
+      TypeScript, targeted lint, source/geometry, real-Chrome occlusion, arrival
+      continuity, resilience, and four normal-speed review films also pass.
 - [x] Task 3 report records RED, implementation, verification, self-review,
       exact committed files, enumerated obligation audit, and any remaining
       concerns without claiming R4 creative completion.
+
+## Local Technical Review Candidate Audit
+
+1. ✅ Hero lighting continuity shipped + five-viewport final-pixel catalog:
+   still-to-first-live delta is exactly zero and the live film retains the
+   authored room treatment through playback.
+2. ✅ Hero physical registration shipped + `465/465` lifecycle gate: the print
+   remains stationary through desk and all four destination transitions,
+   including breakpoint changes and direct destination switches.
+3. ✅ Foreground coherence shipped + authored depth and local-edge proof:
+   leaning card, production sheet, pencils, and all crossing objects occlude
+   the film through profile-correct geometry rather than a resampled mask.
+4. ✅ One-shot playback shipped + lifecycle/resilience gate: playback begins
+   only after settle and first compositor presentation, continues through
+   navigation, ends once, and holds its natural final frame.
+5. ✅ JOURNAL choreography shipped + camera-state and normal-speed film proof:
+   one coupled forward/downward hip pivot settles into a readable notebook POV
+   without the rejected pause, desk-height dip, or late side twist.
+6. ✅ CONTACT practical shipped + 16-check reveal gate: the lamp visibly turns
+   on at the stationary desk, holds for `1.0s`, illuminates the physical
+   indentation, then performs the approved camera move and clean reverse.
+7. ✅ Physical navigation shipped + dense 2,501-point/profile scan and dwell
+   proof: four separated graphite rows open only their named destinations;
+   gaps and margins select nothing.
+8. ✅ Arrival and destination routing shipped + five-viewport continuity and
+   camera gates: 79/79 arrival samples, exact desk restoration, and an
+   observable desk handoff between direct destination switches.
+9. ✅ Timing and performance shipped locally + live instrumentation:
+   settle `3.09s`, magic `4.94s`, JOURNAL target `0.08s`, median `59.9fps`,
+   `2.37MB` pre-settle, and `11.28MB` total.
+10. ✅ Responsive visual review captured + normal-speed desktop, tall-desktop,
+    landscape-tablet, and phone films plus original-resolution JOURNAL and
+    CONTACT proof frames.
+11. ⚠️ Deployment verification pending this closeout step.
+12. ⚠️ Jonathan's explicit visual approval remains open. Passing the technical
+    audit authorizes review but cannot certify the creative quality bar.
 
 ---
 

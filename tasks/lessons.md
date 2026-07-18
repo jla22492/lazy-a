@@ -54,3 +54,18 @@
 - Capture continuity state at the actual media handoff, not when replacement loading begins. A slow responsive asset can make an initially correct resume timestamp stale while the currently presented camera keeps moving.
 - A one-shot review journey may outlast the hero film after longer approved camera beats. Motion proof must reject pauses, rewinds, or restarts while allowing the natural ended state and final-frame hold at later destinations.
 - A media element's `currentTime` can lead its decoded, painted frame by one frame. Camera and physical-overlay projection must use `requestVideoFrameCallback().mediaTime` exclusively or thin foreground edges and the poster itself will visibly separate during motion.
+- A finite one-shot film must be verified against an authored frame schedule and pinned frame rate, not container duration alone; the final natural frame may outlive the nominal timeline interval.
+- Producer and consumer evidence must share one trace contract. Pin every source hash, route identity, profile, frame index, and physical-plane relationship so regenerated references cannot silently describe a different scene.
+- `loadeddata` proves media availability, not first-frame presentation. Pair decoded readiness with a compositor presentation handshake before allowing playback.
+- Updating a `VideoTexture` source or seek does not guarantee a fresh GPU upload. The runtime must mark the texture for update at the decoded callback that owns the presented frame.
+- Browser seeks at authored frame boundaries can resolve to an adjacent decoded frame. Sample the center of the authored frame interval when exact source identity matters.
+- `requestVideoFrameCallback().presentedFrames` is not a stable content identifier across reloads, seeks, or responsive replacement. Use callback `mediaTime` mapped through the pinned frame rate.
+- Whole-surface registration and local foreground-edge correspondence prove different things. Run both: a globally stationary poster can still tear around a pencil, and a locally plausible edge can hide global drift.
+- Evidence capture must freeze the exact camera and media sample while asynchronous screenshots are written. Otherwise the captured pixels can belong to a later frame than their recorded projection metadata.
+- Responsive depth geometry must describe the same canonical physical plane as its profile's navigation hit geometry. A visually similar proxy in another crop can make correct labels and incorrect occlusion coexist.
+- A state machine can pass through the settled desk in a microtask without ever presenting that state. Route direct destination switches through the next animation frame so the visitor sees the physical handoff.
+- Protect the pre-settle budget by keeping lightweight geometry resident while deferring treatment textures, hero media, and the settled desk still until the arrival completes.
+- A browser tool's screenshot preview can crop a declared viewport. Judge full composition from saved full-width proof frames or review films before diagnosing a layout crop.
+- Screenshot-heavy browser gates compete for compositor timing when run in parallel. Run motion and final-pixel evidence captures in isolation; parallelize only source-level checks.
+- Compare visual deltas between frames from the same media path. A JPEG endpoint and an H.264 transition frame can differ from codec/color handling before any authored effect is applied.
+- When a browser verifier needs one exact rendered frame, capture the Canvas synchronously inside the qualifying animation frame. An asynchronous page screenshot can land after a short stationary beat has already crossed into camera motion.

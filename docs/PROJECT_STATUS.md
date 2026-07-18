@@ -14,7 +14,8 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R4 IN PROGRESS — PHYSICAL CONTINUITY CORRECTIONS. Jonathan's full-motion
+0117-R4 LOCAL TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING.
+Jonathan's full-motion
 review accepted the room's substantial R3 progress but rejected three remaining
 behaviors. The living hero changes saturation, drifts against its poster during
 camera motion, draws over the leaning card, and tears around pencil silhouettes.
@@ -40,15 +41,14 @@ design is
 R3's prior automated passes remain historical evidence, not acceptance.
 
 The R4 authored-source checkpoint is independently reviewed and pushed through
-`59605a6`. The pinned Blender master now preserves the approved room and natural
-rigid lamp placement; JOURNAL follows one monotone forward-and-down reading
-path; CONTACT ties its visible bulb and desk pool to one soft practical, holds
-the camera for the approved second, and keeps the portrait crop's light
-physically derived from that same offscreen lamp. The hero compositor artifact,
-room-treatment bake, evaluated foreground geometry, exact camera paths, and
-activation curve are source-hashed and behaviorally guarded. Runtime atomic
-compositing, final motion media, local/deployed browser proof, and Jonathan's
-visual approval remain open.
+`59605a6`. The runtime now presents the photographic plate, living print, and
+profile-aware foreground depth on one decoded frame clock. The complete
+five-viewport final-pixel catalog passes `465/465`; arrival, camera, physical
+navigation, CONTACT, fallbacks, clock, and performance pass locally. Normal-speed
+desktop, tall-desktop, landscape-tablet, and phone journeys have been captured
+and visually inspected. Deployment verification is the remaining technical
+closeout step. Jonathan's explicit visual approval remains open and cannot be
+self-certified.
 
 ---
 
@@ -210,11 +210,10 @@ visual approval remain open.
 
 ## In Progress
 
-WORK ORDER 0117-R4 — atomic runtime integration. The reviewed authored source is
-locked and pushed. The current implementation step moves the photographic plate,
-hero surface, and evaluated foreground depth into one Canvas and one presented
-frame clock. Final wide/portrait motion renders, normal-speed review films,
-local/deployed batteries, and Jonathan's visual decision follow that integration.
+WORK ORDER 0117-R4 — local technical review candidate. The authored source,
+atomic compositor, final motion media, five-viewport browser catalog, normal-speed
+review films, and local timing/performance battery are ready. The remaining
+technical step is deployed Pages verification; Jonathan's visual decision follows.
 
 ---
 

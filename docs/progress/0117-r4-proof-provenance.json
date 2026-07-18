@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-07-18T08:50:17.035376+00:00",
+  "masterBuildInvocationId": "47a0c209-563b-5cb9-9d41-d3dfebe80685",
+  "masterBuilderSha256": "550cf82ef7327cee89b4f2bbf08f5d1a18c80127eb9a5922577c726620a7078a",
+  "outputs": {
+    "portrait-contact.jpg": {
+      "bytes": 39190,
+      "sha256": "e8f28f7ea764b1f022086e8a43f86cfb5f52b13e0cec5825d3146d01e78c0a25"
+    },
+    "portrait-journal.jpg": {
+      "bytes": 33029,
+      "sha256": "51fc35eee6eb0654dd20885a37a5c82cccbeeea1df531b5552e2928449f56e35"
+    },
+    "wide-contact.jpg": {
+      "bytes": 107857,
+      "sha256": "4f5c6103c521b44f74fe142378d1009b8c388c152c25ed959d72f2f66944d6d3"
+    },
+    "wide-journal.jpg": {
+      "bytes": 83532,
+      "sha256": "39ac92743c7653b98ff25c4b68102322801fb85529aa2bb4f570daf00fea3d04"
+    }
+  },
+  "renderer": "scripts/render-master-shots.py",
+  "rendererSha256": "142fced77466544a82a0124ec11872f5826374b14bacdc2debaaf62355a14cdd",
+  "samples": 8,
+  "selectors": [
+    "portrait:contact",
+    "portrait:journal",
+    "wide:contact",
+    "wide:journal"
+  ],
+  "sourceBlend": "build/wo-0117-r/master.blend",
+  "sourceBlendSha256": "d81279bba63ebb928c3605f5118d5af6c2f449b40051a6a44e25f34ee9d292ac"
+}

@@ -1,11 +1,10 @@
 # BUILD REPORT
 
-WORK ORDER 0117-R4 IN PROGRESS — PHYSICAL CONTINUITY CORRECTIONS
+WORK ORDER 0117-R4 LOCAL TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
 
 Version:
 
-v0.1 — approved design, reproduced failures, and reviewed authored-source
-checkpoint
+v0.1 — local technical review candidate
 
 Observed Result:
 
@@ -74,10 +73,81 @@ Verification Status:
 
 - Design and acceptance criteria — APPROVED.
 - Authored source and physical-continuity contracts — APPROVED and pushed.
-- Atomic runtime integration — IN PROGRESS.
-- Regenerated final media, browser battery, deployment, and Jonathan's final
-  visual approval — OPEN.
+- Atomic runtime integration and regenerated final media — PASS locally.
+- Five-viewport catalog-backed hero lifecycle — PASS `465/465`.
+- Arrival, camera, physical navigation, dwell, CONTACT, fallback, timing,
+  performance, TypeScript, targeted lint, formatting, and production build —
+  PASS locally.
+- Normal-speed desktop, tall-desktop, landscape-tablet, and phone films were
+  captured and visually inspected.
+- Deployment verification and Jonathan's final visual approval — OPEN.
 - No completion claim is made.
+
+Local Behavioral Verification:
+
+- Hero lifecycle — PASS `465/465` at 1280x720, 1316x1329, 1024x768, 768x1024,
+  and 375x812. Still-to-first-live pixel delta is zero; poster translation is
+  zero; foreground edges retain local correspondence; playback starts once,
+  survives navigation, ends naturally once, and holds.
+- Hero source/geometry — PASS: 13 authored depth meshes, 12 active occluders
+  per profile, `43,247` triangles, canonical profile navigation planes, pinned
+  relationship SHA-256
+  `1339de879c4e9f7149e4169660270e7e5e525d46ae0df2694f01330fcd603d30`.
+- Presented-pixel catalog — PASS: 130 schedule bindings and 390 generated
+  source/composite/region images, all pinned to immutable authoring hashes.
+- Arrival — PASS `79/79` at all five viewport classes with zero camera error,
+  zero held-endpoint error, and zero endpoint-pixel delta.
+- Camera states — PASS: JOURNAL remains one coupled readable downward motion;
+  FILMS, CONTACT, and ABOUT preserve approved framing; direct switches visibly
+  pass through the settled desk; all returns restore the exact desk camera.
+- Physical navigation — PASS: dense 2,501-point scans on desktop and phone
+  contain no overlap or false region; each row opens only its destination and
+  every gap/margin opens none. Dwell flyby/rest/release passes for all four.
+- CONTACT — PASS `16/16`: exact three-line copy, fixed physical indentation,
+  visible practical activation, `1.0s` stationary comprehension beat, soft
+  lamp-derived pool, approved camera move, clean reverse, and no DOM overlay.
+- Timing — PASS: settle `3.09s`; magic `4.94s`; physical JOURNAL target
+  `0.08s`.
+- Performance — PASS: median `59.9fps`; `2.37MB` pre-settle; `11.28MB` total;
+  reverse arrival is not preloaded.
+- Source/build — PASS: saved Blender master/provenance, six endpoints x two
+  profiles, JOURNAL and CONTACT shot contracts, media/encode parity, atomic
+  compositor source, TypeScript, targeted ESLint, Prettier, Python compile,
+  diff check, and optimized Next.js build.
+
+Local Review Evidence:
+
+- `docs/progress/0117-r4-review-desktop.webm`
+- `docs/progress/0117-r4-review-tall.webm`
+- `docs/progress/0117-r4-review-tablet.webm`
+- `docs/progress/0117-r4-review-phone.webm`
+- `docs/progress/0117-r4-proof-wide-journal.jpg`
+- `docs/progress/0117-r4-proof-portrait-journal.jpg`
+- `docs/progress/0117-r4-proof-wide-contact.jpg`
+- `docs/progress/0117-r4-proof-portrait-contact.jpg`
+
+Enumerated 0117-R4 Audit:
+
+1. ✅ Hero grade remains identical between still and playback + exact
+   still-to-first-live pixel gate at five viewports.
+2. ✅ Hero stays on its physical print through every camera move + whole-surface
+   registration and local foreground-edge gates.
+3. ✅ Leaning card and pencil silhouettes occlude correctly + profile-aware
+   authored depth geometry and delivery-resolution presented references.
+4. ✅ Hero plays once after settle, continues during navigation, ends once, and
+   holds + lifecycle and delayed/faulted media behavioral tests.
+5. ✅ JOURNAL is one human forward/downward bend into readable copy + generated
+   camera contract, browser camera-state gate, and normal-speed films.
+6. ✅ CONTACT visibly turns on the physical lamp, waits one second, illuminates
+   the indentation, then moves + source, pixel, timing, reverse, and film proof.
+7. ✅ Existing room, prop, logo-card, navigation, FILMS, ABOUT, arrival, and
+   settled-camera locks remain intact + source, camera, dense-grid, fallback,
+   five-viewport continuity, and visual-review gates.
+8. ✅ Local clock and performance remain inside the sprint criteria +
+   instrumented production-build measurements.
+9. ⚠️ Deployed Pages proof is pending the final closeout step.
+10. ⚠️ Jonathan's explicit full-motion visual approval remains open. This is a
+    technical review candidate, not a creative-completion claim.
 
 ---
 
