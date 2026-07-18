@@ -44,6 +44,7 @@ const PLATE_VERTEX_SHADER = `
     gl_Position = vec4(position.xy, 0.0, 1.0);
   }
 `;
+const HERO_FIRST_FRAME_PRESENTED = "lazy-a:hero-first-frame-presented";
 
 const PLATE_FRAGMENT_SHADER = `
   uniform sampler2D plateMap;
@@ -70,6 +71,7 @@ export interface CompositorFrame {
   projection: PlateProjectionFrame;
   mediaTime: number;
   frameIndex: number;
+  variant: PlateVariant;
 }
 
 export type PlateStatus = "ready" | "transitioning" | "retained";
@@ -79,6 +81,8 @@ export interface CompositorDiagnostic {
   plateMediaTime: number;
   projectionFrame: number;
   heroFramePresented: number;
+  profile: PlateVariant;
+  plateSource: string;
   treatment: "calibrated-room-transfer";
   occlusion: "authored-depth-geometry";
 }
@@ -97,6 +101,8 @@ interface ActivePlateMedia {
   texture: Texture;
   video: HTMLVideoElement | null;
   mediaTime: RefObject<number>;
+  variant: PlateVariant;
+  onFault: (listener: () => void) => () => void;
   dispose: () => void;
 }
 
@@ -129,7 +135,10 @@ function prepareTexture(texture: Texture): Texture {
   return texture;
 }
 
-async function loadImageMedia(asset: PlateAsset): Promise<ActivePlateMedia> {
+async function loadImageMedia(
+  asset: PlateAsset,
+  variant: PlateVariant,
+): Promise<ActivePlateMedia> {
   const texture = prepareTexture(
     await new TextureLoader().loadAsync(asset.src),
   );
@@ -139,11 +148,17 @@ async function loadImageMedia(asset: PlateAsset): Promise<ActivePlateMedia> {
     texture,
     video: null,
     mediaTime,
+    variant,
+    onFault: () => () => {},
     dispose: () => texture.dispose(),
   };
 }
 
-function loadVideoMedia(asset: PlateAsset): Promise<ActivePlateMedia> {
+function loadVideoMedia(
+  asset: PlateAsset,
+  variant: PlateVariant,
+  startTime = 0,
+): Promise<ActivePlateMedia> {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
     video.preload = "auto";
@@ -155,10 +170,16 @@ function loadVideoMedia(asset: PlateAsset): Promise<ActivePlateMedia> {
     video.disablePictureInPicture = true;
     video.dataset.lazyAPlate = asset.id;
     const mediaTime = { current: 0 };
+    const faultListeners = new Set<() => void>();
     let videoFrameCallback = 0;
-    const cleanupListeners = () => {
+    let resolved = false;
+    const cleanupLoadListener = () => {
       video.removeEventListener("loadeddata", loaded);
+    };
+    const cleanupListeners = () => {
+      cleanupLoadListener();
       video.removeEventListener("error", failed);
+      video.removeEventListener("abort", failed);
     };
     const dispose = () => {
       cleanupListeners();
@@ -177,21 +198,52 @@ function loadVideoMedia(asset: PlateAsset): Promise<ActivePlateMedia> {
       }
     };
     const texture = prepareTexture(new VideoTexture(video));
-    const loaded = () => {
-      cleanupListeners();
-      video.currentTime = 0;
-      mediaTime.current = 0;
+    const finish = () => {
+      resolved = true;
+      mediaTime.current = video.currentTime;
       if ("requestVideoFrameCallback" in video) {
         videoFrameCallback = video.requestVideoFrameCallback(observeFrame);
       }
-      resolve({ asset, texture, video, mediaTime, dispose });
+      resolve({
+        asset,
+        texture,
+        video,
+        mediaTime,
+        variant,
+        onFault(listener) {
+          faultListeners.add(listener);
+          return () => faultListeners.delete(listener);
+        },
+        dispose,
+      });
+    };
+    const loaded = () => {
+      cleanupLoadListener();
+      const boundedStart = Math.min(
+        Math.max(0, startTime),
+        Number.isFinite(video.duration)
+          ? Math.max(0, video.duration - 1 / (asset.fps ?? 30))
+          : 0,
+      );
+      if (boundedStart <= 0.001) {
+        video.currentTime = 0;
+        finish();
+        return;
+      }
+      video.addEventListener("seeked", finish, { once: true });
+      video.currentTime = boundedStart;
     };
     const failed = () => {
+      if (resolved) {
+        for (const listener of faultListeners) listener();
+        return;
+      }
       dispose();
       reject(new Error(`Plate video failed: ${asset.id}`));
     };
     video.addEventListener("loadeddata", loaded, { once: true });
-    video.addEventListener("error", failed, { once: true });
+    video.addEventListener("error", failed);
+    video.addEventListener("abort", failed);
     video.src = asset.src;
     video.load();
   });
@@ -243,8 +295,7 @@ export function PlateCompositor({
   const frameRef = useRef<CompositorFrame | null>(null);
   const runRef = useRef(0);
   const mountedRef = useRef(true);
-  const requestedTransitionRef = useRef<string | null>(null);
-  const { presentedFrames } = useHeroMedia();
+  const { phase: heroPhase, presentedFrames } = useHeroMedia();
   const profileSize = plateManifest.variants[variant];
   const uniforms = useMemo(
     () => ({
@@ -293,7 +344,7 @@ export function PlateCompositor({
           variant,
           target as Parameters<typeof endpointAsset>[2],
         );
-        const fallback = await loadImageMedia(endpoint);
+        const fallback = await loadImageMedia(endpoint, variant);
         if (!mountedRef.current || runRef.current !== run) {
           fallback.dispose();
           return;
@@ -314,16 +365,14 @@ export function PlateCompositor({
   );
 
   useEffect(() => {
-    mountedRef.current = true;
-    const run = runRef.current;
-    const opening = endpointAsset(manifest, variant, "opening");
-    void loadImageMedia(opening)
+    if (state.phase === "transitioning") return;
+    if (activeMediaRef.current?.variant === variant) return;
+    const run = ++runRef.current;
+    const endpoint = endpointAsset(manifest, variant, state.endpoint);
+    onStatusChange("transitioning");
+    void loadImageMedia(endpoint, variant)
       .then((media) => {
-        if (
-          !mountedRef.current ||
-          runRef.current !== run ||
-          requestedTransitionRef.current
-        ) {
+        if (!mountedRef.current || runRef.current !== run) {
           media.dispose();
           return;
         }
@@ -331,23 +380,32 @@ export function PlateCompositor({
         onStatusChange("ready");
       })
       .catch(() => onStatusChange("retained"));
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [manifest, onStatusChange, replaceMedia, variant]);
+  }, [
+    manifest,
+    onStatusChange,
+    replaceMedia,
+    state.endpoint,
+    state.phase,
+    variant,
+  ]);
 
   useEffect(() => {
     if (state.phase !== "transitioning" || !state.transition) return;
     const experience = { ...state };
+    const previous = activeMediaRef.current;
+    const resumeTime =
+      previous?.video && previous.asset.id === state.transition
+        ? Math.max(previous.mediaTime.current, previous.video.currentTime)
+        : 0;
     const run = ++runRef.current;
-    requestedTransitionRef.current = state.transition;
     const transition = transitionAsset(manifest, variant, state.transition);
     onStatusChange("transitioning");
     if (!transition) {
       void retainFallback(experience, run, transition);
       return;
     }
-    void loadVideoMedia(transition)
+    let releaseTransitionWatch = () => {};
+    void loadVideoMedia(transition, variant, resumeTime)
       .then((media) => {
         if (!mountedRef.current || runRef.current !== run) {
           media.dispose();
@@ -356,24 +414,47 @@ export function PlateCompositor({
         replaceMedia(media);
         const video = media.video;
         if (!video) return;
-        video.addEventListener(
-          "ended",
-          () => {
-            media.mediaTime.current = video.duration;
-            video.pause();
-            completeTransition(experience, run);
-          },
-          { once: true },
-        );
-        void video.play().catch(() => {
+        let completed = false;
+        let stallTimer = 0;
+        const cleanupWatch = () => {
+          window.clearTimeout(stallTimer);
+          video.removeEventListener("ended", onEnded);
+          video.removeEventListener("playing", armStallWatch);
+          video.removeEventListener("timeupdate", armStallWatch);
+          unsubscribeFault();
+        };
+        const fail = () => {
+          if (completed || runRef.current !== run) return;
+          completed = true;
+          cleanupWatch();
           media.dispose();
           if (activeMediaRef.current === media) {
             activeMediaRef.current = null;
           }
           void retainFallback(experience, run, transition);
-        });
+        };
+        const armStallWatch = () => {
+          window.clearTimeout(stallTimer);
+          stallTimer = window.setTimeout(fail, 2_000);
+        };
+        const onEnded = () => {
+          if (completed) return;
+          completed = true;
+          cleanupWatch();
+          media.mediaTime.current = video.duration;
+          video.pause();
+          completeTransition(experience, run);
+        };
+        const unsubscribeFault = media.onFault(fail);
+        releaseTransitionWatch = cleanupWatch;
+        video.addEventListener("ended", onEnded, { once: true });
+        video.addEventListener("playing", armStallWatch);
+        video.addEventListener("timeupdate", armStallWatch);
+        armStallWatch();
+        void video.play().catch(fail);
       })
       .catch(() => retainFallback(experience, run, transition));
+    return () => releaseTransitionWatch();
   }, [
     completeTransition,
     manifest,
@@ -405,6 +486,7 @@ export function PlateCompositor({
       return;
     }
     const frames = media.asset.projectionFrames;
+    const activeProfileSize = plateManifest.variants[media.variant];
     const mediaTime = media.video
       ? Math.max(media.mediaTime.current, media.video.currentTime)
       : 0;
@@ -434,6 +516,10 @@ export function PlateCompositor({
     publishPlateProjection(projection);
 
     material.uniforms.plateMap.value = media.texture;
+    material.uniforms.sourceSize.value.set(
+      activeProfileSize.width,
+      activeProfileSize.height,
+    );
     material.uniforms.viewportSize.value.set(size.width, size.height);
     material.uniforms.objectPosition.value.copy(objectPosition(media.asset));
     mesh.visible = true;
@@ -442,6 +528,7 @@ export function PlateCompositor({
       projection,
       mediaTime,
       frameIndex,
+      variant: media.variant,
     };
   }, -100);
 
@@ -454,6 +541,8 @@ export function PlateCompositor({
       plateMediaTime: frame.mediaTime,
       projectionFrame: frame.frameIndex,
       heroFramePresented: presentedFrames.current,
+      profile: frame.variant,
+      plateSource: activeMediaRef.current?.asset.src ?? "",
       treatment: "calibrated-room-transfer",
       occlusion: "authored-depth-geometry",
     };
@@ -461,6 +550,9 @@ export function PlateCompositor({
     window.dispatchEvent(
       new CustomEvent("lazy-a:compositor-frame-presented", { detail }),
     );
+    if (heroPhase === "starting" && presentedFrames.current >= 1) {
+      window.dispatchEvent(new Event(HERO_FIRST_FRAME_PRESENTED));
+    }
   }, 1000);
 
   return (

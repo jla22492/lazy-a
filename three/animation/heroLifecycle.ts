@@ -1,4 +1,5 @@
-export type HeroPhase = "preloading" | "armed" | "playing" | "held" | "failed";
+export type HeroPhase =
+  "preloading" | "armed" | "starting" | "playing" | "held" | "failed";
 
 export interface HeroState {
   phase: HeroPhase;
@@ -27,9 +28,12 @@ export function heroLifecycleReducer(
         ? { ...state, phase: "armed" }
         : state;
     case "DESK_SETTLED":
-    case "PLAYING":
       return state.phase === "armed" && state.playCount === 0
-        ? { phase: "playing", playCount: 1 }
+        ? { phase: "starting", playCount: 1 }
+        : state;
+    case "PLAYING":
+      return state.phase === "starting"
+        ? { ...state, phase: "playing" }
         : state;
     case "ENDED":
       return state.phase === "playing" ? { ...state, phase: "held" } : state;

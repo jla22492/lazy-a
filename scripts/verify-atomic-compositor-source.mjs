@@ -21,7 +21,10 @@ const runtimeFiles = {
   navigation: "components/site/AttentionNavigation.tsx",
   assets: "lib/plateAssets.ts",
   page: "app/page.tsx",
+  heroState: "three/animation/heroLifecycle.ts",
   arrival: "scripts/verify-arrival-continuity.mjs",
+  lifecycle: "scripts/verify-hero-lifecycle.mjs",
+  resilience: "scripts/verify-compositor-resilience.mjs",
 };
 
 function read(relativePath) {
@@ -215,6 +218,76 @@ assert.match(
   /nextTexture\.colorSpace\s*=\s*NoColorSpace/,
   "hero video bytes must bypass implicit texture conversion",
 );
+assert.match(
+  sources.film,
+  /!videoReady\s*\|\|\s*!surfaceReady/,
+  "hero READY must wait for both decoded video and physical surface resources",
+);
+assert.match(
+  sources.film,
+  /preload="auto"/,
+  "hero first frame must decode before the settle beat can release playback",
+);
+assert.match(
+  sources.surface,
+  /setSurfaceReady\(true\)/,
+  "the mounted authored surface must explicitly release hero playback",
+);
+assert.match(
+  sources.heroState,
+  /DESK_SETTLED[\s\S]*phase:\s*"starting"[\s\S]*PLAYING[\s\S]*state\.phase\s*===\s*"starting"/,
+  "the hero lifecycle must wait in a pre-play presentation phase",
+);
+assert.match(
+  sources.film,
+  /HERO_FIRST_FRAME_PRESENTED[\s\S]*video\.play\(\)/,
+  "hero playback must wait for the compositor's first-frame presentation",
+);
+assert.match(
+  sources.compositor,
+  /gl\.render\(scene,\s*camera\)[\s\S]*heroPhase\s*===\s*"starting"[\s\S]*presentedFrames\.current\s*>=\s*1[\s\S]*HERO_FIRST_FRAME_PRESENTED/,
+  "the first-frame handshake must be dispatched only after the room is rendered",
+);
+assert.match(
+  sources.compositor,
+  /profile:\s*frame\.variant[\s\S]*plateSource:/,
+  "compositor diagnostics must bind presented profile and plate source",
+);
+assert.match(
+  sources.compositor,
+  /activeProfileSize\s*=\s*plateManifest\.variants\[media\.variant\]/,
+  "plate crop dimensions must follow active media during breakpoint swaps",
+);
+assert.match(
+  sources.compositor,
+  /video\.addEventListener\("error",\s*failed\)/,
+  "plate faults must remain observed after loadeddata",
+);
+assert.match(
+  sources.compositor,
+  /video\.addEventListener\("abort",\s*failed\)/,
+  "plate aborts must remain observed after loadeddata",
+);
+assert.match(
+  sources.compositor,
+  /window\.setTimeout\(fail,\s*2_000\)/,
+  "plate transitions need a bounded post-start stall fallback",
+);
+assert.match(
+  sources.navigation,
+  /compositorFrame\.current\?\.variant\s*!==\s*variant/,
+  "navigation must remain inert while a breakpoint profile swap is pending",
+);
+assert.match(
+  sources.lifecycle,
+  /verifyCatalogIndependentLifecycle/,
+  "one-shot lifecycle behavior must execute without the final pixel catalog",
+);
+assert.match(
+  sources.resilience,
+  /verifyDelayedHeroSurface[\s\S]*verifyBreakpointProfileSwap[\s\S]*verifyPostStartMediaFault/,
+  "slow surface, breakpoint, and post-start fault paths need behavioral coverage",
+);
 assert.equal(
   count(sources.film, /data-lazy-a-hero=/g),
   1,
@@ -260,8 +333,18 @@ for (const legacy of [
   "evaluated-mesh-rle-varint",
   "fixed RGB",
 ]) {
+  const productionSources = [
+    sources.compositor,
+    sources.surface,
+    sources.film,
+    sources.room,
+    sources.stage,
+    sources.navigation,
+    sources.assets,
+    sources.page,
+  ];
   assert.ok(
-    !Object.values(sources).some((source) => source.includes(legacy)),
+    !productionSources.some((source) => source.includes(legacy)),
     `Task 3 runtime must retire ${legacy}`,
   );
 }

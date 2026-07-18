@@ -18,7 +18,7 @@ import {
 import { useHeroMedia } from "@/components/room/HeroFilm";
 import { useCompositorFrame } from "@/components/room/PlateCompositor";
 import { assetPath } from "@/lib/assetPath";
-import { mapPlateQuad, selectPlateVariant } from "@/lib/plateSpace";
+import { mapPlateQuad } from "@/lib/plateSpace";
 import { plateManifest } from "@/three/scene/plateManifest";
 
 const HERO_COMPOSITOR = "/room/hero/hero-compositor.glb";
@@ -59,6 +59,7 @@ interface AuthoredHero {
 declare global {
   interface Window {
     __lazyAHeroProjection?: readonly number[];
+    __lazyAHeroSurfaceReady?: boolean;
   }
 }
 
@@ -69,7 +70,7 @@ declare global {
 export function HeroSurface() {
   const { scene } = useGLTF(assetPath(HERO_COMPOSITOR));
   const loadedTreatment = useTexture(assetPath(HERO_TREATMENT));
-  const { texture, phase } = useHeroMedia();
+  const { texture, phase, setSurfaceReady } = useHeroMedia();
   const compositorFrame = useCompositorFrame();
   const authored = useMemo<AuthoredHero>(() => {
     const cloned = scene.clone(true);
@@ -146,14 +147,24 @@ export function HeroSurface() {
     [occluderMaterial, roomTreatment, surfaceMaterial],
   );
 
+  useEffect(() => {
+    if (!surfaceMaterial) return;
+    setSurfaceReady(true);
+    window.__lazyAHeroSurfaceReady = true;
+    return () => {
+      setSurfaceReady(false);
+      delete window.__lazyAHeroSurfaceReady;
+    };
+  }, [setSurfaceReady, surfaceMaterial]);
+
   useFrame(({ size }) => {
-    const hero = compositorFrame.current?.projection.hero;
+    const frame = compositorFrame.current;
+    const hero = frame?.projection.hero;
     if (!hero) {
       window.__lazyAHeroProjection = undefined;
       return;
     }
-    const variant = selectPlateVariant(size.width);
-    const profile = plateManifest.variants[variant];
+    const profile = plateManifest.variants[frame.variant];
     const mapped = mapPlateQuad(
       hero,
       { width: profile.width, height: profile.height },
@@ -186,7 +197,9 @@ export function HeroSurface() {
           material={surfaceMaterial}
           matrix={authored.surface.matrix}
           matrixAutoUpdate={false}
-          visible={phase === "playing" || phase === "held"}
+          visible={
+            phase === "starting" || phase === "playing" || phase === "held"
+          }
           frustumCulled={false}
           renderOrder={1}
         />

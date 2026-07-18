@@ -46,3 +46,7 @@
 - A successful browser capture is not visual acceptance. Compare presented Canvas pixels against the exact authored source for orientation, exposure, first-frame parity, and foreground crossings before approving the frame.
 - Custom shaders own their texture color conversion. Decode authored sRGB plate and hero bytes exactly once before linear treatment, keep transfer maps as linear data, and gate the final output against browser-presented pixels.
 - Bake a physical poster treatment on the exported front surface with non-overlapping UVs. Baking a full box whose front, rear, and side faces share projected UV space can reconstruct perfectly while producing a near-black false reference.
+- Decoded media is not the same as presented physical media. Release playback only after the source frame, authored surface resources, and a post-render compositor handshake all agree that frame zero reached the room.
+- During responsive media replacement, the active media owns its crop dimensions and projection profile until the replacement is presented. Viewport intent must not mutate half of an atomic frame.
+- Video reliability does not end at `loadeddata`. Keep error and abort observation alive, add a bounded stall watchdog, and retain a photographic endpoint that still completes the requested navigation.
+- A missing proof dependency must fail its own evidence check without short-circuiting independent behavior verification. Catalog absence cannot be allowed to disguise an untested one-shot lifecycle.

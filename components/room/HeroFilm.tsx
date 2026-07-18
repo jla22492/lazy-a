@@ -4,6 +4,7 @@ import {
   createContext,
   type PropsWithChildren,
   type RefObject,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -25,12 +26,14 @@ const HERO_FILM = {
   src: "/videos/hero-print-placeholder.mp4",
   settleBeatSeconds: 1.8,
 } as const;
+const HERO_FIRST_FRAME_PRESENTED = "lazy-a:hero-first-frame-presented";
 
 interface HeroMedia {
   video: HTMLVideoElement | null;
   texture: VideoTexture | null;
   phase: HeroPhase;
   presentedFrames: RefObject<number>;
+  setSurfaceReady: (ready: boolean) => void;
 }
 
 const HeroMediaContext = createContext<HeroMedia | null>(null);
@@ -57,6 +60,8 @@ export function useHeroMedia(): HeroMedia {
  */
 export function HeroFilm({ children }: PropsWithChildren) {
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
+  const [videoReady, setVideoReady] = useState(false);
+  const [surfaceReady, setSurfaceReadyState] = useState(false);
   const [state, dispatch] = useReducer(
     heroLifecycleReducer,
     INITIAL_HERO_STATE,
@@ -67,6 +72,9 @@ export function HeroFilm({ children }: PropsWithChildren) {
   const playAttemptedRef = useRef(false);
   const presentedFramesRef = useRef(0);
   const presentedFrameCallbackRef = useRef(0);
+  const setSurfaceReady = useCallback((ready: boolean) => {
+    setSurfaceReadyState(ready);
+  }, []);
 
   const texture = useMemo(() => {
     if (!video) return;
@@ -87,15 +95,45 @@ export function HeroFilm({ children }: PropsWithChildren) {
   );
 
   useEffect(() => {
-    if (!video || readyRef.current) return;
+    if (!video) return;
+    const observe: VideoFrameRequestCallback = (_now, metadata) => {
+      presentedFramesRef.current = metadata.presentedFrames;
+      if (!video.ended) {
+        presentedFrameCallbackRef.current =
+          video.requestVideoFrameCallback(observe);
+      }
+    };
+    const markVideoReady = () => {
+      // loadeddata guarantees the decoded frame at currentTime=0 is available
+      // to VideoTexture before playback is released.
+      presentedFramesRef.current = 1;
+      setVideoReady(true);
+      if (
+        !presentedFrameCallbackRef.current &&
+        "requestVideoFrameCallback" in video
+      ) {
+        presentedFrameCallbackRef.current =
+          video.requestVideoFrameCallback(observe);
+      }
+    };
+    video.addEventListener("loadeddata", markVideoReady);
+    if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      markVideoReady();
+    }
+    return () => {
+      video.removeEventListener("loadeddata", markVideoReady);
+    };
+  }, [video]);
+
+  useEffect(() => {
+    if (!video || !videoReady || !surfaceReady || readyRef.current) return;
     readyRef.current = true;
-    presentedFramesRef.current = 0;
     dispatch({ type: "READY" });
     if (beatPassedRef.current && !settleDispatchedRef.current) {
       settleDispatchedRef.current = true;
       dispatch({ type: "DESK_SETTLED" });
     }
-  }, [video]);
+  }, [surfaceReady, video, videoReady]);
 
   useEffect(() => {
     let beatTimer = 0;
@@ -125,26 +163,28 @@ export function HeroFilm({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (
-      state.phase !== "playing" ||
+      state.phase !== "starting" ||
       state.playCount !== 1 ||
       !video ||
       playAttemptedRef.current
     ) {
       return;
     }
-    playAttemptedRef.current = true;
-    if ("requestVideoFrameCallback" in video) {
-      const observe: VideoFrameRequestCallback = (_now, metadata) => {
-        presentedFramesRef.current = metadata.presentedFrames;
-        if (!video.ended) {
-          presentedFrameCallbackRef.current =
-            video.requestVideoFrameCallback(observe);
-        }
-      };
-      presentedFrameCallbackRef.current =
-        video.requestVideoFrameCallback(observe);
-    }
-    void video.play().catch(() => dispatch({ type: "FAILED" }));
+    const playAfterFirstPresentation = () => {
+      if (playAttemptedRef.current) return;
+      playAttemptedRef.current = true;
+      void video.play().catch(() => dispatch({ type: "FAILED" }));
+    };
+    window.addEventListener(
+      HERO_FIRST_FRAME_PRESENTED,
+      playAfterFirstPresentation,
+    );
+    return () => {
+      window.removeEventListener(
+        HERO_FIRST_FRAME_PRESENTED,
+        playAfterFirstPresentation,
+      );
+    };
   }, [state, video]);
 
   useEffect(
@@ -170,8 +210,9 @@ export function HeroFilm({ children }: PropsWithChildren) {
       texture: texture ?? null,
       phase: state.phase,
       presentedFrames: presentedFramesRef,
+      setSurfaceReady,
     }),
-    [state.phase, texture, video],
+    [setSurfaceReady, state.phase, texture, video],
   );
 
   return (
@@ -182,7 +223,7 @@ export function HeroFilm({ children }: PropsWithChildren) {
         src={assetPath(HERO_FILM.src)}
         muted
         playsInline
-        preload="none"
+        preload="auto"
         loop={false}
         controls={false}
         disablePictureInPicture

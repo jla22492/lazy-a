@@ -197,11 +197,17 @@ export function AttentionNavigation({
 
   const requestDestination = useCallback(
     (destination: DestinationId): void => {
-      if (!arrivalDone() || !DESTINATIONS.includes(destination)) return;
+      if (
+        !arrivalDone() ||
+        !DESTINATIONS.includes(destination) ||
+        compositorFrame.current?.variant !== variant
+      ) {
+        return;
+      }
       setConversation(destination);
       onExperienceEvent({ type: "SELECT", destination });
     },
-    [onExperienceEvent, setConversation],
+    [compositorFrame, onExperienceEvent, setConversation, variant],
   );
 
   const close = useCallback((): void => {
@@ -321,7 +327,8 @@ export function AttentionNavigation({
       pointerAlive.current &&
       arrivalDone() &&
       current.phase === "resting" &&
-      current.endpoint === "desk"
+      current.endpoint === "desk" &&
+      compositorFrame.current?.variant === variant
     ) {
       const normalized = {
         x: (state.pointer.x + 1) / 2,
@@ -350,9 +357,11 @@ export function AttentionNavigation({
       EndpointId,
     ];
     const destination = (from === "desk" ? to : from) as DestinationId;
-    const authored = profile.transitions[`desk-${destination}`];
     const frame = compositorFrame.current;
-    if (!authored || !frame) return;
+    if (!frame) return;
+    const authored =
+      plateManifest.variants[frame.variant].transitions[`desk-${destination}`];
+    if (!authored) return;
     const progress =
       authored.frames.length > 1
         ? frame.frameIndex / (authored.frames.length - 1)

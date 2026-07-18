@@ -54,14 +54,26 @@
 - [x] `HeroSurface` loads `HeroLiveSurface` and every `HeroOccluder_*` from the
       authored GLB, uses GPU depth for occlusion, and applies the calibrated linear
       additive room-transfer shader to the one hero video texture.
+- [x] Independent review correction: decoded video and the authored physical
+      surface must both be ready, then frame zero must reach the compositor's
+      drawing buffer before the one permitted `play()` call.
+- [x] Independent review correction: breakpoint swaps keep the active media,
+      crop dimensions, projection profile, diagnostics, and physical navigation
+      bound to one variant until the replacement frame is presented.
+- [x] Independent review correction: post-start transition errors, aborts, and
+      stalls retain the photographic endpoint and complete navigation instead
+      of leaving the room indefinitely transitioning.
+- [x] Independent review correction: missing pixel-catalog evidence records its
+      own failure without skipping the catalog-independent one-shot lifecycle
+      behavior; delayed surface, profile swap, and media-fault RED cases pass.
 - [ ] The complete five-viewport desk plus FILMS/JOURNAL/CONTACT/ABOUT
       forward/reverse early/mid/late browser-presented reference catalog is
       generated and cryptographically pinned to immutable offline authoring assets;
       blocked on Task 4's final 58-frame CONTACT media.
 - [ ] The final catalog-backed lifecycle gate passes. Build, TypeScript, targeted
-      lint, source/geometry, real-Chrome occlusion, arrival continuity, and
-      desktop/phone visual inspection pass; lifecycle is `40/45` at the expected
-      catalog-only boundary.
+      lint, source/geometry, real-Chrome occlusion, arrival continuity, resilience,
+      and desktop/phone visual inspection pass; the catalog-independent lifecycle
+      is `75/75` and the default gate remains at the expected catalog-only boundary.
 - [x] Task 3 report records RED, implementation, verification, self-review,
       exact committed files, enumerated obligation audit, and any remaining
       concerns without claiming R4 creative completion.

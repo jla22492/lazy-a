@@ -15,7 +15,10 @@ import { resolve } from "node:path";
 import { chromium } from "playwright";
 import sharp from "sharp";
 
-const url = process.argv[2] ?? "http://localhost:3000/";
+const argumentsList = process.argv.slice(2);
+const url =
+  argumentsList.find((argument) => !argument.startsWith("--")) ??
+  "http://localhost:3000/";
 const VIEWPORTS = [
   { name: "desktop", width: 1280, height: 720, profile: "wide" },
   { name: "tall desktop", width: 1316, height: 1329, profile: "wide" },
@@ -49,6 +52,7 @@ const MIN_TREATMENT_REGION_PIXELS = 64;
 const MIN_TREATMENT_REGION_FRACTION = 0.002;
 const MAX_TRACE_OVERLAP_FRACTION = 0.05;
 const selfTest = process.argv.includes("--self-test");
+const runtimeOnly = argumentsList.includes("--runtime-only");
 
 let failures = 0;
 let checks = 0;
@@ -1402,6 +1406,7 @@ async function installPageProbes(expectedProfile) {
 
       const eventSnapshot = (type, video) => ({
         type,
+        hero: video.dataset.lazyAHero === "true",
         at: performance.now(),
         arrivalDone: window.__arrivalDone === true,
         conversation: window.__lazyAConversation ?? null,
@@ -1759,7 +1764,8 @@ async function installPageProbes(expectedProfile) {
         };
         if (
           heroPlaybackReleased &&
-          snapshot.at >= presented.playbackReleasedAt
+          snapshot.at >= presented.playbackReleasedAt &&
+          detail.heroFramePresented > 0
         ) {
           presented.presentedFramesAfterRelease.push(detail.heroFramePresented);
         }
@@ -1920,7 +1926,7 @@ function heroSnapshot() {
       playStarts: record.playStarts,
       endedEvents: record.endedEvents,
       playEvents: probe.events.filter(
-        (event) => event.type === "play" && event.duration === video.duration,
+        (event) => event.type === "play" && event.hero,
       ),
       currentTime: video.currentTime,
       duration: video.duration,
@@ -2501,6 +2507,116 @@ async function closeDestination(id) {
   }
 }
 
+async function verifyCatalogIndependentLifecycle(viewport, label) {
+  await releaseHeroPlayback();
+  const started = await waitForHero(
+    (snapshot) => snapshot.playStarts >= 1,
+    8_000,
+  );
+  const afterStart = await heroSnapshot();
+  const firstPlay = afterStart.playEvents[0];
+  check(
+    afterStart.playCalls === 1 && afterStart.playStarts === 1,
+    `${label} runtime-only one play start after settle`,
+    `calls=${afterStart.playCalls} starts=${afterStart.playStarts}`,
+  );
+  check(
+    Boolean(firstPlay?.arrivalDone) &&
+      firstPlay.currentTime <= TIME_EPSILON * 2,
+    `${label} runtime-only play starts from zero after settle`,
+    firstPlay
+      ? `arrivalDone=${firstPlay.arrivalDone} currentTime=${fixed(firstPlay.currentTime)}`
+      : `no play event; currentTime=${fixed(started.currentTime)}`,
+  );
+
+  const playbackSnapshots = [];
+  let allDestinationsOpened = true;
+  let allDeskReturns = true;
+  for (const destination of DESTINATIONS) {
+    const beforeOpen = await heroSnapshot();
+    const opened = await openDestination(destination);
+    const afterOpen = await heroSnapshot();
+    playbackSnapshots.push(afterOpen);
+    allDestinationsOpened &&= opened.ok;
+    if (destination === "films") {
+      check(
+        opened.ok &&
+          afterOpen.currentTime > beforeOpen.currentTime + 0.2 &&
+          !afterOpen.paused,
+        `${label} runtime-only playback advances while navigation opens`,
+        `${fixed(beforeOpen.currentTime)} -> ${fixed(afterOpen.currentTime)} paused=${afterOpen.paused}`,
+      );
+    }
+    const closed = await closeDestination(destination);
+    const afterClose = await heroSnapshot();
+    playbackSnapshots.push(afterClose);
+    allDeskReturns &&= closed.ok;
+  }
+
+  const monotonicPlayback = playbackSnapshots.every(
+    (snapshot, index) =>
+      index === 0 ||
+      snapshot.currentTime + TIME_EPSILON >=
+        playbackSnapshots[index - 1].currentTime,
+  );
+  const oneShotPlayback = playbackSnapshots.every(
+    (snapshot) => snapshot.playCalls === 1 && snapshot.playStarts === 1,
+  );
+  check(
+    allDestinationsOpened &&
+      allDeskReturns &&
+      monotonicPlayback &&
+      oneShotPlayback,
+    `${label} runtime-only navigation preserves one-shot playback`,
+    `samples=${playbackSnapshots.map((snapshot) => fixed(snapshot.currentTime)).join(" -> ")} calls=${playbackSnapshots.at(-1)?.playCalls} starts=${playbackSnapshots.at(-1)?.playStarts}`,
+  );
+
+  const beforeEnd = await heroSnapshot();
+  const endedSnapshot = await waitForHero(
+    (snapshot) => snapshot.endedEvents >= 1 || snapshot.ended,
+    Math.min(
+      Math.max((beforeEnd.duration - beforeEnd.currentTime + 2) * 1_000, 4_000),
+      16_000,
+    ),
+  );
+  check(
+    endedSnapshot.endedEvents === 1 && endedSnapshot.ended,
+    `${label} runtime-only hero reaches ended once`,
+    `endedEvents=${endedSnapshot.endedEvents} ended=${endedSnapshot.ended} currentTime=${fixed(endedSnapshot.currentTime)}`,
+  );
+  const presentedSequence = await page.evaluate(
+    () =>
+      window.__heroPresentedFrameProbe.snapshot().presentedFramesAfterRelease,
+  );
+  const sequenceIssues = presentationSequenceIssues(presentedSequence);
+  check(
+    sequenceIssues.length === 0,
+    `${label} runtime-only compositor presentation stays ordered`,
+    sequenceIssues.length > 0
+      ? sequenceIssues.join("; ")
+      : `${presentedSequence.length} live presentations, first=${presentedSequence[0]}`,
+  );
+
+  const finalFrameTime = endedSnapshot.currentTime;
+  await page.waitForTimeout(600);
+  const held = await heroSnapshot();
+  const atFinalFrame =
+    Number.isFinite(held.duration) &&
+    held.duration > 0 &&
+    held.duration - held.currentTime <= 0.15;
+  check(
+    endedSnapshot.ended &&
+      held.ended &&
+      held.paused &&
+      atFinalFrame &&
+      Math.abs(held.currentTime - finalFrameTime) <= TIME_EPSILON &&
+      held.playCalls === 1 &&
+      held.playStarts === 1,
+    `${label} runtime-only final frame holds without restart`,
+    `paused=${held.paused} ended=${held.ended} currentTime=${fixed(held.currentTime)} duration=${fixed(held.duration)} calls=${held.playCalls}`,
+  );
+}
+
 async function runViewport(viewport) {
   const label = viewportLabel(viewport);
   const context = await browser.newContext({
@@ -2543,7 +2659,24 @@ async function runViewport(viewport) {
       `${label} looping is disabled`,
       `loop=${settled.loop}`,
     );
-    const references = await loadPresentedPixelReferenceCatalog(viewport);
+    let references;
+    try {
+      references = runtimeOnly
+        ? null
+        : await loadPresentedPixelReferenceCatalog(viewport);
+    } catch (error) {
+      check(
+        false,
+        `${label} presented-pixel catalog`,
+        error instanceof Error ? error.message : String(error),
+      );
+      await verifyCatalogIndependentLifecycle(viewport, label);
+      return;
+    }
+    if (!references) {
+      await verifyCatalogIndependentLifecycle(viewport, label);
+      return;
+    }
     const restingReferences = references.filter(
       ({ plateState }) => plateState === "resting:desk",
     );
