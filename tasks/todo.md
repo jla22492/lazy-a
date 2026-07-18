@@ -27,11 +27,44 @@
   corrective files, leaving unrelated untracked files untouched.
 - [x] Replace the split JOURNAL motion with one readable hip-pivot path.
 - [x] Re-author CONTACT's visible practical and one-second activation beat.
-- [ ] Replace the non-atomic hero overlay and low-resolution occlusion path.
+- [x] Replace the non-atomic hero overlay and low-resolution occlusion path.
 - [ ] Regenerate and encode affected wide and portrait room media.
 - [ ] Run full local source, browser, clock, performance, and visual batteries.
 - [ ] Push and verify the deployed Pages candidate.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
+
+## Task 3 — Atomic Plate And Living Print
+
+- [x] Preserve the base-commit RED in real Chrome before production edits:
+      atomic compositor timeout; lifecycle `30/45` with missing pixel catalog and
+      unresolved authored-depth presentation at all five viewports.
+- [x] Source contract rejects a second camera writer in `Stage` or
+      `AttentionNavigation`, legacy screen-space hero geometry, fixed RGB
+      treatment, RLE/canvas occlusion, and a visible DOM transition video.
+- [x] `PlateCompositor.useFrame(..., -100)` selects one plate texture, media
+      time, projection frame, and approved camera sample for the current render.
+- [x] One positive-priority presenter calls `gl.render(scene, camera)` exactly
+      once, then publishes `window.__lazyACompositor` and dispatches
+      `lazy-a:compositor-frame-presented`.
+- [x] The clip-space photographic plate preserves the authored
+      `object-fit: cover` crop while the server-rendered opening photograph stays
+      below Canvas through first successful presentation and after failures.
+- [x] `HeroFilm` owns only one DOM-observable `data-lazy-a-hero` video and its
+      one-play-after-settle, navigate-through, end-once, final-frame-hold lifecycle.
+- [x] `HeroSurface` loads `HeroLiveSurface` and every `HeroOccluder_*` from the
+      authored GLB, uses GPU depth for occlusion, and applies the calibrated linear
+      additive room-transfer shader to the one hero video texture.
+- [ ] The complete five-viewport desk plus FILMS/JOURNAL/CONTACT/ABOUT
+      forward/reverse early/mid/late browser-presented reference catalog is
+      generated and cryptographically pinned to immutable offline authoring assets;
+      blocked on Task 4's final 58-frame CONTACT media.
+- [ ] The final catalog-backed lifecycle gate passes. Build, TypeScript, targeted
+      lint, source/geometry, real-Chrome occlusion, arrival continuity, and
+      desktop/phone visual inspection pass; lifecycle is `40/45` at the expected
+      catalog-only boundary.
+- [x] Task 3 report records RED, implementation, verification, self-review,
+      exact committed files, enumerated obligation audit, and any remaining
+      concerns without claiming R4 creative completion.
 
 ---
 

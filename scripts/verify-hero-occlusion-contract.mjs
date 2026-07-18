@@ -41,12 +41,18 @@ const HERO_SURFACE_OBJECT = "HeroLiveSurface";
 const EXPECTED_AUTHORING_SOURCES = {
   masterBlend: "build/wo-0117-r/master.blend",
   renderScript: "scripts/render-master-shots.py",
+  treatmentAuthor: "scripts/build-hero-room-treatment.mjs",
   compositorGlb: "public/room/hero/hero-compositor.glb",
   treatedBake: "build/wo-0117-r/hero-treated-first-frame.png",
 };
+const ROOM_POSTER_REFERENCE = "public/room/wide/stills/desk.jpg";
 const EXPECTED_GLB_AUTHORING_RELATIONSHIP_SHA256 =
   "f8aba2c32214c4c0483cdd1b2f05449721a0d410e7c0ac2bcbc371d09032b4ed";
 const MAX_TREATMENT_RECONSTRUCTION_ERROR = 2;
+const MAX_ROOM_POSTER_MEAN_CHANNEL_DELTA = 48;
+const MIN_PLATE_ORIENTATION_ERROR_MARGIN = 5;
+const MAX_PRESENTED_PLATE_CHANNEL_MAD = 6;
+const MAX_FIRST_FRAME_CHANNEL_MAD = 8;
 const viewport = { width: 1280, height: 720 };
 const failures = [];
 
@@ -401,6 +407,22 @@ async function rgbRaster(imageBytes, label) {
   return { data, width: info.width, height: info.height };
 }
 
+function srgbToLinear(value) {
+  const normalized = value / 255;
+  return normalized <= 0.04045
+    ? normalized / 12.92
+    : ((normalized + 0.055) / 1.055) ** 2.4;
+}
+
+function linearToSrgbByte(value) {
+  const clamped = Math.max(0, Math.min(1, value));
+  const encoded =
+    clamped <= 0.0031308
+      ? clamped * 12.92
+      : 1.055 * clamped ** (1 / 2.4) - 0.055;
+  return Math.round(encoded * 255);
+}
+
 async function treatmentReconstructionError(fixture) {
   const [source, treated, transfer] = await Promise.all([
     rgbRaster(fixture.firstFrameBytes, "hero first frame"),
@@ -419,18 +441,255 @@ async function treatmentReconstructionError(fixture) {
   );
   let absoluteError = 0;
   for (let index = 0; index < source.data.length; index += 1) {
-    const reconstructed = Math.max(
-      0,
-      Math.min(
-        255,
-        Math.round(
-          source.data[index] + (transfer.data[index] / 255 - 0.5) * 510,
-        ),
-      ),
+    const reconstructed = linearToSrgbByte(
+      srgbToLinear(source.data[index]) + (transfer.data[index] / 255 - 0.5) * 2,
     );
     absoluteError += Math.abs(reconstructed - treated.data[index]);
   }
   return absoluteError / source.data.length;
+}
+
+function pointInPolygon(x, y, polygon) {
+  let inside = false;
+  for (
+    let index = 0, prior = polygon.length - 1;
+    index < polygon.length;
+    prior = index, index += 1
+  ) {
+    const [currentX, currentY] = polygon[index];
+    const [priorX, priorY] = polygon[prior];
+    if (
+      currentY > y !== priorY > y &&
+      x <
+        ((priorX - currentX) * (y - currentY)) / (priorY - currentY) + currentX
+    ) {
+      inside = !inside;
+    }
+  }
+  return inside;
+}
+
+function meanChannels(raster, polygon = null) {
+  const sums = [0, 0, 0];
+  let samples = 0;
+  const bounds = polygon
+    ? {
+        minX: Math.max(0, Math.floor(Math.min(...polygon.map(([x]) => x)))),
+        maxX: Math.min(
+          raster.width,
+          Math.ceil(Math.max(...polygon.map(([x]) => x))),
+        ),
+        minY: Math.max(0, Math.floor(Math.min(...polygon.map(([, y]) => y)))),
+        maxY: Math.min(
+          raster.height,
+          Math.ceil(Math.max(...polygon.map(([, y]) => y))),
+        ),
+      }
+    : {
+        minX: 0,
+        maxX: raster.width,
+        minY: 0,
+        maxY: raster.height,
+      };
+  for (let y = bounds.minY; y < bounds.maxY; y += 1) {
+    for (let x = bounds.minX; x < bounds.maxX; x += 1) {
+      if (polygon && !pointInPolygon(x + 0.5, y + 0.5, polygon)) continue;
+      const offset = (y * raster.width + x) * 3;
+      for (let channel = 0; channel < 3; channel += 1) {
+        sums[channel] += raster.data[offset + channel];
+      }
+      samples += 1;
+    }
+  }
+  assert.ok(samples > 0, "room-poster parity region has no pixels");
+  return sums.map((sum) => sum / samples);
+}
+
+async function treatmentRoomParity(fixture) {
+  const [source, treated, roomPlate] = await Promise.all([
+    rgbRaster(fixture.firstFrameBytes, "hero first frame"),
+    rgbRaster(fixture.treatedFrameBytes, "hero treated bake"),
+    rgbRaster(fixture.roomPlateBytes, "authored desk room plate"),
+  ]);
+  const hero =
+    fixture.manifest.variants?.wide?.endpoints?.desk?.projection?.hero;
+  assert.equal(hero?.length, 8, "wide desk hero projection");
+  const polygon = Array.from({ length: 4 }, (_, index) => [
+    hero[index * 2] * roomPlate.width,
+    hero[index * 2 + 1] * roomPlate.height,
+  ]);
+  const sourceMeans = meanChannels(source);
+  const treatedMeans = meanChannels(treated);
+  const roomMeans = meanChannels(roomPlate, polygon);
+  const maxRoomDelta = Math.max(
+    ...treatedMeans.map((value, index) => Math.abs(value - roomMeans[index])),
+  );
+  assert.ok(
+    maxRoomDelta <= MAX_ROOM_POSTER_MEAN_CHANNEL_DELTA,
+    `treated bake does not reproduce the authored room poster: source=${sourceMeans
+      .map((value) => value.toFixed(3))
+      .join("/")} treated=${treatedMeans
+      .map((value) => value.toFixed(3))
+      .join("/")} room=${roomMeans
+      .map((value) => value.toFixed(3))
+      .join("/")} maxDelta=${maxRoomDelta.toFixed(3)}`,
+  );
+  return { sourceMeans, treatedMeans, roomMeans, maxRoomDelta };
+}
+
+async function plateOrientationErrors(actualBytes, authoredPlateBytes) {
+  const expected = await sharp(authoredPlateBytes)
+    .resize(viewport.width, viewport.height, { fit: "cover" })
+    .removeAlpha()
+    .toColourspace("srgb")
+    .raw()
+    .toBuffer();
+  const reflected = await sharp(authoredPlateBytes)
+    .flip()
+    .resize(viewport.width, viewport.height, { fit: "cover" })
+    .removeAlpha()
+    .toColourspace("srgb")
+    .raw()
+    .toBuffer();
+  const actual = await sharp(actualBytes)
+    .resize(viewport.width, viewport.height, { fit: "fill" })
+    .removeAlpha()
+    .toColourspace("srgb")
+    .raw()
+    .toBuffer();
+  assert.equal(actual.length, expected.length, "plate comparison dimensions");
+  let uprightError = 0;
+  let reflectedError = 0;
+  for (let index = 0; index < actual.length; index += 1) {
+    uprightError += Math.abs(actual[index] - expected[index]);
+    reflectedError += Math.abs(actual[index] - reflected[index]);
+  }
+  return {
+    uprightError: uprightError / actual.length,
+    reflectedError: reflectedError / actual.length,
+  };
+}
+
+function assertPlateUpright(errors) {
+  assert.ok(
+    errors.uprightError + MIN_PLATE_ORIENTATION_ERROR_MARGIN <
+      errors.reflectedError,
+    `Canvas plate is not upright: uprightError=${errors.uprightError.toFixed(
+      3,
+    )} reflectedError=${errors.reflectedError.toFixed(3)}`,
+  );
+}
+
+async function rawViewportRgb(imageBytes, fit = "fill") {
+  const { data, info } = await sharp(imageBytes)
+    .resize(viewport.width, viewport.height, { fit })
+    .removeAlpha()
+    .toColourspace("srgb")
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  assert.equal(info.width, viewport.width);
+  assert.equal(info.height, viewport.height);
+  assert.equal(info.channels, 3);
+  return data;
+}
+
+function normalizedQuadPolygon(quad, inset = 0) {
+  assert.equal(quad?.length, 8, "presented hero projection");
+  const points = Array.from({ length: 4 }, (_, index) => [
+    quad[index * 2] * viewport.width,
+    quad[index * 2 + 1] * viewport.height,
+  ]);
+  if (inset <= 0) return points;
+  const center = points.reduce(
+    ([x, y], point) => [x + point[0] / 4, y + point[1] / 4],
+    [0, 0],
+  );
+  return points.map(([x, y]) => {
+    const distance = Math.hypot(x - center[0], y - center[1]);
+    const scale = distance > inset ? (distance - inset) / distance : 0;
+    return [
+      center[0] + (x - center[0]) * scale,
+      center[1] + (y - center[1]) * scale,
+    ];
+  });
+}
+
+async function presentedPlateColorParity(
+  actualBytes,
+  authoredPlateBytes,
+  heroQuad,
+) {
+  const [actual, expected] = await Promise.all([
+    rawViewportRgb(actualBytes),
+    rawViewportRgb(authoredPlateBytes, "cover"),
+  ]);
+  const hero = normalizedQuadPolygon(heroQuad);
+  const actualSums = [0, 0, 0];
+  const expectedSums = [0, 0, 0];
+  const absoluteErrors = [0, 0, 0];
+  let samples = 0;
+  for (let y = 0; y < viewport.height; y += 1) {
+    for (let x = 0; x < viewport.width; x += 1) {
+      if (pointInPolygon(x + 0.5, y + 0.5, hero)) continue;
+      const offset = (y * viewport.width + x) * 3;
+      for (let channel = 0; channel < 3; channel += 1) {
+        const actualValue = actual[offset + channel];
+        const expectedValue = expected[offset + channel];
+        actualSums[channel] += actualValue;
+        expectedSums[channel] += expectedValue;
+        absoluteErrors[channel] += Math.abs(actualValue - expectedValue);
+      }
+      samples += 1;
+    }
+  }
+  assert.ok(samples > viewport.width * viewport.height * 0.6);
+  return {
+    actualMeans: actualSums.map((sum) => sum / samples),
+    expectedMeans: expectedSums.map((sum) => sum / samples),
+    channelMad: absoluteErrors.map((sum) => sum / samples),
+  };
+}
+
+async function presentedFirstFrameParity(beforeBytes, liveBytes, heroQuad) {
+  const [before, live] = await Promise.all([
+    rawViewportRgb(beforeBytes),
+    rawViewportRgb(liveBytes),
+  ]);
+  const hero = normalizedQuadPolygon(heroQuad, 10);
+  const absoluteErrors = [0, 0, 0];
+  let samples = 0;
+  for (let y = 0; y < viewport.height; y += 1) {
+    for (let x = 0; x < viewport.width; x += 1) {
+      if (!pointInPolygon(x + 0.5, y + 0.5, hero)) continue;
+      const offset = (y * viewport.width + x) * 3;
+      for (let channel = 0; channel < 3; channel += 1) {
+        absoluteErrors[channel] += Math.abs(
+          before[offset + channel] - live[offset + channel],
+        );
+      }
+      samples += 1;
+    }
+  }
+  assert.ok(samples > 25_000, `${samples} first-frame hero pixels`);
+  return {
+    samples,
+    channelMad: absoluteErrors.map((sum) => sum / samples),
+  };
+}
+
+function assertPlateColorParity(metrics, label) {
+  assert.ok(
+    metrics.channelMad.every(
+      (value) => value <= MAX_PRESENTED_PLATE_CHANNEL_MAD,
+    ),
+    `${label} plate color does not match authored sRGB pixels: actual=${metrics.actualMeans
+      .map((value) => value.toFixed(3))
+      .join("/")} authored=${metrics.expectedMeans
+      .map((value) => value.toFixed(3))
+      .join("/")} MAD=${metrics.channelMad
+      .map((value) => value.toFixed(3))
+      .join("/")}`,
+  );
 }
 
 async function assertR4HeroArtifactContract(fixture) {
@@ -487,7 +746,12 @@ async function assertR4HeroArtifactContract(fixture) {
     meanChannelError <= MAX_TREATMENT_RECONSTRUCTION_ERROR,
     `room-treatment reconstruction error ${meanChannelError.toFixed(6)} exceeds ${MAX_TREATMENT_RECONSTRUCTION_ERROR}`,
   );
-  return `${glb.objects} objects, ${glb.triangles} triangles, relationship ${glb.relationshipSha256}, treatment error ${meanChannelError.toFixed(6)}`;
+  const roomParity = await treatmentRoomParity(fixture);
+  return `${glb.objects} objects, ${glb.triangles} triangles, relationship ${
+    glb.relationshipSha256
+  }, treatment error ${meanChannelError.toFixed(
+    6,
+  )}, room delta ${roomParity.maxRoomDelta.toFixed(3)}`;
 }
 
 function projectionFrames(manifest) {
@@ -625,6 +889,7 @@ function loadR4HeroArtifactFixture() {
     transferBytes: fs.readFileSync(
       path.join(root, "public", manifest.hero.treatment.source),
     ),
+    roomPlateBytes: fs.readFileSync(path.join(root, ROOM_POSTER_REFERENCE)),
   };
 }
 
@@ -648,6 +913,60 @@ function withRehashedGlb(fixture, glbBytes) {
     authoringManifestBytes,
     sourceBytes: new Map(fixture.sourceBytes).set(glbPath, glbBytes),
   };
+}
+
+function withRehashedTreatedBake(fixture, treatedFrameBytes, transferBytes) {
+  const authoring = JSON.parse(fixture.authoringManifestBytes);
+  const treatedPath = authoring.sources.treatedBake.path;
+  authoring.sources.treatedBake.sha256 = sha256(treatedFrameBytes);
+  const authoringManifestBytes = Buffer.from(JSON.stringify(authoring));
+  return {
+    ...fixture,
+    manifest: {
+      ...fixture.manifest,
+      hero: {
+        ...fixture.manifest.hero,
+        verification: {
+          ...fixture.manifest.hero.verification,
+          presentedPixelAuthoringManifestSha256: sha256(authoringManifestBytes),
+        },
+      },
+    },
+    authoringManifestBytes,
+    treatedFrameBytes,
+    transferBytes,
+    sourceBytes: new Map(fixture.sourceBytes).set(
+      treatedPath,
+      treatedFrameBytes,
+    ),
+  };
+}
+
+async function nearBlackTreatmentFixture(fixture) {
+  const source = await rgbRaster(fixture.firstFrameBytes, "hero first frame");
+  const treated = Buffer.alloc(source.data.length);
+  const transfer = Buffer.alloc(source.data.length);
+  for (let index = 0; index < source.data.length; index += 1) {
+    transfer[index] = Math.max(
+      0,
+      Math.min(
+        255,
+        Math.round(127.5 - srgbToLinear(source.data[index]) * 127.5),
+      ),
+    );
+  }
+  const imageOptions = {
+    raw: {
+      width: source.width,
+      height: source.height,
+      channels: 3,
+    },
+  };
+  const [treatedFrameBytes, transferBytes] = await Promise.all([
+    sharp(treated, imageOptions).png().toBuffer(),
+    sharp(transfer, imageOptions).png().toBuffer(),
+  ]);
+  return withRehashedTreatedBake(fixture, treatedFrameBytes, transferBytes);
 }
 
 async function assertR4HeroArtifactStubsFail() {
@@ -692,13 +1011,31 @@ async function assertR4HeroArtifactStubsFail() {
       }),
     /treatedBake source SHA-256/,
   );
+  await assert.rejects(
+    () => nearBlackTreatmentFixture(fixture).then(assertR4HeroArtifactContract),
+    /does not reproduce the authored room poster/,
+  );
+  const authoredPlate = fixture.roomPlateBytes;
+  const upright = await sharp(authoredPlate)
+    .resize(viewport.width, viewport.height, { fit: "cover" })
+    .png()
+    .toBuffer();
+  const reflected = await sharp(upright).flip().png().toBuffer();
+  assertPlateUpright(await plateOrientationErrors(upright, authoredPlate));
+  await assert.rejects(
+    async () =>
+      assertPlateUpright(
+        await plateOrientationErrors(reflected, authoredPlate),
+      ),
+    /Canvas plate is not upright/,
+  );
 }
 
 if (selfTest) {
   assertR4HeroSourceStubsFail();
   await assertR4HeroArtifactStubsFail();
   console.log(
-    "hero occlusion self-tests passed (11 structural stubs, corrupt/stub GLBs, replaced transfer).",
+    "hero occlusion self-tests passed (11 structural stubs, corrupt/stub GLBs, replaced transfer, near-black treatment, reflected plate).",
   );
   process.exit(0);
 }
@@ -828,6 +1165,51 @@ if (!geometryOnly) {
       compositor: window.__lazyACompositor ?? null,
       legacyOcclusionMarkerPresent: "__lazyAHeroOcclusion" in window,
     }));
+    const canvasBytes = await page.locator("canvas").screenshot();
+    await page.evaluate(
+      () =>
+        new Promise((resolve, reject) => {
+          const timeout = window.setTimeout(
+            () => reject(new Error("hero first compositor frame timed out")),
+            10_000,
+          );
+          const onFrame = (event) => {
+            if (event.detail?.heroFramePresented !== 1) return;
+            window.clearTimeout(timeout);
+            window.removeEventListener(
+              "lazy-a:compositor-frame-presented",
+              onFrame,
+            );
+            document.querySelector("[data-lazy-a-hero]")?.pause();
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+          };
+          window.addEventListener("lazy-a:compositor-frame-presented", onFrame);
+        }),
+    );
+    const liveCanvasBytes = await page.locator("canvas").screenshot();
+    const deskProjection = manifest.variants.wide.endpoints.desk.projection;
+    const orientationErrors = await plateOrientationErrors(
+      canvasBytes,
+      fs.readFileSync(path.join(root, ROOM_POSTER_REFERENCE)),
+    );
+    const [beforePlateParity, livePlateParity, firstFrameParity] =
+      await Promise.all([
+        presentedPlateColorParity(
+          canvasBytes,
+          fs.readFileSync(path.join(root, ROOM_POSTER_REFERENCE)),
+          deskProjection.hero,
+        ),
+        presentedPlateColorParity(
+          liveCanvasBytes,
+          fs.readFileSync(path.join(root, ROOM_POSTER_REFERENCE)),
+          deskProjection.hero,
+        ),
+        presentedFirstFrameParity(
+          canvasBytes,
+          liveCanvasBytes,
+          deskProjection.hero,
+        ),
+      ]);
 
     check(
       "browser presents hero and plate from one atomic compositor frame",
@@ -851,6 +1233,42 @@ if (!geometryOnly) {
       );
       return "no window.__lazyAHeroOcclusion marker";
     });
+    check("browser presents the authored photographic plate upright", () => {
+      assertPlateUpright(orientationErrors);
+      return `upright error ${orientationErrors.uprightError.toFixed(
+        3,
+      )}; reflected error ${orientationErrors.reflectedError.toFixed(3)}`;
+    });
+    check(
+      "browser preserves authored plate color before and during the living print",
+      () => {
+        assertPlateColorParity(beforePlateParity, "before hero");
+        assertPlateColorParity(livePlateParity, "live hero");
+        return `before MAD ${beforePlateParity.channelMad
+          .map((value) => value.toFixed(3))
+          .join("/")}; live MAD ${livePlateParity.channelMad
+          .map((value) => value.toFixed(3))
+          .join("/")}`;
+      },
+    );
+    check(
+      "browser first live hero frame matches the corrected treated room poster",
+      () => {
+        assert.ok(
+          firstFrameParity.channelMad.every(
+            (value) => value <= MAX_FIRST_FRAME_CHANNEL_MAD,
+          ),
+          `first live frame diverges from treated poster: pixels=${
+            firstFrameParity.samples
+          } MAD=${firstFrameParity.channelMad
+            .map((value) => value.toFixed(3))
+            .join("/")}`,
+        );
+        return `${firstFrameParity.samples} pixels; MAD ${firstFrameParity.channelMad
+          .map((value) => value.toFixed(3))
+          .join("/")}`;
+      },
+    );
   } catch (error) {
     failures.push("browser hero occlusion behavior");
     console.log(`FAIL browser hero occlusion behavior: ${error.message}`);

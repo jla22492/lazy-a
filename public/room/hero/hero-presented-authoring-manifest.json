@@ -94,7 +94,7 @@
   "sources": {
     "compositorGlb": {
       "path": "public/room/hero/hero-compositor.glb",
-      "sha256": "a580215ad7bc1f2960272da22fe1f1ee12f9043b4555b8deb994b34aafef334e"
+      "sha256": "eb4c9a4bc6482ebe0752a5cc38da3284c8f58c37578f437dde9d65f8536a305f"
     },
     "masterBlend": {
       "path": "build/wo-0117-r/master.blend",
@@ -102,11 +102,15 @@
     },
     "renderScript": {
       "path": "scripts/render-master-shots.py",
-      "sha256": "33a9dc91f94622c51f8071ab740de7891e464ee2a69d89f185781462f71ba433"
+      "sha256": "142fced77466544a82a0124ec11872f5826374b14bacdc2debaaf62355a14cdd"
     },
     "treatedBake": {
       "path": "build/wo-0117-r/hero-treated-first-frame.png",
-      "sha256": "472cd380c3f3c983fa3e3d5de742ee2ade97654dcb975d5b022bba8acaefed0b"
+      "sha256": "e457f21d5e47d12ee8d4f161100af25b7f5a0b30ab3aa5b346e94e3ca1a6b1e4"
+    },
+    "treatmentAuthor": {
+      "path": "scripts/build-hero-room-treatment.mjs",
+      "sha256": "4f69a3f746e64910511e0ac3146a27fb9cb9a6378f229b29b685189d19d67220"
     }
   },
   "version": 1

@@ -3,27 +3,20 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { useFrame, useThree } from "@react-three/fiber";
-import {
-  PerspectiveCamera,
-  Quaternion,
-  Vector3,
-  type Camera,
-} from "three";
+import { PerspectiveCamera, type Camera } from "three";
 
-import { setContactLevel } from "@/three/interface/contact";
+import { useCompositorFrame } from "@/components/room/PlateCompositor";
+import { type PlateExperienceState } from "@/lib/plateAssets";
 import { mapPlateQuad, selectPlateVariant } from "@/lib/plateSpace";
+import {
+  NAVIGATION_SHEET,
+  type ExperienceEvent,
+} from "@/three/animation/plateExperience";
+import { setContactLevel } from "@/three/interface/contact";
 import { setJournalLevel } from "@/three/interface/journal";
 import { setQuietLevel } from "@/three/interface/quiet";
 import {
-  INITIAL_PLATE_EXPERIENCE,
-  NAVIGATION_SHEET,
-  plateExperienceReducer,
-  type ExperienceEvent,
-  type ExperienceState,
-} from "@/three/animation/plateExperience";
-import {
   plateManifest,
-  type CameraSample,
   type DestinationId,
   type EndpointId,
   type Variant,
@@ -35,15 +28,16 @@ type NavigationExperienceEvent = Extract<
 >;
 
 export interface AttentionNavigationProps {
-  /** Sends user navigation intent to an optional Stage-owned reducer. */
-  onExperienceEvent?: (event: NavigationExperienceEvent) => void;
+  experience: PlateExperienceState;
+  /** Sends visitor intent to the Stage-owned experience reducer. */
+  onExperienceEvent: (event: NavigationExperienceEvent) => void;
 }
 
 interface CameraSnapshot {
   endpoint: EndpointId;
   requested: DestinationId | null;
   transition: string | null;
-  phase: ExperienceState["phase"];
+  phase: PlateExperienceState["phase"];
   camera: {
     position: [number, number, number];
     quaternion: [number, number, number, number];
@@ -59,18 +53,12 @@ interface CameraSnapshot {
   };
 }
 
-interface ActiveTransition {
-  id: string;
-  elapsed: number;
-  progress: number;
-}
-
-const DESTINATIONS = NAVIGATION_SHEET.rows.map(({ id }) => id);
-
 interface ScreenPoint {
   x: number;
   y: number;
 }
+
+const DESTINATIONS = NAVIGATION_SHEET.rows.map(({ id }) => id);
 
 function pointInConvexQuad(point: ScreenPoint, quad: readonly ScreenPoint[]) {
   let sign = 0;
@@ -99,37 +87,6 @@ function cameraFov(camera: Camera): number {
   return camera instanceof PerspectiveCamera ? camera.fov : 35;
 }
 
-function setCameraFov(camera: Camera, fov: number): void {
-  if (!(camera instanceof PerspectiveCamera)) return;
-  if (camera.fov === fov) return;
-  camera.fov = fov;
-  camera.updateProjectionMatrix();
-}
-
-function applyCameraSample(camera: Camera, sample: CameraSample): void {
-  camera.position.set(...sample.position);
-  camera.quaternion.set(...sample.quaternion);
-  setCameraFov(camera, sample.fov);
-  camera.updateMatrixWorld();
-}
-
-function interpolateCameraSample(
-  camera: Camera,
-  from: CameraSample,
-  to: CameraSample,
-  amount: number,
-): void {
-  camera.position
-    .set(...from.position)
-    .lerp(new Vector3(...to.position), amount);
-  camera.quaternion
-    .set(...from.quaternion)
-    .slerp(new Quaternion(...to.quaternion), amount)
-    .normalize();
-  setCameraFov(camera, from.fov + (to.fov - from.fov) * amount);
-  camera.updateMatrixWorld();
-}
-
 function copySnapshot(snapshot: CameraSnapshot): CameraSnapshot {
   return {
     ...snapshot,
@@ -142,21 +99,31 @@ function copySnapshot(snapshot: CameraSnapshot): CameraSnapshot {
   };
 }
 
+/**
+ * Navigation owns visitor intent, physical hit-testing, consequence levels,
+ * and read-only diagnostics. PlateCompositor is the only camera writer.
+ */
 export function AttentionNavigation({
+  experience,
   onExperienceEvent,
-}: AttentionNavigationProps = {}) {
+}: AttentionNavigationProps) {
   const { camera, gl, size } = useThree();
+  const compositorFrame = useCompositorFrame();
   const variant: Variant = selectPlateVariant(size.width);
   const profile = plateManifest.variants[variant];
   const navigation = profile.navigation;
-
   const conversationRef = useRef<DestinationId | null>(null);
   const candidateRef = useRef<DestinationId | null>(null);
   const pointerAlive = useRef(false);
-  const experienceRef = useRef<ExperienceState>(INITIAL_PLATE_EXPERIENCE);
-  const activeTransitionRef = useRef<ActiveTransition | null>(null);
-  const deskSampleRef = useRef<CameraSample | null>(null);
+  const experienceRef = useRef(experience);
   const historyRef = useRef<CameraSnapshot[]>([]);
+  const lastRecordedStateRef = useRef("");
+
+  useEffect(() => {
+    experienceRef.current = experience;
+    (window as Window & { __lazyAEndpoint?: EndpointId }).__lazyAEndpoint =
+      experience.endpoint;
+  }, [experience]);
 
   const sheetProjection = useMemo(() => {
     const values = navigation.screenQuads.desk ??
@@ -171,17 +138,19 @@ export function AttentionNavigation({
       y: mapped[index * 2 + 1] / size.height,
     }));
     const projectNormalized = (localX: number, localY: number): ScreenPoint => {
-      const u =
-        (localX - navigation.bounds.x) / navigation.bounds.width;
-      const v =
-        (localY - navigation.bounds.y) / navigation.bounds.height;
+      const u = (localX - navigation.bounds.x) / navigation.bounds.width;
+      const v = (localY - navigation.bounds.y) / navigation.bounds.height;
       const top = {
-        x: normalizedQuad[0].x + (normalizedQuad[1].x - normalizedQuad[0].x) * u,
-        y: normalizedQuad[0].y + (normalizedQuad[1].y - normalizedQuad[0].y) * u,
+        x:
+          normalizedQuad[0].x + (normalizedQuad[1].x - normalizedQuad[0].x) * u,
+        y:
+          normalizedQuad[0].y + (normalizedQuad[1].y - normalizedQuad[0].y) * u,
       };
       const bottom = {
-        x: normalizedQuad[3].x + (normalizedQuad[2].x - normalizedQuad[3].x) * u,
-        y: normalizedQuad[3].y + (normalizedQuad[2].y - normalizedQuad[3].y) * u,
+        x:
+          normalizedQuad[3].x + (normalizedQuad[2].x - normalizedQuad[3].x) * u,
+        y:
+          normalizedQuad[3].y + (normalizedQuad[2].y - normalizedQuad[3].y) * u,
       };
       return {
         x: top.x + (bottom.x - top.x) * v,
@@ -199,33 +168,19 @@ export function AttentionNavigation({
 
   const setConversation = useCallback((id: DestinationId | null): void => {
     conversationRef.current = id;
-    (window as Window & { __lazyAConversation?: DestinationId | null })
-      .__lazyAConversation = id;
+    (
+      window as Window & { __lazyAConversation?: DestinationId | null }
+    ).__lazyAConversation = id;
   }, []);
-
-  const setExperience = useCallback((next: ExperienceState): void => {
-    experienceRef.current = next;
-    (window as Window & { __lazyAEndpoint?: EndpointId }).__lazyAEndpoint =
-      next.endpoint;
-  }, []);
-
-  const localEvent = useCallback(
-    (event: ExperienceEvent): ExperienceState => {
-      const next = plateExperienceReducer(experienceRef.current, event);
-      setExperience(next);
-      return next;
-    },
-    [setExperience],
-  );
 
   const snapshot = useCallback((): CameraSnapshot => {
-    const state = experienceRef.current;
-    const coverage = profile.endpoints[state.endpoint].framing.coverage;
+    const current = experienceRef.current;
+    const coverage = profile.endpoints[current.endpoint].framing.coverage;
     return {
-      endpoint: state.endpoint,
-      requested: state.requested,
-      transition: state.transition,
-      phase: state.phase,
+      endpoint: current.endpoint,
+      requested: current.requested,
+      transition: current.transition,
+      phase: current.phase,
       camera: {
         position: camera.position.toArray() as [number, number, number],
         quaternion: camera.quaternion.toArray() as [
@@ -240,30 +195,19 @@ export function AttentionNavigation({
     };
   }, [camera, profile]);
 
-  const recordSnapshot = useCallback((): void => {
-    historyRef.current.push(snapshot());
-  }, [snapshot]);
-
   const requestDestination = useCallback(
     (destination: DestinationId): void => {
       if (!arrivalDone() || !DESTINATIONS.includes(destination)) return;
       setConversation(destination);
-      const event: NavigationExperienceEvent = {
-        type: "SELECT",
-        destination,
-      };
-      onExperienceEvent?.(event);
-      localEvent(event);
+      onExperienceEvent({ type: "SELECT", destination });
     },
-    [localEvent, onExperienceEvent, setConversation],
+    [onExperienceEvent, setConversation],
   );
 
   const close = useCallback((): void => {
     setConversation(null);
-    const event: NavigationExperienceEvent = { type: "CLOSE" };
-    onExperienceEvent?.(event);
-    localEvent(event);
-  }, [localEvent, onExperienceEvent, setConversation]);
+    onExperienceEvent({ type: "CLOSE" });
+  }, [onExperienceEvent, setConversation]);
 
   useEffect(() => {
     const wake = () => {
@@ -359,39 +303,25 @@ export function AttentionNavigation({
         delete debugWindow.__lazyACameraDebug;
       }
     };
-  }, [close, gl, navigation, profile, requestDestination, sheetProjection, snapshot]);
+  }, [close, gl, navigation, requestDestination, sheetProjection, snapshot]);
 
-  useFrame((state, delta) => {
-    if (arrivalDone() && experienceRef.current.phase === "opening") {
-      deskSampleRef.current = {
-        position: camera.position.toArray() as [number, number, number],
-        quaternion: camera.quaternion.toArray() as [
-          number,
-          number,
-          number,
-          number,
-        ],
-        fov: cameraFov(camera),
-      };
-      localEvent({ type: "ARRIVAL_SETTLED" });
-      recordSnapshot();
-    }
-
+  useFrame((state) => {
     const current = experienceRef.current;
+    const stateKey = `${current.phase}:${current.transition ?? current.endpoint}`;
     if (
       current.phase === "resting" &&
-      current.endpoint === "desk" &&
-      current.requested
+      lastRecordedStateRef.current !== stateKey
     ) {
-      localEvent({ type: "SELECT", destination: current.requested });
+      lastRecordedStateRef.current = stateKey;
+      historyRef.current.push(snapshot());
     }
 
     let candidate: DestinationId | null = null;
     if (
       pointerAlive.current &&
       arrivalDone() &&
-      experienceRef.current.phase === "resting" &&
-      experienceRef.current.endpoint === "desk"
+      current.phase === "resting" &&
+      current.endpoint === "desk"
     ) {
       const normalized = {
         x: (state.pointer.x + 1) / 2,
@@ -403,59 +333,34 @@ export function AttentionNavigation({
         )?.id ?? null;
     }
     candidateRef.current = candidate;
-    (window as Window & { __lazyANavCandidate?: DestinationId | null })
-      .__lazyANavCandidate = candidate;
+    (
+      window as Window & { __lazyANavCandidate?: DestinationId | null }
+    ).__lazyANavCandidate = candidate;
 
-    const experience = experienceRef.current;
-    if (experience.phase !== "transitioning" || !experience.transition) {
-      activeTransitionRef.current = null;
-      const active = experience.endpoint;
+    if (current.phase !== "transitioning" || !current.transition) {
+      const active = current.endpoint;
       setQuietLevel(active === "desk" || active === "opening" ? 0 : 1);
       setJournalLevel(active === "journal" ? 1 : 0);
       setContactLevel(active === "contact" ? 1 : 0);
       return;
     }
 
-    const [from, to] = experience.transition.split("-to-") as [
+    const [from, to] = current.transition.split("-to-") as [
       EndpointId,
       EndpointId,
     ];
     const destination = (from === "desk" ? to : from) as DestinationId;
     const authored = profile.transitions[`desk-${destination}`];
-    if (!authored) return;
-
-    let active = activeTransitionRef.current;
-    if (!active || active.id !== experience.transition) {
-      active = { id: experience.transition, elapsed: 0, progress: 0 };
-      activeTransitionRef.current = active;
-    }
-    active.elapsed = Math.min(active.elapsed + delta, authored.duration);
-    active.progress = active.elapsed / authored.duration;
-    const forwardProgress = from === "desk" ? active.progress : 1 - active.progress;
-    const framePosition = forwardProgress * (authored.frames.length - 1);
-    const lowerIndex = Math.floor(framePosition);
-    const upperIndex = Math.min(lowerIndex + 1, authored.frames.length - 1);
-    interpolateCameraSample(
-      camera,
-      authored.frames[lowerIndex].camera,
-      authored.frames[upperIndex].camera,
-      framePosition - lowerIndex,
-    );
-
-    const effectProgress = from === "desk" ? active.progress : 1 - active.progress;
+    const frame = compositorFrame.current;
+    if (!authored || !frame) return;
+    const progress =
+      authored.frames.length > 1
+        ? frame.frameIndex / (authored.frames.length - 1)
+        : 1;
+    const effectProgress = from === "desk" ? progress : 1 - progress;
     setQuietLevel(effectProgress);
     setJournalLevel(destination === "journal" ? effectProgress : 0);
-    setContactLevel(destination === "contact" ? effectProgress : 0);
-
-    if (active.progress < 1) return;
-    if (to === "desk" && deskSampleRef.current) {
-      applyCameraSample(camera, deskSampleRef.current);
-    } else {
-      applyCameraSample(camera, profile.endpoints[to].projection.camera);
-    }
-    activeTransitionRef.current = null;
-    localEvent({ type: "TRANSITION_ENDED" });
-    recordSnapshot();
+    setContactLevel(destination === "contact" ? frame.projection.lampLevel : 0);
   });
 
   return null;

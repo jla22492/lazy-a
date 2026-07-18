@@ -1943,6 +1943,7 @@ def export_hero_compositor_geometry(
 def bake_hero_treated_source(
     scene: bpy.types.Scene,
     hero: bpy.types.Object,
+    surface: bpy.types.Object,
     samples: int,
 ) -> None:
     source_image = next(
@@ -1960,28 +1961,38 @@ def bake_hero_treated_source(
         "HeroTreatedFirstFrame", width=width, height=height, alpha=True
     )
     baked.generated_color = (0.0, 0.0, 0.0, 1.0)
-    material = hero.data.materials[0]
+    material = hero.data.materials[0].copy()
+    material.name = "HeroLiveSurfaceBakeMaterial"
+    for node in material.node_tree.nodes:
+        if node.bl_idname == "ShaderNodeUVMap":
+            node.uv_map = "HeroLiveUV"
+    surface.data.materials.clear()
+    surface.data.materials.append(material)
     target = material.node_tree.nodes.new("ShaderNodeTexImage")
     target.name = "HeroTreatedBakeTarget"
     target.image = baked
     material.node_tree.nodes.active = target
 
-    bpy.ops.object.select_all(action="DESELECT")
-    hero.hide_render = False
-    hero.select_set(True)
-    bpy.context.view_layer.objects.active = hero
-    scene.render.engine = "CYCLES"
-    scene.cycles.samples = samples
-    scene.cycles.use_denoising = True
-    scene.render.bake.use_clear = True
-    scene.render.bake.margin = 2
-    bpy.ops.object.bake(type="COMBINED")
-    HERO_TREATED_SOURCE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    scene.render.image_settings.file_format = "PNG"
-    scene.render.image_settings.color_mode = "RGBA"
-    scene.render.image_settings.color_depth = "8"
-    baked.save_render(str(HERO_TREATED_SOURCE_PATH), scene=scene)
-    material.node_tree.nodes.remove(target)
+    try:
+        bpy.ops.object.select_all(action="DESELECT")
+        surface.hide_render = False
+        surface.select_set(True)
+        bpy.context.view_layer.objects.active = surface
+        scene.render.engine = "CYCLES"
+        scene.cycles.samples = samples
+        scene.cycles.use_denoising = True
+        scene.render.bake.use_clear = True
+        scene.render.bake.margin = 2
+        bpy.ops.object.bake(type="COMBINED")
+        HERO_TREATED_SOURCE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        scene.render.image_settings.file_format = "PNG"
+        scene.render.image_settings.color_mode = "RGBA"
+        scene.render.image_settings.color_depth = "8"
+        baked.save_render(str(HERO_TREATED_SOURCE_PATH), scene=scene)
+    finally:
+        material.node_tree.nodes.remove(target)
+        surface.data.materials.clear()
+        bpy.data.materials.remove(material)
 
 
 def padded_projection_quad(
@@ -2435,6 +2446,12 @@ def build_hero_authoring_manifest(geometry: dict[str, Any]) -> dict[str, Any]:
                 "path": "scripts/render-master-shots.py",
                 "sha256": sha256_file(Path(__file__).resolve()),
             },
+            "treatmentAuthor": {
+                "path": "scripts/build-hero-room-treatment.mjs",
+                "sha256": sha256_file(
+                    REPO_ROOT / "scripts" / "build-hero-room-treatment.mjs"
+                ),
+            },
             "compositorGlb": {
                 "path": "public/room/hero/hero-compositor.glb",
                 "sha256": sha256_file(HERO_COMPOSITOR_PATH),
@@ -2474,7 +2491,12 @@ def build_authored_source_assets(
     samples: int,
 ) -> None:
     exported = export_hero_compositor_geometry(authored)
-    bake_hero_treated_source(scene, authored["heroPoster"], samples)
+    bake_hero_treated_source(
+        scene,
+        authored["heroPoster"],
+        exported["surface"],
+        samples,
+    )
     practical = build_practical_authoring_manifest(scene, camera, authored)
     write_json(CONTACT_AUTHORING_MANIFEST_PATH, practical)
     hero = build_hero_authoring_manifest(exported["geometry"])

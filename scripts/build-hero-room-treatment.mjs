@@ -19,6 +19,20 @@ const treatedPath = resolve(treatedArgument);
 const outputPath = resolve(outputArgument);
 
 const clampByte = (value) => Math.max(0, Math.min(255, Math.round(value)));
+const srgbToLinear = (value) => {
+  const normalized = value / 255;
+  return normalized <= 0.04045
+    ? normalized / 12.92
+    : ((normalized + 0.055) / 1.055) ** 2.4;
+};
+const linearToSrgbByte = (value) => {
+  const clamped = Math.max(0, Math.min(1, value));
+  const encoded =
+    clamped <= 0.0031308
+      ? clamped * 12.92
+      : 1.055 * clamped ** (1 / 2.4) - 0.055;
+  return clampByte(encoded * 255);
+};
 
 async function loadRgb(path) {
   const { data, info } = await sharp(path)
@@ -53,12 +67,14 @@ if (
 const transfer = Buffer.alloc(source.data.length);
 let absoluteError = 0;
 for (let index = 0; index < transfer.length; index += 1) {
-  const signedDelta = treated.data[index] - source.data[index];
-  const encoded = clampByte(127.5 + signedDelta / 2);
+  const sourceLinear = srgbToLinear(source.data[index]);
+  const treatedLinear = srgbToLinear(treated.data[index]);
+  const signedDelta = treatedLinear - sourceLinear;
+  const encoded = clampByte(127.5 + signedDelta * 127.5);
   transfer[index] = encoded;
 
-  const reconstructed = clampByte(
-    source.data[index] + (encoded / 255 - 0.5) * 510,
+  const reconstructed = linearToSrgbByte(
+    sourceLinear + (encoded / 255 - 0.5) * 2,
   );
   absoluteError += Math.abs(reconstructed - treated.data[index]);
 }
@@ -81,7 +97,7 @@ console.log(
   JSON.stringify({
     output: outputPath,
     dimensions: [source.width, source.height],
-    encoding: "signed-rgb-transfer-centered-at-0.5",
+    encoding: "signed-linear-rgb-transfer-centered-at-0.5",
     meanChannelError: Number(meanChannelError.toFixed(6)),
   }),
 );

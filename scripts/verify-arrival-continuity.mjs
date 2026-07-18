@@ -158,10 +158,7 @@ function evidenceIssues(viewport, expected, evidence) {
     );
   }
   const authoredFrameIndices = mediaTimes.map((mediaTime) =>
-    Math.min(
-      Math.round(mediaTime * expected.fps),
-      expectedFrames.length - 1,
-    ),
+    Math.min(Math.round(mediaTime * expected.fps), expectedFrames.length - 1),
   );
   if (
     authoredFrameIndices[0] !== 0 ||
@@ -219,9 +216,9 @@ function evidenceIssues(viewport, expected, evidence) {
     issues.push(`held endpoint camera mismatch: error=${heldCameraError}`);
   }
   const heldAtEnd =
-    hold?.connected === true &&
-    hold?.visible === true &&
-    hold?.isTopPlateMedia === true &&
+    hold?.mediaDetached === true &&
+    hold?.compositorOwned === true &&
+    hold?.canvasPresented === true &&
     hold?.paused === true &&
     hold?.ended === true &&
     Number.isFinite(hold?.currentTime) &&
@@ -231,9 +228,9 @@ function evidenceIssues(viewport, expected, evidence) {
   if (!heldAtEnd) {
     issues.push(
       `final decoded frame was not retained at desk: ${JSON.stringify({
-        connected: hold?.connected,
-        visible: hold?.visible,
-        isTopPlateMedia: hold?.isTopPlateMedia,
+        mediaDetached: hold?.mediaDetached,
+        compositorOwned: hold?.compositorOwned,
+        canvasPresented: hold?.canvasPresented,
         paused: hold?.paused,
         ended: hold?.ended,
         currentTime: hold?.currentTime,
@@ -319,9 +316,9 @@ function runAntiStubSelfTest() {
     frames: Array.from({ length: expected.frameCount }, () => staticFrame),
     hold: {
       srcPath: expected.forward,
-      connected: true,
-      visible: true,
-      isTopPlateMedia: true,
+      mediaDetached: true,
+      compositorOwned: true,
+      canvasPresented: true,
       paused: true,
       ended: true,
       currentTime: expected.duration,
@@ -356,6 +353,8 @@ function installArrivalProbe(expected) {
   const nativeRequestVideoFrameCallback =
     HTMLVideoElement.prototype.requestVideoFrameCallback;
   const decodedFrames = new Map();
+  const pendingFrames = new Map();
+  const presentedProjections = new Map();
   const firstFrameArmed = new WeakSet();
   let trackedVideo = null;
 
@@ -382,6 +381,31 @@ function installArrivalProbe(expected) {
       return null;
     }
   };
+  const bindPresentation = (frame, presentation) => {
+    frame.profile = presentation.profile;
+    frame.camera = presentation.camera;
+  };
+  window.addEventListener("lazy-a:compositor-frame-presented", (event) => {
+    const detail = clone(event.detail);
+    const projection = clone(window.__lazyAPlateProjection ?? null);
+    const plate = window.__lazyAPlateState;
+    if (
+      !Number.isInteger(detail?.projectionFrame) ||
+      !projection?.camera ||
+      typeof plate?.profile !== "string" ||
+      !["transitioning:opening-to-desk", "resting:desk"].includes(plate.state)
+    ) {
+      return;
+    }
+    const presentation = {
+      profile: plate.profile,
+      camera: projection.camera,
+    };
+    presentedProjections.set(detail.projectionFrame, presentation);
+    const waiting = pendingFrames.get(detail.projectionFrame) ?? [];
+    for (const frame of waiting) bindPresentation(frame, presentation);
+    pendingFrames.delete(detail.projectionFrame);
+  });
 
   const fingerprint = (video, projection) => {
     if (!video.videoWidth || !video.videoHeight || video.readyState < 2) {
@@ -480,11 +504,18 @@ function installArrivalProbe(expected) {
         : null,
     };
     decodedFrames.set(metadata.presentedFrames, frame);
-    setTimeout(() => {
-      const projection = clone(window.__lazyAPlateProjection ?? null);
-      frame.profile = window.__lazyAPlateState?.profile ?? null;
-      frame.camera = projection?.camera ?? null;
-    }, 0);
+    const authoredFrame = Math.min(
+      Math.round(metadata.mediaTime * expectedFps),
+      Math.round(expectedDuration * expectedFps),
+    );
+    const presentation = presentedProjections.get(authoredFrame);
+    if (presentation) {
+      bindPresentation(frame, presentation);
+    } else {
+      const waiting = pendingFrames.get(authoredFrame) ?? [];
+      waiting.push(frame);
+      pendingFrames.set(authoredFrame, waiting);
+    }
   };
 
   const armFirstFrame = (video) => {
@@ -513,6 +544,21 @@ function installArrivalProbe(expected) {
     }
     return result;
   };
+  const nativeSrc = Object.getOwnPropertyDescriptor(
+    HTMLMediaElement.prototype,
+    "src",
+  );
+  if (nativeSrc?.get && nativeSrc.set) {
+    Object.defineProperty(HTMLMediaElement.prototype, "src", {
+      configurable: nativeSrc.configurable,
+      enumerable: nativeSrc.enumerable,
+      get: nativeSrc.get,
+      set(value) {
+        nativeSrc.set.call(this, value);
+        if (this instanceof HTMLVideoElement) armFirstFrame(this);
+      },
+    });
+  }
   new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.target instanceof HTMLVideoElement) {
@@ -546,38 +592,38 @@ function installArrivalProbe(expected) {
   };
 
   probe.snapshot = () => {
-    const video =
-      trackedVideo ??
-      [...document.querySelectorAll('[data-room-renderer="plate"] video')].find(
-        isArrivalVideo,
-      ) ??
-      null;
+    const video = trackedVideo;
     const projection = clone(window.__lazyAPlateProjection ?? null);
     const plate = clone(window.__lazyAPlateState ?? null);
     let hold = null;
     if (video) {
-      const style = getComputedStyle(video);
-      const bounds = video.getBoundingClientRect();
-      const media = [
-        ...video.parentElement.querySelectorAll("img, video"),
-      ].filter((element) => {
-        const mediaStyle = getComputedStyle(element);
-        return (
-          mediaStyle.display !== "none" &&
-          mediaStyle.visibility !== "hidden" &&
-          Number(mediaStyle.opacity) > 0
-        );
-      });
+      const canvas = [...document.querySelectorAll("canvas")]
+        .map((element) => ({
+          element,
+          bounds: element.getBoundingClientRect(),
+          style: getComputedStyle(element),
+        }))
+        .filter(
+          ({ bounds, style }) =>
+            style.display !== "none" &&
+            style.visibility !== "hidden" &&
+            Number(style.opacity) > 0 &&
+            bounds.width >= innerWidth &&
+            bounds.height >= innerHeight,
+        )
+        .sort(
+          (left, right) =>
+            right.bounds.width * right.bounds.height -
+            left.bounds.width * left.bounds.height,
+        )[0];
       hold = {
         srcPath: sourcePath(video),
-        connected: video.isConnected,
-        visible:
-          style.display !== "none" &&
-          style.visibility !== "hidden" &&
-          Number(style.opacity) > 0 &&
-          bounds.width >= innerWidth &&
-          bounds.height >= innerHeight,
-        isTopPlateMedia: media.at(-1) === video,
+        mediaDetached: !video.isConnected,
+        compositorOwned: Boolean(video.dataset.lazyAPlate),
+        canvasPresented:
+          Boolean(canvas) &&
+          window.__lazyACompositor?.atomic === true &&
+          window.__lazyACompositor?.occlusion === "authored-depth-geometry",
         paused: video.paused,
         ended: video.ended,
         currentTime: video.currentTime,

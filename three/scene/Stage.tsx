@@ -1,21 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 
-import { Canvas, useFrame, type RootState } from "@react-three/fiber";
+import { Canvas, type RootState } from "@react-three/fiber";
 import { AgXToneMapping } from "three";
 
 import { HeroFilm } from "@/components/room/HeroFilm";
+import { HeroSurface } from "@/components/room/HeroSurface";
+import {
+  PlateCompositor,
+  type PlateStatus,
+} from "@/components/room/PlateCompositor";
 import { PlateRoom } from "@/components/room/PlateRoom";
 import { AttentionNavigation } from "@/components/site/AttentionNavigation";
 import { announceRoomSettled } from "@/lib/deferredAssets";
-import { PHONE_MAX_WIDTH, selectPlateVariant } from "@/lib/plateSpace";
 import {
   adaptPlateManifest,
-  getPlateProjection,
   type PlateExperienceState,
   type PlateVariant,
 } from "@/lib/plateAssets";
+import { PHONE_MAX_WIDTH, selectPlateVariant } from "@/lib/plateSpace";
 import { RoomClockDriver } from "@/three/animation/RoomClockDriver";
 import {
   plateExperienceReducer,
@@ -33,7 +37,6 @@ const INITIAL_EXPERIENCE: PlateExperienceState = {
   transition: "opening-to-desk",
   phase: "transitioning",
 };
-
 const AUTHORED_PLATES = adaptPlateManifest(plateManifest);
 
 function isCaptureRun(): boolean {
@@ -51,45 +54,12 @@ function viewportVariant(): PlateVariant {
     : "wide";
 }
 
-function PlateProjectionCamera() {
-  const lastProjection = useRef<ReturnType<typeof getPlateProjection>>(null);
-  useFrame(({ camera }) => {
-    const projection = getPlateProjection();
-    if (!projection || projection === lastProjection.current) return;
-    lastProjection.current = projection;
-    camera.position.set(...projection.camera.position);
-    camera.quaternion.set(...projection.camera.quaternion);
-    if ("fov" in camera && camera.fov !== projection.camera.fov) {
-      camera.fov = projection.camera.fov;
-      camera.updateProjectionMatrix();
-    }
-  });
-  return null;
-}
-
-function LivingPlateLayers({
-  onExperienceEvent,
-}: {
-  onExperienceEvent: (
-    event: Extract<ExperienceEvent, { type: "SELECT" | "CLOSE" }>,
-  ) => void;
-}) {
-  return (
-    <>
-      <ambientLight intensity={Math.PI} />
-      <RoomClockDriver />
-      <PlateProjectionCamera />
-      <HeroFilm />
-      <AttentionNavigation onExperienceEvent={onExperienceEvent} />
-    </>
-  );
-}
-
-/** The visitor runtime is one authored plate surface plus stateful live layers. */
+/** The visitor runtime is one Canvas, one authored plate frame, and one camera. */
 export function Stage() {
   const study = activeStudy();
   const [captureMode] = useState(isCaptureRun);
   const [variant, setVariant] = useState<PlateVariant>(viewportVariant);
+  const [plateStatus, setPlateStatus] = useState<PlateStatus>("ready");
   const [experience, setExperience] =
     useState<PlateExperienceState>(INITIAL_EXPERIENCE);
 
@@ -165,41 +135,58 @@ export function Stage() {
             }
       }
     >
-      <PlateRoom
-        key={variant}
-        variant={variant}
-        state={experience}
-        manifest={AUTHORED_PLATES}
-        onDeskSettled={settleAtDesk}
-        onTransitionEnded={transitionEnded}
-      />
-      <Canvas
-        shadows={false}
-        gl={{
-          alpha: true,
-          preserveDrawingBuffer: true,
-          toneMapping: AgXToneMapping,
-        }}
-        style={{ position: "absolute", inset: 0, background: "transparent" }}
-        camera={{
-          fov: study.fov,
-          near: STAGE.camera.near,
-          far: STAGE.camera.far,
-          position: [...study.position],
-        }}
-        onCreated={(state) => {
-          state.gl.setClearColor(0x000000, 0);
-          state.camera.lookAt(...study.lookAt);
-          if (process.env.NODE_ENV !== "production") {
-            (window as Window & { __stage?: RootState }).__stage = state;
-            scheduleProgressShot(state);
-          }
-        }}
-      >
-        <LivingPlateLayers
-          onExperienceEvent={handleExperienceEvent}
+      <HeroFilm>
+        <PlateRoom
+          variant={variant}
+          state={experience}
+          status={plateStatus}
+          manifest={AUTHORED_PLATES}
         />
-      </Canvas>
+        <Canvas
+          shadows={false}
+          gl={{
+            alpha: true,
+            preserveDrawingBuffer: true,
+            toneMapping: AgXToneMapping,
+          }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "transparent",
+          }}
+          camera={{
+            fov: study.fov,
+            near: STAGE.camera.near,
+            far: STAGE.camera.far,
+            position: [...study.position],
+          }}
+          onCreated={(state) => {
+            state.gl.setClearColor(0x000000, 0);
+            if (process.env.NODE_ENV !== "production") {
+              (window as Window & { __stage?: RootState }).__stage = state;
+              scheduleProgressShot(state);
+            }
+          }}
+        >
+          <PlateCompositor
+            variant={variant}
+            state={experience}
+            manifest={AUTHORED_PLATES}
+            onDeskSettled={settleAtDesk}
+            onTransitionEnded={transitionEnded}
+            onStatusChange={setPlateStatus}
+          >
+            <RoomClockDriver />
+            <Suspense fallback={null}>
+              <HeroSurface />
+            </Suspense>
+            <AttentionNavigation
+              experience={experience}
+              onExperienceEvent={handleExperienceEvent}
+            />
+          </PlateCompositor>
+        </Canvas>
+      </HeroFilm>
     </div>
   );
 }

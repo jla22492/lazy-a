@@ -256,6 +256,7 @@ function heroAuthoringContractIssues(authoring, catalog) {
     ([viewport, value]) =>
       (value?.frames ?? []).map((frame) => ({ ...frame, viewport })),
   );
+  const edgeQualityReferences = new Map();
   for (const frame of catalogFrames) {
     const label = `${frame.viewport}/${frame.authoringReferenceId ?? "missing-reference"}`;
     const reference = authoring?.references?.[frame.authoringReferenceId ?? ""];
@@ -306,18 +307,34 @@ function heroAuthoringContractIssues(authoring, catalog) {
       issues.push(`${label} HeroLiveSurface projected geometry is invalid`);
     }
     const projectedOccluders = projection?.green?.objects;
+    const greenApplicable = projection?.green?.applicable;
     if (
       !Array.isArray(projectedOccluders) ||
-      projectedOccluders.length !== expectedOccluders.size ||
+      typeof greenApplicable !== "boolean" ||
+      greenApplicable !== projectedOccluders.length > 0 ||
       projectedOccluders.some(
         (entry) =>
+          !expectedOccluders.has(entry.object) ||
           entry.geometrySha256 !== expectedOccluders.get(entry.object) ||
           !validBoundaries(entry.boundaries),
       ) ||
       new Set(projectedOccluders.map(({ object }) => object)).size !==
-        expectedOccluders.size
+        projectedOccluders.length
     ) {
       issues.push(`${label} HeroOccluder projected geometry is invalid`);
+    }
+    if (greenApplicable) {
+      edgeQualityReferences.set(
+        frame.viewport,
+        (edgeQualityReferences.get(frame.viewport) ?? 0) + 1,
+      );
+    }
+  }
+  for (const viewport of Object.keys(catalog?.viewports ?? {})) {
+    if ((edgeQualityReferences.get(viewport) ?? 0) < 3) {
+      issues.push(
+        `${viewport} needs at least three authored foreground edge-quality references`,
+      );
     }
   }
   return issues;
@@ -366,13 +383,17 @@ function pointInsidePolygon(point, polygon) {
 }
 
 function referenceRegionProjectionIssues(regions, projection) {
-  const issues = referenceRegionMapIssues(regions);
+  const greenApplicable = projection?.green?.applicable === true;
+  const issues = referenceRegionMapIssues(regions, { greenApplicable });
   if (issues.length > 0) return issues;
   const boundarySets = [
     projection?.red?.boundaries,
-    projection?.green?.objects?.flatMap(({ boundaries }) => boundaries),
+    greenApplicable
+      ? projection?.green?.objects?.flatMap(({ boundaries }) => boundaries)
+      : null,
   ];
   for (let channel = 0; channel < boundarySets.length; channel += 1) {
+    if (channel === 1 && !greenApplicable) continue;
     const segments = (boundarySets[channel] ?? []).flatMap((boundary) =>
       boundary.slice(1).map((end, index) => [boundary[index], end]),
     );
@@ -431,7 +452,7 @@ function referenceRegionProjectionIssues(regions, projection) {
   return issues;
 }
 
-function referenceRegionMapIssues(regions) {
+function referenceRegionMapIssues(regions, { greenApplicable = true } = {}) {
   if (
     !Buffer.isBuffer(regions?.data) ||
     !Number.isInteger(regions?.width) ||
@@ -471,6 +492,14 @@ function referenceRegionMapIssues(regions) {
   const issues = [];
   const names = ["red poster-axis", "green foreground-edge", "blue treatment"];
   for (let channel = 0; channel < names.length; channel += 1) {
+    if (channel === 1 && !greenApplicable) {
+      if (counts[channel] !== 0) {
+        issues.push(
+          `green foreground-edge region must be empty without an authored crossing; got ${counts[channel]} pixels`,
+        );
+      }
+      continue;
+    }
     if (counts[channel] < minimums[channel]) {
       issues.push(
         `${names[channel]} region needs substantial coverage; got ${counts[channel]} pixels, minimum ${minimums[channel]}`,
@@ -778,9 +807,14 @@ function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
   const posterAxis = presentedFrames.map((frame) =>
     measureEdgeAlignment(frame, frame.reference?.regions ?? {}, 0),
   );
-  const foreground = presentedFrames.map((frame) =>
-    measureEdgeAlignment(frame, frame.reference?.regions ?? {}, 1),
-  );
+  const foreground = presentedFrames
+    .filter(
+      (frame) =>
+        frame.reference?.authoringProjection?.green?.applicable === true,
+    )
+    .map((frame) =>
+      measureEdgeAlignment(frame, frame.reference?.regions ?? {}, 1),
+    );
   return {
     firstFrame: maskedPixelDelta(
       firstPainted,
@@ -856,7 +890,7 @@ function fixtureFrame({
   };
 }
 
-function fixtureRegions() {
+function fixtureRegions({ greenApplicable = true } = {}) {
   const width = 32;
   const height = 32;
   const data = Buffer.alloc(width * height * 4);
@@ -870,9 +904,11 @@ function fixtureRegions() {
     mark(6, value, 0);
     mark(25, value, 0);
   }
-  for (let y = 10; y <= 21; y += 1) {
-    mark(15, y, 1);
-    mark(17, y, 1);
+  if (greenApplicable) {
+    for (let y = 10; y <= 21; y += 1) {
+      mark(15, y, 1);
+      mark(17, y, 1);
+    }
   }
   for (let y = 8; y <= 23; y += 1) {
     for (let x = 8; x <= 23; x += 1) {
@@ -882,12 +918,19 @@ function fixtureRegions() {
   return { data, width, height };
 }
 
-function withFixtureReference(frame, composite = frame) {
+function withFixtureReference(
+  frame,
+  composite = frame,
+  { greenApplicable = true } = {},
+) {
   return {
     ...frame,
     reference: {
       composite,
-      regions: fixtureRegions(),
+      regions: fixtureRegions({ greenApplicable }),
+      authoringProjection: {
+        green: { applicable: greenApplicable },
+      },
     },
   };
 }
@@ -952,6 +995,7 @@ function runSelfTests() {
       ],
     },
     green: {
+      applicable: true,
       objects: [
         {
           object: "HeroOccluderDeskCard",
@@ -1196,6 +1240,24 @@ function runSelfTests() {
     /projected|geometry/,
     "arbitrary non-overlapping traces must fail geometry projection",
   );
+  const nonOccludedProjection = structuredClone(fixtureProjection);
+  nonOccludedProjection.green = { applicable: false, objects: [] };
+  assert.deepEqual(
+    referenceRegionProjectionIssues(
+      fixtureRegions({ greenApplicable: false }),
+      nonOccludedProjection,
+    ),
+    [],
+    "non-occluded references retain axis and treatment evidence without a fabricated green trace",
+  );
+  assert.match(
+    referenceRegionProjectionIssues(
+      fixtureRegions(),
+      nonOccludedProjection,
+    ).join("\n"),
+    /must be empty/,
+    "green pixels without an authored crossing must fail",
+  );
 
   assert.equal(
     normalizePresentedPixelCatalog(
@@ -1309,7 +1371,7 @@ function runSelfTests() {
   );
   assert.equal(fabricatedDiagnostics.pixels.firstFrame.meanLumaDelta, 0);
   console.log(
-    "hero lifecycle self-tests passed (alias/hash provenance, geometry mismatch, arbitrary traces, destination/direction/phase coverage, out-of-order presentation, and final-pixel negatives).",
+    "hero lifecycle self-tests passed (alias/hash provenance, geometry mismatch, conditional real-crossing traces, destination/direction/phase coverage, out-of-order presentation, and final-pixel negatives).",
   );
 }
 
@@ -1574,7 +1636,7 @@ async function installPageProbes(expectedProfile) {
         capture: null,
         latestFrame: 0,
         overlay: null,
-        slowedVideo: null,
+        slowedVideos: [],
         armedAt: 0,
         playbackReleasedAt: 0,
         presentedFramesAfterRelease: [],
@@ -1582,10 +1644,10 @@ async function installPageProbes(expectedProfile) {
         compositorFrames: new Map(),
       };
       const restorePlaybackRate = () => {
-        if (!presented.slowedVideo) return;
-        presented.slowedVideo.element.playbackRate =
-          presented.slowedVideo.playbackRate;
-        presented.slowedVideo = null;
+        for (const { element, playbackRate } of presented.slowedVideos) {
+          element.playbackRate = playbackRate;
+        }
+        presented.slowedVideos.length = 0;
       };
       const removeOverlay = () => {
         presented.overlay?.remove();
@@ -1626,15 +1688,28 @@ async function installPageProbes(expectedProfile) {
         );
         document.documentElement.append(overlay);
         presented.overlay = overlay;
-        const heroVideo = records.find(
-          ({ element }) => element.dataset.lazyAHero === "true",
-        )?.element;
-        if (heroVideo && !presented.slowedVideo) {
-          presented.slowedVideo = {
-            element: heroVideo,
-            playbackRate: heroVideo.playbackRate,
-          };
-          heroVideo.playbackRate = 0.0625;
+        const captureVideos = records
+          .map(({ element }) => element)
+          .filter(
+            (element) =>
+              element.dataset.lazyAHero === "true" ||
+              (Boolean(element.dataset.lazyAPlate) &&
+                !element.paused &&
+                !element.ended),
+          );
+        for (const element of captureVideos) {
+          if (
+            presented.slowedVideos.some(
+              ({ element: slowed }) => slowed === element,
+            )
+          ) {
+            continue;
+          }
+          presented.slowedVideos.push({
+            element,
+            playbackRate: element.playbackRate,
+          });
+          element.playbackRate = 0.0625;
         }
         return source.bounds.toJSON();
       };
@@ -1716,7 +1791,7 @@ async function installPageProbes(expectedProfile) {
               tryCapturePresentedFrame(metadata.presentedFrames);
             }
             callback(now, metadata);
-            if (this.closest('[data-room-renderer="plate"]')) {
+            if (this.dataset.lazyAPlate) {
               recordDecodedFrame(metadata);
             }
           });
@@ -2083,7 +2158,11 @@ async function loadPresentedPixelReference(reference, viewport) {
       `region reference for frame ${reference.heroFramePresented} is invalid: ${regionIssues.join("; ")}`,
     );
   }
-  return { composite, regions };
+  return {
+    composite,
+    regions,
+    authoringProjection: reference.authoringProjection,
+  };
 }
 
 async function armPresentedFrameCapture(reference) {

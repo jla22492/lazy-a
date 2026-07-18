@@ -32,12 +32,10 @@ export interface PlateProjectionFrame {
     | readonly [number, number, number, number, number, number, number, number]
     | null;
   heroReciprocalW: readonly [number, number, number, number] | null;
-  heroOccluders: readonly (readonly number[])[];
-  heroOcclusionMask?: {
-    size: number;
-    encoding: "rle-varint-v1";
-    rle: string;
-  };
+  lampLevel: number;
+  visibleBulbLevel: number;
+  revealLevel: number;
+  contactIndentDepth: number;
 }
 
 export interface PlateAsset {
@@ -139,33 +137,6 @@ function projectionFrame(value: unknown): PlateProjectionFrame | undefined {
   if (!camera) return undefined;
   const hero = value.hero;
   const heroReciprocalW = value.heroReciprocalW;
-  const heroOccluders = Array.isArray(value.heroOccluders)
-    ? value.heroOccluders.map((polygon): number[] => {
-        if (Array.isArray(polygon) && polygon.length === 0) return [];
-        return Array.isArray(polygon) &&
-          polygon.length >= 6 &&
-          polygon.length % 2 === 0 &&
-          polygon.every((item) => typeof item === "number")
-          ? polygon
-          : [];
-      })
-    : [];
-  const rawMask = isRecord(value.heroOcclusionMask)
-    ? value.heroOcclusionMask
-    : undefined;
-  const heroOcclusionMask =
-    rawMask &&
-    typeof rawMask.size === "number" &&
-    rawMask.size > 0 &&
-    rawMask.encoding === "rle-varint-v1" &&
-    typeof rawMask.rle === "string" &&
-    rawMask.rle.length > 0
-      ? {
-          size: rawMask.size,
-          encoding: "rle-varint-v1" as const,
-          rle: rawMask.rle,
-        }
-      : undefined;
   return {
     camera,
     hero:
@@ -184,10 +155,21 @@ function projectionFrame(value: unknown): PlateProjectionFrame | undefined {
               (item) =>
                 typeof item === "number" && Number.isFinite(item) && item > 0,
             )
-          ? (heroReciprocalW as unknown as readonly [number, number, number, number])
+          ? (heroReciprocalW as unknown as readonly [
+              number,
+              number,
+              number,
+              number,
+            ])
           : null,
-    heroOccluders,
-    heroOcclusionMask,
+    lampLevel: typeof value.lampLevel === "number" ? value.lampLevel : 0,
+    visibleBulbLevel:
+      typeof value.visibleBulbLevel === "number" ? value.visibleBulbLevel : 0,
+    revealLevel: typeof value.revealLevel === "number" ? value.revealLevel : 0,
+    contactIndentDepth:
+      typeof value.contactIndentDepth === "number"
+        ? value.contactIndentDepth
+        : 0,
   };
 }
 

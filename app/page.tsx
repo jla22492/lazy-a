@@ -25,7 +25,7 @@ function RoomBootstrap() {
 
 const Stage = dynamic(
   () => import("@/three/scene/Stage").then((module) => module.Stage),
-  { loading: RoomBootstrap, ssr: false },
+  { ssr: false },
 );
 
 /**
@@ -37,6 +37,7 @@ const Stage = dynamic(
 export default function Home() {
   return (
     <main className="fixed inset-0">
+      <RoomBootstrap />
       <Stage />
     </main>
   );
