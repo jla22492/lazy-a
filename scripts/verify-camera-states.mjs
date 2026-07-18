@@ -17,6 +17,7 @@
  */
 
 import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 
 import { chromium } from "playwright";
 import { PerspectiveCamera, Quaternion, Vector3 } from "three";
@@ -45,6 +46,10 @@ const DECLARED_METRIC_TOLERANCE = 1e-6;
 const MIN_JOURNAL_TRAVEL = 0.05;
 const MAX_CONTACT_YAW_FROM_DESK = 0.12;
 const MIN_ABOUT_LEFT_YAW = 0.05;
+const APPROVED_R4_JOURNAL_PATH_SHA256 = {
+  wide: "798da616b3587cf23e15a90d31022ade306c1ade986d79611a59453877a27bfe",
+  portrait: "bab1e9a77bd34c16849ff8d35f1f47ac02cd08c57e853c5b422dabe66da323fb",
+};
 const APPROVED_R3_ENDPOINT_CAMERAS = {
   wide: {
     opening: {
@@ -344,6 +349,12 @@ function cameraAngularStepDegrees(left, right) {
   return (2 * Math.acos(Math.min(1, dot)) * 180) / Math.PI;
 }
 
+function cameraPathSha256(frames) {
+  return createHash("sha256")
+    .update(JSON.stringify(frames.map(({ camera }) => camera)))
+    .digest("hex");
+}
+
 function journalMotionMetrics(frames) {
   if (
     !Array.isArray(frames) ||
@@ -356,13 +367,28 @@ function journalMotionMetrics(frames) {
   ) {
     return null;
   }
+  const start = frames[0].camera.position;
+  const end = frames.at(-1).camera.position;
+  const horizontalTravel = [end[0] - start[0], end[2] - start[2]];
+  const horizontalTravelLength = Math.hypot(...horizontalTravel);
+  const forwardDirection =
+    horizontalTravelLength > CAMERA_POSITION_EPSILON
+      ? horizontalTravel.map((value) => value / horizontalTravelLength)
+      : null;
   const steps = frames.slice(1).map((frame, index) => {
     const previous = frames[index].camera;
     const current = frame.camera;
+    const delta = current.position.map(
+      (value, axis) => value - previous.position[axis],
+    );
     return {
       frame: index + 1,
       translation: cameraPositionStep(previous, current),
       angleDegrees: cameraAngularStepDegrees(previous, current),
+      forwardTravel: forwardDirection
+        ? delta[0] * forwardDirection[0] + delta[2] * forwardDirection[1]
+        : Number.NEGATIVE_INFINITY,
+      downwardTravel: -delta[1],
     };
   });
   const firstTranslation = steps.find(
@@ -394,10 +420,17 @@ function journalMotionMetrics(frames) {
       ...steps.map(({ angleDegrees }) => angleDegrees),
     ),
     maxOrientationOnlyPlateauFrames: maxOrientationOnlyPlateau,
+    horizontalTravelLength,
+    minimumForwardStep: Math.min(
+      ...steps.map(({ forwardTravel }) => forwardTravel),
+    ),
+    minimumDownwardStep: Math.min(
+      ...steps.map(({ downwardTravel }) => downwardTravel),
+    ),
   };
 }
 
-function journalMotionIssues(frames) {
+function journalMotionIssues(frames, approvedPathSha256 = null) {
   const metrics = journalMotionMetrics(frames);
   if (!metrics) return ["actual camera samples are incomplete"];
   const issues = [];
@@ -420,6 +453,24 @@ function journalMotionIssues(frames) {
   ) {
     issues.push(
       `orientation-only plateau lasts ${metrics.maxOrientationOnlyPlateauFrames} frames; maximum is ${MAX_ORIENTATION_ONLY_PLATEAU_STEPS}`,
+    );
+  }
+  if (
+    metrics.horizontalTravelLength <= CAMERA_POSITION_EPSILON ||
+    metrics.minimumForwardStep <= CAMERA_POSITION_EPSILON
+  ) {
+    issues.push(
+      "every authored camera step must make continuous forward progress without backtracking",
+    );
+  }
+  if (metrics.minimumDownwardStep <= CAMERA_POSITION_EPSILON) {
+    issues.push(
+      "every authored camera step must make continuous downward progress without rising",
+    );
+  }
+  if (approvedPathSha256 && cameraPathSha256(frames) !== approvedPathSha256) {
+    issues.push(
+      "camera samples must equal the approved hip-pivot path without lateral backtracking or a non-pivot substitute",
     );
   }
   return issues;
@@ -547,9 +598,10 @@ function cameraContractFailures(manifest) {
     const physicalNotebookWorldQuad = variant?.journal?.notebookWorldQuad;
     const motionMetrics = journalMotionMetrics(frames);
     failures.push(
-      ...journalMotionIssues(frames).map(
-        (issue) => `${profile}: JOURNAL ${issue}`,
-      ),
+      ...journalMotionIssues(
+        frames,
+        APPROVED_R4_JOURNAL_PATH_SHA256[profile],
+      ).map((issue) => `${profile}: JOURNAL ${issue}`),
       ...journalDeclaredMotionIssues(transition, motionMetrics).map(
         (issue) => `${profile}: JOURNAL ${issue}`,
       ),
@@ -681,7 +733,7 @@ if (selfTest) {
   ];
   const readableApproachFrames = Array.from({ length: 24 }, (_, index) => {
     const progress = index / 23;
-    const position = [0, 0, 2 - 1.2 * progress];
+    const position = [0, 0.1 - 0.1 * progress, 2 - 1.2 * progress];
     const camera = new PerspectiveCamera(90, 1, 0.1, 200);
     camera.position.set(...position);
     camera.lookAt(1 - progress, 0, 0);
@@ -773,13 +825,63 @@ if (selfTest) {
   }
   const coupledFrames = Array.from({ length: 6 }, (_, index) => ({
     camera: {
-      position: [0, -index * 0.01, -index * 0.02],
+      position: [
+        index * index * 0.002,
+        -index * index * 0.001,
+        -index * index * 0.004,
+      ],
       quaternion: yawQuaternion(index),
       fov: 35,
     },
   }));
-  if (journalMotionIssues(coupledFrames).length > 0) {
-    throw new Error("a continuously coupled JOURNAL fixture must pass");
+  const coupledPathSha256 = cameraPathSha256(coupledFrames);
+  if (journalMotionIssues(coupledFrames, coupledPathSha256).length > 0) {
+    throw new Error(
+      "an approved continuously coupled JOURNAL fixture must pass",
+    );
+  }
+  const backtrackingFrames = structuredClone(coupledFrames);
+  backtrackingFrames[3].camera.position[2] =
+    backtrackingFrames[2].camera.position[2] + 0.005;
+  if (
+    !journalMotionIssues(backtrackingFrames, coupledPathSha256).some((issue) =>
+      issue.includes("forward"),
+    )
+  ) {
+    throw new Error("a backward JOURNAL step must fail");
+  }
+  const upwardFrames = structuredClone(coupledFrames);
+  upwardFrames[3].camera.position[1] =
+    upwardFrames[2].camera.position[1] + 0.001;
+  if (
+    !journalMotionIssues(upwardFrames, coupledPathSha256).some((issue) =>
+      issue.includes("downward"),
+    )
+  ) {
+    throw new Error("an upward JOURNAL step must fail");
+  }
+  const lateralBacktrackingFrames = structuredClone(coupledFrames);
+  lateralBacktrackingFrames[3].camera.position[0] = -0.01;
+  if (
+    !journalMotionIssues(lateralBacktrackingFrames, coupledPathSha256).some(
+      (issue) => issue.includes("approved hip-pivot"),
+    )
+  ) {
+    throw new Error("a lateral-backtracking JOURNAL path must fail");
+  }
+  const linearNonPivotFrames = Array.from({ length: 6 }, (_, index) => ({
+    camera: {
+      position: [index * 0.01, -index * 0.005, -index * 0.02],
+      quaternion: yawQuaternion(index),
+      fov: 35,
+    },
+  }));
+  if (
+    !journalMotionIssues(linearNonPivotFrames, coupledPathSha256).some(
+      (issue) => issue.includes("approved hip-pivot"),
+    )
+  ) {
+    throw new Error("a linear non-pivot JOURNAL path must fail");
   }
   const coupledMetrics = journalMotionMetrics(coupledFrames);
   const declaredMotion = {
@@ -834,7 +936,7 @@ if (selfTest) {
   }
 
   console.log(
-    "camera-state self-tests passed (reading-half physical sightline, missing/fabricated endpoint declarations, fabricated motion scalars, discontinuity, staged-motion, unreadable endpoint, and clipped-coverage negatives).",
+    "camera-state self-tests passed (approved pivot, backward/upward/lateral backtrack, non-pivot, reading-half sightline, endpoint, discontinuity, staged-motion, and clipped-coverage negatives).",
   );
   process.exit(0);
 }

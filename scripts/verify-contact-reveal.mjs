@@ -54,6 +54,13 @@ const EXPECTED_CONTACT_COPY = [
 const EXPECTED_INDENT_DEPTH = 0.0003;
 const MAX_GRAZING_ANGLE_DEGREES = 35;
 const CONTACT_ACTIVATION_SAMPLES = 31;
+const CONTACT_ACTIVATION_LEVELS = Array.from(
+  { length: CONTACT_ACTIVATION_SAMPLES },
+  (_, index) => {
+    const elapsed = index / (CONTACT_ACTIVATION_SAMPLES - 1);
+    return Number((elapsed * elapsed * (3 - 2 * elapsed)).toFixed(12));
+  },
+);
 const PRACTICAL_AUTHORING_MANIFEST =
   "/room/contact/practical-light-authoring-manifest.json";
 const PRACTICAL_AUTHORING_GENERATOR = "blender-background-python";
@@ -117,15 +124,24 @@ function exactCameraMatch(left, right) {
   );
 }
 
-function monotonicallyRises(values) {
-  return (
-    values.length > 1 &&
-    values.every(
-      (value, index) =>
-        Number.isFinite(value) && (index === 0 || value >= values[index - 1]),
-    ) &&
-    values.at(-1) > values[0]
-  );
+function contactActivationSequenceIssues(frames) {
+  if (frames.length !== CONTACT_ACTIVATION_SAMPLES) {
+    return [
+      `activation must contain exactly ${CONTACT_ACTIVATION_SAMPLES} samples`,
+    ];
+  }
+  const issues = [];
+  for (const field of ["lampLevel", "visibleBulbLevel"]) {
+    const mismatch = frames.findIndex(
+      (frame, index) => frame?.[field] !== CONTACT_ACTIVATION_LEVELS[index],
+    );
+    if (mismatch >= 0) {
+      issues.push(
+        `${field} sample ${mismatch} must equal smoothstep(${mismatch}/30) = ${CONTACT_ACTIVATION_LEVELS[mismatch]}; got ${String(frames[mismatch]?.[field])}`,
+      );
+    }
+  }
+  return issues;
 }
 
 function canonicalJson(value) {
@@ -665,16 +681,12 @@ function contactManifestFailures(manifest, authoring = null) {
         `${profile}: CONTACT must hold the approved R3 desk camera for the first ${CONTACT_ACTIVATION_SAMPLES} authored samples`,
       );
     }
-    if (
-      !monotonicallyRises(
-        activationFrames.map((frame) => frame.visibleBulbLevel),
-      ) ||
-      !monotonicallyRises(activationFrames.map((frame) => frame.lampLevel))
-    ) {
-      failures.push(
-        `${profile}: CONTACT visibleBulbLevel and lampLevel must rise monotonically during the 1.0s activation hold`,
-      );
-    }
+    failures.push(
+      ...contactActivationSequenceIssues(activationFrames).map(
+        (issue) =>
+          `${profile}: CONTACT 1.0s activation must use the exact 31-sample 30fps smoothstep sequence (${issue})`,
+      ),
+    );
     if (
       !frames[CONTACT_ACTIVATION_SAMPLES] ||
       exactCameraMatch(frames[CONTACT_ACTIVATION_SAMPLES].camera, desk)
@@ -746,6 +758,34 @@ async function loadLocalPracticalAuthoring(manifest) {
 
 if (selfTest) {
   assertR4ContactStubsFail();
+  const smoothstepActivationFrames = CONTACT_ACTIVATION_LEVELS.map((level) => ({
+    lampLevel: level,
+    visibleBulbLevel: level,
+  }));
+  assert.deepEqual(
+    contactActivationSequenceIssues(smoothstepActivationFrames),
+    [],
+    "the exact 31-sample CONTACT smoothstep sequence must pass",
+  );
+  const linearActivationFrames = Array.from(
+    { length: CONTACT_ACTIVATION_SAMPLES },
+    (_, index) => {
+      const level = index / (CONTACT_ACTIVATION_SAMPLES - 1);
+      return { lampLevel: level, visibleBulbLevel: level };
+    },
+  );
+  assert.match(
+    contactActivationSequenceIssues(linearActivationFrames).join("\n"),
+    /lampLevel sample 1[\s\S]*visibleBulbLevel sample 1/,
+    "a linear CONTACT activation ramp must fail both exact level sequences",
+  );
+  const wrongBulbFrames = structuredClone(smoothstepActivationFrames);
+  wrongBulbFrames[15].visibleBulbLevel = 0.51;
+  assert.match(
+    contactActivationSequenceIssues(wrongBulbFrames).join("\n"),
+    /visibleBulbLevel sample 15/,
+    "visibleBulbLevel must be checked independently from lampLevel",
+  );
   const fixtureHash = (label) =>
     createHash("sha256").update(label).digest("hex");
   const canonicalFixture = (value) => {
@@ -1142,7 +1182,7 @@ if (selfTest) {
   );
 
   console.log(
-    "contact-reveal self-tests passed (camera/geometry hash, portrait, arbitrary-region, and invisible-practical negatives).",
+    "contact-reveal self-tests passed (exact smoothstep, linear-ramp, independent bulb-level, camera/geometry hash, portrait, arbitrary-region, and invisible-practical negatives).",
   );
   process.exit(0);
 }
