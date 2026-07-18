@@ -15,6 +15,16 @@
 - [x] Commit the implementation plan (`979e220`).
 - [x] Add failing physical-continuity gates (`f76c07f`..`f65366b`;
   independent review clean).
+- [x] Task 2 correction: prove RED for a wide visible practical plus portrait
+  `offscreen-practical-light-pool-v1` relationship at the exact desk camera.
+- [x] Task 2 correction: restore the supplied lamp's natural rigid placement
+  and remove stretch, forced portrait relocation, and inferred multi-joint rigging.
+- [x] Task 2 correction: regenerate the master, practical evidence, manifest,
+  hero hash dependents, and exact camera/provenance contracts.
+- [x] Task 2 correction: inspect required original-resolution CONTACT/JOURNAL
+  strips and run the full authored-source verification battery.
+- [x] Task 2 correction: update the Task 2 report and commit only the focused
+  corrective files, leaving unrelated untracked files untouched.
 - [ ] Replace the split JOURNAL motion with one readable hip-pivot path.
 - [ ] Re-author CONTACT's visible practical and one-second activation beat.
 - [ ] Replace the non-atomic hero overlay and low-resolution occlusion path.

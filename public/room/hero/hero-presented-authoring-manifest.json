@@ -94,15 +94,15 @@
   "sources": {
     "compositorGlb": {
       "path": "public/room/hero/hero-compositor.glb",
-      "sha256": "2ce0436ebe1167d8e8c07e78e62dbd0522cef2898a6c06217a9edbb639bc51a3"
+      "sha256": "1985b345920e2672d9b61ac78657f6c0a8e3ec5a576d74e7b3eadcfb700b4273"
     },
     "masterBlend": {
       "path": "build/wo-0117-r/master.blend",
-      "sha256": "713ba379dddbdc774ecf45d538806de13128e0cfd197a73a4b1603c188946469"
+      "sha256": "d81279bba63ebb928c3605f5118d5af6c2f449b40051a6a44e25f34ee9d292ac"
     },
     "renderScript": {
       "path": "scripts/render-master-shots.py",
-      "sha256": "1d34f23cde4fa22d9a51d93972169a29280a5ba5fabb9112cff961c2fc4d40b5"
+      "sha256": "0d3a39eb4d7b0a77e7ee82b9030ae68c6979b66d1d12a472b495e53ed455d8b3"
     }
   },
   "version": 1

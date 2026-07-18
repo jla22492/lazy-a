@@ -18,7 +18,6 @@ import uuid
 from datetime import datetime, timezone
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Matrix, Quaternion, Vector
-from mathutils.kdtree import KDTree
 import numpy as np
 
 argv = sys.argv[sys.argv.index("--") + 1 :]
@@ -33,11 +32,7 @@ ORIGINAL_LEFT_BOUNDARY_X = -3.2
 EXTENDED_LEFT_BOUNDARY_X = -5.7
 CONTACT_PAPER_CENTER_XY = (-0.35, -0.04)
 CONTACT_SHADE_MAX_ERROR_DEGREES = 12.0
-CONTACT_LAMP_WHOLE_TRANSLATION = Vector((0.466707, -0.209931, 0.0))
-CONTACT_LAMP_LOWER_HINGE_DEGREES = -33.988
-CONTACT_LAMP_ELBOW_HINGE_DEGREES = -83.859
-CONTACT_LAMP_HEAD_HINGE_DEGREES = 102.555
-CONTACT_LAMP_BASE_YAW_DEGREES = -162.888
+CONTACT_LAMP_BASE_YAW_DEGREES = -37.2
 SHELL_OBJECTS = {
     "rear_wall": "Mesh_1",
     "floor": "Mesh_163",
@@ -479,7 +474,6 @@ def shade_geometry(lamp_objects):
         dimensions = maximum - minimum
         if (
             len(points) >= 300
-            and minimum.z > 1.1
             and max(dimensions.x, dimensions.y, dimensions.z) > 0.12
         ):
             shade_candidates.append(points)
@@ -533,255 +527,6 @@ def measured_lamp_base_bounds(lamp_objects):
     return component_bounds(base_points)
 
 
-def average_points(points):
-    return sum(points, Vector()) / len(points)
-
-
-def lamp_articulation_topology(lamp_objects, base_center, base_min_z):
-    fixture = next(
-        obj
-        for obj in lamp_objects
-        if obj.type == "MESH" and not obj.hide_render
-    )
-    components = []
-    for indices in mesh_component_indices(fixture):
-        points = [
-            fixture.matrix_world @ fixture.data.vertices[index].co
-            for index in indices
-        ]
-        minimum, maximum = component_bounds(points)
-        components.append(
-            {
-                "indices": indices,
-                "points": points,
-                "minimum": minimum,
-                "maximum": maximum,
-                "center": (minimum + maximum) * 0.5,
-                "movable": minimum.z >= base_min_z + 0.10,
-            }
-        )
-
-    fixed_joint_points = [
-        point
-        for component in components
-        if not component["movable"]
-        for point in component["points"]
-        if base_min_z + 0.075 <= point.z <= base_min_z + 0.14
-    ]
-    moving_joint_points = [
-        point
-        for component in components
-        if component["movable"]
-        for point in component["points"]
-        if point.z <= base_min_z + 0.18
-    ]
-    if not fixed_joint_points or not moving_joint_points:
-        raise RuntimeError("Desk-lamp lower articulation could not be measured")
-    fixed_tree = KDTree(len(fixed_joint_points))
-    for index, point in enumerate(fixed_joint_points):
-        fixed_tree.insert(point, index)
-    fixed_tree.balance()
-    lower_pairs = sorted(
-        (
-            (
-                distance,
-                (point + nearest) * 0.5,
-            )
-            for point in moving_joint_points
-            for nearest, _index, distance in (fixed_tree.find(point),)
-        ),
-        key=lambda pair: pair[0],
-    )[:160]
-    lower_center = average_points(
-        [midpoint for _distance, midpoint in lower_pairs]
-    )
-
-    shade_axis, shade_opening, _shade_radius = shade_geometry(lamp_objects)
-    horizontal_reach = shade_opening - lower_center
-    horizontal_reach.z = 0.0
-    hinge_axis = (
-        Vector((0.0, 0.0, 1.0)).cross(horizontal_reach).normalized()
-    )
-
-    lower_link = max(
-        (
-            component
-            for component in components
-            if component["movable"]
-            and 100 <= len(component["points"]) <= 250
-            and component["maximum"].z - component["minimum"].z > 0.15
-            and component["maximum"].x - component["minimum"].x > 0.10
-            and component["maximum"].y - component["minimum"].y < 0.03
-            and component["minimum"].z < base_min_z + 0.14
-        ),
-        key=lambda component: len(component["points"]),
-    )
-    lower_endpoint = average_points(
-        [
-            point
-            for _distance, point in sorted(
-                (
-                    ((point - lower_center).length, point)
-                    for point in lower_link["points"]
-                ),
-                key=lambda pair: pair[0],
-                reverse=True,
-            )[:24]
-        ]
-    )
-    elbow_centers = []
-    for component in components:
-        dimensions = component["maximum"] - component["minimum"]
-        if (
-            component["movable"]
-            and len(component["points"]) >= 150
-            and 0.025 <= dimensions.x <= 0.08
-            and 0.025 <= dimensions.z <= 0.08
-            and component["center"].z >= lower_endpoint.z
-            and (component["center"] - lower_endpoint).length < 0.10
-        ):
-            elbow_centers.append(component["center"])
-    if not elbow_centers:
-        raise RuntimeError("Desk-lamp elbow articulation could not be measured")
-    elbow_center = Vector(
-        (
-            float(np.median([point.x for point in elbow_centers])),
-            sum(point.y for point in elbow_centers) / len(elbow_centers),
-            float(np.median([point.z for point in elbow_centers])),
-        )
-    )
-
-    upper_link = max(
-        (
-            component
-            for component in components
-            if component["movable"]
-            and 100 <= len(component["points"]) <= 250
-            and component["maximum"].x - component["minimum"].x > 0.16
-            and component["maximum"].y - component["minimum"].y < 0.03
-            and 0.05
-            < component["maximum"].z - component["minimum"].z
-            < 0.12
-            and component["minimum"].z > base_min_z + 0.25
-        ),
-        key=lambda component: len(component["points"]),
-    )
-    upper_reference = Vector(
-        (
-            upper_link["maximum"].x,
-            (upper_link["minimum"].y + upper_link["maximum"].y) * 0.5,
-            upper_link["maximum"].z,
-        )
-    )
-    head_joint = min(
-        (
-            component
-            for component in components
-            if component["movable"]
-            and 50 <= len(component["points"]) <= 120
-            and max(component["maximum"] - component["minimum"]) < 0.04
-        ),
-        key=lambda component: (component["center"] - upper_reference).length,
-    )
-    head_center = head_joint["center"]
-
-    for component in components:
-        center = component["center"]
-        if not component["movable"]:
-            role = "base"
-        elif (
-            center.x >= head_center.x - 0.005
-            and center.z > base_min_z + 0.25
-        ):
-            role = "head"
-        elif (
-            center.x > elbow_center.x + 0.035
-            and center.z > elbow_center.z - 0.04
-        ):
-            role = "upper-link"
-        elif (center - elbow_center).length < 0.11:
-            role = "elbow"
-        else:
-            role = "lower-link"
-        component["role"] = role
-
-    return {
-        "fixture": fixture,
-        "components": components,
-        "lower_center": lower_center,
-        "elbow_center": elbow_center,
-        "head_center": head_center,
-        "hinge_axis": hinge_axis,
-        "base_center": base_center,
-    }
-
-
-def articulate_lamp_upper_geometry(lamp_objects, topology):
-    lower_center = topology["lower_center"]
-    elbow_center = topology["elbow_center"]
-    head_center = topology["head_center"]
-    hinge_axis = topology["hinge_axis"]
-    base_center = topology["base_center"]
-    lower_rotation = Matrix.Rotation(
-        math.radians(CONTACT_LAMP_LOWER_HINGE_DEGREES), 4, hinge_axis
-    )
-    elbow_rotation = Matrix.Rotation(
-        math.radians(CONTACT_LAMP_ELBOW_HINGE_DEGREES), 4, hinge_axis
-    )
-    head_rotation = Matrix.Rotation(
-        math.radians(CONTACT_LAMP_HEAD_HINGE_DEGREES), 4, hinge_axis
-    )
-    yaw_rotation = Matrix.Rotation(
-        math.radians(CONTACT_LAMP_BASE_YAW_DEGREES), 4, "Z"
-    )
-    moved_elbow = lower_center + lower_rotation @ (
-        elbow_center - lower_center
-    )
-    fixture = topology["fixture"]
-    inverse = fixture.matrix_world.inverted()
-
-    for component in topology["components"]:
-        if not component["movable"]:
-            continue
-        for index, point in zip(component["indices"], component["points"]):
-            if component["role"] == "head":
-                head_point = head_center + head_rotation @ (
-                    point - head_center
-                )
-                elbow_point = elbow_center + elbow_rotation @ (
-                    head_center - elbow_center
-                    + head_point
-                    - head_center
-                )
-                articulated = lower_center + lower_rotation @ (
-                    elbow_center - lower_center
-                    + elbow_point
-                    - elbow_center
-                )
-            elif component["role"] == "upper-link":
-                elbow_point = elbow_center + elbow_rotation @ (
-                    point - elbow_center
-                )
-                articulated = lower_center + lower_rotation @ (
-                    elbow_center - lower_center
-                    + elbow_point
-                    - elbow_center
-                )
-            elif component["role"] == "elbow":
-                articulated = moved_elbow + lower_rotation @ (
-                    point - elbow_center
-                )
-            else:
-                articulated = lower_center + lower_rotation @ (
-                    point - lower_center
-                )
-            rotated = base_center + yaw_rotation @ (
-                articulated - base_center
-            )
-            fixture.data.vertices[index].co = inverse @ rotated
-    fixture.data.update()
-
-
 def angle_degrees(first, second):
     return math.degrees(
         math.acos(max(-1.0, min(1.0, first.normalized().dot(second.normalized()))))
@@ -791,39 +536,65 @@ def angle_degrees(first, second):
 def correct_contact_lamp_orientation(anchor, lamp_objects):
     bpy.context.view_layer.update()
     base_center, base_min_z = measured_lamp_base(lamp_objects)
-    base_bounds_before = measured_lamp_base_bounds(lamp_objects)
-    topology = lamp_articulation_topology(
-        lamp_objects, base_center, base_min_z
-    )
-    desk_top = object_world_bounds(bpy.data.objects["Mesh_26"])[1].z
+    natural_axis, natural_opening, _natural_radius = shade_geometry(lamp_objects)
+    base_points_before = [
+        obj.matrix_world @ vertex.co
+        for obj in lamp_objects
+        if obj.type == "MESH" and not obj.hide_render
+        for vertex in obj.data.vertices
+        if (obj.matrix_world @ vertex.co).z <= base_min_z + 0.03
+    ]
+    desk_bounds = object_world_bounds(bpy.data.objects["Mesh_26"])
+    desk_top = desk_bounds[1].z
     target = Vector((*CONTACT_PAPER_CENTER_XY, desk_top + 0.0016))
-
-    articulate_lamp_upper_geometry(lamp_objects, topology)
-    anchor.location += CONTACT_LAMP_WHOLE_TRANSLATION
+    natural_error = angle_degrees(natural_axis, target - natural_opening)
+    yaw_rotation = Matrix.Rotation(
+        math.radians(CONTACT_LAMP_BASE_YAW_DEGREES), 4, "Z"
+    )
+    whole_transform = (
+        Matrix.Translation(base_center)
+        @ yaw_rotation
+        @ Matrix.Translation(-base_center)
+    )
+    anchor.matrix_world = whole_transform @ anchor.matrix_world
     bpy.context.view_layer.update()
 
     corrected_base_center, corrected_min_z = measured_lamp_base(lamp_objects)
     base_bounds_after = measured_lamp_base_bounds(lamp_objects)
     corrected_axis, corrected_opening, opening_radius = shade_geometry(lamp_objects)
     corrected_error = angle_degrees(corrected_axis, target - corrected_opening)
-    expected_base_center = base_center + CONTACT_LAMP_WHOLE_TRANSLATION
-    if (corrected_base_center - expected_base_center).length > 1e-6:
+    if (corrected_base_center - base_center).length > 1e-6:
         raise RuntimeError(
-            "Desk-lamp base did not follow the authored whole-fixture translation"
+            "Desk-lamp base moved away from its natural original placement"
         )
     if abs(corrected_min_z - base_min_z) > 1e-7:
         raise RuntimeError("Desk-lamp support height changed while applying the CONTACT aim")
+    expected_base_points = [
+        whole_transform @ point for point in base_points_before
+    ]
+    expected_base_bounds = component_bounds(expected_base_points)
     if any(
-        (after - before - CONTACT_LAMP_WHOLE_TRANSLATION).length > 1e-7
-        for before, after in zip(base_bounds_before, base_bounds_after)
+        (actual - expected).length > 1e-6
+        for actual, expected in zip(
+            base_bounds_after, expected_base_bounds
+        )
     ):
         raise RuntimeError(
-            "Desk-lamp base geometry changed while applying its rigid translation"
+            "Desk-lamp base did not retain its rigid whole-fixture transform"
         )
+    if (
+        base_bounds_after[0].x < desk_bounds[0].x
+        or base_bounds_after[0].y < desk_bounds[0].y
+        or base_bounds_after[1].x > desk_bounds[1].x
+        or base_bounds_after[1].y > desk_bounds[1].y
+    ):
+        raise RuntimeError("Desk-lamp base is not fully supported by Mesh_26")
     if corrected_error > CONTACT_SHADE_MAX_ERROR_DEGREES:
         raise RuntimeError(
             f"Desk-lamp shade misses CONTACT by {corrected_error:.3f} degrees"
         )
+    if corrected_error >= natural_error:
+        raise RuntimeError("Desk-lamp rigid yaw did not improve its natural CONTACT aim")
 
     anchor["lazy_a_contact_aim_target"] = json.dumps(rounded_vector(target))
     anchor["lazy_a_contact_shade_axis"] = json.dumps(
@@ -843,35 +614,15 @@ def correct_contact_lamp_orientation(anchor, lamp_objects):
         rounded_vector(corrected_base_center)
     )
     anchor["lazy_a_contact_link_scale"] = 1.0
-    anchor["lazy_a_contact_whole_translation"] = json.dumps(
-        rounded_vector(CONTACT_LAMP_WHOLE_TRANSLATION)
-    )
-    anchor["lazy_a_contact_lower_hinge_degrees"] = (
-        CONTACT_LAMP_LOWER_HINGE_DEGREES
-    )
-    anchor["lazy_a_contact_elbow_hinge_degrees"] = (
-        CONTACT_LAMP_ELBOW_HINGE_DEGREES
-    )
-    anchor["lazy_a_contact_head_hinge_degrees"] = (
-        CONTACT_LAMP_HEAD_HINGE_DEGREES
-    )
-    anchor["lazy_a_contact_lower_hinge_center"] = json.dumps(
-        rounded_vector(topology["lower_center"])
-    )
-    anchor["lazy_a_contact_elbow_hinge_center"] = json.dumps(
-        rounded_vector(topology["elbow_center"])
-    )
-    anchor["lazy_a_contact_head_hinge_center"] = json.dumps(
-        rounded_vector(topology["head_center"])
+    anchor["lazy_a_contact_pose_relationship"] = "natural-source-rigid-yaw-v1"
+    anchor["lazy_a_contact_natural_axis_error_degrees"] = round(
+        natural_error, 12
     )
     print(
         "CONTACT LAMP AIM:",
-        "rigid-components=true",
-        f"translation={rounded_vector(CONTACT_LAMP_WHOLE_TRANSLATION, 6)}",
-        f"lower={CONTACT_LAMP_LOWER_HINGE_DEGREES:.3f}",
-        f"elbow={CONTACT_LAMP_ELBOW_HINGE_DEGREES:.3f}",
-        f"head={CONTACT_LAMP_HEAD_HINGE_DEGREES:.3f}",
+        "relationship=natural-source-rigid-yaw-v1",
         f"yaw={CONTACT_LAMP_BASE_YAW_DEGREES:.3f}",
+        f"natural_error={natural_error:.3f}",
         f"error={corrected_error:.3f}",
         f"target={rounded_vector(target, 6)}",
     )

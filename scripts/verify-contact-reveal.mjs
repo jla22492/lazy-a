@@ -61,9 +61,15 @@ const PRACTICAL_MASTER_BLEND = "build/wo-0117-r/master.blend";
 const PRACTICAL_RENDER_SCRIPT = "scripts/render-master-shots.py";
 const PRACTICAL_BULB_OBJECT = "ContactPracticalBulb";
 const PRACTICAL_SHADE_OBJECT = "ContactPracticalShadeInterior";
+const PRACTICAL_DESK_OBJECT = "Mesh_26";
+const PRACTICAL_CONTACT_PAPER_OBJECT = "Mesh_56";
+const WIDE_PRACTICAL_RELATIONSHIP = "visible-practical-source-v1";
+const PORTRAIT_PRACTICAL_RELATIONSHIP = "offscreen-practical-light-pool-v1";
+const PORTRAIT_POOL_DERIVATION = "blender-shade-cone-receiver-render-v1";
 const MAX_PRACTICAL_AUTHORING_BYTES = 256 * 1024;
 const MIN_BULB_LUMINANCE_RISE = 20;
 const MIN_SHADE_INTERIOR_LUMINANCE_RISE = 8;
+const MIN_PORTRAIT_POOL_LUMINANCE_RISE = 8;
 const APPROVED_R3_CONTACT_PATH_SHA256 = {
   wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
   portrait: "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
@@ -145,10 +151,115 @@ function quadArea(quad) {
   return Math.abs(area) / 2;
 }
 
+function finiteTuple(value, length) {
+  return (
+    Array.isArray(value) &&
+    value.length === length &&
+    value.every(Number.isFinite)
+  );
+}
+
+function finiteWorldQuad(value) {
+  return (
+    Array.isArray(value) &&
+    value.length === 4 &&
+    value.every((point) => finiteTuple(point, 3))
+  );
+}
+
+function subtract(first, second) {
+  return first.map((value, index) => value - second[index]);
+}
+
+function dot(first, second) {
+  return first.reduce((sum, value, index) => sum + value * second[index], 0);
+}
+
+function cross(first, second) {
+  return [
+    first[1] * second[2] - first[2] * second[1],
+    first[2] * second[0] - first[0] * second[2],
+    first[0] * second[1] - first[1] * second[0],
+  ];
+}
+
+function vectorLength(value) {
+  return Math.sqrt(dot(value, value));
+}
+
+function normalized(value) {
+  const length = vectorLength(value);
+  return length > 1e-9 ? value.map((component) => component / length) : null;
+}
+
+function angleDegrees(first, second) {
+  const normalizedFirst = normalized(first);
+  const normalizedSecond = normalized(second);
+  if (!normalizedFirst || !normalizedSecond) return Number.POSITIVE_INFINITY;
+  const cosine = Math.max(
+    -1,
+    Math.min(1, dot(normalizedFirst, normalizedSecond)),
+  );
+  return (Math.acos(cosine) * 180) / Math.PI;
+}
+
+function rayTriangleDistance(origin, direction, triangle) {
+  const edge1 = subtract(triangle[1], triangle[0]);
+  const edge2 = subtract(triangle[2], triangle[0]);
+  const p = cross(direction, edge2);
+  const determinant = dot(edge1, p);
+  if (Math.abs(determinant) < 1e-9) return null;
+  const inverse = 1 / determinant;
+  const t = subtract(origin, triangle[0]);
+  const u = dot(t, p) * inverse;
+  if (u < -1e-4 || u > 1 + 1e-4) return null;
+  const q = cross(t, edge1);
+  const v = dot(direction, q) * inverse;
+  if (v < -1e-4 || u + v > 1 + 1e-4) return null;
+  const distance = dot(edge2, q) * inverse;
+  return distance >= 0 ? distance : null;
+}
+
+function rayIntersectsWorldQuad(origin, direction, quad) {
+  if (
+    !finiteTuple(origin, 3) ||
+    !finiteTuple(direction, 3) ||
+    !finiteWorldQuad(quad)
+  ) {
+    return false;
+  }
+  const ray = normalized(direction);
+  if (!ray) return false;
+  return [
+    [quad[0], quad[1], quad[2]],
+    [quad[0], quad[2], quad[3]],
+  ].some((triangle) => rayTriangleDistance(origin, ray, triangle) !== null);
+}
+
+function sourceRelationshipPayload(authoring) {
+  const lightSource = { ...authoring?.lightSource };
+  delete lightSource.relationshipSha256;
+  return {
+    sources: authoring?.sources,
+    receiverGeometry: {
+      desk: authoring?.geometry?.desk,
+      contactPaper: authoring?.geometry?.contactPaper,
+    },
+    lightSource,
+  };
+}
+
+function receiverGeometrySha256(authoring) {
+  return sha256Canonical({
+    desk: authoring?.geometry?.desk?.geometrySha256,
+    contactPaper: authoring?.geometry?.contactPaper?.geometrySha256,
+  });
+}
+
 function practicalAuthoringContractIssues(authoring) {
   const issues = [];
   if (
-    authoring?.version !== 1 ||
+    authoring?.version !== 2 ||
     authoring?.immutable !== true ||
     authoring?.generator?.identity !== PRACTICAL_AUTHORING_GENERATOR ||
     authoring?.generator?.browserRuntime !== false
@@ -169,6 +280,8 @@ function practicalAuthoringContractIssues(authoring) {
   const expectedGeometry = [
     ["bulb", PRACTICAL_BULB_OBJECT],
     ["shadeInterior", PRACTICAL_SHADE_OBJECT],
+    ["desk", PRACTICAL_DESK_OBJECT],
+    ["contactPaper", PRACTICAL_CONTACT_PAPER_OBJECT],
   ];
   for (const [key, object] of expectedGeometry) {
     if (
@@ -178,6 +291,71 @@ function practicalAuthoringContractIssues(authoring) {
       issues.push(`${object} source geometry hash is invalid`);
     }
   }
+  for (const key of ["desk", "contactPaper"]) {
+    if (!finiteWorldQuad(authoring?.geometry?.[key]?.worldQuad)) {
+      issues.push(`${key} receiver world quad is invalid`);
+    }
+  }
+  const lightSource = authoring?.lightSource;
+  const sourceRelationshipSha256 = sha256Canonical(
+    sourceRelationshipPayload(authoring),
+  );
+  if (
+    lightSource?.relationship !== "shade-origin-ray-v1" ||
+    lightSource?.lampObject !== "scan_lamp" ||
+    !finiteTuple(lightSource?.shadeOpening, 3) ||
+    !Number.isFinite(lightSource?.shadeOpeningRadius) ||
+    lightSource.shadeOpeningRadius <= 0 ||
+    !finiteTuple(lightSource?.shadeAxis, 3) ||
+    !finiteTuple(lightSource?.origin, 3) ||
+    !finiteTuple(lightSource?.direction, 3) ||
+    !finiteTuple(lightSource?.target, 3) ||
+    !Number.isFinite(lightSource?.axisErrorDegrees) ||
+    !Number.isFinite(lightSource?.spotAngleDegrees) ||
+    lightSource.spotAngleDegrees <= 0 ||
+    lightSource.spotAngleDegrees >= 180 ||
+    lightSource?.relationshipSha256 !== sourceRelationshipSha256
+  ) {
+    issues.push(
+      "shade-origin source relationship must bind exact master/render hashes and receiver geometry",
+    );
+  } else {
+    const openingOffset = vectorLength(
+      subtract(lightSource.origin, lightSource.shadeOpening),
+    );
+    const targetDirection = subtract(lightSource.target, lightSource.origin);
+    const measuredAxisError = angleDegrees(
+      lightSource.shadeAxis,
+      lightSource.direction,
+    );
+    if (
+      openingOffset > lightSource.shadeOpeningRadius ||
+      angleDegrees(targetDirection, lightSource.direction) > 0.01 ||
+      measuredAxisError > 12 ||
+      Math.abs(measuredAxisError - lightSource.axisErrorDegrees) > 0.01
+    ) {
+      issues.push(
+        "light origin/direction must remain inside the real shade opening and follow its measured axis",
+      );
+    }
+    if (
+      !rayIntersectsWorldQuad(
+        lightSource.origin,
+        lightSource.direction,
+        authoring?.geometry?.contactPaper?.worldQuad,
+      ) ||
+      !rayIntersectsWorldQuad(
+        lightSource.origin,
+        lightSource.direction,
+        authoring?.geometry?.desk?.worldQuad,
+      )
+    ) {
+      issues.push(
+        "shade-origin light ray must intersect the contact paper and desk receivers",
+      );
+    }
+  }
+  const expectedReceiverSha256 = receiverGeometrySha256(authoring);
   for (const [profile, expectedViewport] of Object.entries(CONTACT_VIEWPORTS)) {
     const projection = authoring?.profiles?.[profile];
     if (!projection) {
@@ -202,43 +380,85 @@ function practicalAuthoringContractIssues(authoring) {
     ) {
       issues.push(`${profile} geometry projection hash is invalid`);
     }
-    for (const [key, object] of expectedGeometry) {
-      const region = projection[key];
-      const topGeometry = authoring?.geometry?.[key];
-      if (
-        region?.object !== object ||
-        region?.geometrySha256 !== topGeometry?.geometrySha256
-      ) {
-        issues.push(`${profile} ${key} geometry hash does not match source`);
+    if (projection.lightSourceRelationshipSha256 !== sourceRelationshipSha256) {
+      issues.push(`${profile} source relationship hash is invalid`);
+    }
+    if (profile === "wide") {
+      if (projection.kind !== WIDE_PRACTICAL_RELATIONSHIP) {
+        issues.push("wide practical relationship must expose the real source");
+      }
+      for (const [key, object] of expectedGeometry.slice(0, 2)) {
+        const region = projection[key];
+        const topGeometry = authoring?.geometry?.[key];
+        if (
+          region?.object !== object ||
+          region?.geometrySha256 !== topGeometry?.geometrySha256
+        ) {
+          issues.push(`${profile} ${key} geometry hash does not match source`);
+        }
+        if (
+          !finiteTuple(region?.quad, 8) ||
+          region.quad.some((value) => value < 0 || value > 1) ||
+          quadArea(region.quad) < 0.00001
+        ) {
+          issues.push(`${profile} ${key} projected quad is invalid`);
+        }
+        if (
+          typeof region?.mask?.path !== "string" ||
+          !/^[a-z0-9][a-z0-9._-]*\.png$/.test(region.mask.path) ||
+          !isSha256(region?.mask?.sha256)
+        ) {
+          issues.push(
+            `${profile} ${key} projected mask relationship is invalid`,
+          );
+        }
       }
       if (
-        !Array.isArray(region?.quad) ||
-        region.quad.length !== 8 ||
-        region.quad.some(
-          (value) => !Number.isFinite(value) || value < 0 || value > 1,
-        ) ||
-        quadArea(region.quad) < 0.00001
+        projection.bulb?.mask?.path === projection.shadeInterior?.mask?.path ||
+        projection.bulb?.mask?.sha256 ===
+          projection.shadeInterior?.mask?.sha256 ||
+        JSON.stringify(projection.bulb?.quad) ===
+          JSON.stringify(projection.shadeInterior?.quad)
       ) {
-        issues.push(`${profile} ${key} projected quad is invalid`);
+        issues.push(
+          "wide bulb and shade interior need distinct geometry projections",
+        );
       }
-      if (
-        typeof region?.mask?.path !== "string" ||
-        !/^[a-z0-9][a-z0-9._-]*\.png$/.test(region.mask.path) ||
-        !isSha256(region?.mask?.sha256)
-      ) {
-        issues.push(`${profile} ${key} projected mask relationship is invalid`);
-      }
+      continue;
+    }
+    if (projection.kind !== PORTRAIT_PRACTICAL_RELATIONSHIP) {
+      issues.push(
+        "portrait practical relationship must use the offscreen source-derived pool",
+      );
     }
     if (
-      projection.bulb?.mask?.path === projection.shadeInterior?.mask?.path ||
-      projection.bulb?.mask?.sha256 ===
-        projection.shadeInterior?.mask?.sha256 ||
-      JSON.stringify(projection.bulb?.quad) ===
-        JSON.stringify(projection.shadeInterior?.quad)
+      projection.receivers?.deskGeometrySha256 !==
+        authoring?.geometry?.desk?.geometrySha256 ||
+      projection.receivers?.contactPaperGeometrySha256 !==
+        authoring?.geometry?.contactPaper?.geometrySha256 ||
+      projection.receivers?.receiverGeometrySha256 !== expectedReceiverSha256
+    ) {
+      issues.push("portrait receiver geometry relationship is invalid");
+    }
+    const lightPool = projection.lightPool;
+    if (
+      lightPool?.derivation !== PORTRAIT_POOL_DERIVATION ||
+      lightPool?.runtimeAuthored !== false ||
+      lightPool?.lightSourceRelationshipSha256 !== sourceRelationshipSha256 ||
+      lightPool?.receiverGeometrySha256 !== expectedReceiverSha256 ||
+      !finiteTuple(lightPool?.quad, 8) ||
+      lightPool.quad.some((value) => value < 0 || value > 1) ||
+      quadArea(lightPool.quad) < 0.0001 ||
+      typeof lightPool?.mask?.path !== "string" ||
+      !/^[a-z0-9][a-z0-9._-]*\.png$/.test(lightPool.mask.path) ||
+      !isSha256(lightPool?.mask?.sha256)
     ) {
       issues.push(
-        `${profile} bulb and shade interior need distinct geometry projections`,
+        "portrait light pool must be a non-runtime-authored Blender receiver mask",
       );
+    }
+    if (lightPool?.runtimeAuthored === true) {
+      issues.push("portrait light pool cannot use a runtime-authored mask");
     }
   }
   return issues;
@@ -280,35 +500,78 @@ async function localPracticalAuthoringSourceIssues(authoring) {
   return issues;
 }
 
-function assertR4ContactContract(contact, transition) {
+function assertR4ContactContract(profile, contact, transition) {
   assert.equal(contact.activationHoldSeconds, 1);
-  assert.equal(contact.visibleBulb, true);
-  assert.equal(contact.visibleShadeInterior, true);
+  assert.equal(
+    contact.practicalRelationship,
+    profile === "wide"
+      ? WIDE_PRACTICAL_RELATIONSHIP
+      : PORTRAIT_PRACTICAL_RELATIONSHIP,
+  );
+  if (profile === "wide") {
+    assert.equal(contact.visibleBulb, true);
+    assert.equal(contact.visibleShadeInterior, true);
+  }
   assert.ok(contact.shadeAxisErrorDegrees <= 12);
   assert.equal(contact.lightIntersectsPaper, true);
+  assert.equal(contact.lightIntersectsDesk, true);
   assert.equal(transition.duration, 1.9);
 }
 
 function assertR4ContactStubsFail() {
-  const contact = {
+  const wideContact = {
     activationHoldSeconds: 1,
+    practicalRelationship: "visible-practical-source-v1",
     visibleBulb: true,
     visibleShadeInterior: true,
     shadeAxisErrorDegrees: 12,
     lightIntersectsPaper: true,
+    lightIntersectsDesk: true,
+  };
+  const portraitContact = {
+    ...wideContact,
+    practicalRelationship: "offscreen-practical-light-pool-v1",
+    visibleBulb: false,
+    visibleShadeInterior: false,
   };
   const transition = { duration: 1.9 };
-  assert.doesNotThrow(() => assertR4ContactContract(contact, transition));
+  assert.doesNotThrow(() =>
+    assertR4ContactContract("wide", wideContact, transition),
+  );
+  assert.doesNotThrow(() =>
+    assertR4ContactContract("portrait", portraitContact, transition),
+  );
   const stubs = [
-    [{ ...contact, activationHoldSeconds: 0 }, transition],
-    [{ ...contact, visibleBulb: false }, transition],
-    [{ ...contact, visibleShadeInterior: false }, transition],
-    [{ ...contact, shadeAxisErrorDegrees: 13 }, transition],
-    [{ ...contact, lightIntersectsPaper: false }, transition],
-    [contact, { duration: 0.9 }],
+    ["wide", { ...wideContact, activationHoldSeconds: 0 }, transition],
+    ["wide", { ...wideContact, visibleBulb: false }, transition],
+    ["wide", { ...wideContact, visibleShadeInterior: false }, transition],
+    ["wide", { ...wideContact, shadeAxisErrorDegrees: 13 }, transition],
+    ["wide", { ...wideContact, lightIntersectsPaper: false }, transition],
+    ["wide", { ...wideContact, lightIntersectsDesk: false }, transition],
+    [
+      "portrait",
+      {
+        ...portraitContact,
+        practicalRelationship: "visible-practical-source-v1",
+      },
+      transition,
+    ],
+    [
+      "portrait",
+      { ...portraitContact, lightIntersectsPaper: false },
+      transition,
+    ],
+    [
+      "portrait",
+      { ...portraitContact, lightIntersectsDesk: false },
+      transition,
+    ],
+    ["wide", wideContact, { duration: 0.9 }],
   ];
-  for (const [stubContact, stubTransition] of stubs) {
-    assert.throws(() => assertR4ContactContract(stubContact, stubTransition));
+  for (const [profile, stubContact, stubTransition] of stubs) {
+    assert.throws(() =>
+      assertR4ContactContract(profile, stubContact, stubTransition),
+    );
   }
 }
 
@@ -325,10 +588,10 @@ function contactManifestFailures(manifest, authoring = null) {
     }
     const transition = variant.transitions?.["desk-contact"];
     try {
-      assertR4ContactContract(contact, transition ?? {});
+      assertR4ContactContract(profile, contact, transition ?? {});
     } catch (error) {
       failures.push(
-        `${profile}: CONTACT requires a visible practical and a 1.0s activation hold (${error.message})`,
+        `${profile}: CONTACT practical relationship and 1.0s activation hold are invalid (${error.message})`,
       );
     }
     if (
@@ -355,10 +618,11 @@ function contactManifestFailures(manifest, authoring = null) {
       !Array.isArray(contact.lightTarget) ||
       contact.lightTarget.length !== 3 ||
       contact.lightInsideShade !== true ||
-      contact.lightIntersectsPaper !== true
+      contact.lightIntersectsPaper !== true ||
+      contact.lightIntersectsDesk !== true
     ) {
       failures.push(
-        `${profile}: CONTACT light must originate inside the visible lamp shade and intersect the contact paper`,
+        `${profile}: CONTACT light must originate inside the real lamp shade and intersect the contact paper and desk`,
       );
     }
     const frames = transition?.frames ?? [];
@@ -478,6 +742,16 @@ if (selfTest) {
     }
     return JSON.stringify(value);
   };
+  const practicalSources = {
+    masterBlend: {
+      path: "build/wo-0117-r/master.blend",
+      sha256: fixtureHash("master-blend"),
+    },
+    renderScript: {
+      path: "scripts/render-master-shots.py",
+      sha256: fixtureHash("render-script"),
+    },
+  };
   const practicalGeometry = {
     bulb: {
       object: "ContactPracticalBulb",
@@ -487,66 +761,140 @@ if (selfTest) {
       object: "ContactPracticalShadeInterior",
       geometrySha256: fixtureHash("shade-geometry"),
     },
+    desk: {
+      object: "Mesh_26",
+      geometrySha256: fixtureHash("desk-geometry"),
+      worldQuad: [
+        [-1, -1, 0],
+        [1, -1, 0],
+        [1, 1, 0],
+        [-1, 1, 0],
+      ],
+    },
+    contactPaper: {
+      object: "Mesh_56",
+      geometrySha256: fixtureHash("contact-paper-geometry"),
+      worldQuad: [
+        [-0.2, -0.2, 0.01],
+        [0.2, -0.2, 0.01],
+        [0.2, 0.2, 0.01],
+        [-0.2, 0.2, 0.01],
+      ],
+    },
   };
-  const practicalProfiles = Object.fromEntries(
-    Object.entries(APPROVED_R3_DESK_CAMERAS).map(([profile, camera]) => {
-      const projection = {
-        viewport: profile === "wide" ? [1280, 720] : [375, 812],
-        deskCameraSha256: createHash("sha256")
-          .update(canonicalFixture(camera))
-          .digest("hex"),
-        bulb: {
-          ...practicalGeometry.bulb,
-          quad: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
-          mask: {
-            path: `${profile}-bulb-mask.png`,
-            sha256: fixtureHash(`${profile}-bulb-mask`),
+  const lightSourcePayload = {
+    relationship: "shade-origin-ray-v1",
+    lampObject: "scan_lamp",
+    shadeOpening: [0, 0, 1],
+    shadeOpeningRadius: 0.1,
+    shadeAxis: [0, 0, -1],
+    origin: [0, 0, 0.98],
+    direction: [0, 0, -1],
+    target: [0, 0, 0.01],
+    axisErrorDegrees: 0,
+    spotAngleDegrees: 70,
+  };
+  const lightSource = {
+    ...lightSourcePayload,
+    relationshipSha256: createHash("sha256")
+      .update(
+        canonicalFixture({
+          sources: practicalSources,
+          receiverGeometry: {
+            desk: practicalGeometry.desk,
+            contactPaper: practicalGeometry.contactPaper,
           },
-        },
-        shadeInterior: {
-          ...practicalGeometry.shadeInterior,
-          quad: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
-          mask: {
-            path: `${profile}-shade-mask.png`,
-            sha256: fixtureHash(`${profile}-shade-mask`),
-          },
-        },
-      };
-      return [
-        profile,
-        {
-          ...projection,
-          projectionSha256: createHash("sha256")
-            .update(canonicalFixture(projection))
-            .digest("hex"),
-        },
-      ];
-    }),
-  );
+          lightSource: lightSourcePayload,
+        }),
+      )
+      .digest("hex"),
+  };
+  const wideProjection = {
+    kind: "visible-practical-source-v1",
+    viewport: [1280, 720],
+    deskCameraSha256: createHash("sha256")
+      .update(canonicalFixture(APPROVED_R3_DESK_CAMERAS.wide))
+      .digest("hex"),
+    lightSourceRelationshipSha256: lightSource.relationshipSha256,
+    bulb: {
+      ...practicalGeometry.bulb,
+      quad: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
+      mask: {
+        path: "wide-bulb-mask.png",
+        sha256: fixtureHash("wide-bulb-mask"),
+      },
+    },
+    shadeInterior: {
+      ...practicalGeometry.shadeInterior,
+      quad: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
+      mask: {
+        path: "wide-shade-interior-mask.png",
+        sha256: fixtureHash("wide-shade-mask"),
+      },
+    },
+  };
+  const receiverGeometrySha256 = createHash("sha256")
+    .update(
+      canonicalFixture({
+        desk: practicalGeometry.desk.geometrySha256,
+        contactPaper: practicalGeometry.contactPaper.geometrySha256,
+      }),
+    )
+    .digest("hex");
+  const portraitProjection = {
+    kind: "offscreen-practical-light-pool-v1",
+    viewport: [375, 812],
+    deskCameraSha256: createHash("sha256")
+      .update(canonicalFixture(APPROVED_R3_DESK_CAMERAS.portrait))
+      .digest("hex"),
+    lightSourceRelationshipSha256: lightSource.relationshipSha256,
+    receivers: {
+      deskGeometrySha256: practicalGeometry.desk.geometrySha256,
+      contactPaperGeometrySha256: practicalGeometry.contactPaper.geometrySha256,
+      receiverGeometrySha256,
+    },
+    lightPool: {
+      derivation: "blender-shade-cone-receiver-render-v1",
+      runtimeAuthored: false,
+      lightSourceRelationshipSha256: lightSource.relationshipSha256,
+      receiverGeometrySha256,
+      quad: [0.1, 0.3, 0.8, 0.3, 0.8, 0.8, 0.1, 0.8],
+      mask: {
+        path: "portrait-desk-paper-light-pool-mask.png",
+        sha256: fixtureHash("portrait-light-pool-mask"),
+      },
+    },
+  };
+  const practicalProfiles = {
+    wide: {
+      ...wideProjection,
+      projectionSha256: createHash("sha256")
+        .update(canonicalFixture(wideProjection))
+        .digest("hex"),
+    },
+    portrait: {
+      ...portraitProjection,
+      projectionSha256: createHash("sha256")
+        .update(canonicalFixture(portraitProjection))
+        .digest("hex"),
+    },
+  };
   const practicalAuthoring = {
-    version: 1,
+    version: 2,
     immutable: true,
     generator: {
       identity: "blender-background-python",
       browserRuntime: false,
     },
-    sources: {
-      masterBlend: {
-        path: "build/wo-0117-r/master.blend",
-        sha256: fixtureHash("master-blend"),
-      },
-      renderScript: {
-        path: "scripts/render-master-shots.py",
-        sha256: fixtureHash("render-script"),
-      },
-    },
+    sources: practicalSources,
     geometry: practicalGeometry,
+    lightSource,
     profiles: practicalProfiles,
   };
   assert.deepEqual(
     practicalAuthoringContractIssues(practicalAuthoring),
     [],
-    "geometry-projected practical authoring for wide and portrait should pass",
+    "wide visible-practical and portrait offscreen-pool authoring should pass",
   );
   const wrongCameraAuthoring = structuredClone(practicalAuthoring);
   wrongCameraAuthoring.profiles.wide.deskCameraSha256 =
@@ -563,6 +911,53 @@ if (selfTest) {
     practicalAuthoringContractIssues(wrongGeometryAuthoring).join("\n"),
     /geometry/,
     "mismatched bulb/shade geometry hashes must fail",
+  );
+  const wrongSourceHashAuthoring = structuredClone(practicalAuthoring);
+  wrongSourceHashAuthoring.sources.masterBlend.sha256 =
+    fixtureHash("wrong-master");
+  assert.match(
+    practicalAuthoringContractIssues(wrongSourceHashAuthoring).join("\n"),
+    /source relationship/,
+    "wrong master/render source hashes must invalidate the light relationship",
+  );
+  const missedPaperAuthoring = structuredClone(practicalAuthoring);
+  missedPaperAuthoring.lightSource.direction = [1, 0, 0];
+  const missedPayload = { ...missedPaperAuthoring.lightSource };
+  delete missedPayload.relationshipSha256;
+  missedPaperAuthoring.lightSource.relationshipSha256 = createHash("sha256")
+    .update(
+      canonicalFixture({
+        sources: missedPaperAuthoring.sources,
+        receiverGeometry: {
+          desk: missedPaperAuthoring.geometry.desk,
+          contactPaper: missedPaperAuthoring.geometry.contactPaper,
+        },
+        lightSource: missedPayload,
+      }),
+    )
+    .digest("hex");
+  missedPaperAuthoring.profiles.portrait.lightSourceRelationshipSha256 =
+    missedPaperAuthoring.lightSource.relationshipSha256;
+  missedPaperAuthoring.profiles.portrait.lightPool.lightSourceRelationshipSha256 =
+    missedPaperAuthoring.lightSource.relationshipSha256;
+  const missedPortraitPayload = {
+    ...missedPaperAuthoring.profiles.portrait,
+  };
+  delete missedPortraitPayload.projectionSha256;
+  missedPaperAuthoring.profiles.portrait.projectionSha256 = createHash("sha256")
+    .update(canonicalFixture(missedPortraitPayload))
+    .digest("hex");
+  assert.match(
+    practicalAuthoringContractIssues(missedPaperAuthoring).join("\n"),
+    /intersect.*paper.*desk|paper.*desk.*intersect/,
+    "a shade-origin ray that misses the paper or desk must fail",
+  );
+  const runtimeMaskAuthoring = structuredClone(practicalAuthoring);
+  runtimeMaskAuthoring.profiles.portrait.lightPool.runtimeAuthored = true;
+  assert.match(
+    practicalAuthoringContractIssues(runtimeMaskAuthoring).join("\n"),
+    /runtime-authored/,
+    "a runtime-authored portrait pool mask must fail",
   );
   const missingPortraitAuthoring = structuredClone(practicalAuthoring);
   delete missingPortraitAuthoring.profiles.portrait;
@@ -607,7 +1002,12 @@ if (selfTest) {
     shadeInterior: maskFor(practicalRegions.shadeInterior),
   };
   assert.deepEqual(
-    practicalLightMaskIssues(rest, lit, practicalMasks),
+    practicalLightMaskIssues(
+      rest,
+      lit,
+      practicalMasks,
+      "visible-practical-source-v1",
+    ),
     [],
     "geometry-projected bulb and shade-interior luminance rises should pass",
   );
@@ -619,19 +1019,61 @@ if (selfTest) {
     80,
   );
   assert.match(
-    practicalLightMaskIssues(rest, independentDeskLight, practicalMasks).join(
-      "; ",
-    ),
+    practicalLightMaskIssues(
+      rest,
+      independentDeskLight,
+      practicalMasks,
+      "visible-practical-source-v1",
+    ).join("; "),
     /bulb[\s\S]*shade interior|shade interior[\s\S]*bulb/,
     "an independent desk light with an invisible practical must fail",
   );
   assert.match(
-    practicalLightMaskIssues(rest, independentDeskLight, {
-      bulb: maskFor(practicalRegions.bulb),
-      shadeInterior: maskFor(practicalRegions.shadeInterior),
-    }).join("\n"),
+    practicalLightMaskIssues(
+      rest,
+      independentDeskLight,
+      {
+        bulb: maskFor(practicalRegions.bulb),
+        shadeInterior: maskFor(practicalRegions.shadeInterior),
+      },
+      "visible-practical-source-v1",
+    ).join("\n"),
     /bulb[\s\S]*shade interior|shade interior[\s\S]*bulb/,
     "arbitrary bright regions outside geometry-projected masks must fail",
+  );
+  const portraitPoolQuad = [0.2, 0.4, 0.8, 0.4, 0.8, 0.8, 0.2, 0.8];
+  const portraitPoolMask = maskFor(portraitPoolQuad);
+  const portraitLit = grayFixture();
+  brighten(portraitLit, portraitPoolQuad, 24);
+  assert.deepEqual(
+    practicalLightMaskIssues(
+      rest,
+      portraitLit,
+      { lightPool: portraitPoolMask },
+      "offscreen-practical-light-pool-v1",
+    ),
+    [],
+    "the geometry-derived portrait desk/paper pool should pass without a visible source",
+  );
+  assert.match(
+    practicalLightMaskIssues(
+      rest,
+      independentDeskLight,
+      { lightPool: portraitPoolMask },
+      "offscreen-practical-light-pool-v1",
+    ).join("\n"),
+    /light pool/,
+    "an arbitrary portrait bright region outside the authored pool must fail",
+  );
+  assert.match(
+    practicalLightMaskIssues(
+      rest,
+      grayFixture(),
+      { lightPool: portraitPoolMask },
+      "offscreen-practical-light-pool-v1",
+    ).join("\n"),
+    /light pool/,
+    "a portrait hold with no pool rise must fail",
   );
 
   console.log(
@@ -803,7 +1245,12 @@ async function loadPracticalMaskAssets(authoring) {
   const issues = [];
   for (const [profile, viewportSize] of Object.entries(CONTACT_VIEWPORTS)) {
     profiles[profile] = {};
-    for (const key of ["bulb", "shadeInterior"]) {
+    const relationship = authoring?.profiles?.[profile]?.kind;
+    const keys =
+      relationship === PORTRAIT_PRACTICAL_RELATIONSHIP
+        ? ["lightPool"]
+        : ["bulb", "shadeInterior"];
+    for (const key of keys) {
       const region = authoring?.profiles?.[profile]?.[key];
       try {
         const path = resolve(dirname(authoringPath), region.mask.path);
@@ -873,6 +1320,17 @@ function mean(values) {
 }
 
 function practicalLightMaskMetrics(rest, lit, masks) {
+  if (masks?.lightPool) {
+    const differences = [];
+    for (let index = 0; index < masks.lightPool.data.length; index += 1) {
+      if (masks.lightPool.data[index] >= 128) {
+        differences.push(lit.data[index] - rest.data[index]);
+      }
+    }
+    return {
+      lightPool: differences.length > 0 ? mean(differences) : Number.NaN,
+    };
+  }
   const rises = {};
   for (const key of ["bulb", "shadeInterior"]) {
     const mask = masks[key];
@@ -887,7 +1345,7 @@ function practicalLightMaskMetrics(rest, lit, masks) {
   return rises;
 }
 
-function practicalLightMaskIssues(rest, lit, masks) {
+function practicalLightMaskIssues(rest, lit, masks, relationship) {
   const issues = [];
   if (
     rest?.width !== lit?.width ||
@@ -899,10 +1357,14 @@ function practicalLightMaskIssues(rest, lit, masks) {
   ) {
     return [...issues, "rest and lit practical-light images must match"];
   }
-  for (const [label, mask] of [
-    ["bulb", masks?.bulb],
-    ["shade interior", masks?.shadeInterior],
-  ]) {
+  const requiredMasks =
+    relationship === PORTRAIT_PRACTICAL_RELATIONSHIP
+      ? [["light pool", masks?.lightPool]]
+      : [
+          ["bulb", masks?.bulb],
+          ["shade interior", masks?.shadeInterior],
+        ];
+  for (const [label, mask] of requiredMasks) {
     const marked = Buffer.isBuffer(mask?.data)
       ? [...mask.data].filter((value) => value >= 128).length
       : 0;
@@ -917,6 +1379,17 @@ function practicalLightMaskIssues(rest, lit, masks) {
   }
   if (issues.length > 0) return issues;
   const rises = practicalLightMaskMetrics(rest, lit, masks);
+  if (relationship === PORTRAIT_PRACTICAL_RELATIONSHIP) {
+    if (
+      !Number.isFinite(rises.lightPool) ||
+      rises.lightPool < MIN_PORTRAIT_POOL_LUMINANCE_RISE
+    ) {
+      issues.push(
+        `light pool luminance rise ${String(rises.lightPool)} is below ${MIN_PORTRAIT_POOL_LUMINANCE_RISE}`,
+      );
+    }
+    return issues;
+  }
   if (!Number.isFinite(rises.bulb) || rises.bulb < MIN_BULB_LUMINANCE_RISE) {
     issues.push(
       `bulb luminance rise ${String(rises.bulb)} is below ${MIN_BULB_LUMINANCE_RISE}`,
@@ -1250,11 +1723,13 @@ try {
     restImage,
     activationLitImage,
     loadedPracticalMasks.profiles.wide,
+    WIDE_PRACTICAL_RELATIONSHIP,
   );
   const portraitPracticalIssues = practicalLightMaskIssues(
     portraitRestImage,
     portraitActivationLitImage,
     loadedPracticalMasks.profiles.portrait,
+    PORTRAIT_PRACTICAL_RELATIONSHIP,
   );
   const reverseDifference = meanAbsoluteDifference(
     restImage,
@@ -1294,7 +1769,7 @@ try {
       loadedPracticalMasks.profiles.portrait,
     );
     passes.push(
-      `visible bulb and shade interior rose during both stationary holds (wide=${widePracticalRises.bulb.toFixed(1)}/${widePracticalRises.shadeInterior.toFixed(1)}, portrait=${portraitPracticalRises.bulb.toFixed(1)}/${portraitPracticalRises.shadeInterior.toFixed(1)})`,
+      `wide bulb/shade and portrait desk-paper pool rose during the stationary holds (wide=${widePracticalRises.bulb.toFixed(1)}/${widePracticalRises.shadeInterior.toFixed(1)}, portraitPool=${portraitPracticalRises.lightPool.toFixed(1)})`,
     );
   }
   if (

@@ -50,6 +50,11 @@ const practicalMasterBlend = "build/wo-0117-r/master.blend";
 const practicalRenderScript = "scripts/render-master-shots.py";
 const practicalBulbObject = "ContactPracticalBulb";
 const practicalShadeObject = "ContactPracticalShadeInterior";
+const practicalDeskObject = "Mesh_26";
+const practicalContactPaperObject = "Mesh_56";
+const widePracticalRelationship = "visible-practical-source-v1";
+const portraitPracticalRelationship = "offscreen-practical-light-pool-v1";
+const portraitPoolDerivation = "blender-shade-cone-receiver-render-v1";
 const maximumPracticalAuthoringBytes = 256 * 1024;
 const practicalViewports = {
   wide: [1280, 720],
@@ -622,6 +627,16 @@ async function runSelfTests() {
 
   const fixtureHash = (label) =>
     createHash("sha256").update(label).digest("hex");
+  const practicalSources = {
+    masterBlend: {
+      path: practicalMasterBlend,
+      sha256: fixtureHash("master-blend"),
+    },
+    renderScript: {
+      path: practicalRenderScript,
+      sha256: fixtureHash("render-script"),
+    },
+  };
   const practicalGeometry = {
     bulb: {
       object: practicalBulbObject,
@@ -631,58 +646,118 @@ async function runSelfTests() {
       object: practicalShadeObject,
       geometrySha256: fixtureHash("shade-geometry"),
     },
+    desk: {
+      object: "Mesh_26",
+      geometrySha256: fixtureHash("desk-geometry"),
+      worldQuad: [
+        [-1, -1, 0],
+        [1, -1, 0],
+        [1, 1, 0],
+        [-1, 1, 0],
+      ],
+    },
+    contactPaper: {
+      object: "Mesh_56",
+      geometrySha256: fixtureHash("contact-paper-geometry"),
+      worldQuad: [
+        [-0.2, -0.2, 0.01],
+        [0.2, -0.2, 0.01],
+        [0.2, 0.2, 0.01],
+        [-0.2, 0.2, 0.01],
+      ],
+    },
   };
-  const practicalProfiles = Object.fromEntries(
-    expectedVariants.map((profile) => {
-      const projection = {
-        viewport: practicalViewports[profile],
-        deskCameraSha256: sha256Canonical(
-          approvedR3EndpointCameras[profile].desk,
-        ),
-        bulb: {
-          ...practicalGeometry.bulb,
-          quad: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
-          mask: {
-            path: `${profile}-bulb-mask.png`,
-            sha256: fixtureHash(`${profile}-bulb-mask`),
-          },
-        },
-        shadeInterior: {
-          ...practicalGeometry.shadeInterior,
-          quad: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
-          mask: {
-            path: `${profile}-shade-mask.png`,
-            sha256: fixtureHash(`${profile}-shade-mask`),
-          },
-        },
-      };
-      return [
-        profile,
-        {
-          ...projection,
-          projectionSha256: sha256Canonical(projection),
-        },
-      ];
+  const lightSourcePayload = {
+    relationship: "shade-origin-ray-v1",
+    lampObject: "scan_lamp",
+    shadeOpening: [0, 0, 1],
+    shadeOpeningRadius: 0.1,
+    shadeAxis: [0, 0, -1],
+    origin: [0, 0, 0.98],
+    direction: [0, 0, -1],
+    target: [0, 0, 0.01],
+    axisErrorDegrees: 0,
+    spotAngleDegrees: 70,
+  };
+  const lightSource = {
+    ...lightSourcePayload,
+    relationshipSha256: sha256Canonical({
+      sources: practicalSources,
+      receiverGeometry: {
+        desk: practicalGeometry.desk,
+        contactPaper: practicalGeometry.contactPaper,
+      },
+      lightSource: lightSourcePayload,
     }),
-  );
+  };
+  const wideProjection = {
+    kind: "visible-practical-source-v1",
+    viewport: practicalViewports.wide,
+    deskCameraSha256: sha256Canonical(approvedR3EndpointCameras.wide.desk),
+    lightSourceRelationshipSha256: lightSource.relationshipSha256,
+    bulb: {
+      ...practicalGeometry.bulb,
+      quad: [0.1, 0.1, 0.2, 0.1, 0.2, 0.2, 0.1, 0.2],
+      mask: {
+        path: "wide-bulb-mask.png",
+        sha256: fixtureHash("wide-bulb-mask"),
+      },
+    },
+    shadeInterior: {
+      ...practicalGeometry.shadeInterior,
+      quad: [0.3, 0.1, 0.5, 0.1, 0.5, 0.25, 0.3, 0.25],
+      mask: {
+        path: "wide-shade-interior-mask.png",
+        sha256: fixtureHash("wide-shade-mask"),
+      },
+    },
+  };
+  const receiverGeometrySha256 = sha256Canonical({
+    desk: practicalGeometry.desk.geometrySha256,
+    contactPaper: practicalGeometry.contactPaper.geometrySha256,
+  });
+  const portraitProjection = {
+    kind: "offscreen-practical-light-pool-v1",
+    viewport: practicalViewports.portrait,
+    deskCameraSha256: sha256Canonical(approvedR3EndpointCameras.portrait.desk),
+    lightSourceRelationshipSha256: lightSource.relationshipSha256,
+    receivers: {
+      deskGeometrySha256: practicalGeometry.desk.geometrySha256,
+      contactPaperGeometrySha256: practicalGeometry.contactPaper.geometrySha256,
+      receiverGeometrySha256,
+    },
+    lightPool: {
+      derivation: "blender-shade-cone-receiver-render-v1",
+      runtimeAuthored: false,
+      lightSourceRelationshipSha256: lightSource.relationshipSha256,
+      receiverGeometrySha256,
+      quad: [0.1, 0.3, 0.8, 0.3, 0.8, 0.8, 0.1, 0.8],
+      mask: {
+        path: "portrait-desk-paper-light-pool-mask.png",
+        sha256: fixtureHash("portrait-light-pool-mask"),
+      },
+    },
+  };
+  const practicalProfiles = {
+    wide: {
+      ...wideProjection,
+      projectionSha256: sha256Canonical(wideProjection),
+    },
+    portrait: {
+      ...portraitProjection,
+      projectionSha256: sha256Canonical(portraitProjection),
+    },
+  };
   const practicalAuthoring = {
-    version: 1,
+    version: 2,
     immutable: true,
     generator: {
       identity: practicalAuthoringGenerator,
       browserRuntime: false,
     },
-    sources: {
-      masterBlend: {
-        path: practicalMasterBlend,
-        sha256: fixtureHash("master-blend"),
-      },
-      renderScript: {
-        path: practicalRenderScript,
-        sha256: fixtureHash("render-script"),
-      },
-    },
+    sources: practicalSources,
     geometry: practicalGeometry,
+    lightSource,
     profiles: practicalProfiles,
   };
   assert.deepEqual(practicalAuthoringContractIssues(practicalAuthoring), []);
@@ -700,6 +775,20 @@ async function runSelfTests() {
     practicalAuthoringContractIssues(missingPortrait).join("\n"),
     /portrait/,
     "encoder parity must reject missing portrait practical evidence",
+  );
+  const runtimeMask = structuredClone(practicalAuthoring);
+  runtimeMask.profiles.portrait.lightPool.runtimeAuthored = true;
+  assert.match(
+    practicalAuthoringContractIssues(runtimeMask).join("\n"),
+    /runtime-authored/,
+    "encoder parity must reject a runtime-authored portrait pool mask",
+  );
+  const wrongSourceHash = structuredClone(practicalAuthoring);
+  wrongSourceHash.sources.masterBlend.sha256 = fixtureHash("wrong-master");
+  assert.match(
+    practicalAuthoringContractIssues(wrongSourceHash).join("\n"),
+    /source relationship/,
+    "encoder parity must bind the portrait pool to exact source hashes",
   );
 
   console.log(
@@ -1219,6 +1308,81 @@ function normalizedQuadArea(quad) {
   return Math.abs(area) / 2;
 }
 
+function finiteWorldQuad(value) {
+  return (
+    Array.isArray(value) &&
+    value.length === 4 &&
+    value.every((point) => finiteTuple(point, 3))
+  );
+}
+
+function vectorAngleDegrees(first, second) {
+  if (!finiteTuple(first, 3) || !finiteTuple(second, 3)) {
+    return Number.POSITIVE_INFINITY;
+  }
+  const firstVector = new Vector3(...first);
+  const secondVector = new Vector3(...second);
+  if (firstVector.lengthSq() < 1e-18 || secondVector.lengthSq() < 1e-18) {
+    return Number.POSITIVE_INFINITY;
+  }
+  return (firstVector.angleTo(secondVector) * 180) / Math.PI;
+}
+
+function rayIntersectsWorldQuad(origin, direction, quad) {
+  if (
+    !finiteTuple(origin, 3) ||
+    !finiteTuple(direction, 3) ||
+    !finiteWorldQuad(quad)
+  ) {
+    return false;
+  }
+  const rayOrigin = new Vector3(...origin);
+  const rayDirection = new Vector3(...direction);
+  if (rayDirection.lengthSq() < 1e-18) return false;
+  rayDirection.normalize();
+  const rayTriangleDistance = (first, second, third) => {
+    const edge1 = second.clone().sub(first);
+    const edge2 = third.clone().sub(first);
+    const p = rayDirection.clone().cross(edge2);
+    const determinant = edge1.dot(p);
+    if (Math.abs(determinant) < 1e-9) return null;
+    const inverse = 1 / determinant;
+    const t = rayOrigin.clone().sub(first);
+    const u = t.dot(p) * inverse;
+    if (u < -1e-4 || u > 1 + 1e-4) return null;
+    const q = t.clone().cross(edge1);
+    const v = rayDirection.dot(q) * inverse;
+    if (v < -1e-4 || u + v > 1 + 1e-4) return null;
+    const distance = edge2.dot(q) * inverse;
+    return distance >= 0 ? distance : null;
+  };
+  const points = quad.map((point) => new Vector3(...point));
+  return (
+    rayTriangleDistance(points[0], points[1], points[2]) !== null ||
+    rayTriangleDistance(points[0], points[2], points[3]) !== null
+  );
+}
+
+function sourceRelationshipPayload(authoring) {
+  const lightSource = { ...authoring?.lightSource };
+  delete lightSource.relationshipSha256;
+  return {
+    sources: authoring?.sources,
+    receiverGeometry: {
+      desk: authoring?.geometry?.desk,
+      contactPaper: authoring?.geometry?.contactPaper,
+    },
+    lightSource,
+  };
+}
+
+function receiverGeometrySha256(authoring) {
+  return sha256Canonical({
+    desk: authoring?.geometry?.desk?.geometrySha256,
+    contactPaper: authoring?.geometry?.contactPaper?.geometrySha256,
+  });
+}
+
 function practicalAuthoringDeclarationIssues(manifest) {
   const issues = [];
   if (
@@ -1236,7 +1400,7 @@ function practicalAuthoringDeclarationIssues(manifest) {
 function practicalAuthoringContractIssues(authoring) {
   const issues = [];
   if (
-    authoring?.version !== 1 ||
+    authoring?.version !== 2 ||
     authoring?.immutable !== true ||
     authoring?.generator?.identity !== practicalAuthoringGenerator ||
     authoring?.generator?.browserRuntime !== false
@@ -1257,6 +1421,8 @@ function practicalAuthoringContractIssues(authoring) {
   const expectedGeometry = [
     ["bulb", practicalBulbObject],
     ["shadeInterior", practicalShadeObject],
+    ["desk", practicalDeskObject],
+    ["contactPaper", practicalContactPaperObject],
   ];
   for (const [key, object] of expectedGeometry) {
     if (
@@ -1266,6 +1432,73 @@ function practicalAuthoringContractIssues(authoring) {
       issues.push(`${object} source geometry hash is invalid`);
     }
   }
+  for (const key of ["desk", "contactPaper"]) {
+    if (!finiteWorldQuad(authoring?.geometry?.[key]?.worldQuad)) {
+      issues.push(`${key} receiver world quad is invalid`);
+    }
+  }
+  const lightSource = authoring?.lightSource;
+  const sourceRelationshipSha256 = sha256Canonical(
+    sourceRelationshipPayload(authoring),
+  );
+  if (
+    lightSource?.relationship !== "shade-origin-ray-v1" ||
+    lightSource?.lampObject !== "scan_lamp" ||
+    !finiteTuple(lightSource?.shadeOpening, 3) ||
+    !Number.isFinite(lightSource?.shadeOpeningRadius) ||
+    lightSource.shadeOpeningRadius <= 0 ||
+    !finiteTuple(lightSource?.shadeAxis, 3) ||
+    !finiteTuple(lightSource?.origin, 3) ||
+    !finiteTuple(lightSource?.direction, 3) ||
+    !finiteTuple(lightSource?.target, 3) ||
+    !Number.isFinite(lightSource?.axisErrorDegrees) ||
+    !Number.isFinite(lightSource?.spotAngleDegrees) ||
+    lightSource.spotAngleDegrees <= 0 ||
+    lightSource.spotAngleDegrees >= 180 ||
+    lightSource?.relationshipSha256 !== sourceRelationshipSha256
+  ) {
+    issues.push(
+      "shade-origin source relationship must bind exact master/render hashes and receiver geometry",
+    );
+  } else {
+    const openingOffset = new Vector3(...lightSource.origin).distanceTo(
+      new Vector3(...lightSource.shadeOpening),
+    );
+    const targetDirection = new Vector3(...lightSource.target)
+      .sub(new Vector3(...lightSource.origin))
+      .toArray();
+    const measuredAxisError = vectorAngleDegrees(
+      lightSource.shadeAxis,
+      lightSource.direction,
+    );
+    if (
+      openingOffset > lightSource.shadeOpeningRadius ||
+      vectorAngleDegrees(targetDirection, lightSource.direction) > 0.01 ||
+      measuredAxisError > 12 ||
+      Math.abs(measuredAxisError - lightSource.axisErrorDegrees) > 0.01
+    ) {
+      issues.push(
+        "light origin/direction must remain inside the real shade opening and follow its measured axis",
+      );
+    }
+    if (
+      !rayIntersectsWorldQuad(
+        lightSource.origin,
+        lightSource.direction,
+        authoring?.geometry?.contactPaper?.worldQuad,
+      ) ||
+      !rayIntersectsWorldQuad(
+        lightSource.origin,
+        lightSource.direction,
+        authoring?.geometry?.desk?.worldQuad,
+      )
+    ) {
+      issues.push(
+        "shade-origin light ray must intersect the contact paper and desk receivers",
+      );
+    }
+  }
+  const expectedReceiverSha256 = receiverGeometrySha256(authoring);
   for (const profile of expectedVariants) {
     const projection = authoring?.profiles?.[profile];
     if (!projection) {
@@ -1290,38 +1523,82 @@ function practicalAuthoringContractIssues(authoring) {
     ) {
       issues.push(`${profile} geometry projection hash is invalid`);
     }
-    for (const [key, object] of expectedGeometry) {
-      const region = projection[key];
-      if (
-        region?.object !== object ||
-        region?.geometrySha256 !== authoring?.geometry?.[key]?.geometrySha256
-      ) {
-        issues.push(`${profile} ${key} geometry hash does not match source`);
+    if (projection.lightSourceRelationshipSha256 !== sourceRelationshipSha256) {
+      issues.push(`${profile} source relationship hash is invalid`);
+    }
+    if (profile === "wide") {
+      if (projection.kind !== widePracticalRelationship) {
+        issues.push("wide practical relationship must expose the real source");
+      }
+      for (const [key, object] of expectedGeometry.slice(0, 2)) {
+        const region = projection[key];
+        if (
+          region?.object !== object ||
+          region?.geometrySha256 !== authoring?.geometry?.[key]?.geometrySha256
+        ) {
+          issues.push(`${profile} ${key} geometry hash does not match source`);
+        }
+        if (
+          !finiteTuple(region?.quad, 8) ||
+          region.quad.some((value) => value < 0 || value > 1) ||
+          normalizedQuadArea(region.quad) < 0.00001
+        ) {
+          issues.push(`${profile} ${key} projected quad is invalid`);
+        }
+        if (
+          !/^[a-z0-9][a-z0-9._-]*\.png$/.test(region?.mask?.path ?? "") ||
+          !isSha256(region?.mask?.sha256)
+        ) {
+          issues.push(
+            `${profile} ${key} projected mask relationship is invalid`,
+          );
+        }
       }
       if (
-        !finiteTuple(region?.quad, 8) ||
-        region.quad.some((value) => value < 0 || value > 1) ||
-        normalizedQuadArea(region.quad) < 0.00001
+        projection.bulb?.mask?.path === projection.shadeInterior?.mask?.path ||
+        projection.bulb?.mask?.sha256 ===
+          projection.shadeInterior?.mask?.sha256 ||
+        JSON.stringify(projection.bulb?.quad) ===
+          JSON.stringify(projection.shadeInterior?.quad)
       ) {
-        issues.push(`${profile} ${key} projected quad is invalid`);
+        issues.push(
+          "wide bulb and shade interior need distinct geometry projections",
+        );
       }
-      if (
-        !/^[a-z0-9][a-z0-9._-]*\.png$/.test(region?.mask?.path ?? "") ||
-        !isSha256(region?.mask?.sha256)
-      ) {
-        issues.push(`${profile} ${key} projected mask relationship is invalid`);
-      }
+      continue;
+    }
+    if (projection.kind !== portraitPracticalRelationship) {
+      issues.push(
+        "portrait practical relationship must use the offscreen source-derived pool",
+      );
     }
     if (
-      projection.bulb?.mask?.path === projection.shadeInterior?.mask?.path ||
-      projection.bulb?.mask?.sha256 ===
-        projection.shadeInterior?.mask?.sha256 ||
-      JSON.stringify(projection.bulb?.quad) ===
-        JSON.stringify(projection.shadeInterior?.quad)
+      projection.receivers?.deskGeometrySha256 !==
+        authoring?.geometry?.desk?.geometrySha256 ||
+      projection.receivers?.contactPaperGeometrySha256 !==
+        authoring?.geometry?.contactPaper?.geometrySha256 ||
+      projection.receivers?.receiverGeometrySha256 !== expectedReceiverSha256
+    ) {
+      issues.push("portrait receiver geometry relationship is invalid");
+    }
+    const lightPool = projection.lightPool;
+    if (
+      lightPool?.derivation !== portraitPoolDerivation ||
+      lightPool?.runtimeAuthored !== false ||
+      lightPool?.lightSourceRelationshipSha256 !== sourceRelationshipSha256 ||
+      lightPool?.receiverGeometrySha256 !== expectedReceiverSha256 ||
+      !finiteTuple(lightPool?.quad, 8) ||
+      lightPool.quad.some((value) => value < 0 || value > 1) ||
+      normalizedQuadArea(lightPool.quad) < 0.0001 ||
+      !/^[a-z0-9][a-z0-9._-]*\.png$/.test(lightPool?.mask?.path ?? "") ||
+      !isSha256(lightPool?.mask?.sha256)
     ) {
       issues.push(
-        `${profile} bulb and shade interior need distinct geometry projections`,
+        "portrait light pool must be a non-runtime-authored Blender receiver mask",
       );
+    }
+    if (lightPool?.runtimeAuthored === true) {
+      issues.push("portrait light pool cannot use a runtime-authored mask");
     }
   }
   return issues;
@@ -1608,10 +1885,16 @@ function validateManifest(
       .digest("hex");
     if (
       variant.contact?.activationHoldSeconds !== 1 ||
-      variant.contact?.visibleBulb !== true ||
-      variant.contact?.visibleShadeInterior !== true ||
+      variant.contact?.practicalRelationship !==
+        (variantId === "wide"
+          ? widePracticalRelationship
+          : portraitPracticalRelationship) ||
+      (variantId === "wide" &&
+        (variant.contact?.visibleBulb !== true ||
+          variant.contact?.visibleShadeInterior !== true)) ||
       !(variant.contact?.shadeAxisErrorDegrees <= 12) ||
       variant.contact?.lightIntersectsPaper !== true ||
+      variant.contact?.lightIntersectsDesk !== true ||
       !deskCamera ||
       activationFrames.some(
         (frame) => JSON.stringify(frame.camera) !== JSON.stringify(deskCamera),
@@ -1625,7 +1908,7 @@ function validateManifest(
       postHoldHash !== approvedR3ContactPathSha256[variantId]
     ) {
       issues.push(
-        `${variantId}/desk-contact must hold the exact desk camera for 1.0s while the visible practical rises, then preserve the approved R3 path`,
+        `${variantId}/desk-contact must hold the exact desk camera for 1.0s while its approved practical relationship rises, then preserve the approved R3 path`,
       );
     }
     if (
@@ -1928,7 +2211,11 @@ async function loadPracticalAuthoring(manifest) {
       }
     }
     for (const profile of expectedVariants) {
-      for (const key of ["bulb", "shadeInterior"]) {
+      const keys =
+        authoring?.profiles?.[profile]?.kind === portraitPracticalRelationship
+          ? ["lightPool"]
+          : ["bulb", "shadeInterior"];
+      for (const key of keys) {
         const mask = authoring?.profiles?.[profile]?.[key]?.mask;
         if (
           !/^[a-z0-9][a-z0-9._-]*\.png$/.test(mask?.path ?? "") ||

@@ -12,6 +12,7 @@ import numpy as np
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Matrix, Quaternion, Vector
 from mathutils.bvhtree import BVHTree
+from mathutils.kdtree import KDTree
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -313,9 +314,7 @@ def mesh_components_world(obj):
     return components
 
 
-def mesh_component_edge_signatures(
-    obj, *, scale=1.0, stretch_longest=False
-):
+def mesh_component_records(obj):
     adjacency = [[] for _vertex in obj.data.vertices]
     for edge in obj.data.edges:
         first, second = edge.vertices
@@ -358,10 +357,19 @@ def mesh_component_edge_signatures(
                 "indices": indices,
                 "edges": edges,
                 "points": points,
+                "minimum": minimum,
+                "maximum": maximum,
+                "center": sum(points.values(), Vector()) / len(points),
                 "span": max(maximum - minimum),
             }
         )
+    return components
 
+
+def mesh_component_edge_signatures(
+    obj, *, scale=1.0, stretch_longest=False
+):
+    components = mesh_component_records(obj)
     stretched_component = None
     if stretch_longest:
         stretched_component = max(
@@ -415,7 +423,53 @@ def mesh_component_edge_signatures(
     return signatures
 
 
-def supplied_lamp_component_signatures():
+def component_center_signature(
+    components, component_indices, *, scale=1.0, offset_component=None
+):
+    centers = {
+        index: component["center"].copy()
+        for index, component in enumerate(components)
+        if index in component_indices
+    }
+    if offset_component is not None:
+        centers[offset_component] += Vector((0.025, 0.0, 0.0))
+    return [
+        (
+            first,
+            second,
+            (centers[first] - centers[second]).length * scale,
+        )
+        for offset, first in enumerate(component_indices)
+        for second in component_indices[offset + 1 :]
+    ]
+
+
+def hinge_gap_signature(
+    obj, base_vertex_indices, upper_vertex_indices, *, scale=1.0
+):
+    base_points = [
+        obj.matrix_world @ obj.data.vertices[index].co * scale
+        for index in base_vertex_indices
+    ]
+    upper_points = [
+        obj.matrix_world @ obj.data.vertices[index].co * scale
+        for index in upper_vertex_indices
+    ]
+    if not base_points or not upper_points:
+        return None
+    tree = KDTree(len(base_points))
+    for index, point in enumerate(base_points):
+        tree.insert(point, index)
+    tree.balance()
+    distances = sorted(tree.find(point)[2] for point in upper_points)
+    sample_count = min(160, len(distances))
+    return {
+        "minimum": distances[0],
+        "localMean": sum(distances[:sample_count]) / sample_count,
+    }
+
+
+def supplied_lamp_geometry_contract():
     source_path = (
         REPO_ROOT / "assets/master/scans/desk-lamp/scene.gltf"
     )
@@ -435,9 +489,52 @@ def supplied_lamp_component_signatures():
             return None
         source_height = source_bounds[1].z - source_bounds[0].z
         real_world_scale = ASSET_RULES["lamp"]["size"] / source_height
-        return mesh_component_edge_signatures(
-            source_fixture, scale=real_world_scale
-        )
+        components = mesh_component_records(source_fixture)
+        source_min_z = source_bounds[0].z
+        upper_component_indices = [
+            index
+            for index, component in enumerate(components)
+            if (component["minimum"].z - source_min_z) * real_world_scale
+            >= 0.10
+        ]
+        base_component_indices = [
+            index
+            for index in range(len(components))
+            if index not in upper_component_indices
+        ]
+        base_hinge_vertex_indices = [
+            index
+            for component_index in base_component_indices
+            for index, point in components[component_index]["points"].items()
+            if 0.075
+            <= (point.z - source_min_z) * real_world_scale
+            <= 0.14
+        ]
+        upper_hinge_vertex_indices = [
+            index
+            for component_index in upper_component_indices
+            for index, point in components[component_index]["points"].items()
+            if (point.z - source_min_z) * real_world_scale <= 0.18
+        ]
+        return {
+            "edgeSignatures": mesh_component_edge_signatures(
+                source_fixture, scale=real_world_scale
+            ),
+            "componentIndices": list(range(len(components))),
+            "componentCenterSignature": component_center_signature(
+                components,
+                list(range(len(components))),
+                scale=real_world_scale,
+            ),
+            "baseHingeVertexIndices": base_hinge_vertex_indices,
+            "upperHingeVertexIndices": upper_hinge_vertex_indices,
+            "hingeGap": hinge_gap_signature(
+                source_fixture,
+                base_hinge_vertex_indices,
+                upper_hinge_vertex_indices,
+                scale=real_world_scale,
+            ),
+        }
     finally:
         for obj in [
             obj for obj in bpy.data.objects if obj not in existing_objects
@@ -447,6 +544,38 @@ def supplied_lamp_component_signatures():
             mesh for mesh in bpy.data.meshes if mesh not in existing_meshes
         ]:
             bpy.data.meshes.remove(mesh)
+
+
+def actual_lamp_geometry_contract(obj, expected):
+    components = mesh_component_records(obj)
+    offset_component = None
+    if (
+        os.environ.get("LAZY_A_VERIFY_NEGATIVE_CONTROL")
+        == "lamp-component-offset"
+    ):
+        offset_component = min(
+            expected["componentIndices"],
+            key=lambda index: components[index]["center"].z,
+        )
+    return {
+        "edgeSignatures": mesh_component_edge_signatures(
+            obj,
+            stretch_longest=(
+                os.environ.get("LAZY_A_VERIFY_NEGATIVE_CONTROL")
+                == "lamp-stretch"
+            ),
+        ),
+        "componentCenterSignature": component_center_signature(
+            components,
+            expected["componentIndices"],
+            offset_component=offset_component,
+        ),
+        "hingeGap": hinge_gap_signature(
+            obj,
+            expected["baseHingeVertexIndices"],
+            expected["upperHingeVertexIndices"],
+        ),
+    }
 
 
 def rigid_component_signature_issues(actual, expected):
@@ -482,6 +611,46 @@ def rigid_component_signature_issues(actual, expected):
     return failures
 
 
+def component_placement_signature_issues(actual, expected):
+    if actual is None or expected is None or len(actual) != len(expected):
+        return ["pairwise component-center signature length differs"]
+    failures = []
+    for (
+        actual_first,
+        actual_second,
+        actual_distance,
+    ), (
+        expected_first,
+        expected_second,
+        expected_distance,
+    ) in zip(actual, expected):
+        if (actual_first, actual_second) != (
+            expected_first,
+            expected_second,
+        ):
+            return ["component identity/order differs"]
+        error = abs(actual_distance - expected_distance)
+        if error > max(1e-5, expected_distance * 0.0001):
+            failures.append(
+                f"{actual_first}-{actual_second}:{error:.4f}m"
+            )
+    return failures
+
+
+def hinge_gap_issues(actual, expected):
+    if actual is None or expected is None:
+        return ["base-to-upper hinge geometry is missing"]
+    failures = []
+    for key in ("minimum", "localMean"):
+        tolerance = 0.001
+        if abs(actual[key] - expected[key]) > tolerance:
+            failures.append(
+                f"{key}={actual[key]:.4f}m "
+                f"expected={expected[key]:.4f}m +/-{tolerance:.4f}m"
+            )
+    return failures
+
+
 def measured_lamp_shade_geometry(fixture):
     candidates = []
     for points in mesh_components_world(fixture):
@@ -494,7 +663,6 @@ def measured_lamp_shade_geometry(fixture):
         dimensions = maximum - minimum
         if (
             len(points) >= 300
-            and minimum.z > 1.1
             and max(dimensions) > 0.12
         ):
             candidates.append(points)
@@ -1362,21 +1530,86 @@ if isinstance(lamp_record, dict):
     if lamp_anchor is None:
         issues.append("scan_lamp root is missing")
     elif len(fixture_meshes) == 1:
-        expected_component_signatures = supplied_lamp_component_signatures()
-        actual_component_signatures = mesh_component_edge_signatures(
-            fixture_meshes[0],
-            stretch_longest=(
-                os.environ.get("LAZY_A_VERIFY_NEGATIVE_CONTROL")
-                == "lamp-stretch"
-            ),
+        obsolete_articulation = [
+            key
+            for key in (
+                "lazy_a_contact_lower_hinge_degrees",
+                "lazy_a_contact_elbow_hinge_degrees",
+                "lazy_a_contact_head_hinge_degrees",
+                "lazy_a_contact_lower_hinge_center",
+                "lazy_a_contact_elbow_hinge_center",
+                "lazy_a_contact_head_hinge_center",
+                "lazy_a_contact_rigid_group_count",
+                "lazy_a_contact_upper_component_count",
+                "lazy_a_contact_upper_hinge_center",
+                "lazy_a_contact_upper_assembly_rotation",
+                "lazy_a_contact_whole_translation",
+            )
+            if key in lamp_anchor
+        ]
+        if obsolete_articulation:
+            issues.append(
+                "CONTACT lamp retains forbidden independent articulation "
+                f"metadata: {obsolete_articulation}"
+            )
+        expected_geometry = supplied_lamp_geometry_contract()
+        actual_geometry = (
+            actual_lamp_geometry_contract(
+                fixture_meshes[0], expected_geometry
+            )
+            if expected_geometry is not None
+            else None
         )
         signature_failures = rigid_component_signature_issues(
-            actual_component_signatures, expected_component_signatures
+            (
+                actual_geometry["edgeSignatures"]
+                if actual_geometry is not None
+                else None
+            ),
+            (
+                expected_geometry["edgeSignatures"]
+                if expected_geometry is not None
+                else None
+            ),
         )
         if signature_failures:
             issues.append(
                 "CONTACT lamp disconnected components are not rigid copies of "
                 f"the supplied fixture: {signature_failures[:8]}"
+            )
+        placement_failures = component_placement_signature_issues(
+            (
+                actual_geometry["componentCenterSignature"]
+                if actual_geometry is not None
+                else None
+            ),
+            (
+                expected_geometry["componentCenterSignature"]
+                if expected_geometry is not None
+                else None
+            ),
+        )
+        if placement_failures:
+            issues.append(
+                "CONTACT lamp disconnected components changed relative "
+                f"placement: {placement_failures[:8]}"
+            )
+        hinge_failures = hinge_gap_issues(
+            (
+                actual_geometry["hingeGap"]
+                if actual_geometry is not None
+                else None
+            ),
+            (
+                expected_geometry["hingeGap"]
+                if expected_geometry is not None
+                else None
+            ),
+        )
+        if hinge_failures:
+            issues.append(
+                "CONTACT lamp base-to-upper hinge gap differs from the "
+                f"supplied fixture: {hinge_failures}"
             )
         stored_target = vector_json_property(
             lamp_anchor,
@@ -1415,7 +1648,9 @@ if isinstance(lamp_record, dict):
             measured_axis, measured_opening, measured_radius = measured_shade
             if os.environ.get("LAZY_A_VERIFY_NEGATIVE_CONTROL") == "lamp-axis":
                 stored_axis.negate()
-            if angle_degrees(stored_axis, measured_axis) > 0.01:
+            if (
+                stored_axis.normalized() - measured_axis.normalized()
+            ).length > 1e-6:
                 issues.append("CONTACT lamp shade-axis metadata differs from geometry")
             if (stored_opening - measured_opening).length > 1e-5:
                 issues.append("CONTACT lamp shade-opening metadata differs from geometry")
@@ -1448,7 +1683,8 @@ if isinstance(lamp_record, dict):
             opening_points = shade_opening_points(
                 measured_axis, measured_opening, measured_radius
             )
-            for profile, desk_camera in CONTACT_DESK_CAMERAS.items():
+            for profile in ("wide",):
+                desk_camera = CONTACT_DESK_CAMERAS[profile]
                 opening_projection = project_points_with_camera_sample(
                     opening_points, desk_camera
                 )
@@ -1482,6 +1718,14 @@ if isinstance(lamp_record, dict):
             or (stored_base - measured_base).length > 1e-6
         ):
             issues.append("CONTACT lamp base-center metadata differs from geometry")
+        expected_natural_base = Vector((-0.70917356, 0.294578075, 0.9))
+        if (
+            measured_base is None
+            or (measured_base - expected_natural_base).length > 1e-5
+        ):
+            issues.append(
+                "CONTACT lamp base must remain at its natural original placement"
+            )
         if base_points:
             base_min = Vector(
                 min(point[index] for point in base_points) for index in range(3)

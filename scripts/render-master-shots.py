@@ -109,7 +109,7 @@ CONTACT_MODIFIER = "CONTACT_INDENTATION_GEOMETRY_NODES"
 CONTACT_LIGHT = "ContactRakingLight"
 CONTACT_BULB = "ContactPracticalBulb"
 CONTACT_SHADE = "ContactPracticalShadeInterior"
-CONTACT_LIGHT_ENERGY = 110.0
+CONTACT_LIGHT_ENERGY = 800.0
 CONTACT_ROOT = PUBLIC_ROOT / "contact"
 CONTACT_AUTHORING_MANIFEST_PATH = (
     CONTACT_ROOT / "practical-light-authoring-manifest.json"
@@ -119,6 +119,9 @@ CONTACT_MASK_VIEWPORTS = {
     "wide": (1280, 720),
     "portrait": (375, 812),
 }
+WIDE_PRACTICAL_RELATIONSHIP = "visible-practical-source-v1"
+PORTRAIT_PRACTICAL_RELATIONSHIP = "offscreen-practical-light-pool-v1"
+PORTRAIT_POOL_DERIVATION = "blender-shade-cone-receiver-render-v1"
 
 NAV_WIDTH = 0.30
 NAV_HEIGHT = 0.20
@@ -960,19 +963,38 @@ def add_lamp_bulb_and_raking_light(
     bulb.scale = (1.0, 0.84, 1.08)
     bulb.data.materials.append(bulb_material)
     bulb.hide_render = False
+    bulb.visible_shadow = False
     bulb["lazy_a_authored_role"] = "lamp-emissive-bulb"
     bulb["lazy_a_legacy_source_name"] = "ContactEmissiveBulb"
     parent_keep_world(bulb, lamp)
 
     shade_location = opening_center - shade_axis * 0.004
-    bpy.ops.mesh.primitive_cylinder_add(
-        vertices=64,
-        radius=opening_radius * 0.88,
-        depth=0.0015,
-        location=shade_location,
-    )
-    shade = bpy.context.active_object
-    shade.name = CONTACT_SHADE
+    shade_mesh = bpy.data.meshes.new(f"{CONTACT_SHADE}Mesh")
+    shade_vertices = []
+    shade_faces = []
+    shade_segments = 64
+    inner_radius = opening_radius * 0.42
+    outer_radius = opening_radius * 0.88
+    for index in range(shade_segments):
+        angle = math.tau * index / shade_segments
+        cosine = math.cos(angle)
+        sine = math.sin(angle)
+        shade_vertices.extend(
+            (
+                (inner_radius * cosine, inner_radius * sine, 0.0),
+                (outer_radius * cosine, outer_radius * sine, 0.0),
+            )
+        )
+    for index in range(shade_segments):
+        next_index = (index + 1) % shade_segments
+        shade_faces.append(
+            (index * 2, next_index * 2, next_index * 2 + 1, index * 2 + 1)
+        )
+    shade_mesh.from_pydata(shade_vertices, [], shade_faces)
+    shade_mesh.update()
+    shade = bpy.data.objects.new(CONTACT_SHADE, shade_mesh)
+    bpy.context.collection.objects.link(shade)
+    shade.location = shade_location
     shade.rotation_mode = "QUATERNION"
     shade.rotation_quaternion = shade_axis.to_track_quat("Z", "Y")
     shade.data.materials.append(shade_material)
@@ -983,8 +1005,8 @@ def add_lamp_bulb_and_raking_light(
     light_data = bpy.data.lights.new(CONTACT_LIGHT, "SPOT")
     light_data.energy = 0.0
     light_data.color = (1.0, 0.58, 0.30)
-    light_data.spot_size = math.radians(70.0)
-    light_data.spot_blend = 0.94
+    light_data.spot_size = math.radians(48.0)
+    light_data.spot_blend = 0.72
     light_data.shadow_soft_size = 0.0005
     light = bpy.data.objects.new(CONTACT_LIGHT, light_data)
     bpy.context.collection.objects.link(light)
@@ -2054,12 +2076,194 @@ def render_practical_mask(
     return quad
 
 
+def receiver_world_quad(obj: bpy.types.Object) -> list[Vector]:
+    points = local_face_points(obj, 2, "max")
+    center = sum(points, Vector()) / len(points)
+    points.sort(key=lambda point: math.atan2(point.y - center.y, point.x - center.x))
+    start = min(
+        range(len(points)),
+        key=lambda index: points[index].x + points[index].y,
+    )
+    return points[start:] + points[:start]
+
+
+def ray_intersects_receiver(
+    origin: Vector,
+    direction: Vector,
+    receiver: bpy.types.Object,
+) -> tuple[bool, Vector | None]:
+    inverse = receiver.matrix_world.inverted()
+    local_origin = inverse @ origin
+    local_direction = inverse.to_3x3() @ direction
+    local_direction.normalize()
+    local_bounds = [Vector(corner) for corner in receiver.bound_box]
+    top = max(point.z for point in local_bounds)
+    if abs(local_direction.z) <= 1e-8:
+        return False, None
+    distance = (top - local_origin.z) / local_direction.z
+    if distance <= 0.0:
+        return False, None
+    hit = local_origin + local_direction * distance
+    min_x = min(point.x for point in local_bounds)
+    max_x = max(point.x for point in local_bounds)
+    min_y = min(point.y for point in local_bounds)
+    max_y = max(point.y for point in local_bounds)
+    tolerance = 1e-6
+    intersects = (
+        min_x - tolerance <= hit.x <= max_x + tolerance
+        and min_y - tolerance <= hit.y <= max_y + tolerance
+    )
+    return intersects, receiver.matrix_world @ hit
+
+
+def padded_projection_quad_for_objects(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    objects: list[bpy.types.Object],
+    width: int,
+    height: int,
+) -> list[float]:
+    quad = project_object_bounds(scene, camera, objects)
+    if quad is None:
+        raise RuntimeError("CONTACT light-pool receivers do not project into portrait")
+    min_x = max(0.0, min(quad[0::2]) - 2.0 / width)
+    max_x = min(1.0, max(quad[0::2]) + 2.0 / width)
+    min_y = max(0.0, min(quad[1::2]) - 2.0 / height)
+    max_y = min(1.0, max(quad[1::2]) + 2.0 / height)
+    return rounded_vector((min_x, min_y, max_x, min_y, max_x, max_y, min_x, max_y))
+
+
+def make_light_pool_mask_material(
+    origin: Vector,
+    direction: Vector,
+    spot_size: float,
+) -> bpy.types.Material:
+    material = bpy.data.materials.new("ContactPortraitLightPoolMask")
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    bsdf = nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = (0.0, 0.0, 0.0, 1.0)
+    bsdf.inputs["Roughness"].default_value = 1.0
+    bsdf.inputs["Emission Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+
+    geometry = nodes.new("ShaderNodeNewGeometry")
+    subtract = nodes.new("ShaderNodeVectorMath")
+    subtract.operation = "SUBTRACT"
+    subtract.inputs[1].default_value = origin
+    normalize = nodes.new("ShaderNodeVectorMath")
+    normalize.operation = "NORMALIZE"
+    dot_product = nodes.new("ShaderNodeVectorMath")
+    dot_product.operation = "DOT_PRODUCT"
+    dot_product.inputs[1].default_value = direction.normalized()
+    threshold = nodes.new("ShaderNodeMath")
+    threshold.operation = "GREATER_THAN"
+    threshold.inputs[1].default_value = math.cos(spot_size * 0.5)
+    links.new(geometry.outputs["Position"], subtract.inputs[0])
+    links.new(subtract.outputs["Vector"], normalize.inputs[0])
+    links.new(normalize.outputs["Vector"], dot_product.inputs[0])
+    links.new(dot_product.outputs["Value"], threshold.inputs[0])
+    links.new(threshold.outputs["Value"], bsdf.inputs["Emission Strength"])
+    return material
+
+
+def render_portrait_light_pool_mask(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+    authored: dict[str, Any],
+    path: Path,
+) -> list[float]:
+    profile = "portrait"
+    width, height = CONTACT_MASK_VIEWPORTS[profile]
+    position, quaternion = pose_transform(profile, "desk")
+    set_camera_transform(camera, position, quaternion)
+    set_vertical_fov(camera.data, LENS_FOV[profile])
+    scene.render.resolution_x = width
+    scene.render.resolution_y = height
+    scene.render.resolution_percentage = 100
+    receivers = [require_object("Mesh_26", "MESH"), authored["contact"]]
+    quad = padded_projection_quad_for_objects(
+        scene, camera, receivers, width, height
+    )
+    light = require_object(CONTACT_LIGHT, "LIGHT")
+    origin = light.matrix_world.translation.copy()
+    direction = light.matrix_world.to_quaternion() @ Vector((0.0, 0.0, -1.0))
+    direction.normalize()
+    material = make_light_pool_mask_material(
+        origin, direction, light.data.spot_size
+    )
+
+    mesh_visibility = {
+        obj.name: obj.hide_render for obj in bpy.data.objects if obj.type == "MESH"
+    }
+    light_visibility = {
+        obj.name: obj.hide_render for obj in bpy.data.objects if obj.type == "LIGHT"
+    }
+    original_materials = {
+        obj.name: list(obj.data.materials) for obj in receivers
+    }
+    original_engine = scene.render.engine
+    original_transparent = scene.render.film_transparent
+    original_format = scene.render.image_settings.file_format
+    original_mode = scene.render.image_settings.color_mode
+    original_depth = scene.render.image_settings.color_depth
+    world = scene.world
+    background = (
+        world.node_tree.nodes.get("Background")
+        if world is not None and world.use_nodes
+        else None
+    )
+    background_strength = (
+        background.inputs["Strength"].default_value if background is not None else None
+    )
+    try:
+        for obj in bpy.data.objects:
+            if obj.type == "MESH":
+                obj.hide_render = obj not in receivers
+            elif obj.type == "LIGHT":
+                obj.hide_render = True
+        for receiver in receivers:
+            receiver.data.materials.clear()
+            receiver.data.materials.append(material)
+        if background is not None:
+            background.inputs["Strength"].default_value = 0.0
+        scene.render.engine = "BLENDER_EEVEE"
+        scene.render.film_transparent = False
+        scene.render.image_settings.file_format = "PNG"
+        scene.render.image_settings.color_mode = "BW"
+        scene.render.image_settings.color_depth = "8"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        scene.render.filepath = str(path)
+        bpy.ops.render.render(write_still=True)
+    finally:
+        for obj in bpy.data.objects:
+            if obj.name in mesh_visibility:
+                obj.hide_render = mesh_visibility[obj.name]
+            elif obj.name in light_visibility:
+                obj.hide_render = light_visibility[obj.name]
+        for receiver in receivers:
+            receiver.data.materials.clear()
+            for original_material in original_materials[receiver.name]:
+                receiver.data.materials.append(original_material)
+        if background is not None:
+            background.inputs["Strength"].default_value = background_strength
+        scene.render.engine = original_engine
+        scene.render.film_transparent = original_transparent
+        scene.render.image_settings.file_format = original_format
+        scene.render.image_settings.color_mode = original_mode
+        scene.render.image_settings.color_depth = original_depth
+        bpy.data.materials.remove(material)
+    return quad
+
+
 def build_practical_authoring_manifest(
     scene: bpy.types.Scene,
     camera: bpy.types.Object,
     authored: dict[str, Any],
 ) -> dict[str, Any]:
     CONTACT_ROOT.mkdir(parents=True, exist_ok=True)
+    desk = require_object("Mesh_26", "MESH")
+    paper = authored["contact"]
     geometry = {
         "bulb": {
             "object": CONTACT_BULB,
@@ -2069,50 +2273,145 @@ def build_practical_authoring_manifest(
             "object": CONTACT_SHADE,
             "geometrySha256": mesh_geometry_sha256(authored["shadeInterior"]),
         },
+        "desk": {
+            "object": desk.name,
+            "geometrySha256": mesh_geometry_sha256(desk),
+            "worldQuad": [
+                rounded_vector(point) for point in receiver_world_quad(desk)
+            ],
+        },
+        "contactPaper": {
+            "object": paper.name,
+            "geometrySha256": mesh_geometry_sha256(paper),
+            "worldQuad": [
+                rounded_vector(point) for point in receiver_world_quad(paper)
+            ],
+        },
     }
-    profiles = {}
-    for profile in PROFILE_IDS:
-        position, quaternion = pose_transform(profile, "desk")
-        set_camera_transform(camera, position, quaternion)
-        desk_camera = camera_sample(camera, LENS_FOV[profile])
-        projection = {
-            "viewport": list(CONTACT_MASK_VIEWPORTS[profile]),
-            "deskCameraSha256": sha256_canonical(desk_camera),
+    sources = {
+        "masterBlend": {
+            "path": SOURCE_BLEND,
+            "sha256": sha256_file(REPO_ROOT / SOURCE_BLEND),
+        },
+        "renderScript": {
+            "path": "scripts/render-master-shots.py",
+            "sha256": sha256_file(Path(__file__).resolve()),
+        },
+    }
+    lamp = require_object(LAMP_ROOT)
+    light = require_object(CONTACT_LIGHT, "LIGHT")
+    origin = light.matrix_world.translation.copy()
+    direction = light.matrix_world.to_quaternion() @ Vector((0.0, 0.0, -1.0))
+    direction.normalize()
+    light_source_payload = {
+        "relationship": "shade-origin-ray-v1",
+        "lampObject": LAMP_ROOT,
+        "shadeOpening": rounded_vector(
+            lamp_vector_property(lamp, "lazy_a_contact_shade_opening_center")
+        ),
+        "shadeOpeningRadius": rounded(
+            float(lamp["lazy_a_contact_shade_opening_radius"])
+        ),
+        "shadeAxis": rounded_vector(
+            lamp_vector_property(lamp, "lazy_a_contact_shade_axis")
+        ),
+        "origin": rounded_vector(origin),
+        "direction": rounded_vector(direction),
+        "target": json.loads(light["lazy_a_contact_target"]),
+        "axisErrorDegrees": rounded(
+            float(light["lazy_a_contact_axis_offset_degrees"])
+        ),
+        "spotAngleDegrees": rounded(math.degrees(light.data.spot_size)),
+    }
+    relationship_payload = {
+        "sources": sources,
+        "receiverGeometry": {
+            "desk": geometry["desk"],
+            "contactPaper": geometry["contactPaper"],
+        },
+        "lightSource": light_source_payload,
+    }
+    light_source = {
+        **light_source_payload,
+        "relationshipSha256": sha256_canonical(relationship_payload),
+    }
+
+    position, quaternion = pose_transform("wide", "desk")
+    set_camera_transform(camera, position, quaternion)
+    wide_camera = camera_sample(camera, LENS_FOV["wide"])
+    wide_projection = {
+        "kind": WIDE_PRACTICAL_RELATIONSHIP,
+        "viewport": list(CONTACT_MASK_VIEWPORTS["wide"]),
+        "deskCameraSha256": sha256_canonical(wide_camera),
+        "lightSourceRelationshipSha256": light_source["relationshipSha256"],
+    }
+    for key, obj in (
+        ("bulb", authored["bulb"]),
+        ("shadeInterior", authored["shadeInterior"]),
+    ):
+        filename = f"wide-{key.replace('Interior', '-interior').lower()}-mask.png"
+        path = CONTACT_ROOT / filename
+        wide_projection[key] = {
+            **geometry[key],
+            "quad": render_practical_mask(
+                scene, camera, "wide", obj, path
+            ),
+            "mask": {"path": filename, "sha256": sha256_file(path)},
         }
-        for key, obj in (
-            ("bulb", authored["bulb"]),
-            ("shadeInterior", authored["shadeInterior"]),
-        ):
-            filename = f"{profile}-{key.replace('Interior', '-interior').lower()}-mask.png"
-            path = CONTACT_ROOT / filename
-            projection[key] = {
-                **geometry[key],
-                "quad": render_practical_mask(
-                    scene, camera, profile, obj, path
-                ),
-                "mask": {"path": filename, "sha256": sha256_file(path)},
-            }
-        projection["projectionSha256"] = sha256_canonical(projection)
-        profiles[profile] = projection
+    wide_projection["projectionSha256"] = sha256_canonical(wide_projection)
+
+    position, quaternion = pose_transform("portrait", "desk")
+    set_camera_transform(camera, position, quaternion)
+    portrait_camera = camera_sample(camera, LENS_FOV["portrait"])
+    receiver_sha256 = sha256_canonical(
+        {
+            "desk": geometry["desk"]["geometrySha256"],
+            "contactPaper": geometry["contactPaper"]["geometrySha256"],
+        }
+    )
+    pool_filename = "portrait-desk-paper-light-pool-mask.png"
+    pool_path = CONTACT_ROOT / pool_filename
+    portrait_projection = {
+        "kind": PORTRAIT_PRACTICAL_RELATIONSHIP,
+        "viewport": list(CONTACT_MASK_VIEWPORTS["portrait"]),
+        "deskCameraSha256": sha256_canonical(portrait_camera),
+        "lightSourceRelationshipSha256": light_source["relationshipSha256"],
+        "receivers": {
+            "deskGeometrySha256": geometry["desk"]["geometrySha256"],
+            "contactPaperGeometrySha256": geometry["contactPaper"]["geometrySha256"],
+            "receiverGeometrySha256": receiver_sha256,
+        },
+        "lightPool": {
+            "derivation": PORTRAIT_POOL_DERIVATION,
+            "runtimeAuthored": False,
+            "lightSourceRelationshipSha256": light_source["relationshipSha256"],
+            "receiverGeometrySha256": receiver_sha256,
+            "quad": render_portrait_light_pool_mask(
+                scene, camera, authored, pool_path
+            ),
+            "mask": {
+                "path": pool_filename,
+                "sha256": sha256_file(pool_path),
+            },
+        },
+    }
+    portrait_projection["projectionSha256"] = sha256_canonical(
+        portrait_projection
+    )
     return {
-        "version": 1,
+        "version": 2,
         "immutable": True,
         "generator": {
             "identity": "blender-background-python",
             "browserRuntime": False,
         },
-        "sources": {
-            "masterBlend": {
-                "path": SOURCE_BLEND,
-                "sha256": sha256_file(REPO_ROOT / SOURCE_BLEND),
-            },
-            "renderScript": {
-                "path": "scripts/render-master-shots.py",
-                "sha256": sha256_file(Path(__file__).resolve()),
-            },
-        },
+        "sources": sources,
         "geometry": geometry,
-        "profiles": profiles,
+        "lightSource": light_source,
+        "profiles": {
+            "wide": wide_projection,
+            "portrait": portrait_projection,
+        },
     }
 
 
@@ -2202,36 +2501,32 @@ def contact_light_contract(authored: dict[str, Any]) -> dict[str, Any]:
     )
 
     inverse = paper.matrix_world.inverted()
-    local_origin = inverse @ origin
     local_direction = inverse.to_3x3() @ direction
     local_direction.normalize()
     grazing_angle = math.degrees(
         math.asin(max(0.0, min(1.0, abs(local_direction.z))))
     )
-    paper_top = max(Vector(corner).z for corner in paper.bound_box)
-    denominator = local_direction.z
-    intersects = False
-    hit_world = None
-    if abs(denominator) > 1e-8:
-        distance = (paper_top - local_origin.z) / denominator
-        if distance > 0.0:
-            hit = local_origin + local_direction * distance
-            local_bounds = [Vector(corner) for corner in paper.bound_box]
-            min_x = min(point.x for point in local_bounds)
-            max_x = max(point.x for point in local_bounds)
-            min_y = min(point.y for point in local_bounds)
-            max_y = max(point.y for point in local_bounds)
-            tolerance = 1e-6
-            intersects = (
-                min_x - tolerance <= hit.x <= max_x + tolerance
-                and min_y - tolerance <= hit.y <= max_y + tolerance
-            )
-            hit_world = paper.matrix_world @ hit
+    intersects_paper, paper_hit_world = ray_intersects_receiver(
+        origin, direction, paper
+    )
+    intersects_desk, desk_hit_world = ray_intersects_receiver(
+        origin, direction, require_object("Mesh_26", "MESH")
+    )
     return {
         "lightOrigin": blender_to_three(origin),
-        "lightTarget": blender_to_three(hit_world) if hit_world is not None else None,
+        "lightTarget": (
+            blender_to_three(paper_hit_world)
+            if paper_hit_world is not None
+            else None
+        ),
+        "deskLightTarget": (
+            blender_to_three(desk_hit_world)
+            if desk_hit_world is not None
+            else None
+        ),
         "lightInsideShade": inside_shade,
-        "lightIntersectsPaper": intersects,
+        "lightIntersectsPaper": intersects_paper,
+        "lightIntersectsDesk": intersects_desk,
         "grazingAngleDegrees": rounded(grazing_angle),
     }
 
@@ -2441,8 +2736,13 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
                 "paperScreenQuads": paper_screen_quads,
                 "lampScreenQuads": lamp_screen_quads,
                 "activationHoldSeconds": CONTACT_ACTIVATION_SECONDS,
-                "visibleBulb": True,
-                "visibleShadeInterior": True,
+                "practicalRelationship": (
+                    WIDE_PRACTICAL_RELATIONSHIP
+                    if profile == "wide"
+                    else PORTRAIT_PRACTICAL_RELATIONSHIP
+                ),
+                "visibleBulb": profile == "wide",
+                "visibleShadeInterior": profile == "wide",
                 "shadeAxisErrorDegrees": rounded(
                     float(
                         require_object(LAMP_ROOT).get(
@@ -2612,12 +2912,15 @@ export interface PlateVariant {
     lampScreenQuads: Record<EndpointId, readonly number[] | null>;
     lightOrigin: readonly [number, number, number];
     lightTarget: readonly [number, number, number];
+    deskLightTarget: readonly [number, number, number];
     lightInsideShade: true;
     lightIntersectsPaper: true;
+    lightIntersectsDesk: true;
     grazingAngleDegrees: number;
     activationHoldSeconds: 1;
-    visibleBulb: true;
-    visibleShadeInterior: true;
+    practicalRelationship: "visible-practical-source-v1" | "offscreen-practical-light-pool-v1";
+    visibleBulb: boolean;
+    visibleShadeInterior: boolean;
     shadeAxisErrorDegrees: number;
   };
   journal: {
@@ -2828,6 +3131,25 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
     ):
         if not path.is_file() or path.stat().st_size == 0:
             issues.append(f"{label} is missing: {path}")
+    if CONTACT_AUTHORING_MANIFEST_PATH.is_file():
+        practical_authoring = json.loads(
+            CONTACT_AUTHORING_MANIFEST_PATH.read_text(encoding="utf-8")
+        )
+        if (
+            practical_authoring.get("version") != 2
+            or practical_authoring.get("profiles", {}).get("wide", {}).get("kind")
+            != WIDE_PRACTICAL_RELATIONSHIP
+            or practical_authoring.get("profiles", {}).get("portrait", {}).get("kind")
+            != PORTRAIT_PRACTICAL_RELATIONSHIP
+            or practical_authoring.get("profiles", {})
+            .get("portrait", {})
+            .get("lightPool", {})
+            .get("runtimeAuthored")
+            is not False
+        ):
+            issues.append(
+                "practical authoring must pair a wide visible source with a portrait offscreen receiver pool"
+            )
     hero_poster = authored["heroPoster"]
     if (
         hero_poster.name != HERO_OBJECT
@@ -3128,11 +3450,24 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             or not 0.0 < contact_data.get("grazingAngleDegrees", 90.0) <= 35.0
             or contact_data.get("lightInsideShade") is not True
             or contact_data.get("lightIntersectsPaper") is not True
+            or contact_data.get("lightIntersectsDesk") is not True
             or not contact_data.get("lightOrigin")
             or not contact_data.get("lightTarget")
+            or not contact_data.get("deskLightTarget")
             or contact_data.get("activationHoldSeconds") != 1.0
-            or contact_data.get("visibleBulb") is not True
-            or contact_data.get("visibleShadeInterior") is not True
+            or contact_data.get("practicalRelationship")
+            != (
+                WIDE_PRACTICAL_RELATIONSHIP
+                if profile == "wide"
+                else PORTRAIT_PRACTICAL_RELATIONSHIP
+            )
+            or (
+                profile == "wide"
+                and (
+                    contact_data.get("visibleBulb") is not True
+                    or contact_data.get("visibleShadeInterior") is not True
+                )
+            )
             or contact_data.get("shadeAxisErrorDegrees", math.inf) > 12.0
         ):
             issues.append(f"{profile}: CONTACT must use fixed indentation and shade-origin lamp response")
@@ -3182,11 +3517,10 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
                         )
                 if quad_pixel_height(quad, variant["height"]) < 70.0:
                     issues.append("portrait: navigation sheet must project at least 70px high at desk")
-            lamp_quad = contact_data.get("lampScreenQuads", {}).get("contact")
             paper_quad = contact_data.get("paperScreenQuads", {}).get("contact")
-            if not quad_intersects_frame(lamp_quad) or not quad_inside_frame(paper_quad, 0.01):
+            if not quad_inside_frame(paper_quad, 0.01):
                 issues.append(
-                    f"portrait: CONTACT lean/pan must frame the current lamp and full contact paper; lamp={lamp_quad}, paper={paper_quad}"
+                    f"portrait: CONTACT lean/pan must frame the full contact paper; paper={paper_quad}"
                 )
         address_quad = contact_data.get("addressScreenQuads", {}).get("contact")
         if not quad_inside_frame(address_quad, 0.02):
