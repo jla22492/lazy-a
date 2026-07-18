@@ -25,8 +25,8 @@
   strips and run the full authored-source verification battery.
 - [x] Task 2 correction: update the Task 2 report and commit only the focused
   corrective files, leaving unrelated untracked files untouched.
-- [ ] Replace the split JOURNAL motion with one readable hip-pivot path.
-- [ ] Re-author CONTACT's visible practical and one-second activation beat.
+- [x] Replace the split JOURNAL motion with one readable hip-pivot path.
+- [x] Re-author CONTACT's visible practical and one-second activation beat.
 - [ ] Replace the non-atomic hero overlay and low-resolution occlusion path.
 - [ ] Regenerate and encode affected wide and portrait room media.
 - [ ] Run full local source, browser, clock, performance, and visual batteries.

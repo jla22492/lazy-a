@@ -109,7 +109,7 @@ CONTACT_MODIFIER = "CONTACT_INDENTATION_GEOMETRY_NODES"
 CONTACT_LIGHT = "ContactRakingLight"
 CONTACT_BULB = "ContactPracticalBulb"
 CONTACT_SHADE = "ContactPracticalShadeInterior"
-CONTACT_LIGHT_ENERGY = 800.0
+CONTACT_LIGHT_ENERGY = 240.0
 CONTACT_ROOT = PUBLIC_ROOT / "contact"
 CONTACT_AUTHORING_MANIFEST_PATH = (
     CONTACT_ROOT / "practical-light-authoring-manifest.json"
@@ -1006,8 +1006,8 @@ def add_lamp_bulb_and_raking_light(
     light_data.energy = 0.0
     light_data.color = (1.0, 0.58, 0.30)
     light_data.spot_size = math.radians(48.0)
-    light_data.spot_blend = 0.72
-    light_data.shadow_soft_size = 0.0005
+    light_data.spot_blend = 0.85
+    light_data.shadow_soft_size = 0.04
     light = bpy.data.objects.new(CONTACT_LIGHT, light_data)
     bpy.context.collection.objects.link(light)
     # Keep the photometric source at the bulb inside the visible shade. The
@@ -2322,6 +2322,9 @@ def build_practical_authoring_manifest(
             float(light["lazy_a_contact_axis_offset_degrees"])
         ),
         "spotAngleDegrees": rounded(math.degrees(light.data.spot_size)),
+        "energy": rounded(float(light["lazy_a_contact_energy"])),
+        "spotBlend": rounded(light.data.spot_blend),
+        "shadowSoftSize": rounded(light.data.shadow_soft_size),
     }
     relationship_payload = {
         "sources": sources,

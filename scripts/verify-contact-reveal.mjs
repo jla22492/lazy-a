@@ -70,6 +70,13 @@ const MAX_PRACTICAL_AUTHORING_BYTES = 256 * 1024;
 const MIN_BULB_LUMINANCE_RISE = 20;
 const MIN_SHADE_INTERIOR_LUMINANCE_RISE = 8;
 const MIN_PORTRAIT_POOL_LUMINANCE_RISE = 8;
+const MAX_CONTACT_LIGHT_ENERGY = 400;
+const MIN_CONTACT_SPOT_BLEND = 0.75;
+const MIN_CONTACT_SHADOW_RADIUS_RATIO = 0.25;
+const MAX_CONTACT_SHADOW_RADIUS_RATIO = 1;
+const MAX_PORTRAIT_POOL_P95_RISE = 90;
+const MAX_WIDE_P99_RISE = 105;
+const MAX_WIDE_NEW_NEAR_WHITE_FRACTION = 0.01;
 const APPROVED_R3_CONTACT_PATH_SHA256 = {
   wide: "f9432c37d2e081d41d9e745ffe6dc8807f8e0255dec6f9701a130d0706aba375",
   portrait: "496a618f0a311cdf52717a7376387da075c173639899ff88af4361b3df48054c",
@@ -314,10 +321,21 @@ function practicalAuthoringContractIssues(authoring) {
     !Number.isFinite(lightSource?.spotAngleDegrees) ||
     lightSource.spotAngleDegrees <= 0 ||
     lightSource.spotAngleDegrees >= 180 ||
+    !Number.isFinite(lightSource?.energy) ||
+    lightSource.energy <= 0 ||
+    lightSource.energy > MAX_CONTACT_LIGHT_ENERGY ||
+    !Number.isFinite(lightSource?.spotBlend) ||
+    lightSource.spotBlend < MIN_CONTACT_SPOT_BLEND ||
+    lightSource.spotBlend > 1 ||
+    !Number.isFinite(lightSource?.shadowSoftSize) ||
+    lightSource.shadowSoftSize <
+      lightSource.shadeOpeningRadius * MIN_CONTACT_SHADOW_RADIUS_RATIO ||
+    lightSource.shadowSoftSize >
+      lightSource.shadeOpeningRadius * MAX_CONTACT_SHADOW_RADIUS_RATIO ||
     lightSource?.relationshipSha256 !== sourceRelationshipSha256
   ) {
     issues.push(
-      "shade-origin source relationship must bind exact master/render hashes and receiver geometry",
+      "shade-origin source relationship must bind exact master/render hashes, receiver geometry, and restrained soft-source photometrics",
     );
   } else {
     const openingOffset = vectorLength(
@@ -793,6 +811,9 @@ if (selfTest) {
     target: [0, 0, 0.01],
     axisErrorDegrees: 0,
     spotAngleDegrees: 70,
+    energy: 240,
+    spotBlend: 0.85,
+    shadowSoftSize: 0.04,
   };
   const lightSource = {
     ...lightSourcePayload,
@@ -1011,6 +1032,16 @@ if (selfTest) {
     [],
     "geometry-projected bulb and shade-interior luminance rises should pass",
   );
+  assert.deepEqual(
+    practicalLightQualityIssues(
+      rest,
+      lit,
+      practicalMasks,
+      WIDE_PRACTICAL_RELATIONSHIP,
+    ),
+    [],
+    "restrained wide practical illumination should pass",
+  );
 
   const independentDeskLight = grayFixture();
   brighten(
@@ -1054,6 +1085,40 @@ if (selfTest) {
     ),
     [],
     "the geometry-derived portrait desk/paper pool should pass without a visible source",
+  );
+  assert.deepEqual(
+    practicalLightQualityIssues(
+      rest,
+      portraitLit,
+      { lightPool: portraitPoolMask },
+      PORTRAIT_PRACTICAL_RELATIONSHIP,
+    ),
+    [],
+    "restrained portrait pool illumination should pass",
+  );
+  const blownWide = grayFixture();
+  brighten(blownWide, [0, 0, 1, 0, 1, 1, 0, 1], 230);
+  assert.match(
+    practicalLightQualityIssues(
+      rest,
+      blownWide,
+      practicalMasks,
+      WIDE_PRACTICAL_RELATIONSHIP,
+    ).join("\n"),
+    /p99 rise|near-white/,
+    "a blown-out wide desk pool must fail",
+  );
+  const blownPortrait = grayFixture();
+  brighten(blownPortrait, portraitPoolQuad, 120);
+  assert.match(
+    practicalLightQualityIssues(
+      rest,
+      blownPortrait,
+      { lightPool: portraitPoolMask },
+      PORTRAIT_PRACTICAL_RELATIONSHIP,
+    ).join("\n"),
+    /p95 rise/,
+    "a blown-out portrait desk pool must fail",
   );
   assert.match(
     practicalLightMaskIssues(
@@ -1406,6 +1471,65 @@ function practicalLightMaskIssues(rest, lit, masks, relationship) {
   return issues;
 }
 
+function practicalLightQualityIssues(rest, lit, masks, relationship) {
+  const issues = [];
+  if (
+    rest?.width !== lit?.width ||
+    rest?.height !== lit?.height ||
+    !Buffer.isBuffer(rest?.data) ||
+    !Buffer.isBuffer(lit?.data) ||
+    rest.data.length !== rest.width * rest.height ||
+    lit.data.length !== lit.width * lit.height
+  ) {
+    return ["rest and lit practical-light images must match"];
+  }
+  if (relationship === PORTRAIT_PRACTICAL_RELATIONSHIP) {
+    const rises = [];
+    const mask = masks?.lightPool;
+    if (
+      mask?.width !== rest.width ||
+      mask?.height !== rest.height ||
+      !Buffer.isBuffer(mask?.data)
+    ) {
+      return ["portrait light pool mask is unavailable for quality checks"];
+    }
+    for (let index = 0; index < mask.data.length; index += 1) {
+      if (mask.data[index] >= 128) {
+        rises.push(lit.data[index] - rest.data[index]);
+      }
+    }
+    const p95Rise = rises.length > 0 ? percentile(rises, 0.95) : Number.NaN;
+    if (!Number.isFinite(p95Rise) || p95Rise > MAX_PORTRAIT_POOL_P95_RISE) {
+      issues.push(
+        `portrait light pool p95 rise ${String(p95Rise)} exceeds ${MAX_PORTRAIT_POOL_P95_RISE}`,
+      );
+    }
+    return issues;
+  }
+
+  const rises = [];
+  let newNearWhite = 0;
+  for (let index = 0; index < rest.data.length; index += 1) {
+    rises.push(lit.data[index] - rest.data[index]);
+    if (rest.data[index] < 235 && lit.data[index] >= 235) {
+      newNearWhite += 1;
+    }
+  }
+  const p99Rise = percentile(rises, 0.99);
+  const nearWhiteFraction = newNearWhite / rest.data.length;
+  if (p99Rise > MAX_WIDE_P99_RISE) {
+    issues.push(
+      `wide practical p99 rise ${p99Rise} exceeds ${MAX_WIDE_P99_RISE}`,
+    );
+  }
+  if (nearWhiteFraction > MAX_WIDE_NEW_NEAR_WHITE_FRACTION) {
+    issues.push(
+      `wide practical newly near-white fraction ${nearWhiteFraction.toFixed(4)} exceeds ${MAX_WIDE_NEW_NEAR_WHITE_FRACTION}`,
+    );
+  }
+  return issues;
+}
+
 function practicalMaskProjectionIssues(mask, quad, viewport) {
   const issues = [];
   if (
@@ -1731,6 +1855,18 @@ try {
     loadedPracticalMasks.profiles.portrait,
     PORTRAIT_PRACTICAL_RELATIONSHIP,
   );
+  const widePracticalQualityIssues = practicalLightQualityIssues(
+    restImage,
+    activationLitImage,
+    loadedPracticalMasks.profiles.wide,
+    WIDE_PRACTICAL_RELATIONSHIP,
+  );
+  const portraitPracticalQualityIssues = practicalLightQualityIssues(
+    portraitRestImage,
+    portraitActivationLitImage,
+    loadedPracticalMasks.profiles.portrait,
+    PORTRAIT_PRACTICAL_RELATIONSHIP,
+  );
   const reverseDifference = meanAbsoluteDifference(
     restImage,
     reversedImage,
@@ -1771,6 +1907,16 @@ try {
     passes.push(
       `wide bulb/shade and portrait desk-paper pool rose during the stationary holds (wide=${widePracticalRises.bulb.toFixed(1)}/${widePracticalRises.shadeInterior.toFixed(1)}, portraitPool=${portraitPracticalRises.lightPool.toFixed(1)})`,
     );
+  }
+  if (
+    widePracticalQualityIssues.length > 0 ||
+    portraitPracticalQualityIssues.length > 0
+  ) {
+    failures.push(
+      `CONTACT practical illumination was too harsh or overexposed: wide=${widePracticalQualityIssues.join("; ") || "ok"}; portrait=${portraitPracticalQualityIssues.join("; ") || "ok"}`,
+    );
+  } else {
+    passes.push("CONTACT practical illumination remained soft and restrained");
   }
   if (
     holdContrast.gradientP95 < 14 ||
