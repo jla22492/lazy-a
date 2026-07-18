@@ -52,3 +52,4 @@
 - A missing proof dependency must fail its own evidence check without short-circuiting independent behavior verification. Catalog absence cannot be allowed to disguise an untested one-shot lifecycle.
 - Transition identity must be canonical before media continuity comparisons. Reducer names and asset names may describe the same route with different separators, and profile-swap tests must exercise both forward and reverse motion rather than only resting frames.
 - Capture continuity state at the actual media handoff, not when replacement loading begins. A slow responsive asset can make an initially correct resume timestamp stale while the currently presented camera keeps moving.
+- A one-shot review journey may outlast the hero film after longer approved camera beats. Motion proof must reject pauses, rewinds, or restarts while allowing the natural ended state and final-frame hold at later destinations.

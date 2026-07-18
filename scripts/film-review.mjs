@@ -99,13 +99,21 @@ async function heroState(page) {
   });
 }
 
-async function requireHeroPlaying(page, beatName) {
+let lastObservedHeroTime = 0;
+async function requireHeroContinuing(page, beatName) {
   const state = await heroState(page);
-  if (!state || state.paused || state.ended || state.currentTime <= 0) {
+  const monotonic = state && state.currentTime + 0.05 >= lastObservedHeroTime;
+  const validPlaybackState =
+    state && (state.ended ? state.paused : !state.paused);
+  if (!monotonic || !validPlaybackState) {
     throw new Error(
-      `${beatName} did not occur during hero playback: ${JSON.stringify(state)}`,
+      `${beatName} interrupted or rewound hero playback: ${JSON.stringify({
+        previousTime: lastObservedHeroTime,
+        state,
+      })}`,
     );
   }
+  lastObservedHeroTime = Math.max(lastObservedHeroTime, state.currentTime);
   return state;
 }
 
@@ -127,7 +135,7 @@ async function visit(page, destination) {
   const point = await navigationRowCenter(page, destination);
   await page.mouse.move(point.x, point.y, { steps: 8 });
   await page.waitForTimeout(80);
-  await requireHeroPlaying(page, `${destination} hover`);
+  await requireHeroContinuing(page, `${destination} hover`);
   await page.mouse.click(point.x, point.y);
   await page.waitForFunction(
     (id) => window.__lazyAConversation === id,
@@ -135,7 +143,7 @@ async function visit(page, destination) {
     { timeout: TRANSITION_TIMEOUT_MS },
   );
   await waitForRestingEndpoint(page, destination);
-  const opened = await requireHeroPlaying(page, destination);
+  const opened = await requireHeroContinuing(page, destination);
   beat(
     destination,
     `row center (${point.x.toFixed(1)}, ${point.y.toFixed(1)}), hero ${opened.currentTime.toFixed(2)}s`,
@@ -148,7 +156,10 @@ async function visit(page, destination) {
     { timeout: TRANSITION_TIMEOUT_MS },
   );
   await waitForRestingEndpoint(page, "desk");
-  const returned = await requireHeroPlaying(page, `${destination} desk return`);
+  const returned = await requireHeroContinuing(
+    page,
+    `${destination} desk return`,
+  );
   beat("desk", `from ${destination}, hero ${returned.currentTime.toFixed(2)}s`);
 }
 
