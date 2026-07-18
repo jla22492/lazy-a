@@ -75,4 +75,6 @@
 
 - R-0117-R3 failed Jonathan's full-motion acceptance: the room itself finally reads with conviction, but the living print still changes grade and swims against its paper, its foreground mask cuts into pencils and ignores the card leaning against it, JOURNAL bends in two mechanical stages and twists away from readable copy, and CONTACT creates light without letting the lamp visibly turn on. R4 binds the room and moving image to one frame, bends the visitor toward the notebook in one human motion, and gives CONTACT a full second of stillness to watch the practical illuminate the desk before the approved camera move begins.
 
+- R-0117-R4 reached its independently reviewed authored-source checkpoint: the supplied desk lamp remains a natural rigid object while its visible bulb and soft desk pool now belong to one practical; CONTACT gives that light a full second before the camera moves; JOURNAL bends continuously forward and down into a readable page; and the hero's treated print, live surface, leaning card, pencils, and every other crossing object are pinned from the evaluated master rather than inferred from a low-resolution mask. Runtime atomic compositing, final motion media, live proof, and Jonathan's approval remain open.
+
 Record experience changes here, not just technical ones.

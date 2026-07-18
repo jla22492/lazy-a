@@ -39,6 +39,17 @@ design is
 `docs/superpowers/specs/2026-07-17-0117-r4-physical-continuity-design.md`.
 R3's prior automated passes remain historical evidence, not acceptance.
 
+The R4 authored-source checkpoint is independently reviewed and pushed through
+`59605a6`. The pinned Blender master now preserves the approved room and natural
+rigid lamp placement; JOURNAL follows one monotone forward-and-down reading
+path; CONTACT ties its visible bulb and desk pool to one soft practical, holds
+the camera for the approved second, and keeps the portrait crop's light
+physically derived from that same offscreen lamp. The hero compositor artifact,
+room-treatment bake, evaluated foreground geometry, exact camera paths, and
+activation curve are source-hashed and behaviorally guarded. Runtime atomic
+compositing, final motion media, local/deployed browser proof, and Jonathan's
+visual approval remain open.
+
 ---
 
 ## Completed
@@ -199,15 +210,18 @@ R3's prior automated passes remain historical evidence, not acceptance.
 
 ## In Progress
 
-WORK ORDER 0117-R3 — deployed technical review candidate. The corrected master,
-high-resolution media, physical interactions, normal-speed review films, and
-local/deployed batteries are ready. Jonathan's visual decision remains.
+WORK ORDER 0117-R4 — atomic runtime integration. The reviewed authored source is
+locked and pushed. The current implementation step moves the photographic plate,
+hero surface, and evaluated foreground depth into one Canvas and one presented
+frame clock. Final wide/portrait motion renders, normal-speed review films,
+local/deployed batteries, and Jonathan's visual decision follow that integration.
 
 ---
 
 ## Next Recommended Work Order
 
-0117-R3 must pass Jonathan's full-motion visual review before 0118 can begin.
+0117-R4 must pass full-motion local and deployed visual review, then Jonathan's
+explicit approval, before 0118 can begin.
 After that: content-and-domain readiness, approved company material, authored
 JOURNAL/ABOUT content, and www.lazyaproductions.com migration.
 

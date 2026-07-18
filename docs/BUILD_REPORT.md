@@ -4,7 +4,8 @@ WORK ORDER 0117-R4 IN PROGRESS — PHYSICAL CONTINUITY CORRECTIONS
 
 Version:
 
-v0.1 — approved design and reproduced failures
+v0.1 — approved design, reproduced failures, and reviewed authored-source
+checkpoint
 
 Observed Result:
 
@@ -43,11 +44,39 @@ Approved Result:
   lights the desk, then performs the unchanged R3 move to its unchanged
   endpoint.
 
+Authored-Source Checkpoint:
+
+- `build/wo-0117-r/master.blend` is pinned through Git LFS with SHA-256
+  `d81279bba63ebb928c3605f5118d5af6c2f449b40051a6a44e25f34ee9d292ac`.
+- The supplied lamp remains a natural rigid object on the desk. Its visible
+  bulb, shade direction, and soft reveal pool share one authored practical
+  relationship; portrait derives the pool from the same lamp outside the
+  immutable crop.
+- The practical-light quality gate caps highlight blowout as well as requiring
+  readable illumination. The reviewed wide proof reduced pool p99 rise from
+  `121` to `92`; the portrait proof holds p95 rise at `50` with mean rise
+  `13.53`.
+- JOURNAL's exact wide and portrait paths are hashed and must remain monotone
+  forward-and-down without the rejected head-first pause, lateral backtrack, or
+  late twist.
+- CONTACT's exact 31-sample one-second smoothstep drives visible bulb and lamp
+  level together; linear or independently timed substitutions fail.
+- The hero compositor GLB is parsed by the verifier: `HeroLiveSurface`, all
+  twelve foreground occluders, `43,235` world-space triangles, the aggregate
+  geometry relationship, room-treatment reconstruction, and the treated bake
+  are pinned to their real authored artifacts.
+- Independent Task 2 review approved the checkpoint through commit `59605a6`.
+- Reviewed proofs:
+  `docs/progress/0117-r4-task2-contact-wide-softened.jpg` and
+  `docs/progress/0117-r4-task2-contact-portrait-softened.jpg`.
+
 Verification Status:
 
 - Design and acceptance criteria — APPROVED.
-- Implementation, regenerated media, browser battery, deployment, and
-  Jonathan's final visual approval — OPEN.
+- Authored source and physical-continuity contracts — APPROVED and pushed.
+- Atomic runtime integration — IN PROGRESS.
+- Regenerated final media, browser battery, deployment, and Jonathan's final
+  visual approval — OPEN.
 - No completion claim is made.
 
 ---
