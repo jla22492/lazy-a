@@ -60,6 +60,7 @@ export function Stage() {
   const [captureMode] = useState(isCaptureRun);
   const [variant, setVariant] = useState<PlateVariant>(viewportVariant);
   const [plateStatus, setPlateStatus] = useState<PlateStatus>("ready");
+  const [heroReleased, setHeroReleased] = useState(false);
   const [experience, setExperience] =
     useState<PlateExperienceState>(INITIAL_EXPERIENCE);
 
@@ -77,9 +78,7 @@ export function Stage() {
     ) {
       return;
     }
-    let cancelled = false;
-    queueMicrotask(() => {
-      if (cancelled) return;
+    const frame = window.requestAnimationFrame(() => {
       setExperience((current) =>
         current.phase === "resting" &&
         current.endpoint === "desk" &&
@@ -91,13 +90,12 @@ export function Stage() {
           : current,
       );
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => window.cancelAnimationFrame(frame);
   }, [experience]);
 
   const settleAtDesk = useCallback(() => {
     announceRoomSettled();
+    setHeroReleased(true);
     setExperience({
       endpoint: "desk",
       requested: null,
@@ -178,7 +176,7 @@ export function Stage() {
           >
             <RoomClockDriver />
             <Suspense fallback={null}>
-              <HeroSurface />
+              <HeroSurface released={heroReleased} />
             </Suspense>
             <AttentionNavigation
               experience={experience}

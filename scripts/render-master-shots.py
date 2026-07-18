@@ -1883,18 +1883,27 @@ def create_hero_live_surface(poster: bpy.types.Object) -> bpy.types.Object:
     return surface
 
 
-def evaluated_geometry_proxy(source: bpy.types.Object) -> bpy.types.Object:
+def evaluated_geometry_proxy(
+    source: bpy.types.Object,
+    *,
+    name_suffix: str = "",
+    profile: str | None = None,
+) -> bpy.types.Object:
     depsgraph = bpy.context.evaluated_depsgraph_get()
     evaluated = source.evaluated_get(depsgraph)
     mesh = bpy.data.meshes.new_from_object(
         evaluated, preserve_all_data_layers=True, depsgraph=depsgraph
     )
     mesh.materials.clear()
-    proxy = bpy.data.objects.new(f"{HERO_PROXY_PREFIX}{source.name}", mesh)
+    proxy = bpy.data.objects.new(
+        f"{HERO_PROXY_PREFIX}{source.name}{name_suffix}", mesh
+    )
     bpy.context.collection.objects.link(proxy)
     proxy.matrix_world = evaluated.matrix_world.copy()
     proxy["lazy_a_source_object"] = source.name
     proxy["lazy_a_authored_role"] = "hero-foreground-depth"
+    if profile is not None:
+        proxy["lazy_a_profile"] = profile
     return proxy
 
 
@@ -1906,7 +1915,21 @@ def export_hero_compositor_geometry(
     occluders = [
         evaluated_geometry_proxy(require_object(name, "MESH"))
         for name in HERO_OCCLUDER_OBJECTS
+        if name != NAV_SHEET
     ]
+    navigation_planes: dict[str, dict[str, Any]] = {}
+    for profile in PROFILE_IDS:
+        set_profile_dressing(authored, profile)
+        navigation_planes[profile] = navigation_geometry(
+            authored["navigation"]
+        )["plane"]
+        occluders.append(
+            evaluated_geometry_proxy(
+                authored["navigation"],
+                name_suffix=f"_{profile}",
+                profile=profile,
+            )
+        )
     bpy.ops.object.select_all(action="DESELECT")
     for obj in [surface, *occluders]:
         obj.hide_render = False
@@ -1933,6 +1956,16 @@ def export_hero_compositor_geometry(
                     "object": proxy.name,
                     "sourceObject": proxy["lazy_a_source_object"],
                     "geometrySha256": mesh_geometry_sha256(proxy),
+                    **(
+                        {
+                            "profile": proxy["lazy_a_profile"],
+                            "navigationPlane": navigation_planes[
+                                proxy["lazy_a_profile"]
+                            ],
+                        }
+                        if "lazy_a_profile" in proxy
+                        else {}
+                    ),
                 }
                 for proxy in occluders
             ],

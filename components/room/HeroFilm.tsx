@@ -62,6 +62,7 @@ export function HeroFilm({ children }: PropsWithChildren) {
   const [video, setVideo] = useState<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [surfaceReady, setSurfaceReadyState] = useState(false);
+  const [loadReleased, setLoadReleased] = useState(false);
   const [state, dispatch] = useReducer(
     heroLifecycleReducer,
     INITIAL_HERO_STATE,
@@ -72,6 +73,7 @@ export function HeroFilm({ children }: PropsWithChildren) {
   const playAttemptedRef = useRef(false);
   const presentedFramesRef = useRef(0);
   const presentedFrameCallbackRef = useRef(0);
+  const textureRef = useRef<VideoTexture | null>(null);
   const setSurfaceReady = useCallback((ready: boolean) => {
     setSurfaceReadyState(ready);
   }, []);
@@ -95,9 +97,30 @@ export function HeroFilm({ children }: PropsWithChildren) {
   );
 
   useEffect(() => {
+    textureRef.current = texture ?? null;
+    return () => {
+      if (textureRef.current === texture) textureRef.current = null;
+    };
+  }, [texture]);
+
+  useEffect(() => {
+    const arrivalPoll = window.setInterval(() => {
+      if (!arrivalDone()) return;
+      window.clearInterval(arrivalPoll);
+      setLoadReleased(true);
+    }, 50);
+    return () => window.clearInterval(arrivalPoll);
+  }, []);
+
+  useEffect(() => {
+    if (video && loadReleased) video.load();
+  }, [loadReleased, video]);
+
+  useEffect(() => {
     if (!video) return;
     const observe: VideoFrameRequestCallback = (_now, metadata) => {
       presentedFramesRef.current = metadata.presentedFrames;
+      if (textureRef.current) textureRef.current.needsUpdate = true;
       if (!video.ended) {
         presentedFrameCallbackRef.current =
           video.requestVideoFrameCallback(observe);
@@ -107,6 +130,7 @@ export function HeroFilm({ children }: PropsWithChildren) {
       // loadeddata guarantees the decoded frame at currentTime=0 is available
       // to VideoTexture before playback is released.
       presentedFramesRef.current = 1;
+      if (textureRef.current) textureRef.current.needsUpdate = true;
       setVideoReady(true);
       if (
         !presentedFrameCallbackRef.current &&
@@ -223,7 +247,7 @@ export function HeroFilm({ children }: PropsWithChildren) {
         src={assetPath(HERO_FILM.src)}
         muted
         playsInline
-        preload="auto"
+        preload={loadReleased ? "auto" : "none"}
         loop={false}
         controls={false}
         disablePictureInPicture

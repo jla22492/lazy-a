@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import type { PlateStatus } from "@/components/room/PlateCompositor";
 import { whenRoomIsSettled } from "@/lib/deferredAssets";
 import {
-  preloadDesk,
   preloadDestinations,
   preloadOpening,
   type PlateExperienceState,
@@ -48,9 +47,6 @@ export function PlateRoom({
   useEffect(() => {
     void preloadOpening(manifest, variant).catch(() => {
       // The persistent server-rendered opening photograph remains visible.
-    });
-    void preloadDesk(manifest, variant).catch(() => {
-      // The same opening photograph remains the failure fallback.
     });
   }, [manifest, variant]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, useTexture } from "@react-three/drei";
@@ -56,6 +56,22 @@ interface AuthoredHero {
   occluders: readonly AuthoredMesh[];
 }
 
+interface HeroSurfaceProps {
+  released: boolean;
+}
+
+const PROFILED_NAVIGATION_PROXY = "HeroOccluder_ProductionNavigationSheet_";
+
+function occluderMatchesProfile(
+  name: string,
+  profile: "wide" | "portrait" | undefined,
+) {
+  if (!name.startsWith(PROFILED_NAVIGATION_PROXY)) return true;
+  return (
+    profile !== undefined && name === `${PROFILED_NAVIGATION_PROXY}${profile}`
+  );
+}
+
 declare global {
   interface Window {
     __lazyAHeroProjection?: readonly number[];
@@ -67,11 +83,75 @@ declare global {
  * The impossible image is one authored physical surface. Named foreground
  * proxies write delivery-resolution depth before that surface draws.
  */
-export function HeroSurface() {
-  const { scene } = useGLTF(assetPath(HERO_COMPOSITOR));
+function HeroLiveSurface({ surface }: { surface: AuthoredMesh }) {
   const loadedTreatment = useTexture(assetPath(HERO_TREATMENT));
   const { texture, phase, setSurfaceReady } = useHeroMedia();
+  const roomTreatment = useMemo(() => {
+    const textureClone = loadedTreatment.clone();
+    textureClone.colorSpace = NoColorSpace;
+    textureClone.flipY = false;
+    textureClone.generateMipmaps = false;
+    textureClone.minFilter = LinearFilter;
+    textureClone.magFilter = LinearFilter;
+    textureClone.needsUpdate = true;
+    return textureClone;
+  }, [loadedTreatment]);
+  const surfaceMaterial = useMemo(
+    () =>
+      texture
+        ? new ShaderMaterial({
+            uniforms: {
+              heroMap: { value: texture },
+              roomTreatment: { value: roomTreatment },
+            },
+            vertexShader: HERO_VERTEX_SHADER,
+            fragmentShader: HERO_FRAGMENT_SHADER,
+            side: DoubleSide,
+            depthWrite: true,
+            depthTest: true,
+            toneMapped: false,
+          })
+        : null,
+    [roomTreatment, texture],
+  );
+
+  useEffect(
+    () => () => {
+      roomTreatment.dispose();
+      surfaceMaterial?.dispose();
+    },
+    [roomTreatment, surfaceMaterial],
+  );
+
+  useEffect(() => {
+    if (!surfaceMaterial) return;
+    setSurfaceReady(true);
+    window.__lazyAHeroSurfaceReady = true;
+    return () => {
+      setSurfaceReady(false);
+      delete window.__lazyAHeroSurfaceReady;
+    };
+  }, [setSurfaceReady, surfaceMaterial]);
+
+  if (!surfaceMaterial) return null;
+  return (
+    <mesh
+      name="HeroLiveSurface"
+      geometry={surface.geometry}
+      material={surfaceMaterial}
+      matrix={surface.matrix}
+      matrixAutoUpdate={false}
+      visible={phase === "starting" || phase === "playing" || phase === "held"}
+      frustumCulled={false}
+      renderOrder={1}
+    />
+  );
+}
+
+export function HeroSurface({ released }: HeroSurfaceProps) {
+  const { scene } = useGLTF(assetPath(HERO_COMPOSITOR));
   const compositorFrame = useCompositorFrame();
+  const occluderMeshes = useRef(new Map<string, Mesh>());
   const authored = useMemo<AuthoredHero>(() => {
     const cloned = scene.clone(true);
     cloned.updateMatrixWorld(true);
@@ -99,16 +179,6 @@ export function HeroSurface() {
       occluders,
     };
   }, [scene]);
-  const roomTreatment = useMemo(() => {
-    const textureClone = loadedTreatment.clone();
-    textureClone.colorSpace = NoColorSpace;
-    textureClone.flipY = false;
-    textureClone.generateMipmaps = false;
-    textureClone.minFilter = LinearFilter;
-    textureClone.magFilter = LinearFilter;
-    textureClone.needsUpdate = true;
-    return textureClone;
-  }, [loadedTreatment]);
   const occluderMaterial = useMemo(
     () =>
       new MeshBasicMaterial({
@@ -118,47 +188,20 @@ export function HeroSurface() {
       }),
     [],
   );
-  const surfaceMaterial = useMemo(
-    () =>
-      texture
-        ? new ShaderMaterial({
-            uniforms: {
-              heroMap: { value: texture },
-              roomTreatment: { value: roomTreatment },
-            },
-            vertexShader: HERO_VERTEX_SHADER,
-            fragmentShader: HERO_FRAGMENT_SHADER,
-            side: DoubleSide,
-            depthWrite: true,
-            depthTest: true,
-            toneMapped: false,
-          })
-        : null,
-    [roomTreatment, texture],
-  );
 
   useEffect(
     () => () => {
-      roomTreatment.dispose();
       occluderMaterial.dispose();
-      surfaceMaterial?.dispose();
       delete window.__lazyAHeroProjection;
     },
-    [occluderMaterial, roomTreatment, surfaceMaterial],
+    [occluderMaterial],
   );
-
-  useEffect(() => {
-    if (!surfaceMaterial) return;
-    setSurfaceReady(true);
-    window.__lazyAHeroSurfaceReady = true;
-    return () => {
-      setSurfaceReady(false);
-      delete window.__lazyAHeroSurfaceReady;
-    };
-  }, [setSurfaceReady, surfaceMaterial]);
 
   useFrame(({ size }) => {
     const frame = compositorFrame.current;
+    for (const [name, mesh] of occluderMeshes.current) {
+      mesh.visible = occluderMatchesProfile(name, frame?.variant);
+    }
     const hero = frame?.projection.hero;
     if (!hero) {
       window.__lazyAHeroProjection = undefined;
@@ -182,30 +225,27 @@ export function HeroSurface() {
         <mesh
           key={occluder.name}
           name={occluder.name}
+          ref={(mesh) => {
+            if (mesh) {
+              occluderMeshes.current.set(occluder.name, mesh);
+            } else {
+              occluderMeshes.current.delete(occluder.name);
+            }
+          }}
           geometry={occluder.geometry}
           material={occluderMaterial}
           matrix={occluder.matrix}
           matrixAutoUpdate={false}
+          visible={false}
           frustumCulled={false}
           renderOrder={0}
         />
       ))}
-      {surfaceMaterial && (
-        <mesh
-          name="HeroLiveSurface"
-          geometry={authored.surface.geometry}
-          material={surfaceMaterial}
-          matrix={authored.surface.matrix}
-          matrixAutoUpdate={false}
-          visible={
-            phase === "starting" || phase === "playing" || phase === "held"
-          }
-          frustumCulled={false}
-          renderOrder={1}
-        />
+      {released && (
+        <Suspense fallback={null}>
+          <HeroLiveSurface surface={authored.surface} />
+        </Suspense>
       )}
     </>
   );
 }
-
-useGLTF.preload(assetPath(HERO_COMPOSITOR));
