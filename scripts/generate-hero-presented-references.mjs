@@ -24,6 +24,7 @@ import {
 } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 
+import { chromium } from "playwright";
 import sharp from "sharp";
 import {
   Matrix4,
@@ -57,7 +58,11 @@ const rasterizerPath = resolve(
 );
 const minimumTraceFraction = 0.0005;
 const minimumTreatmentFraction = 0.002;
+const minimumCroppedTraceScale = 0.7;
+const minimumCroppedBoundaryFraction = 0.15;
+const heroFrameRate = 24;
 const dryRun = process.argv.includes("--dry-run");
+const profiledNavigationProxy = "HeroOccluder_ProductionNavigationSheet_";
 
 const [schedule, manifest, baseAuthoring] = await Promise.all([
   readFile(schedulePath, "utf8").then(JSON.parse),
@@ -182,6 +187,82 @@ async function prepareVideoFrames(source, indices) {
   return new Map(unique.map((index, i) => [index, expected[i]]));
 }
 
+async function prepareBrowserVideoFrames(source, indices) {
+  const sourceHash = (await sha256File(source)).slice(0, 16);
+  const output = join(
+    cacheRoot,
+    `${basename(source)}-${sourceHash}-chrome-frame-center-v2`,
+  );
+  const unique = [...new Set(indices)].sort((left, right) => left - right);
+  const expected = unique.map((index) =>
+    join(output, `${String(index).padStart(6, "0")}.png`),
+  );
+  let ready = true;
+  for (const path of expected) {
+    try {
+      await readFile(path);
+    } catch {
+      ready = false;
+      break;
+    }
+  }
+  if (ready) {
+    return new Map(unique.map((index, i) => [index, expected[i]]));
+  }
+
+  await rm(output, { recursive: true, force: true });
+  await mkdir(output, { recursive: true });
+  const browser = await chromium.launch({ channel: "chrome", headless: true });
+  try {
+    const page = await browser.newPage();
+    const sourceDataUrl = `data:video/mp4;base64,${(
+      await readFile(source)
+    ).toString("base64")}`;
+    await page.setContent(
+      `<video id="hero" muted playsinline preload="auto" crossorigin="anonymous"></video>`,
+    );
+    await page.evaluate(async (url) => {
+      const video = document.querySelector("#hero");
+      const loaded = new Promise((resolveLoaded, rejectLoaded) => {
+        video.addEventListener("loadeddata", resolveLoaded, { once: true });
+        video.addEventListener("error", rejectLoaded, { once: true });
+      });
+      video.src = url;
+      video.load();
+      await loaded;
+    }, sourceDataUrl);
+    for (let index = 0; index < unique.length; index += 1) {
+      const frameIndex = unique[index];
+      const dataUrl = await page.evaluate(async (requestedFrame) => {
+        const video = document.querySelector("#hero");
+        const requestedTime = Math.min(
+          (requestedFrame + 0.5) / 24,
+          Math.max(0, video.duration - 1 / 48),
+        );
+        if (Math.abs(video.currentTime - requestedTime) > 1e-6) {
+          await new Promise((resolveSeek, rejectSeek) => {
+            video.addEventListener("seeked", resolveSeek, { once: true });
+            video.addEventListener("error", rejectSeek, { once: true });
+            video.currentTime = requestedTime;
+          });
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d").drawImage(video, 0, 0);
+        return canvas.toDataURL("image/png");
+      }, frameIndex);
+      await writeFile(
+        expected[index],
+        Buffer.from(dataUrl.split(",", 2)[1], "base64"),
+      );
+    }
+  } finally {
+    await browser.close();
+  }
+  return new Map(unique.map((index, i) => [index, expected[i]]));
+}
+
 function resolveFrameSource(viewport, frame) {
   const profile = manifest.variants[viewport.profile];
   if (frame.plateState === "resting:desk") {
@@ -256,8 +337,18 @@ async function loadMeshes() {
     name.startsWith("HeroOccluder_"),
   );
   assert.ok(surface, "HeroLiveSurface is missing from GLB");
-  assert.equal(occluders.length, 12, "HeroOccluder count");
+  assert.equal(occluders.length, 13, "HeroOccluder count");
   return { surface, occluders };
+}
+
+function occludersForProfile(occluders, profile) {
+  const selected = occluders.filter(
+    ({ name }) =>
+      !name.startsWith(profiledNavigationProxy) ||
+      name === `${profiledNavigationProxy}${profile}`,
+  );
+  assert.equal(selected.length, 12, `${profile} HeroOccluder count`);
+  return selected;
 }
 
 function projectMesh(mesh, camera, width, height) {
@@ -733,8 +824,7 @@ function pruneTrace(mask, rgb, width, height, minimumCount) {
   return mask;
 }
 
-function srgbToLinear(value) {
-  const channel = value / 255;
+function srgbToLinear(channel) {
   return channel <= 0.04045
     ? channel / 12.92
     : ((channel + 0.055) / 1.055) ** 2.4;
@@ -751,10 +841,9 @@ function linearToSrgb(value) {
 
 function bilinearSample(image, u, v, decodeSrgb) {
   const x = Math.max(0, Math.min(image.width - 1, u * (image.width - 1)));
-  const y = Math.max(
-    0,
-    Math.min(image.height - 1, (1 - v) * (image.height - 1)),
-  );
+  // Hero and treatment textures both use flipY=false at runtime: the GLB's
+  // v=0 top edge samples the source image's first row.
+  const y = Math.max(0, Math.min(image.height - 1, v * (image.height - 1)));
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
   const x1 = Math.min(image.width - 1, x0 + 1);
@@ -767,12 +856,13 @@ function bilinearSample(image, u, v, decodeSrgb) {
     [(1 - tx) * ty, x0, y1],
     [tx * ty, x1, y1],
   ];
-  return [0, 1, 2].map((channel) =>
-    weights.reduce((total, [weight, sampleX, sampleY]) => {
+  return [0, 1, 2].map((channel) => {
+    const encoded = weights.reduce((total, [weight, sampleX, sampleY]) => {
       const value = image.data[(sampleY * image.width + sampleX) * 3 + channel];
-      return total + weight * (decodeSrgb ? srgbToLinear(value) : value / 255);
-    }, 0),
-  );
+      return total + weight * (value / 255);
+    }, 0);
+    return decodeSrgb ? srgbToLinear(encoded) : encoded;
+  });
 }
 
 function renderHero({
@@ -892,6 +982,19 @@ function referenceId(viewportKey, frame) {
   return `${viewportKey}-${state}-${frame.phase ?? `frame-${frame.heroFramePresented}`}`;
 }
 
+function heroSourceFrameIndex(frame) {
+  assert.ok(
+    Number.isFinite(frame.heroMediaTime) && frame.heroMediaTime >= 0,
+    `hero frame ${frame.heroFramePresented} needs a decoded media timestamp`,
+  );
+  const frameIndex = Math.round(frame.heroMediaTime * heroFrameRate);
+  assert.ok(
+    Math.abs(frame.heroMediaTime - frameIndex / heroFrameRate) <= 0.000_01,
+    `hero timestamp ${frame.heroMediaTime} is off the ${heroFrameRate}fps source grid`,
+  );
+  return frameIndex;
+}
+
 const meshes = await loadMeshes();
 const treatment = await loadRgb(treatmentPath);
 const scheduleFrames = Object.entries(schedule.viewports).flatMap(
@@ -905,11 +1008,27 @@ const scheduleFrames = Object.entries(schedule.viewports).flatMap(
 );
 assert.equal(scheduleFrames.length, 130, "five-viewport reference count");
 assert.deepEqual(
+  schedule.capturePlaybackRates,
+  { hero: 0.4, plate: 0.5 },
+  "reference capture playback rates",
+);
+assert.deepEqual(
   Object.keys(schedule.viewports).sort(),
   ["1024x768", "1280x720", "1316x1329", "375x812", "768x1024"],
   "required reference viewports",
 );
 for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
+  const navigationGeometry = baseAuthoring.geometry.heroOccluders.filter(
+    ({ sourceObject }) => sourceObject === "ProductionNavigationSheet",
+  );
+  const navigationProxy = navigationGeometry.find(
+    ({ profile }) => profile === viewport.profile,
+  );
+  assert.deepEqual(
+    navigationProxy?.navigationPlane,
+    manifest.variants[viewport.profile].navigation.plane,
+    `${viewportKey} compositor navigation proxy must match the canonical ${viewport.profile} navigation plane`,
+  );
   assert.equal(viewport.frames.length, 26, `${viewportKey} reference count`);
   for (const destination of ["films", "journal", "contact", "about"]) {
     for (const direction of ["forward", "reverse"]) {
@@ -937,14 +1056,14 @@ if (dryRun) {
     );
   }
   console.log(
-    "Hero reference author dry-run passed: 130 path/phase bindings, pinned source hashes, 1 live surface, and 12 authored occluders.",
+    "Hero reference author dry-run passed: 130 path/phase bindings, pinned source hashes, 1 live surface, and 12 active occluders per profile.",
   );
   process.exit(0);
 }
 
-const heroFramePaths = await prepareVideoFrames(
+const heroFramePaths = await prepareBrowserVideoFrames(
   heroVideoPath,
-  scheduleFrames.map(({ frame }) => frame.heroFramePresented - 1),
+  scheduleFrames.map(({ frame }) => heroSourceFrameIndex(frame)),
 );
 const plateGroups = new Map();
 for (const { source } of scheduleFrames) {
@@ -988,7 +1107,11 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
       viewport.width,
       viewport.height,
     );
-    const projectedOccluders = meshes.occluders.map((mesh) => ({
+    const profileOccluders = occludersForProfile(
+      meshes.occluders,
+      viewport.profile,
+    );
+    const projectedOccluders = profileOccluders.map((mesh) => ({
       mesh,
       projected: projectMesh(mesh, camera, viewport.width, viewport.height),
     }));
@@ -1036,7 +1159,7 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
       }),
     );
 
-    const heroFramePath = heroFramePaths.get(frame.heroFramePresented - 1);
+    const heroFramePath = heroFramePaths.get(heroSourceFrameIndex(frame));
     const plateFramePath = plateFramePaths
       .get(source.path)
       .get(source.mediaFrame);
@@ -1078,7 +1201,38 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
       ({ chains }) => chains,
     );
 
-    const minimumTrace = Math.max(16, Math.ceil(pixels * minimumTraceFraction));
+    const viewportMinimumTrace = Math.ceil(pixels * minimumTraceFraction);
+    const touchesViewportEdge =
+      bounds.minX === 0 ||
+      bounds.minY === 0 ||
+      bounds.maxX === viewport.width - 1 ||
+      bounds.maxY === viewport.height - 1;
+    const projectedBoundary =
+      2 * (bounds.maxX - bounds.minX + 1 + (bounds.maxY - bounds.minY + 1));
+    const projectedWidth = bounds.maxX - bounds.minX + 1;
+    const projectedHeight = bounds.maxY - bounds.minY + 1;
+    const availableProjectedBoundary =
+      projectedBoundary -
+      (bounds.minX === 0 ? projectedHeight : 0) -
+      (bounds.maxX === viewport.width - 1 ? projectedHeight : 0) -
+      (bounds.minY === 0 ? projectedWidth : 0) -
+      (bounds.maxY === viewport.height - 1 ? projectedWidth : 0);
+    const visibleHeroPixels = rendered.visible.reduce(
+      (total, value) => total + value,
+      0,
+    );
+    const minimumTrace = Math.max(
+      16,
+      touchesViewportEdge
+        ? Math.min(
+            viewportMinimumTrace,
+            Math.ceil(Math.sqrt(visibleHeroPixels) * minimumCroppedTraceScale),
+            Math.ceil(
+              availableProjectedBoundary * minimumCroppedBoundaryFraction,
+            ),
+          )
+        : viewportMinimumTrace,
+    );
     const rawRed = drawChains(redChains, viewport.width, viewport.height);
     const rawGreen = drawChains(
       tracedGreenChains,
@@ -1104,9 +1258,10 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
     }
     const redCount = red.reduce((total, value) => total + value, 0);
     const greenCount = green.reduce((total, value) => total + value, 0);
+    const rawRedCount = rawRed.reduce((total, value) => total + value, 0);
     assert.ok(
       redCount >= minimumTrace,
-      `${viewportKey} red trace ${redCount} < ${minimumTrace}`,
+      `${viewportKey} red trace ${redCount} < ${minimumTrace}; raw=${rawRedCount} visible=${visibleHeroPixels} cropped=${touchesViewportEdge} projectedBoundary=${projectedBoundary} availableBoundary=${availableProjectedBoundary} bounds=${JSON.stringify(bounds)}`,
     );
     const greenApplicable = greenCount >= minimumTrace;
     if (!greenApplicable) {
@@ -1134,6 +1289,15 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
     );
     assert.ok(heroPolygon.length >= 3, `${viewportKey} hero polygon`);
     const authoredProjection = {
+      traceEvidence: {
+        version: 1,
+        basis: touchesViewportEdge
+          ? "cropped-visible-boundary-v2"
+          : "viewport-area-v1",
+        visibleHeroPixels,
+        availableProjectedBoundary,
+        minimumPixels: minimumTrace,
+      },
       red: {
         object: "HeroLiveSurface",
         geometrySha256: geometryHashes.get("HeroLiveSurface"),
@@ -1204,6 +1368,7 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
     references[id] = {
       viewport: viewportKey,
       heroFramePresented: frame.heroFramePresented,
+      heroMediaTime: frame.heroMediaTime,
       source: { path: paths.source, sha256: sourceSha256 },
       composite: { path: paths.composite, sha256: compositeSha256 },
       regions: { path: paths.regions, sha256: regionsSha256 },
@@ -1213,6 +1378,7 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
     catalogFrames.push({
       authoringReferenceId: id,
       heroFramePresented: frame.heroFramePresented,
+      heroMediaTime: frame.heroMediaTime,
       plateState: frame.plateState,
       projectionFrame: frame.projectionFrame,
       ...(frame.phase ? { phase: frame.phase } : {}),
@@ -1235,6 +1401,7 @@ const authoring = {
   ...baseAuthoring,
   referenceGeneration: {
     ...baseAuthoring.referenceGeneration,
+    capturePlaybackRates: schedule.capturePlaybackRates,
     schedule: {
       path: schedulePath.replace(resolve(".") + "/", ""),
       sha256: await sha256File(schedulePath),
@@ -1261,7 +1428,7 @@ runtimeManifest.hero.verification.presentedPixelAuthoringManifestSha256 =
 await writeFile(manifestPath, JSON.stringify(runtimeManifest));
 const typescriptManifest = await readFile(typescriptManifestPath, "utf8");
 const hashPattern =
-  /(presentedPixelAuthoringManifestSha256:\s*")[a-f0-9]{64}(")/;
+  /(["']?presentedPixelAuthoringManifestSha256["']?\s*:\s*")[a-f0-9]{64}(")/;
 assert.ok(
   hashPattern.test(typescriptManifest),
   "TypeScript manifest authoring hash field",

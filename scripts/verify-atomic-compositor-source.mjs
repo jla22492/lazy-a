@@ -225,8 +225,23 @@ assert.match(
 );
 assert.match(
   sources.film,
-  /preload="auto"/,
-  "hero first frame must decode before the settle beat can release playback",
+  /preload=\{loadReleased\s*\?\s*"auto"\s*:\s*"none"\}/,
+  "hero media must remain unfetched until the desk-settle release",
+);
+assert.match(
+  sources.film,
+  /arrivalDone\(\)[\s\S]*setLoadReleased\(true\)[\s\S]*video\s*&&\s*loadReleased[\s\S]*video\.load\(\)/,
+  "desk settle must explicitly release and decode the deferred hero video",
+);
+assert.match(
+  sources.stage,
+  /setHeroReleased\(true\)[\s\S]*<HeroSurface\s+released=\{heroReleased\}/,
+  "the authored geometry must remain mounted while its live material waits for desk settle",
+);
+assert.doesNotMatch(
+  sources.room,
+  /preloadDesk/,
+  "the desk still must not compete with arrival before settle",
 );
 assert.match(
   sources.surface,
@@ -333,6 +348,11 @@ assert.match(sources.surface, /hero-compositor\.glb/);
 assert.match(sources.surface, /hero-room-treatment\.png/);
 assert.match(sources.surface, /HeroLiveSurface/);
 assert.match(sources.surface, /HeroOccluder_/);
+assert.match(
+  sources.surface,
+  /HeroOccluder_ProductionNavigationSheet_[\s\S]*occluderMatchesProfile[\s\S]*compositorFrame\.current[\s\S]*frame\?\.variant/,
+  "profiled navigation depth must follow the active physical room dressing",
+);
 assert.match(sources.surface, /colorWrite:\s*false/);
 assert.match(sources.surface, /depthWrite:\s*true/);
 assert.match(sources.surface, /depthTest:\s*true/);

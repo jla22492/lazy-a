@@ -17,7 +17,7 @@
  *   node scripts/verify-contact-reveal.mjs [url] [--out-dir path]
  */
 
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
@@ -1266,6 +1266,56 @@ async function collect(page, durationMs, onSample) {
   return samples;
 }
 
+async function armStationaryPracticalEvidence(page, camera, level) {
+  await page.evaluate(
+    ({ approvedCamera, levelRange }) => {
+      window.__lazyAContactEvidenceHold = null;
+      const tick = () => {
+        const marker = window.__lazyAContactReveal;
+        const snapshot = window.__lazyACameraDebug?.snapshot?.() ?? null;
+        const observedCamera = snapshot?.camera ?? snapshot;
+        if (
+          marker?.phase === "revealing" &&
+          marker.lampLevel >= levelRange.min &&
+          marker.lampLevel <= levelRange.max &&
+          JSON.stringify(observedCamera) === JSON.stringify(approvedCamera)
+        ) {
+          const canvas = document.querySelector("canvas");
+          if (canvas) {
+            window.__lazyAContactEvidenceHold = {
+              camera: snapshot,
+              marker: { ...marker },
+              png: canvas.toDataURL("image/png"),
+            };
+            return;
+          }
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    },
+    { approvedCamera: camera, levelRange: level },
+  );
+}
+
+async function captureArmedStationaryPracticalEvidence(page, path) {
+  await page.waitForFunction(
+    () => window.__lazyAContactEvidenceHold !== null,
+    null,
+    { timeout: 5_000 },
+  );
+  const sample = await page.evaluate(() => window.__lazyAContactEvidenceHold);
+  const match = /^data:image\/png;base64,(.+)$/.exec(sample.png ?? "");
+  if (!match) {
+    throw new Error("stationary CONTACT canvas capture was not PNG data");
+  }
+  await writeFile(path, Buffer.from(match[1], "base64"));
+  await page.evaluate(() => {
+    window.__lazyAContactEvidenceHold = null;
+  });
+  return { camera: sample.camera, marker: sample.marker };
+}
+
 async function activatePhysicalContact(page) {
   await page.waitForFunction(() => window.__arrivalDone === true, null, {
     timeout: 15_000,
@@ -1314,23 +1364,27 @@ async function captureStationaryPracticalProfile(
     viewport: profileViewport,
   });
   await activationPage.goto(baseUrl, { waitUntil: "load" });
+  await armStationaryPracticalEvidence(
+    activationPage,
+    APPROVED_R3_DESK_CAMERAS[profile],
+    { min: 0, max: 0.05 },
+  );
   await activatePhysicalContact(activationPage);
-  let activation = null;
-  await collect(activationPage, 2_200, async (sample) => {
-    if (
-      !activation &&
-      exactCameraMatch(sample.camera, APPROVED_R3_DESK_CAMERAS[profile]) &&
-      sample.marker?.lampLevel >= 0.9
-    ) {
-      activation = sample;
-      await activationPage.screenshot({ path: paths.activationLit });
-    }
-  });
-  if (!activation) {
-    await activationPage.screenshot({ path: paths.activationLit });
-  }
+  const activationRest = await captureArmedStationaryPracticalEvidence(
+    activationPage,
+    paths.activationRest,
+  );
+  await armStationaryPracticalEvidence(
+    activationPage,
+    APPROVED_R3_DESK_CAMERAS[profile],
+    { min: 0.9, max: 1 },
+  );
+  const activation = await captureArmedStationaryPracticalEvidence(
+    activationPage,
+    paths.activationLit,
+  );
   await activationPage.close();
-  return { rest, activation };
+  return { rest, activationRest, activation };
 }
 
 async function readGrayImage(path) {
@@ -1685,11 +1739,17 @@ const closeBrowser = () =>
 
 const evidence = {
   rest: resolve(outDir, "contact-rest.png"),
+  activationRest: resolve(outDir, "contact-activation-rest.png"),
+  activationQualityLit: resolve(outDir, "contact-activation-quality-lit.png"),
   mid: resolve(outDir, "contact-reveal-mid.png"),
   activationLit: resolve(outDir, "contact-activation-lit.png"),
   hold: resolve(outDir, "contact-hold.png"),
   reversed: resolve(outDir, "contact-reversed.png"),
   portraitRest: resolve(outDir, "contact-portrait-rest.png"),
+  portraitActivationRest: resolve(
+    outDir,
+    "contact-portrait-activation-rest.png",
+  ),
   portraitActivationLit: resolve(outDir, "contact-portrait-activation-lit.png"),
 };
 
@@ -1699,6 +1759,7 @@ let reverseSamples = [];
 let midCaptured = false;
 let activationLitCaptured = false;
 let activationLitSample = null;
+let widePracticalCapture = null;
 let portraitCapture = null;
 try {
   const restPage = await browser.newPage({ viewport });
@@ -1744,14 +1805,24 @@ try {
   await page.screenshot({ path: evidence.hold });
 
   await page.keyboard.press("Escape");
-  reverseSamples = await collect(page, 1800);
+  reverseSamples = await collect(page, 3000);
   await page.screenshot({ path: evidence.reversed });
   await page.close();
+  widePracticalCapture = await captureStationaryPracticalProfile(
+    browser,
+    "wide",
+    {
+      rest: evidence.rest,
+      activationRest: evidence.activationRest,
+      activationLit: evidence.activationQualityLit,
+    },
+  );
   portraitCapture = await captureStationaryPracticalProfile(
     browser,
     "portrait",
     {
       rest: evidence.portraitRest,
+      activationRest: evidence.portraitActivationRest,
       activationLit: evidence.portraitActivationLit,
     },
   );
@@ -1828,7 +1899,19 @@ if (
     APPROVED_R3_DESK_CAMERAS.wide,
   ) ||
   !exactCameraMatch(
+    widePracticalCapture?.activationRest?.camera,
+    APPROVED_R3_DESK_CAMERAS.wide,
+  ) ||
+  !exactCameraMatch(
+    widePracticalCapture?.activation?.camera,
+    APPROVED_R3_DESK_CAMERAS.wide,
+  ) ||
+  !exactCameraMatch(
     portraitCapture?.rest?.camera,
+    APPROVED_R3_DESK_CAMERAS.portrait,
+  ) ||
+  !exactCameraMatch(
+    portraitCapture?.activationRest?.camera,
     APPROVED_R3_DESK_CAMERAS.portrait,
   ) ||
   !exactCameraMatch(
@@ -1849,19 +1932,21 @@ try {
   if (!wideContact) throw new Error("wide CONTACT manifest data missing");
   const [
     restImage,
+    activationRestImage,
     midImage,
-    activationLitImage,
+    activationQualityLitImage,
     holdImage,
     reversedImage,
-    portraitRestImage,
+    portraitActivationRestImage,
     portraitActivationLitImage,
   ] = await Promise.all([
     readGrayImage(evidence.rest),
+    readGrayImage(evidence.activationRest),
     readGrayImage(evidence.mid),
-    readGrayImage(evidence.activationLit),
+    readGrayImage(evidence.activationQualityLit),
     readGrayImage(evidence.hold),
     readGrayImage(evidence.reversed),
-    readGrayImage(evidence.portraitRest),
+    readGrayImage(evidence.portraitActivationRest),
     readGrayImage(evidence.portraitActivationLit),
   ]);
   const restAddress = boundsFromQuad(
@@ -1884,25 +1969,25 @@ try {
   );
   const lampPoolLift = lampPoolMean - unlitTableMean;
   const widePracticalIssues = practicalLightMaskIssues(
-    restImage,
-    activationLitImage,
+    activationRestImage,
+    activationQualityLitImage,
     loadedPracticalMasks.profiles.wide,
     WIDE_PRACTICAL_RELATIONSHIP,
   );
   const portraitPracticalIssues = practicalLightMaskIssues(
-    portraitRestImage,
+    portraitActivationRestImage,
     portraitActivationLitImage,
     loadedPracticalMasks.profiles.portrait,
     PORTRAIT_PRACTICAL_RELATIONSHIP,
   );
   const widePracticalQualityIssues = practicalLightQualityIssues(
-    restImage,
-    activationLitImage,
+    activationRestImage,
+    activationQualityLitImage,
     loadedPracticalMasks.profiles.wide,
     WIDE_PRACTICAL_RELATIONSHIP,
   );
   const portraitPracticalQualityIssues = practicalLightQualityIssues(
-    portraitRestImage,
+    portraitActivationRestImage,
     portraitActivationLitImage,
     loadedPracticalMasks.profiles.portrait,
     PORTRAIT_PRACTICAL_RELATIONSHIP,
@@ -1935,12 +2020,12 @@ try {
     );
   } else {
     const widePracticalRises = practicalLightMaskMetrics(
-      restImage,
-      activationLitImage,
+      activationRestImage,
+      activationQualityLitImage,
       loadedPracticalMasks.profiles.wide,
     );
     const portraitPracticalRises = practicalLightMaskMetrics(
-      portraitRestImage,
+      portraitActivationRestImage,
       portraitActivationLitImage,
       loadedPracticalMasks.profiles.portrait,
     );

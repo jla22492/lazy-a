@@ -1,7 +1,7 @@
 /**
  * Record reproducible browser-presented frame bindings for the offline hero
- * reference author. Browser pixels are never written: screenshots only mirror
- * the lifecycle verifier's capture latency while the hero video is slowed.
+ * reference author. Browser pixels are never written: screenshots mirror the
+ * lifecycle verifier's atomic pause/capture/resume evidence path.
  *
  * Usage:
  *   node scripts/capture-hero-reference-schedule.mjs [url] [output]
@@ -86,6 +86,9 @@ const viewports = viewportFilter
 assert.ok(viewports.length > 0, `unknown viewport ${viewportFilter}`);
 const destinations = ["films", "journal", "contact", "about"];
 const presentedEvent = "lazy-a:compositor-frame-presented";
+const authoringHeroPlaybackRate = 0.4;
+const authoringPlatePlaybackRate = 0.5;
+const minimumTargetProjectionGap = 2;
 
 function visibleHeroArea(frame, viewport) {
   if (!Array.isArray(frame?.hero) || frame.hero.length !== 8) return 0;
@@ -347,7 +350,7 @@ function phaseTargets(viewport, destination, direction) {
     Math.ceil((scored.length * 2) / 3),
     scored.length,
   ];
-  return [0, 1, 2].map((phase) => {
+  const phaseCandidates = [0, 1, 2].map((phase) => {
     const candidates = scored.slice(boundaries[phase], boundaries[phase + 1]);
     assert.ok(candidates.length > 0, `${viewport.name} phase ${phase} samples`);
     const center = (candidates.length - 1) / 2;
@@ -360,150 +363,211 @@ function phaseTargets(viewport, destination, direction) {
         (left, right) =>
           right.occlusionEdgeScore - left.occlusionEdgeScore ||
           left.distanceFromCenter - right.distanceFromCenter,
-      )[0];
+      );
   });
+  const combinations = phaseCandidates[0].flatMap((early) =>
+    phaseCandidates[1].flatMap((mid) =>
+      phaseCandidates[2]
+        .filter(
+          (late) =>
+            mid.projectionFrame - early.projectionFrame >=
+              minimumTargetProjectionGap &&
+            late.projectionFrame - mid.projectionFrame >=
+              minimumTargetProjectionGap,
+        )
+        .map((late) => [early, mid, late]),
+    ),
+  );
+  assert.ok(
+    combinations.length > 0,
+    `${viewport.name} ${destination} ${direction} lacks three phase samples with ${minimumTargetProjectionGap}-frame separation`,
+  );
+  return combinations.sort(
+    (left, right) =>
+      right.reduce((sum, target) => sum + target.occlusionEdgeScore, 0) -
+        left.reduce((sum, target) => sum + target.occlusionEdgeScore, 0) ||
+      left.reduce((sum, target) => sum + target.distanceFromCenter, 0) -
+        right.reduce((sum, target) => sum + target.distanceFromCenter, 0),
+  )[0];
 }
 
 async function installTimingProbe(page) {
-  await page.addInitScript((eventName) => {
-    const nativePlay = HTMLMediaElement.prototype.play;
-    const pendingHeroPlays = [];
-    const videos = [];
-    let playbackReleased = false;
-    let target = null;
-    let capture = null;
-    const slowedVideos = [];
-    let overlay = null;
+  await page.addInitScript(
+    ({ eventName, platePlaybackRate }) => {
+      const nativePlay = HTMLMediaElement.prototype.play;
+      const pendingHeroPlays = [];
+      const videos = [];
+      const heroVideoFrames = new WeakMap();
+      let playbackReleased = false;
+      let target = null;
+      let capture = null;
+      const heldVideos = [];
+      let overlay = null;
 
-    const nativeCreateElement = Document.prototype.createElement;
-    Document.prototype.createElement = function createElement(
-      localName,
-      options,
-    ) {
-      const element = nativeCreateElement.call(this, localName, options);
-      if (element instanceof HTMLVideoElement) videos.push(element);
-      return element;
-    };
-
-    HTMLMediaElement.prototype.play = function play() {
-      if (
-        this instanceof HTMLVideoElement &&
-        this.dataset.lazyAHero === "true" &&
-        !playbackReleased
+      const nativeCreateElement = Document.prototype.createElement;
+      Document.prototype.createElement = function createElement(
+        localName,
+        options,
       ) {
-        return new Promise((resolve, reject) => {
-          pendingHeroPlays.push({ element: this, resolve, reject });
-        });
-      }
-      return nativePlay.call(this);
-    };
-
-    const arm = (nextTarget) => {
-      target = nextTarget;
-      capture = null;
-    };
-    const freezeCanvas = () => {
-      const source = [...document.querySelectorAll("canvas")]
-        .map((canvas) => ({
-          canvas,
-          bounds: canvas.getBoundingClientRect(),
-        }))
-        .filter(({ bounds }) => bounds.width > 0 && bounds.height > 0)
-        .sort(
-          (left, right) =>
-            right.bounds.width * right.bounds.height -
-            left.bounds.width * left.bounds.height,
-        )[0];
-      if (!source) return;
-      overlay?.remove();
-      overlay = document.createElement("canvas");
-      overlay.width = innerWidth;
-      overlay.height = innerHeight;
-      Object.assign(overlay.style, {
-        position: "fixed",
-        inset: "0",
-        width: `${innerWidth}px`,
-        height: `${innerHeight}px`,
-        pointerEvents: "none",
-        zIndex: "2147483647",
-      });
-      overlay
-        .getContext("2d")
-        .drawImage(
-          source.canvas,
-          source.bounds.left,
-          source.bounds.top,
-          source.bounds.width,
-          source.bounds.height,
-        );
-      document.documentElement.append(overlay);
-    };
-    const restore = () => {
-      for (const { element, playbackRate } of slowedVideos) {
-        element.playbackRate = playbackRate;
-      }
-      slowedVideos.length = 0;
-      overlay?.remove();
-      overlay = null;
-    };
-
-    window.addEventListener(eventName, (event) => {
-      const detail = event.detail;
-      const plateState = window.__lazyAPlateState?.state ?? null;
-      if (
-        capture ||
-        !target ||
-        detail?.atomic !== true ||
-        detail.heroFramePresented < target.minHeroFrame ||
-        detail.projectionFrame !== target.projectionFrame ||
-        plateState !== target.plateState
-      ) {
-        return;
-      }
-      capture = {
-        heroFramePresented: detail.heroFramePresented,
-        plateMediaTime: detail.plateMediaTime,
-        plateState,
-        projectionFrame: detail.projectionFrame,
+        const element = nativeCreateElement.call(this, localName, options);
+        if (element instanceof HTMLVideoElement) videos.push(element);
+        return element;
       };
-      freezeCanvas();
-      for (const element of videos.filter(
-        (video) =>
-          video.dataset.lazyAHero === "true" ||
-          (Boolean(video.dataset.lazyAPlate) && !video.paused && !video.ended),
-      )) {
-        slowedVideos.push({
-          element,
-          playbackRate: element.playbackRate,
-        });
-        element.playbackRate = 0.0625;
-      }
-    });
 
-    Object.defineProperty(window, "__heroReferenceTiming", {
-      configurable: false,
-      value: {
-        arm,
-        capture: () => capture,
-        releasePlayback() {
-          playbackReleased = true;
-          for (const { element, resolve, reject } of pendingHeroPlays.splice(
-            0,
-          )) {
-            nativePlay.call(element).then(resolve, reject);
+      const nativeVideoFrameCallback =
+        HTMLVideoElement.prototype.requestVideoFrameCallback;
+      if (typeof nativeVideoFrameCallback === "function") {
+        HTMLVideoElement.prototype.requestVideoFrameCallback = function (
+          callback,
+        ) {
+          return nativeVideoFrameCallback.call(this, (now, metadata) => {
+            if (this.dataset.lazyAHero === "true") {
+              heroVideoFrames.set(this, metadata);
+            }
+            callback(now, metadata);
+          });
+        };
+      }
+
+      HTMLMediaElement.prototype.play = function play() {
+        if (
+          this instanceof HTMLVideoElement &&
+          Boolean(this.dataset.lazyAPlate)
+        ) {
+          this.playbackRate = platePlaybackRate;
+        }
+        if (
+          this instanceof HTMLVideoElement &&
+          this.dataset.lazyAHero === "true" &&
+          !playbackReleased
+        ) {
+          return new Promise((resolve, reject) => {
+            pendingHeroPlays.push({ element: this, resolve, reject });
+          });
+        }
+        return nativePlay.call(this);
+      };
+
+      const arm = (nextTarget) => {
+        target = nextTarget;
+        capture = null;
+      };
+      const freezeCanvas = () => {
+        const source = [...document.querySelectorAll("canvas")]
+          .map((canvas) => ({
+            canvas,
+            bounds: canvas.getBoundingClientRect(),
+          }))
+          .filter(({ bounds }) => bounds.width > 0 && bounds.height > 0)
+          .sort(
+            (left, right) =>
+              right.bounds.width * right.bounds.height -
+              left.bounds.width * left.bounds.height,
+          )[0];
+        if (!source) return;
+        overlay?.remove();
+        overlay = document.createElement("canvas");
+        overlay.width = innerWidth;
+        overlay.height = innerHeight;
+        Object.assign(overlay.style, {
+          position: "fixed",
+          inset: "0",
+          width: `${innerWidth}px`,
+          height: `${innerHeight}px`,
+          pointerEvents: "none",
+          zIndex: "2147483647",
+        });
+        overlay
+          .getContext("2d")
+          .drawImage(
+            source.canvas,
+            source.bounds.left,
+            source.bounds.top,
+            source.bounds.width,
+            source.bounds.height,
+          );
+        document.documentElement.append(overlay);
+      };
+      const restore = () => {
+        for (const element of heldVideos) {
+          if (!element.ended) void nativePlay.call(element);
+        }
+        heldVideos.length = 0;
+        overlay?.remove();
+        overlay = null;
+      };
+
+      window.addEventListener(eventName, (event) => {
+        const detail = event.detail;
+        const plateState = window.__lazyAPlateState?.state ?? null;
+        if (
+          capture ||
+          !target ||
+          detail?.atomic !== true ||
+          detail.heroFramePresented < target.minHeroFrame ||
+          detail.projectionFrame !== target.projectionFrame ||
+          plateState !== target.plateState
+        ) {
+          return;
+        }
+        const hero = videos.find((video) => video.dataset.lazyAHero === "true");
+        const heroVideoFrame = hero ? heroVideoFrames.get(hero) : null;
+        capture = {
+          heroFramePresented: detail.heroFramePresented,
+          heroMediaTime:
+            heroVideoFrame?.presentedFrames === detail.heroFramePresented
+              ? heroVideoFrame.mediaTime
+              : detail.heroFramePresented === 1
+                ? 0
+                : null,
+          plateMediaTime: detail.plateMediaTime,
+          plateState,
+          projectionFrame: detail.projectionFrame,
+        };
+        freezeCanvas();
+        for (const element of videos.filter(
+          (video) =>
+            video.dataset.lazyAHero === "true" ||
+            (Boolean(video.dataset.lazyAPlate) &&
+              !video.paused &&
+              !video.ended),
+        )) {
+          if (!element.paused) {
+            heldVideos.push(element);
+            element.pause();
           }
+        }
+      });
+
+      Object.defineProperty(window, "__heroReferenceTiming", {
+        configurable: false,
+        value: {
+          arm,
+          capture: () => capture,
+          releasePlayback() {
+            playbackReleased = true;
+            for (const { element, resolve, reject } of pendingHeroPlays.splice(
+              0,
+            )) {
+              nativePlay.call(element).then(resolve, reject);
+            }
+          },
+          releaseAndArm(nextTarget) {
+            const result = capture;
+            restore();
+            target = null;
+            capture = null;
+            if (nextTarget) arm(nextTarget);
+            return result;
+          },
         },
-        releaseAndArm(nextTarget) {
-          const result = capture;
-          restore();
-          target = null;
-          capture = null;
-          if (nextTarget) arm(nextTarget);
-          return result;
-        },
-      },
-    });
-  }, presentedEvent);
+      });
+    },
+    {
+      eventName: presentedEvent,
+      platePlaybackRate: authoringPlatePlaybackRate,
+    },
+  );
 }
 
 async function waitForResting(page, endpoint) {
@@ -573,10 +637,18 @@ async function captureSequence(page, targets, label, alreadyArmed = false) {
     const screenshotStarted = Date.now();
     await page.screenshot({ type: "png" });
     const screenshotMilliseconds = Date.now() - screenshotStarted;
-    const captured = await page.evaluate(
-      (nextTarget) => window.__heroReferenceTiming.releaseAndArm(nextTarget),
-      targets[index + 1] ?? null,
-    );
+    const nextTarget = targets[index + 1]
+      ? {
+          ...targets[index + 1],
+          minHeroFrame: Math.max(
+            targets[index + 1].minHeroFrame,
+            captureBeforeScreenshot.heroFramePresented + 1,
+          ),
+        }
+      : null;
+    const captured = await page.evaluate((target) => {
+      return window.__heroReferenceTiming.releaseAndArm(target);
+    }, nextTarget);
     assert.ok(captured, `timing capture ${index + 1} disappeared`);
     console.log(
       `Captured ${label} ${index + 1}/${targets.length}: hero=${captureBeforeScreenshot.heroFramePresented} projection=${captureBeforeScreenshot.projectionFrame} screenshot=${screenshotMilliseconds}ms`,
@@ -635,20 +707,40 @@ async function captureViewport(browser, viewport) {
       (target) => window.__heroReferenceTiming.arm(target),
       restingTargets[0],
     );
-    await page.evaluate(() => window.__heroReferenceTiming.releasePlayback());
-    const firstCapturePromise = captureSequence(
+    const firstResting = await captureSequence(
       page,
-      restingTargets,
-      `${viewport.name} resting`,
+      [restingTargets[0]],
+      `${viewport.name} resting first frame`,
       true,
     );
-    const resting = await firstCapturePromise;
+    const appliedAuthoringRate = await page.evaluate((playbackRate) => {
+      const hero = document.querySelector('video[data-lazy-a-hero="true"]');
+      if (!(hero instanceof HTMLVideoElement)) return null;
+      hero.playbackRate = playbackRate;
+      return hero.playbackRate;
+    }, authoringHeroPlaybackRate);
+    assert.equal(
+      appliedAuthoringRate,
+      authoringHeroPlaybackRate,
+      `${viewport.name} authoring-only hero playback rate`,
+    );
+    await page.evaluate(
+      (target) => window.__heroReferenceTiming.arm(target),
+      restingTargets[1],
+    );
+    await page.evaluate(() => window.__heroReferenceTiming.releasePlayback());
+    const secondResting = await captureSequence(
+      page,
+      [restingTargets[1]],
+      `${viewport.name} resting moving frame`,
+      true,
+    );
+    const resting = [...firstResting, ...secondResting];
     assert.equal(
       resting[0].heroFramePresented,
       1,
       `${viewport.name} first live hero frame`,
     );
-
     const frames = [
       {
         ...resting[0],
@@ -670,9 +762,9 @@ async function captureViewport(browser, viewport) {
             ? `transitioning:desk-to-${destination}`
             : `transitioning:${destination}-to-desk`;
         const targetFrames = targetPlan[`${destination}:${direction}`];
-        const targets = targetFrames.map(({ projectionFrame }) => ({
+        const targets = targetFrames.map(({ projectionFrame }, index) => ({
           plateState,
-          minHeroFrame: minimumHeroFrame,
+          minHeroFrame: minimumHeroFrame + index,
           projectionFrame,
         }));
         console.log(
@@ -767,6 +859,10 @@ try {
           version: 1,
           presentationEvent: presentedEvent,
           browserPixelsStored: false,
+          capturePlaybackRates: {
+            hero: authoringHeroPlaybackRate,
+            plate: authoringPlatePlaybackRate,
+          },
           generatedFrom: url,
           viewports: captured,
         },
@@ -782,6 +878,10 @@ try {
     version: 1,
     presentationEvent: presentedEvent,
     browserPixelsStored: false,
+    capturePlaybackRates: {
+      hero: authoringHeroPlaybackRate,
+      plate: authoringPlatePlaybackRate,
+    },
     generatedFrom: url,
     viewports: captured,
   };

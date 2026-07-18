@@ -255,5 +255,9 @@ try {
   console.log(`film: ${out}`);
 } finally {
   if (context) await context.close().catch(() => {});
-  await browser.close();
+  await Promise.race([
+    browser.close(),
+    new Promise((resolve) => setTimeout(resolve, 1_500)),
+  ]);
 }
+process.exit(0);

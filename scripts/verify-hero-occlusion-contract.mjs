@@ -47,7 +47,7 @@ const EXPECTED_AUTHORING_SOURCES = {
 };
 const ROOM_POSTER_REFERENCE = "public/room/wide/stills/desk.jpg";
 const EXPECTED_GLB_AUTHORING_RELATIONSHIP_SHA256 =
-  "f8aba2c32214c4c0483cdd1b2f05449721a0d410e7c0ac2bcbc371d09032b4ed";
+  "1339de879c4e9f7149e4169660270e7e5e525d46ae0df2694f01330fcd603d30";
 const MAX_TREATMENT_RECONSTRUCTION_ERROR = 2;
 const MAX_ROOM_POSTER_MEAN_CHANNEL_DELTA = 48;
 const MIN_PLATE_ORIENTATION_ERROR_MARGIN = 5;
@@ -312,6 +312,69 @@ function worldGeometryRelationship(
   };
 }
 
+function assertHeroOccluderInventory(occluders, runtimeHero) {
+  assert.ok(Array.isArray(occluders), "authoring HeroOccluders");
+  const runtimeOccluders = runtimeHero.geometry.occluders;
+  assert.ok(Array.isArray(runtimeOccluders), "runtime HeroOccluders");
+  assert.equal(
+    new Set(runtimeOccluders).size,
+    runtimeOccluders.length,
+    "runtime HeroOccluders must be unique",
+  );
+
+  const responsiveNavigation = occluders.filter(
+    ({ sourceObject }) => sourceObject === "ProductionNavigationSheet",
+  );
+  assert.deepEqual(
+    responsiveNavigation.map(({ profile }) => profile).sort(),
+    ["portrait", "wide"],
+    "responsive navigation HeroOccluder profiles",
+  );
+  assert.ok(
+    occluders
+      .filter(
+        ({ sourceObject }) => sourceObject !== "ProductionNavigationSheet",
+      )
+      .every(({ profile }) => profile === undefined),
+    "only the responsive navigation HeroOccluders may be profile-specific",
+  );
+  assert.equal(
+    occluders.length,
+    runtimeOccluders.length + 1,
+    "authoring HeroOccluder count includes one alternate navigation profile",
+  );
+  assert.deepEqual(
+    [...new Set(occluders.map(({ sourceObject }) => sourceObject))].sort(),
+    [...runtimeOccluders].sort(),
+    "runtime HeroOccluder source-object inventory",
+  );
+  assert.deepEqual(
+    occluders.map(({ object }) => object),
+    occluders.map(({ sourceObject, profile }) =>
+      profile
+        ? `HeroOccluder_${sourceObject}_${profile}`
+        : `HeroOccluder_${sourceObject}`,
+    ),
+    "HeroOccluder export names",
+  );
+  for (const profile of ["wide", "portrait"]) {
+    const active = occluders.filter(
+      ({ profile: ownerProfile }) =>
+        ownerProfile === undefined || ownerProfile === profile,
+    );
+    assert.equal(
+      active.length,
+      runtimeOccluders.length,
+      `${profile} active HeroOccluder count`,
+    );
+    assert.deepEqual(
+      active.map(({ sourceObject }) => sourceObject).sort(),
+      [...runtimeOccluders].sort(),
+      `${profile} active HeroOccluder inventory`,
+    );
+  }
+}
+
 function assertHeroGlbContract(glbBytes, authoring, runtimeHero) {
   const { json: gltf, binary } = parseGlb(glbBytes);
   assert.equal(gltf.asset?.version, "2.0", "glTF asset version");
@@ -328,17 +391,7 @@ function assertHeroGlbContract(glbBytes, authoring, runtimeHero) {
   const occluders = authoring.geometry?.heroOccluders;
   assert.equal(surface?.object, HERO_SURFACE_OBJECT);
   assert.ok(isSha256(surface?.geometrySha256));
-  assert.equal(occluders?.length, 12, "authoring HeroOccluder count");
-  assert.deepEqual(
-    occluders.map(({ sourceObject }) => sourceObject),
-    runtimeHero.geometry.occluders,
-    "runtime HeroOccluder source-object inventory",
-  );
-  assert.deepEqual(
-    occluders.map(({ object }) => object),
-    occluders.map(({ sourceObject }) => `HeroOccluder_${sourceObject}`),
-    "HeroOccluder export names",
-  );
+  assertHeroOccluderInventory(occluders, runtimeHero);
   assert.ok(
     occluders.every(({ geometrySha256 }) => isSha256(geometrySha256)),
     "authoring HeroOccluder geometry hashes",
@@ -974,10 +1027,40 @@ async function assertR4HeroArtifactStubsFail() {
   await assert.doesNotReject(() => assertR4HeroArtifactContract(fixture));
 
   const authoring = JSON.parse(fixture.authoringManifestBytes);
+  const missingPortraitNavigation = structuredClone(authoring);
+  missingPortraitNavigation.geometry.heroOccluders =
+    missingPortraitNavigation.geometry.heroOccluders.filter(
+      ({ profile }) => profile !== "portrait",
+    );
+  const missingPortraitBytes = Buffer.from(
+    JSON.stringify(missingPortraitNavigation),
+  );
+  await assert.rejects(
+    () =>
+      assertR4HeroArtifactContract({
+        ...fixture,
+        manifest: {
+          ...fixture.manifest,
+          hero: {
+            ...fixture.manifest.hero,
+            verification: {
+              ...fixture.manifest.hero.verification,
+              presentedPixelAuthoringManifestSha256:
+                sha256(missingPortraitBytes),
+            },
+          },
+        },
+        authoringManifestBytes: missingPortraitBytes,
+      }),
+    /responsive navigation HeroOccluder profiles/,
+  );
+
   const glbPath = authoring.sources.compositorGlb.path;
   const glbBytes = fixture.sourceBytes.get(glbPath);
   const corruptGlb = Buffer.from(glbBytes);
-  corruptGlb[corruptGlb.length - 8] ^= 1;
+  const jsonChunkLength = corruptGlb.readUInt32LE(12);
+  const binaryChunkStart = 12 + 8 + jsonChunkLength + 8;
+  corruptGlb[binaryChunkStart] ^= 1;
   await assert.rejects(
     () => assertR4HeroArtifactContract(withRehashedGlb(fixture, corruptGlb)),
     /geometry|relationship|GLB/,
