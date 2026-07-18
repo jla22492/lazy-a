@@ -268,6 +268,10 @@ function transitionTarget(state: PlateExperienceState): PlateAsset["id"] {
   return state.requested ?? state.endpoint;
 }
 
+function compactTransitionId(transition: string | null): string | null {
+  return transition?.replace(/-to-/g, "-") ?? null;
+}
+
 function objectPosition(asset: PlateAsset): Vector2 {
   const matches = asset.objectPosition?.match(/^\s*([\d.]+)%\s+([\d.]+)%\s*$/);
   return matches
@@ -394,7 +398,8 @@ export function PlateCompositor({
     const experience = { ...state };
     const previous = activeMediaRef.current;
     const resumeTime =
-      previous?.video && previous.asset.id === state.transition
+      previous?.video &&
+      previous.asset.id === compactTransitionId(state.transition)
         ? Math.max(previous.mediaTime.current, previous.video.currentTime)
         : 0;
     const run = ++runRef.current;

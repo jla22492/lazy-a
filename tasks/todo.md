@@ -59,7 +59,9 @@
       drawing buffer before the one permitted `play()` call.
 - [x] Independent review correction: breakpoint swaps keep the active media,
       crop dimensions, projection profile, diagnostics, and physical navigation
-      bound to one variant until the replacement frame is presented.
+      bound to one variant until the replacement frame is presented, and preserve
+      monotonic forward/reverse transition progress when the viewport changes
+      during motion.
 - [x] Independent review correction: post-start transition errors, aborts, and
       stalls retain the photographic endpoint and complete navigation instead
       of leaving the room indefinitely transitioning.

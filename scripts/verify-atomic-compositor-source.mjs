@@ -260,6 +260,11 @@ assert.match(
 );
 assert.match(
   sources.compositor,
+  /previous\.asset\.id\s*===\s*compactTransitionId\(state\.transition\)/,
+  "in-motion breakpoint swaps must preserve canonical transition progress",
+);
+assert.match(
+  sources.compositor,
   /video\.addEventListener\("error",\s*failed\)/,
   "plate faults must remain observed after loadeddata",
 );

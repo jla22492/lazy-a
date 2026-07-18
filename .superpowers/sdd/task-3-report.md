@@ -115,6 +115,13 @@
   The lifecycle gate now continues through one play, all four destinations and
   returns, one end, and final hold even while separately reporting an absent
   reference catalog.
+- The first independent re-review then caught one remaining Important defect:
+  reducer transition names (`desk-to-films`) were compared directly with compact
+  media IDs (`desk-films`), so a profile change during motion restarted the
+  replacement video at zero. A new real-Chrome RED reproduced
+  `0.452s -> 0.033s`. The compositor now canonicalizes route identity before
+  resuming media time, and the resilience gate covers monotonic outbound and
+  return progress across opposite breakpoint changes.
 
 ## Verification
 
@@ -175,8 +182,9 @@
 - `node scripts/verify-atomic-compositor-source.mjs`: PASS.
 - `node scripts/verify-compositor-resilience.mjs`: PASS. Delayed hero assets
   remain at frame zero until the physical surface is ready; desktop/phone
-  breakpoint swaps preserve atomic profile/media ownership; and a post-start
-  plate-video fault retains the photographic endpoint and completes navigation.
+  breakpoint swaps preserve atomic profile/media ownership plus forward/reverse
+  in-motion progress; and a post-start plate-video fault retains the photographic
+  endpoint and completes navigation.
 - `node scripts/verify-hero-lifecycle.mjs --runtime-only`: PASS `75/75`
   across desktop, tall desktop, landscape tablet, portrait tablet, and phone.
   Every viewport starts once from frame zero after settle, advances through all
