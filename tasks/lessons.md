@@ -51,3 +51,4 @@
 - Video reliability does not end at `loadeddata`. Keep error and abort observation alive, add a bounded stall watchdog, and retain a photographic endpoint that still completes the requested navigation.
 - A missing proof dependency must fail its own evidence check without short-circuiting independent behavior verification. Catalog absence cannot be allowed to disguise an untested one-shot lifecycle.
 - Transition identity must be canonical before media continuity comparisons. Reducer names and asset names may describe the same route with different separators, and profile-swap tests must exercise both forward and reverse motion rather than only resting frames.
+- Capture continuity state at the actual media handoff, not when replacement loading begins. A slow responsive asset can make an initially correct resume timestamp stale while the currently presented camera keeps moving.

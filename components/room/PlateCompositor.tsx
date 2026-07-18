@@ -157,7 +157,7 @@ async function loadImageMedia(
 function loadVideoMedia(
   asset: PlateAsset,
   variant: PlateVariant,
-  startTime = 0,
+  startTime: number | (() => number) = 0,
 ): Promise<ActivePlateMedia> {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
@@ -219,8 +219,10 @@ function loadVideoMedia(
     };
     const loaded = () => {
       cleanupLoadListener();
+      const requestedStart =
+        typeof startTime === "function" ? startTime() : startTime;
       const boundedStart = Math.min(
-        Math.max(0, startTime),
+        Math.max(0, requestedStart),
         Number.isFinite(video.duration)
           ? Math.max(0, video.duration - 1 / (asset.fps ?? 30))
           : 0,
@@ -397,7 +399,7 @@ export function PlateCompositor({
     if (state.phase !== "transitioning" || !state.transition) return;
     const experience = { ...state };
     const previous = activeMediaRef.current;
-    const resumeTime =
+    const resumeTime = () =>
       previous?.video &&
       previous.asset.id === compactTransitionId(state.transition)
         ? Math.max(previous.mediaTime.current, previous.video.currentTime)

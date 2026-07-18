@@ -122,6 +122,13 @@
   `0.452s -> 0.033s`. The compositor now canonicalizes route identity before
   resuming media time, and the resilience gate covers monotonic outbound and
   return progress across opposite breakpoint changes.
+- The follow-up review correctly rejected that first correction under delayed
+  replacement loading: the current plate continued from `0.500s` to `0.933s`
+  while the new profile downloaded, then the replacement appeared at the stale
+  `0.500s`. The final contract samples current media time only when the
+  replacement has decoded and is ready to hand off. Its RED compares the last
+  actually presented old-profile frame with the first new-profile frame under
+  an injected `900ms` delay, separately for forward and reverse motion.
 
 ## Verification
 

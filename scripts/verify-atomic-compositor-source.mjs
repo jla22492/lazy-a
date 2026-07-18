@@ -265,6 +265,11 @@ assert.match(
 );
 assert.match(
   sources.compositor,
+  /typeof startTime\s*===\s*"function"\s*\?\s*startTime\(\)\s*:\s*startTime/,
+  "replacement media must sample transition progress when it is ready to hand off",
+);
+assert.match(
+  sources.compositor,
   /video\.addEventListener\("error",\s*failed\)/,
   "plate faults must remain observed after loadeddata",
 );

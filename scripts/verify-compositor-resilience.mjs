@@ -170,101 +170,136 @@ async function verifyBreakpointProfileSwap() {
 }
 
 async function verifyBreakpointTransitionContinuity() {
-  const context = await browser.newContext({
-    viewport: { width: 1280, height: 720 },
-  });
-  const page = await context.newPage();
-  try {
-    await page.goto(url, { waitUntil: "load" });
-    await waitForDesk(page);
-
-    await page.evaluate(() =>
-      window.__lazyACameraDebug.requestDestination("films"),
-    );
-    await page.waitForFunction(
-      () =>
-        window.__lazyACompositor?.profile === "wide" &&
-        window.__lazyACompositor?.plateSource.includes(
-          "/wide/transitions/desk-films",
-        ) &&
-        window.__lazyACompositor.plateMediaTime >= 0.45,
-      null,
-      { timeout: 6_000 },
-    );
-    const forwardBefore = await page.evaluate(
-      () => window.__lazyACompositor.plateMediaTime,
-    );
-    await page.setViewportSize({ width: 375, height: 812 });
-    await page.waitForFunction(
-      () =>
-        window.__lazyACompositor?.profile === "portrait" &&
-        window.__lazyACompositor?.plateSource.includes(
-          "/portrait/transitions/desk-films",
-        ),
-      null,
-      { timeout: 8_000 },
-    );
-    const forwardAfter = await page.evaluate(
-      () => window.__lazyACompositor.plateMediaTime,
-    );
-    assert.ok(
-      forwardAfter >= forwardBefore - 0.12,
-      `forward transition rewound across breakpoint: ${forwardBefore.toFixed(3)}s -> ${forwardAfter.toFixed(3)}s`,
-    );
-    await page.waitForFunction(
-      () => {
-        const snapshot = window.__lazyACameraDebug?.snapshot?.();
-        return snapshot?.endpoint === "films" && snapshot?.phase === "resting";
+  const scenarios = [
+    {
+      name: "forward",
+      initial: { width: 1280, height: 720 },
+      initialProfile: "wide",
+      replacement: { width: 375, height: 812 },
+      replacementProfile: "portrait",
+      transition: "desk-films",
+      begin: async (page) => {
+        await page.evaluate(() =>
+          window.__lazyACameraDebug.requestDestination("films"),
+        );
       },
-      null,
-      { timeout: 6_000 },
-    );
-
-    await page.evaluate(() => window.__lazyACameraDebug.close());
-    await page.waitForFunction(
-      () =>
-        window.__lazyACompositor?.profile === "portrait" &&
-        window.__lazyACompositor?.plateSource.includes(
-          "/portrait/transitions/films-desk",
-        ) &&
-        window.__lazyACompositor.plateMediaTime >= 0.45,
-      null,
-      { timeout: 6_000 },
-    );
-    const reverseBefore = await page.evaluate(
-      () => window.__lazyACompositor.plateMediaTime,
-    );
-    await page.setViewportSize({ width: 1280, height: 720 });
-    await page.waitForFunction(
-      () =>
-        window.__lazyACompositor?.profile === "wide" &&
-        window.__lazyACompositor?.plateSource.includes(
-          "/wide/transitions/films-desk",
-        ),
-      null,
-      { timeout: 8_000 },
-    );
-    const reverseAfter = await page.evaluate(
-      () => window.__lazyACompositor.plateMediaTime,
-    );
-    assert.ok(
-      reverseAfter >= reverseBefore - 0.12,
-      `reverse transition rewound across breakpoint: ${reverseBefore.toFixed(3)}s -> ${reverseAfter.toFixed(3)}s`,
-    );
-    await page.waitForFunction(
-      () => {
-        const snapshot = window.__lazyACameraDebug?.snapshot?.();
-        return snapshot?.endpoint === "desk" && snapshot?.phase === "resting";
+      endpoint: "films",
+    },
+    {
+      name: "reverse",
+      initial: { width: 375, height: 812 },
+      initialProfile: "portrait",
+      replacement: { width: 1280, height: 720 },
+      replacementProfile: "wide",
+      transition: "films-desk",
+      begin: async (page) => {
+        await page.evaluate(() =>
+          window.__lazyACameraDebug.requestDestination("films"),
+        );
+        await page.waitForFunction(
+          () => {
+            const snapshot = window.__lazyACameraDebug?.snapshot?.();
+            return (
+              snapshot?.endpoint === "films" && snapshot?.phase === "resting"
+            );
+          },
+          null,
+          { timeout: 6_000 },
+        );
+        await page.evaluate(() => window.__lazyACameraDebug.close());
       },
-      null,
-      { timeout: 6_000 },
+      endpoint: "desk",
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    const context = await browser.newContext({ viewport: scenario.initial });
+    const page = await context.newPage();
+    await page.route(
+      `**/room/${scenario.replacementProfile}/transitions/${scenario.transition}.mp4`,
+      async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 900));
+        await route.continue();
+      },
     );
-    console.log(
-      "PASS breakpoint swaps preserve forward and reverse transition progress",
+    await page.addInitScript(
+      ({ eventName, transition }) => {
+        window.__motionSwapProbe = [];
+        window.addEventListener(eventName, (event) => {
+          const detail = event.detail;
+          if (detail?.plateSource?.includes(`/transitions/${transition}.mp4`)) {
+            window.__motionSwapProbe.push({
+              profile: detail.profile,
+              time: detail.plateMediaTime,
+            });
+          }
+        });
+      },
+      { eventName: compositorEvent, transition: scenario.transition },
     );
-  } finally {
-    await context.close();
+    try {
+      await page.goto(url, { waitUntil: "load" });
+      await waitForDesk(page);
+      await scenario.begin(page);
+      await page.waitForFunction(
+        ({ profile, transition }) =>
+          window.__lazyACompositor?.profile === profile &&
+          window.__lazyACompositor?.plateSource.includes(
+            `/${profile}/transitions/${transition}`,
+          ) &&
+          window.__lazyACompositor.plateMediaTime >= 0.45,
+        {
+          profile: scenario.initialProfile,
+          transition: scenario.transition,
+        },
+        { timeout: 6_000 },
+      );
+      await page.setViewportSize(scenario.replacement);
+      await page.waitForFunction(
+        ({ profile, transition }) =>
+          window.__lazyACompositor?.profile === profile &&
+          window.__lazyACompositor?.plateSource.includes(
+            `/${profile}/transitions/${transition}`,
+          ),
+        {
+          profile: scenario.replacementProfile,
+          transition: scenario.transition,
+        },
+        { timeout: 8_000 },
+      );
+      const handoff = await page.evaluate((replacementProfile) => {
+        const samples = window.__motionSwapProbe;
+        const replacementIndex = samples.findIndex(
+          ({ profile }) => profile === replacementProfile,
+        );
+        return {
+          before: samples[replacementIndex - 1]?.time ?? null,
+          after: samples[replacementIndex]?.time ?? null,
+        };
+      }, scenario.replacementProfile);
+      assert.ok(
+        handoff.before !== null &&
+          handoff.after !== null &&
+          handoff.after >= handoff.before - 0.12,
+        `${scenario.name} transition rewound at presented handoff: ${JSON.stringify(handoff)}`,
+      );
+      await page.waitForFunction(
+        (endpoint) => {
+          const snapshot = window.__lazyACameraDebug?.snapshot?.();
+          return (
+            snapshot?.endpoint === endpoint && snapshot?.phase === "resting"
+          );
+        },
+        scenario.endpoint,
+        { timeout: 6_000 },
+      );
+    } finally {
+      await context.close();
+    }
   }
+  console.log(
+    "PASS delayed breakpoint swaps preserve consecutive forward and reverse transition frames",
+  );
 }
 
 async function verifyPostStartMediaFault() {
