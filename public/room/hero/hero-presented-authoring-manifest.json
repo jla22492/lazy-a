@@ -94,7 +94,7 @@
   "sources": {
     "compositorGlb": {
       "path": "public/room/hero/hero-compositor.glb",
-      "sha256": "223a75e2e787150feda3de0f8cf50906cceee2afa04789752f911ad68b85cc48"
+      "sha256": "a580215ad7bc1f2960272da22fe1f1ee12f9043b4555b8deb994b34aafef334e"
     },
     "masterBlend": {
       "path": "build/wo-0117-r/master.blend",
@@ -102,7 +102,11 @@
     },
     "renderScript": {
       "path": "scripts/render-master-shots.py",
-      "sha256": "38a707b795d109ade26b26484025a1823748560157c819830d2807653f863ba7"
+      "sha256": "33a9dc91f94622c51f8071ab740de7891e464ee2a69d89f185781462f71ba433"
+    },
+    "treatedBake": {
+      "path": "build/wo-0117-r/hero-treated-first-frame.png",
+      "sha256": "472cd380c3f3c983fa3e3d5de742ee2ade97654dcb975d5b022bba8acaefed0b"
     }
   },
   "version": 1

@@ -2439,6 +2439,10 @@ def build_hero_authoring_manifest(geometry: dict[str, Any]) -> dict[str, Any]:
                 "path": "public/room/hero/hero-compositor.glb",
                 "sha256": sha256_file(HERO_COMPOSITOR_PATH),
             },
+            "treatedBake": {
+                "path": "build/wo-0117-r/hero-treated-first-frame.png",
+                "sha256": sha256_file(HERO_TREATED_SOURCE_PATH),
+            },
         },
         "geometry": geometry,
         "regionSemantics": {

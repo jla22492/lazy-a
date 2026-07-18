@@ -22,10 +22,6 @@ const heroAuthoringManifestPath = path.join(
   root,
   "public/room/hero/hero-presented-authoring-manifest.json",
 );
-const heroTreatedFirstFramePath = path.join(
-  root,
-  "build/wo-0117-r/hero-treated-first-frame.png",
-);
 const args = process.argv.slice(2);
 const geometryOnly = args.includes("--geometry-only");
 const selfTest = args.includes("--self-test");
@@ -46,6 +42,7 @@ const EXPECTED_AUTHORING_SOURCES = {
   masterBlend: "build/wo-0117-r/master.blend",
   renderScript: "scripts/render-master-shots.py",
   compositorGlb: "public/room/hero/hero-compositor.glb",
+  treatedBake: "build/wo-0117-r/hero-treated-first-frame.png",
 };
 const EXPECTED_GLB_AUTHORING_RELATIONSHIP_SHA256 =
   "f8aba2c32214c4c0483cdd1b2f05449721a0d410e7c0ac2bcbc371d09032b4ed";
@@ -624,7 +621,7 @@ function loadR4HeroArtifactFixture() {
     firstFrameBytes: fs.readFileSync(
       path.join(root, manifest.hero.firstFrameSource),
     ),
-    treatedFrameBytes: fs.readFileSync(heroTreatedFirstFramePath),
+    treatedFrameBytes: sourceBytes.get(EXPECTED_AUTHORING_SOURCES.treatedBake),
     transferBytes: fs.readFileSync(
       path.join(root, "public", manifest.hero.treatment.source),
     ),
@@ -680,6 +677,20 @@ async function assertR4HeroArtifactStubsFail() {
         transferBytes: fixture.firstFrameBytes,
       }),
     /reconstruction error/,
+  );
+  const replacedBake = Buffer.from(fixture.treatedFrameBytes);
+  replacedBake.fill(0, 0, Math.min(256, replacedBake.length));
+  await assert.rejects(
+    () =>
+      assertR4HeroArtifactContract({
+        ...fixture,
+        treatedFrameBytes: replacedBake,
+        sourceBytes: new Map(fixture.sourceBytes).set(
+          EXPECTED_AUTHORING_SOURCES.treatedBake,
+          replacedBake,
+        ),
+      }),
+    /treatedBake source SHA-256/,
   );
 }
 
