@@ -157,6 +157,12 @@
 - Desktop, tall-desktop, landscape-tablet, and phone normal-speed review films
   were captured and visually inspected. Creative acceptance remains Jonathan's
   decision and is not claimed by this report.
+- The integrated R4 candidate was deployed by successful Pages workflow
+  `29646663699` at commit
+  `11c38b3e9bf9e0b8a4493fa093b6f9e1507ed010`. Public verification passes hero
+  lifecycle `465/465`, arrival `79/79` at all five viewport classes, CONTACT
+  `16/16`, desktop/phone camera states, the `3.16s` / `5.00s` / `0.08s`
+  experience clock, and `59.9fps` / `2.36MB` / `11.27MB` performance.
 
 ### Exact Failure And Long-Running Command Record
 
@@ -326,8 +332,6 @@ Documentation: `tasks/todo.md`, `tasks/lessons.md`, and this report.
 
 ## Concern
 
-Task 3 is an honest implementation checkpoint, not a full R4 completion claim.
-The final 130 browser-presented reference assets/catalog and clean lifecycle
-gate are sequentially blocked on Task 4's completed wide and portrait 58-frame
-CONTACT media. They require a follow-up commit immediately after Task 4 media
-stabilizes.
+The technical R4 integration and deployed evidence are complete. This remains
+a technical review candidate, not a creative-completion claim; Jonathan's
+explicit full-motion visual approval is still required.

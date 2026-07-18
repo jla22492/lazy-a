@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.1
+
 - Repository initialized.
 - Creative philosophy established.
 - Room-first development adopted.
@@ -78,5 +79,7 @@
 - R-0117-R4 reached its independently reviewed authored-source checkpoint: the supplied desk lamp remains a natural rigid object while its visible bulb and soft desk pool now belong to one practical; CONTACT gives that light a full second before the camera moves; JOURNAL bends continuously forward and down into a readable page; and the hero's treated print, live surface, leaning card, pencils, and every other crossing object are pinned from the evaluated master rather than inferred from a low-resolution mask. Runtime atomic compositing, final motion media, live proof, and Jonathan's approval remain open.
 
 - R-0117-R4 became a local technical review candidate: the moving print and photographed room now share one decoded frame clock, one room-light treatment, and profile-aware physical depth, so the poster no longer changes grade, swims under camera motion, draws over its leaning card, or tears around pencil edges. JOURNAL bends forward and down in one readable human motion. CONTACT lets the visitor watch the desk lamp itself turn on for a full second before the approved move reveals Jonathan's pressure-cut details. Five browser shapes pass 465 presented-pixel checks, and normal-speed desktop, tall, tablet, and phone journeys have been watched. Deployment proof and Jonathan's visual approval remain open.
+
+- R-0117-R4 went live as a technical review candidate: the public room now presents the photographic plate, living print, and physical foreground on one decoded frame clock at five browser shapes. The poster keeps its room lighting and placement through FILMS, JOURNAL, CONTACT, and ABOUT; its leaning card and pencil crossings remain intact; JOURNAL bends once into readable copy; and CONTACT lets the practical lamp illuminate the pressure-cut details for a full second before the approved move. The deployed candidate passes 465/465 hero checks, 79/79 arrival frames per viewport, CONTACT, camera, clock, and performance gates. Jonathan's explicit full-motion visual approval remains the final open gate.
 
 Record experience changes here, not just technical ones.

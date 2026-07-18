@@ -1,10 +1,10 @@
 # BUILD REPORT
 
-WORK ORDER 0117-R4 LOCAL TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
+WORK ORDER 0117-R4 DEPLOYED TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
 
 Version:
 
-v0.1 — local technical review candidate
+v0.1 — deployed technical review candidate
 
 Observed Result:
 
@@ -80,7 +80,9 @@ Verification Status:
   PASS locally.
 - Normal-speed desktop, tall-desktop, landscape-tablet, and phone films were
   captured and visually inspected.
-- Deployment verification and Jonathan's final visual approval — OPEN.
+- GitHub Pages deployment and public behavioral verification — PASS at
+  `11c38b3` through workflow `29646663699`.
+- Jonathan's final visual approval — OPEN.
 - No completion claim is made.
 
 Local Behavioral Verification:
@@ -126,6 +128,27 @@ Local Review Evidence:
 - `docs/progress/0117-r4-proof-wide-contact.jpg`
 - `docs/progress/0117-r4-proof-portrait-contact.jpg`
 
+Deployed Behavioral Verification:
+
+- Public candidate:
+  `https://jla22492.github.io/lazy-a/`.
+- Pages workflow `29646663699` deployed commit
+  `11c38b3e9bf9e0b8a4493fa093b6f9e1507ed010` successfully.
+- Hero lifecycle — PASS `465/465` across all five viewport classes. The public
+  compositor begins at frame one, preserves exact still-to-live pixels and
+  authored room treatment, keeps the poster and foreground crossings
+  registered through every route, plays once, and holds its final frame.
+- Arrival — PASS `79/79` at all five viewport classes with zero camera error,
+  zero held-camera error, and zero retained-pixel delta.
+- CONTACT — PASS `16/16`: exact copy, physical indentation, visible practical,
+  stationary lamp-on beat, soft pool, approved move, hold, and clean reverse.
+- Camera states — PASS on desktop and phone: readable JOURNAL lean, desk-held
+  CONTACT, leftward ABOUT, visible settled-desk handoffs, and exact returns.
+- Timing — PASS: settle `3.16s`; magic `5.00s`; physical JOURNAL target
+  `0.08s`.
+- Performance — PASS: median `59.9fps`; `2.36MB` pre-settle; `11.27MB` total;
+  reverse arrival is not preloaded.
+
 Enumerated 0117-R4 Audit:
 
 1. ✅ Hero grade remains identical between still and playback + exact
@@ -143,9 +166,10 @@ Enumerated 0117-R4 Audit:
 7. ✅ Existing room, prop, logo-card, navigation, FILMS, ABOUT, arrival, and
    settled-camera locks remain intact + source, camera, dense-grid, fallback,
    five-viewport continuity, and visual-review gates.
-8. ✅ Local clock and performance remain inside the sprint criteria +
-   instrumented production-build measurements.
-9. ⚠️ Deployed Pages proof is pending the final closeout step.
+8. ✅ Local and deployed clock and performance remain inside the sprint
+   criteria + instrumented production-build and public measurements.
+9. ✅ Deployed Pages proof passes at workflow `29646663699` + public
+   five-viewport hero, arrival, CONTACT, camera, clock, and performance gates.
 10. ⚠️ Jonathan's explicit full-motion visual approval remains open. This is a
     technical review candidate, not a creative-completion claim.
 
@@ -260,7 +284,7 @@ Enumerated 0117-R3 Audit:
 2. ✅ CONTACT indentation restored + topology, exact-copy, rest/mid/hold/reverse
    pixel, and no-overlay gates.
 3. ✅ Desk lamp supported on the desk and reveal light sourced inside its shade
-   + saved-master support/source and browser lamp-pool gates.
+   - saved-master support/source and browser lamp-pool gates.
 4. ✅ Rendered camera removed; only the photographic replacement remains +
    replacement/duplicate gate and desk proof.
 5. ✅ Pencil, card, tape, logo, and foreground edges rerendered at final

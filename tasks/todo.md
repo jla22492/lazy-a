@@ -30,7 +30,7 @@
 - [x] Replace the non-atomic hero overlay and low-resolution occlusion path.
 - [x] Regenerate and encode affected wide and portrait room media.
 - [x] Run full local source, browser, clock, performance, and visual batteries.
-- [ ] Push and verify the deployed Pages candidate.
+- [x] Push and verify the deployed Pages candidate.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
 
 ## Task 3 — Atomic Plate And Living Print
@@ -84,7 +84,7 @@
       exact committed files, enumerated obligation audit, and any remaining
       concerns without claiming R4 creative completion.
 
-## Local Technical Review Candidate Audit
+## Deployed Technical Review Candidate Audit
 
 1. ✅ Hero lighting continuity shipped + five-viewport final-pixel catalog:
    still-to-first-live delta is exactly zero and the live film retains the
@@ -110,13 +110,19 @@
 8. ✅ Arrival and destination routing shipped + five-viewport continuity and
    camera gates: 79/79 arrival samples, exact desk restoration, and an
    observable desk handoff between direct destination switches.
-9. ✅ Timing and performance shipped locally + live instrumentation:
-   settle `3.09s`, magic `4.94s`, JOURNAL target `0.08s`, median `59.9fps`,
-   `2.37MB` pre-settle, and `11.28MB` total.
+9. ✅ Timing and performance shipped locally and on Pages + live
+   instrumentation: local settle `3.09s`, magic `4.94s`, JOURNAL target
+   `0.08s`, median `59.9fps`, `2.37MB` pre-settle, and `11.28MB` total;
+   deployed settle `3.16s`, magic `5.00s`, JOURNAL target `0.08s`, median
+   `59.9fps`, `2.36MB` pre-settle, and `11.27MB` total.
 10. ✅ Responsive visual review captured + normal-speed desktop, tall-desktop,
     landscape-tablet, and phone films plus original-resolution JOURNAL and
     CONTACT proof frames.
-11. ⚠️ Deployment verification pending this closeout step.
+11. ✅ Deployment verification shipped + successful Pages workflow
+    `29646663699` at `11c38b3`: public hero lifecycle `465/465`, arrival
+    `79/79` at all five viewport classes, CONTACT `16/16`, desktop/phone
+    camera states, clock, and performance all pass at
+    `https://jla22492.github.io/lazy-a/`.
 12. ⚠️ Jonathan's explicit visual approval remains open. Passing the technical
     audit authorizes review but cannot certify the creative quality bar.
 

@@ -14,7 +14,7 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R4 LOCAL TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING.
+0117-R4 DEPLOYED TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING.
 Jonathan's full-motion
 review accepted the room's substantial R3 progress but rejected three remaining
 behaviors. The living hero changes saturation, drifts against its poster during
@@ -46,8 +46,11 @@ profile-aware foreground depth on one decoded frame clock. The complete
 five-viewport final-pixel catalog passes `465/465`; arrival, camera, physical
 navigation, CONTACT, fallbacks, clock, and performance pass locally. Normal-speed
 desktop, tall-desktop, landscape-tablet, and phone journeys have been captured
-and visually inspected. Deployment verification is the remaining technical
-closeout step. Jonathan's explicit visual approval remains open and cannot be
+and visually inspected. Pages workflow `29646663699` successfully deployed
+commit `11c38b3`; the public candidate passes hero lifecycle `465/465`, arrival
+`79/79` at all five viewport classes, CONTACT `16/16`, desktop/phone camera
+states, the `3.16s` / `5.00s` / `0.08s` clock, and the `59.9fps` performance
+gate. Jonathan's explicit visual approval remains open and cannot be
 self-certified.
 
 ---
@@ -210,17 +213,17 @@ self-certified.
 
 ## In Progress
 
-WORK ORDER 0117-R4 — local technical review candidate. The authored source,
-atomic compositor, final motion media, five-viewport browser catalog, normal-speed
-review films, and local timing/performance battery are ready. The remaining
-technical step is deployed Pages verification; Jonathan's visual decision follows.
+WORK ORDER 0117-R4 — deployed technical review candidate. The authored source,
+atomic compositor, final motion media, five-viewport browser catalog,
+normal-speed review films, local battery, and public Pages battery pass.
+Jonathan's visual decision is the only remaining acceptance gate.
 
 ---
 
 ## Next Recommended Work Order
 
-0117-R4 must pass full-motion local and deployed visual review, then Jonathan's
-explicit approval, before 0118 can begin.
+0117-R4 awaits Jonathan's explicit full-motion visual approval before 0118 can
+begin.
 After that: content-and-domain readiness, approved company material, authored
 JOURNAL/ABOUT content, and www.lazyaproductions.com migration.
 
