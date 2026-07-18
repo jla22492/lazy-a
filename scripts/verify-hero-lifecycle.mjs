@@ -2672,11 +2672,11 @@ async function loadPresentedPixelReferenceCatalog(viewport) {
         );
       }
       const catalogUrl = new URL(
-        verification.presentedPixelReferences,
+        verification.presentedPixelReferences.replace(/^\/+/, ""),
         document.baseURI,
       );
       const authoringUrl = new URL(
-        verification.presentedPixelAuthoringManifest,
+        verification.presentedPixelAuthoringManifest.replace(/^\/+/, ""),
         document.baseURI,
       );
       const [catalogResponse, authoringResponse] = await Promise.all([
