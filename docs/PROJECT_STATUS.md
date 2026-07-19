@@ -33,9 +33,12 @@ arrival frames per viewport, camera, CONTACT, physical navigation, dwell,
 fallback, resilience, 4s/5s/6s clock, TypeScript, lint, and build gates.
 Intent-driven media warming reduced settled-room transfer from `40.10MB` to
 `4.35MB` without changing the pristine transition encodes. Four responsive
-normal-speed films have been visually inspected. Public deployment proof and
-Jonathan's explicit full-motion approval remain open; no creative completion
-claim is made.
+normal-speed films have been visually inspected. Pages workflow `29706751799`
+deployed commit `e0396c9`; the public clock, performance, and `11/11` visitor
+lifecycle pass. One CDN exact-frame CONTACT target timed out (`43/44`) after the
+same fresh local bundle passed `450/450`, so that public catalog replay remains
+an explicit residual verification item. Jonathan's full-motion approval remains
+open; no creative completion claim is made.
 
 ---
 

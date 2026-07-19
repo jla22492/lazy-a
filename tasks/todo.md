@@ -16,8 +16,8 @@
       (`450/450` fresh production bundle).
 - [x] Capture and visually inspect full-motion desktop, tall-desktop, tablet,
       and phone journeys.
-- [ ] Update the standard R5 Build Report, status, changelog, progress evidence,
-      and pushed commit trail (artifacts updated; commit/push pending).
+- [x] Update the standard R5 Build Report, status, changelog, progress evidence,
+      and pushed commit trail.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
 
 ---

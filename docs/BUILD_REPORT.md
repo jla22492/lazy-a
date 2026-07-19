@@ -65,7 +65,11 @@ Enumerated Audit:
    frame.
 6. ✅ Responsive navigation, arrival, timing, fallback, and performance gates
    pass against the fresh production bundle.
-7. ⚠️ Public deployment and public-URL replay follow the pushed candidate.
+7. ✅ Public deployment `29706751799` serves `e0396c9`; the public clock
+   (`3.79s` / `5.64s` / `0.09s`), performance (`59.9fps`, `1.61MB`
+   pre-settle, `4.34MB` total), and visitor lifecycle (`11/11`) pass.
+   ⚠️ The CDN exact-frame desktop replay captured `43/44`; one paused CONTACT
+   target timed out after the local fresh bundle passed `450/450`.
 8. ⚠️ Jonathan's explicit full-motion visual approval remains open. This order
    is a review candidate, not creatively complete.
 
