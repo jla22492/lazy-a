@@ -19,6 +19,7 @@ import hashlib
 import json
 import math
 import os
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -64,6 +65,7 @@ LENS_FOV = {
 RESOLUTION = {"wide": (2560, 1440), "portrait": (750, 1624)}
 PROOF_RESOLUTION = {"wide": (1280, 720), "portrait": (375, 812)}
 MOTION_RESOLUTION = {"wide": (1920, 1080), "portrait": (750, 1624)}
+OBJECT_POSITION = {"wide": "50% 50%", "portrait": "52% 50%"}
 
 LOGO_OBJECT = "Mesh_31"
 OBSOLETE_PINNED_LOGO = "Mesh_173"
@@ -89,7 +91,12 @@ HERO_PROXY_PREFIX = "HeroOccluder_"
 HERO_ROOT = PUBLIC_ROOT / "hero"
 HERO_COMPOSITOR_PATH = HERO_ROOT / "hero-compositor.glb"
 HERO_TREATED_SOURCE_PATH = REPO_ROOT / "build" / "wo-0117-r" / "hero-treated-first-frame.png"
-HERO_TREATMENT_PATH = HERO_ROOT / "hero-room-treatment.png"
+HERO_CALIBRATION_BLACK_PATH = REPO_ROOT / "build" / "wo-0117-r" / "hero-calibration-black.png"
+HERO_CALIBRATION_WHITE_PATH = REPO_ROOT / "build" / "wo-0117-r" / "hero-calibration-white.png"
+HERO_GAIN_PATH = HERO_ROOT / "hero-room-gain.png"
+HERO_OFFSET_PATH = HERO_ROOT / "hero-room-offset.png"
+HERO_DISPLAY_LUT_PATH = HERO_ROOT / "hero-blender-agx-lut.png"
+HERO_DISPLAY_LUT_SIZE = 64
 HERO_AUTHORING_MANIFEST_PATH = HERO_ROOT / "hero-presented-authoring-manifest.json"
 HERO_PRESENTED_REFERENCES = "/room/hero/hero-presented-pixel-references.json"
 HERO_AUTHORING_MANIFEST = "/room/hero/hero-presented-authoring-manifest.json"
@@ -188,11 +195,6 @@ def smoothstep(value: float) -> float:
 def smootherstep(value: float) -> float:
     value = max(0.0, min(1.0, value))
     return value * value * value * (value * (value * 6.0 - 15.0) + 10.0)
-
-
-def quadratic_bezier(start: Vector, control: Vector, end: Vector, value: float) -> Vector:
-    inverse = 1.0 - value
-    return inverse * inverse * start + 2.0 * inverse * value * control + value * value * end
 
 
 def upright_track_quaternion(position: Vector, target: Vector) -> Quaternion:
@@ -1181,7 +1183,7 @@ PROFILE_POSES = {
             "position": tuple(CAMERA_CONTRACT["desktop"]["position"]),
             "target": (0.55, 1.27, -0.45),
         },
-        "journal": {"position": (0.35, 1.08, 0.30), "target": (0.40, 0.92, 0.12)},
+        "journal": {"position": (0.34, 1.24, 0.166), "target": (0.348, 0.92, 0.124)},
         "contact": {"position": (-0.45, 1.58, 0.32), "target": (-0.46, 0.91, -0.01)},
         "about": {"position": (0.02, 1.58, 1.45), "target": (-1.28, 1.22, -0.08)},
     },
@@ -1195,20 +1197,60 @@ PROFILE_POSES = {
             "position": tuple(CAMERA_CONTRACT["phone"]["position"]),
             "target": (0.55, 1.27, -0.45),
         },
-        "journal": {"position": (0.35, 1.30, 0.44), "target": (0.35, 0.92, 0.02)},
+        "journal": {"position": (0.35, 1.34, 0.44), "target": (0.35, 0.92, 0.12)},
         "contact": {"position": (-0.40, 2.25, 0.85), "target": (-0.4415, 0.91, -0.02)},
         "about": {"position": (0.22, 1.58, 2.27), "target": (-1.52, 0.92, -0.08)},
     },
 }
 
-JOURNAL_HIP_CONTROLS = {
-    "wide": (0.13, 1.57, 0.83),
-    "portrait": (0.30, 1.57, 1.29),
-}
-JOURNAL_TARGET_LEAD_POWERS = {
-    "wide": 1.8,
-    "portrait": 3.2,
-}
+JOURNAL_BODY_STEP_FRACTIONS = (
+    0.002,
+    0.020,
+    0.038,
+    0.042,
+    *((0.796 / 19.0,) * 19),
+    0.042,
+    0.038,
+    0.020,
+    0.002,
+)
+
+
+def journal_body_progress(frame_index: int, frame_count: int) -> float:
+    if frame_count - 1 != len(JOURNAL_BODY_STEP_FRACTIONS):
+        return smoothstep(frame_index / max(frame_count - 1, 1))
+    return sum(JOURNAL_BODY_STEP_FRACTIONS[:frame_index])
+
+
+def journal_coupled_pose(
+    body_progress: float,
+    start_position: Vector,
+    start_quaternion: Quaternion,
+    end_position: Vector,
+    end_quaternion: Quaternion,
+) -> tuple[Vector, Quaternion]:
+    delta = end_position - start_position
+    first_control = start_position + Vector(
+        (delta.x * 0.22, delta.y * 0.46, delta.z * 0.05)
+    )
+    second_control = start_position + Vector(
+        (delta.x * 0.78, delta.y * 0.85, delta.z * 0.55)
+    )
+    inverse = 1.0 - body_progress
+    position = (
+        start_position * (inverse ** 3)
+        + first_control * (3.0 * inverse * inverse * body_progress)
+        + second_control * (3.0 * inverse * body_progress * body_progress)
+        + end_position * (body_progress ** 3)
+    )
+    quaternion = start_quaternion.slerp(end_quaternion, body_progress)
+    if body_progress <= 0.0:
+        position = start_position.copy()
+        quaternion = start_quaternion.copy()
+    elif body_progress >= 1.0:
+        position = end_position.copy()
+        quaternion = end_quaternion.copy()
+    return position, quaternion
 
 
 def create_camera() -> bpy.types.Object:
@@ -1231,8 +1273,28 @@ def pose_transform(profile: str, endpoint: str) -> tuple[Vector, Quaternion]:
     pose = PROFILE_POSES[profile][endpoint]
     position = three_to_blender(pose["position"])
     target = three_to_blender(pose["target"])
-    quaternion = (target - position).to_track_quat("-Z", "Y")
+    quaternion = (
+        journal_reading_quaternion(position, target)
+        if endpoint == "journal"
+        else (target - position).to_track_quat("-Z", "Y")
+    )
     return position, quaternion
+
+
+def journal_reading_quaternion(
+    position: Vector,
+    target: Vector,
+) -> Quaternion:
+    notebook = require_object("Mesh_185", "MESH")
+    baseline = notebook_world_quad(notebook)[1] - notebook_world_quad(notebook)[0]
+    forward = (target - position).normalized()
+    right = baseline - forward * baseline.dot(forward)
+    if right.length <= 1e-8:
+        raise RuntimeError("Notebook baseline is parallel to JOURNAL view")
+    right.normalize()
+    back = -forward
+    up = back.cross(right).normalized()
+    return Matrix((right, up, back)).transposed().to_quaternion()
 
 
 def set_camera_transform(camera: bpy.types.Object, position: Vector, quaternion: Quaternion) -> None:
@@ -1410,24 +1472,56 @@ def endpoint_framing(scene: bpy.types.Scene, camera: bpy.types.Object, authored:
     }
 
 
-def hero_projection(scene: bpy.types.Scene, camera: bpy.types.Object) -> list[float] | None:
-    hero = require_object(HERO_OBJECT, "MESH")
-    points = local_face_points(hero, 1, "min")
-    if any((camera.matrix_world.inverted() @ point).z >= -1e-8 for point in points):
-        return None
-    return project_world_points(scene, camera, points)
-
-
-def hero_reciprocal_w(camera: bpy.types.Object) -> list[float] | None:
+def hero_projection_data(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+) -> tuple[list[float] | None, list[float] | None]:
+    points = hero_world_quad()
     camera_inverse = camera.matrix_world.inverted()
-    values = []
-    for point in hero_world_quad():
+    entries = []
+    for point in points:
         camera_point = camera_inverse @ point
         clip_w = -camera_point.z
         if clip_w <= 1e-8:
-            return None
-        values.append(rounded(1.0 / clip_w))
-    return values
+            return None, None
+        projected = world_to_camera_view(scene, camera, point)
+        entries.append(
+            {
+                "screen": (projected.x, 1.0 - projected.y),
+                "reciprocalW": rounded(1.0 / clip_w),
+            }
+        )
+    center_x = sum(entry["screen"][0] for entry in entries) / len(entries)
+    center_y = sum(entry["screen"][1] for entry in entries) / len(entries)
+    entries.sort(
+        key=lambda entry: math.atan2(
+            entry["screen"][1] - center_y,
+            entry["screen"][0] - center_x,
+        )
+    )
+    start = min(
+        range(len(entries)),
+        key=lambda index: sum(entries[index]["screen"]),
+    )
+    entries = entries[start:] + entries[:start]
+    if len(entries) == 4 and entries[1]["screen"][0] < entries[-1]["screen"][0]:
+        entries = [entries[0], entries[-1], entries[-2], entries[1]]
+    projection = rounded_vector(
+        value for entry in entries for value in entry["screen"]
+    )
+    reciprocal_w = [entry["reciprocalW"] for entry in entries]
+    return projection, reciprocal_w
+
+
+def hero_projection(scene: bpy.types.Scene, camera: bpy.types.Object) -> list[float] | None:
+    return hero_projection_data(scene, camera)[0]
+
+
+def hero_reciprocal_w(
+    scene: bpy.types.Scene,
+    camera: bpy.types.Object,
+) -> list[float] | None:
+    return hero_projection_data(scene, camera)[1]
 
 
 def hero_world_quad() -> list[Vector]:
@@ -1561,24 +1655,14 @@ def transition_sample(
     raw_t = frame_index / max(frame_count - 1, 1)
 
     if destination == "journal":
-        start_target = three_to_blender(
-            tuple(PROFILE_POSES[profile][start_name]["target"])
+        body_progress = journal_body_progress(frame_index, frame_count)
+        position, quaternion = journal_coupled_pose(
+            body_progress,
+            start_position,
+            start_quaternion,
+            end_position,
+            end_quaternion,
         )
-        notebook_reading_anchor = three_to_blender(
-            tuple(PROFILE_POSES[profile][destination]["target"])
-        )
-        hip_control = three_to_blender(JOURNAL_HIP_CONTROLS[profile])
-        eased = smootherstep(raw_t)
-        position = quadratic_bezier(
-            start_position, hip_control, end_position, eased
-        )
-        target_raw_t = 1.0 - (1.0 - raw_t) ** JOURNAL_TARGET_LEAD_POWERS[
-            profile
-        ]
-        target = start_target.lerp(
-            notebook_reading_anchor, smootherstep(target_raw_t)
-        )
-        quaternion = upright_track_quaternion(position, target)
     elif destination == "contact":
         elapsed = frame_index / FPS
         if elapsed <= CONTACT_ACTIVATION_SECONDS:
@@ -1605,10 +1689,11 @@ def frame_metadata(
     profile: str,
     lamp_level: float,
 ) -> dict[str, Any]:
+    hero, reciprocal_w = hero_projection_data(scene, camera)
     return {
         "camera": camera_sample(camera, LENS_FOV[profile]),
-        "hero": hero_projection(scene, camera),
-        "heroReciprocalW": hero_reciprocal_w(camera),
+        "hero": hero,
+        "heroReciprocalW": reciprocal_w,
         "lampLevel": rounded(lamp_level),
         "visibleBulbLevel": rounded(lamp_level),
         "revealLevel": rounded(lamp_level),
@@ -1749,6 +1834,29 @@ def media_path(path: Path) -> str:
     return "/" + path.relative_to(REPO_ROOT / "public").as_posix()
 
 
+def configure_cycles_device(scene: bpy.types.Scene) -> None:
+    preferences = bpy.context.preferences.addons["cycles"].preferences
+    try:
+        preferences.compute_device_type = "METAL"
+        preferences.refresh_devices()
+        metal_devices = [
+            device for device in preferences.devices if device.type == "METAL"
+        ]
+    except (AttributeError, TypeError):
+        metal_devices = []
+    if metal_devices:
+        for device in preferences.devices:
+            device.use = device.type == "METAL"
+        scene.cycles.device = "GPU"
+        print(
+            "CYCLES DEVICE:",
+            ", ".join(device.name for device in metal_devices),
+        )
+    else:
+        scene.cycles.device = "CPU"
+        print("CYCLES DEVICE: CPU fallback")
+
+
 def configure_render(
     scene: bpy.types.Scene,
     profile: str,
@@ -1762,6 +1870,7 @@ def configure_render(
     )
     width, height = resolution[profile]
     scene.render.engine = "CYCLES"
+    configure_cycles_device(scene)
     scene.cycles.samples = samples
     scene.cycles.use_adaptive_sampling = True
     scene.cycles.adaptive_threshold = 0.025
@@ -1973,11 +2082,16 @@ def export_hero_compositor_geometry(
     }
 
 
-def bake_hero_treated_source(
+def bake_hero_response(
     scene: bpy.types.Scene,
     hero: bpy.types.Object,
     surface: bpy.types.Object,
     samples: int,
+    *,
+    image_name: str,
+    output_path: Path,
+    source_override: tuple[float, float, float, float] | None = None,
+    raw_output: bool = False,
 ) -> None:
     source_image = next(
         (
@@ -1990,15 +2104,30 @@ def bake_hero_treated_source(
     if source_image is None:
         raise RuntimeError("Hero poster material has no first-frame image")
     width, height = source_image.size
-    baked = bpy.data.images.get("HeroTreatedFirstFrame") or bpy.data.images.new(
-        "HeroTreatedFirstFrame", width=width, height=height, alpha=True
+    baked = bpy.data.images.get(image_name) or bpy.data.images.new(
+        image_name, width=width, height=height, alpha=True
     )
     baked.generated_color = (0.0, 0.0, 0.0, 1.0)
     material = hero.data.materials[0].copy()
-    material.name = "HeroLiveSurfaceBakeMaterial"
+    material.name = f"{image_name}Material"
+    override_image = None
+    if source_override is not None:
+        override_image = bpy.data.images.new(
+            f"{image_name}Source",
+            width=1,
+            height=1,
+            alpha=True,
+        )
+        override_image.generated_color = source_override
     for node in material.node_tree.nodes:
         if node.bl_idname == "ShaderNodeUVMap":
             node.uv_map = "HeroLiveUV"
+        if (
+            source_override is not None
+            and node.bl_idname == "ShaderNodeTexImage"
+            and node.image == source_image
+        ):
+            node.image = override_image
     surface.data.materials.clear()
     surface.data.materials.append(material)
     target = material.node_tree.nodes.new("ShaderNodeTexImage")
@@ -2017,15 +2146,82 @@ def bake_hero_treated_source(
         scene.render.bake.use_clear = True
         scene.render.bake.margin = 2
         bpy.ops.object.bake(type="COMBINED")
-        HERO_TREATED_SOURCE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
         scene.render.image_settings.file_format = "PNG"
         scene.render.image_settings.color_mode = "RGBA"
         scene.render.image_settings.color_depth = "8"
-        baked.save_render(str(HERO_TREATED_SOURCE_PATH), scene=scene)
+        original_view_transform = scene.view_settings.view_transform
+        original_look = scene.view_settings.look
+        original_exposure = scene.view_settings.exposure
+        original_gamma = scene.view_settings.gamma
+        if raw_output:
+            scene.view_settings.view_transform = "Raw"
+            scene.view_settings.look = "None"
+            scene.view_settings.exposure = 0.0
+            scene.view_settings.gamma = 1.0
+        try:
+            baked.save_render(str(output_path), scene=scene)
+        finally:
+            scene.view_settings.view_transform = original_view_transform
+            scene.view_settings.look = original_look
+            scene.view_settings.exposure = original_exposure
+            scene.view_settings.gamma = original_gamma
     finally:
         material.node_tree.nodes.remove(target)
         surface.data.materials.clear()
         bpy.data.materials.remove(material)
+        if override_image is not None:
+            bpy.data.images.remove(override_image)
+
+
+def build_hero_affine_maps() -> None:
+    subprocess.run(
+        [
+            "node",
+            "scripts/build-hero-room-affine.mjs",
+            str(HERO_CALIBRATION_BLACK_PATH),
+            str(HERO_CALIBRATION_WHITE_PATH),
+            str(HERO_GAIN_PATH),
+            str(HERO_OFFSET_PATH),
+        ],
+        cwd=REPO_ROOT,
+        check=True,
+    )
+
+
+def build_hero_display_lut(scene: bpy.types.Scene) -> None:
+    size = HERO_DISPLAY_LUT_SIZE
+    image = bpy.data.images.get("HeroBlenderAgxLut") or bpy.data.images.new(
+        "HeroBlenderAgxLut",
+        width=size * size,
+        height=size,
+        alpha=True,
+        float_buffer=True,
+    )
+    pixels = [0.0] * (size * size * size * 4)
+    denominator = size - 1
+    for green in range(size):
+        for blue in range(size):
+            for red in range(size):
+                pixel = (green * size * size + blue * size + red) * 4
+                pixels[pixel] = red / denominator
+                pixels[pixel + 1] = green / denominator
+                pixels[pixel + 2] = blue / denominator
+                pixels[pixel + 3] = 1.0
+    image.pixels.foreach_set(pixels)
+    HERO_DISPLAY_LUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    original_format = scene.render.image_settings.file_format
+    original_mode = scene.render.image_settings.color_mode
+    original_depth = scene.render.image_settings.color_depth
+    try:
+        scene.render.image_settings.file_format = "PNG"
+        scene.render.image_settings.color_mode = "RGBA"
+        scene.render.image_settings.color_depth = "8"
+        image.save_render(str(HERO_DISPLAY_LUT_PATH), scene=scene)
+    finally:
+        scene.render.image_settings.file_format = original_format
+        scene.render.image_settings.color_mode = original_mode
+        scene.render.image_settings.color_depth = original_depth
 
 
 def padded_projection_quad(
@@ -2480,9 +2676,9 @@ def build_hero_authoring_manifest(geometry: dict[str, Any]) -> dict[str, Any]:
                 "sha256": sha256_file(Path(__file__).resolve()),
             },
             "treatmentAuthor": {
-                "path": "scripts/build-hero-room-treatment.mjs",
+                "path": "scripts/build-hero-room-affine.mjs",
                 "sha256": sha256_file(
-                    REPO_ROOT / "scripts" / "build-hero-room-treatment.mjs"
+                    REPO_ROOT / "scripts" / "build-hero-room-affine.mjs"
                 ),
             },
             "compositorGlb": {
@@ -2492,6 +2688,26 @@ def build_hero_authoring_manifest(geometry: dict[str, Any]) -> dict[str, Any]:
             "treatedBake": {
                 "path": "build/wo-0117-r/hero-treated-first-frame.png",
                 "sha256": sha256_file(HERO_TREATED_SOURCE_PATH),
+            },
+            "blackCalibrationBake": {
+                "path": "build/wo-0117-r/hero-calibration-black.png",
+                "sha256": sha256_file(HERO_CALIBRATION_BLACK_PATH),
+            },
+            "whiteCalibrationBake": {
+                "path": "build/wo-0117-r/hero-calibration-white.png",
+                "sha256": sha256_file(HERO_CALIBRATION_WHITE_PATH),
+            },
+            "gainMap": {
+                "path": "public/room/hero/hero-room-gain.png",
+                "sha256": sha256_file(HERO_GAIN_PATH),
+            },
+            "offsetMap": {
+                "path": "public/room/hero/hero-room-offset.png",
+                "sha256": sha256_file(HERO_OFFSET_PATH),
+            },
+            "displayLut": {
+                "path": "public/room/hero/hero-blender-agx-lut.png",
+                "sha256": sha256_file(HERO_DISPLAY_LUT_PATH),
             },
         },
         "geometry": geometry,
@@ -2524,12 +2740,36 @@ def build_authored_source_assets(
     samples: int,
 ) -> None:
     exported = export_hero_compositor_geometry(authored)
-    bake_hero_treated_source(
+    bake_hero_response(
         scene,
         authored["heroPoster"],
         exported["surface"],
         samples,
+        image_name="HeroTreatedFirstFrame",
+        output_path=HERO_TREATED_SOURCE_PATH,
     )
+    bake_hero_response(
+        scene,
+        authored["heroPoster"],
+        exported["surface"],
+        samples,
+        image_name="HeroCalibrationBlack",
+        output_path=HERO_CALIBRATION_BLACK_PATH,
+        source_override=(0.0, 0.0, 0.0, 1.0),
+        raw_output=True,
+    )
+    bake_hero_response(
+        scene,
+        authored["heroPoster"],
+        exported["surface"],
+        samples,
+        image_name="HeroCalibrationWhite",
+        output_path=HERO_CALIBRATION_WHITE_PATH,
+        source_override=(1.0, 1.0, 1.0, 1.0),
+        raw_output=True,
+    )
+    build_hero_affine_maps()
+    build_hero_display_lut(scene)
     practical = build_practical_authoring_manifest(scene, camera, authored)
     write_json(CONTACT_AUTHORING_MANIFEST_PATH, practical)
     hero = build_hero_authoring_manifest(exported["geometry"])
@@ -2538,6 +2778,8 @@ def build_authored_source_assets(
         "AUTHORED SOURCE ASSETS:",
         HERO_COMPOSITOR_PATH,
         HERO_TREATED_SOURCE_PATH,
+        HERO_GAIN_PATH,
+        HERO_OFFSET_PATH,
         CONTACT_AUTHORING_MANIFEST_PATH,
         HERO_AUTHORING_MANIFEST_PATH,
     )
@@ -2751,6 +2993,7 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
             "width": width,
             "height": height,
             "fov": LENS_FOV[profile],
+            "objectPosition": OBJECT_POSITION[profile],
             "endpoints": endpoints,
             "transitions": transitions,
             "navigation": profile_navigation,
@@ -2841,17 +3084,23 @@ def build_manifest(scene: bpy.types.Scene, camera: bpy.types.Object, authored: d
             "object": HERO_OBJECT,
             "firstFrameSource": HERO_FIRST_FRAME_SOURCE,
             "restingMechanism": "baked-physical-poster",
-            "liveProjection": "camera-reciprocal-depth-projective",
-            "compositor": "single-webgl-pass",
-            "occlusion": "authored-depth-geometry",
+            "liveProjection": "plate-space-reciprocal-depth-projective",
+            "compositor": "plate-space-affine-soft-coverage",
+            "occlusion": "authored-msaa-coverage",
             "treatment": {
-                "kind": "calibrated-room-transfer",
-                "source": "/room/hero/hero-room-treatment.png",
+                "kind": "scene-linear-blender-agx-lut-room-response",
+                "gain": "/room/hero/hero-room-gain.png",
+                "offset": "/room/hero/hero-room-offset.png",
+                "gainRange": 1,
+                "offsetRange": 0.05,
+                "displayLut": "/room/hero/hero-blender-agx-lut.png",
+                "displayLutSize": HERO_DISPLAY_LUT_SIZE,
             },
             "geometry": {
                 "source": "/room/hero/hero-compositor.glb",
                 "surface": HERO_SURFACE,
                 "occluders": list(HERO_OCCLUDER_OBJECTS),
+                "runtimeRole": "offscreen-coverage-only",
             },
             "verification": {
                 "presentationEvent": HERO_PRESENTATION_EVENT,
@@ -2919,6 +3168,7 @@ export interface PlateVariant {
   width: number;
   height: number;
   fov: number;
+  objectPosition: "50% 50%" | "52% 50%";
   endpoints: Record<EndpointId, PlateEndpoint>;
   transitions: Record<string, PlateTransition>;
   navigation: {
@@ -3012,11 +3262,11 @@ export interface PlateManifest {
     object: "Mesh_170";
     firstFrameSource: "assets/master/hero/hero-print-first-frame.png";
     restingMechanism: "baked-physical-poster";
-    liveProjection: "camera-reciprocal-depth-projective";
-    compositor: "single-webgl-pass";
-    occlusion: "authored-depth-geometry";
-    treatment: { kind: "calibrated-room-transfer"; source: string };
-    geometry: { source: string; surface: "HeroLiveSurface"; occluders: readonly string[] };
+    liveProjection: "plate-space-reciprocal-depth-projective";
+    compositor: "plate-space-affine-soft-coverage";
+    occlusion: "authored-msaa-coverage";
+    treatment: { kind: "scene-linear-blender-agx-lut-room-response"; gain: string; offset: string; gainRange: 1; offsetRange: 0.05; displayLut: string; displayLutSize: 64 };
+    geometry: { source: string; surface: "HeroLiveSurface"; occluders: readonly string[]; runtimeRole: "offscreen-coverage-only" };
     verification: {
       presentationEvent: "lazy-a:compositor-frame-presented";
       presentedPixelReferences: string;
@@ -3171,23 +3421,36 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
         or hero_manifest.get("firstFrameSource") != HERO_FIRST_FRAME_SOURCE
         or hero_manifest.get("restingMechanism") != "baked-physical-poster"
         or hero_manifest.get("liveProjection")
-        != "camera-reciprocal-depth-projective"
-        or hero_manifest.get("compositor") != "single-webgl-pass"
-        or hero_manifest.get("occlusion") != "authored-depth-geometry"
+        != "plate-space-reciprocal-depth-projective"
+        or hero_manifest.get("compositor")
+        != "plate-space-affine-soft-coverage"
+        or hero_manifest.get("occlusion") != "authored-msaa-coverage"
         or hero_manifest.get("treatment", {}).get("kind")
-        != "calibrated-room-transfer"
+        != "scene-linear-blender-agx-lut-room-response"
+        or hero_manifest.get("treatment", {}).get("gain")
+        != "/room/hero/hero-room-gain.png"
+        or hero_manifest.get("treatment", {}).get("offset")
+        != "/room/hero/hero-room-offset.png"
+        or hero_manifest.get("treatment", {}).get("gainRange") != 1
+        or hero_manifest.get("treatment", {}).get("offsetRange") != 0.05
+        or hero_manifest.get("treatment", {}).get("displayLut")
+        != "/room/hero/hero-blender-agx-lut.png"
+        or hero_manifest.get("treatment", {}).get("displayLutSize") != 64
         or hero_manifest.get("geometry", {}).get("source")
         != "/room/hero/hero-compositor.glb"
+        or hero_manifest.get("geometry", {}).get("runtimeRole")
+        != "offscreen-coverage-only"
         or tuple(hero_manifest.get("geometry", {}).get("occluders", ()))
         != HERO_OCCLUDER_OBJECTS
         or "maskResolution" in hero_manifest
     ):
         issues.append(
-            "hero must use the calibrated single-pass surface and authored depth geometry"
+            "hero must use the calibrated plate-space surface and authored MSAA coverage"
         )
     for path, label in (
         (HERO_COMPOSITOR_PATH, "hero compositor GLB"),
-        (HERO_TREATMENT_PATH, "hero room treatment"),
+        (HERO_GAIN_PATH, "hero room gain"),
+        (HERO_OFFSET_PATH, "hero room offset"),
         (HERO_AUTHORING_MANIFEST_PATH, "hero authoring manifest"),
         (CONTACT_AUTHORING_MANIFEST_PATH, "practical authoring manifest"),
     ):
@@ -3432,7 +3695,11 @@ def validate_manifest(manifest: dict[str, Any], authored: dict[str, Any]) -> lis
             (
                 index
                 for index, frame in enumerate(journal_frames)
-                if frame["camera"]["position"] != desk_camera["position"]
+                if math.dist(
+                    frame["camera"]["position"],
+                    desk_camera["position"],
+                )
+                > 1e-6
             ),
             -1,
         )

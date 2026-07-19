@@ -1,5 +1,51 @@
 # BUILD REPORT
 
+WORK ORDER 0117-R5 IN PROGRESS — DELIVERED-PIXEL PHYSICAL CONTINUITY
+
+Version:
+
+v0.1 — correction render in progress
+
+Observed Result:
+
+- Jonathan rejected the deployed R4 candidate after direct browser review.
+- The hero still changed grade and geometry when playback began, drifted during
+  destination moves, exposed pencil-edge artifacts, and drew over the card that
+  physically leans against it.
+- The lamp occupied different poses before, during, and after CONTACT.
+- JOURNAL retained the rejected two-stage move and twisted side-reading
+  endpoint despite the previous implementation report.
+
+Correction Contract:
+
+- The hero is one plate-space projective surface on the same measured crop as
+  the room. Its decoded still and video frames receive the exact authored
+  Blender display response, then one final delivery-resolution coverage pass
+  restores every physical foreground crossing.
+- The lamp has one immutable photographed pose. CONTACT changes only the
+  practical and reveal light levels, holds the settled desk camera for one
+  second so the source is understood, then performs the approved move.
+- JOURNAL position and regard advance on one shared body curve from frame one
+  into a level, near-front-on, downward reading POV.
+
+Current Evidence:
+
+- The Blender-authored 64-cube AgX response gate passes at MAE `1.925`, p95
+  `10`, with `6.57%` of pixels above an 8-level error.
+- Exact hero occluder membership, canvas-derived responsive profile selection,
+  shared crop mapping, and non-rVFC video-clock fallback are source-gated.
+- Low-sample real-browser review confirms one coupled JOURNAL bend into the
+  front-readable downward endpoint.
+- Original-resolution inspection found the obsolete stretched lamp baked into
+  the wide opening, FILMS, and ABOUT paths and into portrait opening/ABOUT
+  motion. The desk, CONTACT, and current master retain the approved rigid pose.
+- The first partial render was stopped rather than accepted. The corrected
+  production batch now includes every stale path plus both JOURNAL profiles;
+  deployment, final-quality desktop/phone inspection, and Jonathan's visual
+  approval remain open. No completion claim is made.
+
+---
+
 WORK ORDER 0117-R4 DEPLOYED TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
 
 Version:

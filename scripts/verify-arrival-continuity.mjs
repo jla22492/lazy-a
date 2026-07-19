@@ -623,7 +623,7 @@ function installArrivalProbe(expected) {
         canvasPresented:
           Boolean(canvas) &&
           window.__lazyACompositor?.atomic === true &&
-          window.__lazyACompositor?.occlusion === "authored-depth-geometry",
+          window.__lazyACompositor?.occlusion === "authored-msaa-coverage",
         paused: video.paused,
         ended: video.ended,
         currentTime: video.currentTime,

@@ -2085,7 +2085,7 @@ async function installPageProbes(expectedProfile) {
           profile: window.__lazyAPlateState?.profile ?? null,
           liveObserved: Array.isArray(live),
           occlusionObserved:
-            compositor?.occlusion === "authored-depth-geometry",
+            compositor?.occlusion === "authored-msaa-coverage",
           legacyOcclusionMarkerPresent: "__lazyAHeroOcclusion" in window,
           cornerErrors: cornerErrors(live, authored),
         });
@@ -2124,7 +2124,8 @@ async function installPageProbes(expectedProfile) {
               Array.isArray(projection.hero) && projection.hero.length === 8;
             const compositorReady =
               window.__lazyACompositor?.atomic === true &&
-              window.__lazyACompositor?.occlusion === "authored-depth-geometry";
+              window.__lazyACompositor?.occlusion ===
+              "authored-msaa-coverage";
             if (
               !compositorReady ||
               (authoredProjectable && !Array.isArray(values.live))
@@ -2975,8 +2976,9 @@ function assertAtomicCompositor(viewport, capturedFrame) {
       Number.isFinite(compositor?.plateMediaTime) &&
       Number.isInteger(compositor?.projectionFrame) &&
       Number.isInteger(compositor?.heroFramePresented) &&
-      compositor?.treatment === "calibrated-room-transfer" &&
-      compositor?.occlusion === "authored-depth-geometry" &&
+      compositor?.treatment ===
+        "scene-linear-blender-agx-lut-room-response" &&
+      compositor?.occlusion === "authored-msaa-coverage" &&
       capturedFrame.nativeVideoFrame?.presentedFrames ===
         compositor.heroFramePresented &&
       capturedFrame.legacyOcclusionMarkerPresent === false,

@@ -1,5 +1,5 @@
 /**
- * Offline author for Work Order 0117-R4 presented-pixel references.
+ * Offline author for Work Order 0117-R5 presented-pixel references.
  *
  * The browser-derived schedule contains timing bindings only. This script
  * decodes the pinned media, projects the authored GLB triangles with the exact
@@ -51,7 +51,9 @@ const catalogPath = resolve(
 const outputRoot = resolve("public/room/hero/presented");
 const cacheRoot = resolve("build/wo-0117-r/hero-reference-cache");
 const glbPath = resolve("public/room/hero/hero-compositor.glb");
-const treatmentPath = resolve("public/room/hero/hero-room-treatment.png");
+const gainPath = resolve("public/room/hero/hero-room-gain.png");
+const offsetPath = resolve("public/room/hero/hero-room-offset.png");
+const displayLutPath = resolve("public/room/hero/hero-blender-agx-lut.png");
 const heroVideoPath = resolve("public/videos/hero-print-placeholder.mp4");
 const rasterizerPath = resolve(
   "scripts/generate-hero-presented-references.mjs",
@@ -118,13 +120,28 @@ async function loadRgb(path) {
   };
 }
 
-async function coverRgb(path, width, height) {
+function parseObjectPosition(value) {
+  const matches = value?.match(/^\s*([\d.]+)%\s+([\d.]+)%\s*$/);
+  return matches
+    ? { x: Number(matches[1]) / 100, y: Number(matches[2]) / 100 }
+    : { x: 0.5, y: 0.5 };
+}
+
+async function coverRgb(path, width, height, objectPosition) {
+  const metadata = await sharp(path).metadata();
+  assert.ok(metadata.width && metadata.height, `${path} source dimensions`);
+  const scale = Math.max(width / metadata.width, height / metadata.height);
+  const resizedWidth = Math.max(width, Math.round(metadata.width * scale));
+  const resizedHeight = Math.max(height, Math.round(metadata.height * scale));
+  const position = parseObjectPosition(objectPosition);
+  const left = Math.round((resizedWidth - width) * position.x);
+  const top = Math.round((resizedHeight - height) * position.y);
   const { data } = await sharp(path)
-    .resize(width, height, {
-      fit: "cover",
-      position: "centre",
+    .resize(resizedWidth, resizedHeight, {
+      fit: "fill",
       kernel: sharp.kernel.cubic,
     })
+    .extract({ left, top, width, height })
     .removeAlpha()
     .toColourspace("srgb")
     .raw()
@@ -865,10 +882,50 @@ function bilinearSample(image, u, v, decodeSrgb) {
   });
 }
 
+async function loadLut(path, size) {
+  const image = await loadRgb(path);
+  assert.equal(image.width, size * size, `${path} LUT width`);
+  assert.equal(image.height, size, `${path} LUT height`);
+  return image;
+}
+
+function sampleDisplayLut(lut, size, color) {
+  const scaled = color.map(
+    (value) => Math.max(0, Math.min(1, value)) * (size - 1),
+  );
+  const low = scaled.map(Math.floor);
+  const high = low.map((value) => Math.min(value + 1, size - 1));
+  const fraction = scaled.map((value, index) => value - low[index]);
+  const interpolate = (left, right, amount) => left + (right - left) * amount;
+  const sample = (red, green, blue, channel) => {
+    const fileRow = size - 1 - green;
+    return lut.data[(fileRow * size * size + blue * size + red) * 3 + channel];
+  };
+  return [0, 1, 2].map((channel) => {
+    const blueSamples = [low[2], high[2]].map((blue) => {
+      const greenSamples = [low[1], high[1]].map((green) =>
+        interpolate(
+          sample(low[0], green, blue, channel),
+          sample(high[0], green, blue, channel),
+          fraction[0],
+        ),
+      );
+      return interpolate(greenSamples[0], greenSamples[1], fraction[1]);
+    });
+    const encoded = interpolate(blueSamples[0], blueSamples[1], fraction[2]);
+    return srgbToLinear(encoded / 255);
+  });
+}
+
 function renderHero({
   plate,
   hero,
-  treatment,
+  gain,
+  offset,
+  gainRange,
+  offsetRange,
+  displayLut,
+  displayLutSize,
   surface,
   surfaceDepth,
   occluderDepth,
@@ -892,17 +949,30 @@ function renderHero({
       surface.v[pixel],
       true,
     );
-    const transfer = bilinearSample(
-      treatment,
+    const gainSample = bilinearSample(
+      gain,
       surface.u[pixel],
       surface.v[pixel],
       false,
     );
-    const offset = pixel * 3;
+    const offsetSample = bilinearSample(
+      offset,
+      surface.u[pixel],
+      surface.v[pixel],
+      false,
+    );
+    const treated = sampleDisplayLut(
+      displayLut,
+      displayLutSize,
+      source.map(
+        (value, channel) =>
+          value * gainSample[channel] * gainRange +
+          offsetSample[channel] * offsetRange,
+      ),
+    );
+    const pixelOffset = pixel * 3;
     for (let channel = 0; channel < 3; channel += 1) {
-      composite[offset + channel] = linearToSrgb(
-        source[channel] + (transfer[channel] - 0.5) * 2,
-      );
+      composite[pixelOffset + channel] = linearToSrgb(treated[channel]);
     }
   }
   return { composite, visible, owner };
@@ -996,7 +1066,13 @@ function heroSourceFrameIndex(frame) {
 }
 
 const meshes = await loadMeshes();
-const treatment = await loadRgb(treatmentPath);
+const treatment = manifest.hero.treatment;
+assert.equal(treatment.kind, "scene-linear-blender-agx-lut-room-response");
+const [gain, offset, displayLut] = await Promise.all([
+  loadRgb(gainPath),
+  loadRgb(offsetPath),
+  loadLut(displayLutPath, treatment.displayLutSize),
+]);
 const scheduleFrames = Object.entries(schedule.viewports).flatMap(
   ([viewportKey, viewport]) =>
     viewport.frames.map((frame) => ({
@@ -1166,12 +1242,22 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
     assert.ok(heroFramePath && plateFramePath, "decoded source frame");
     const [hero, plate] = await Promise.all([
       loadRgb(heroFramePath),
-      coverRgb(plateFramePath, viewport.width, viewport.height),
+      coverRgb(
+        plateFramePath,
+        viewport.width,
+        viewport.height,
+        manifest.variants[viewport.profile].objectPosition,
+      ),
     ]);
     const rendered = renderHero({
       plate,
       hero,
-      treatment,
+      gain,
+      offset,
+      gainRange: treatment.gainRange,
+      offsetRange: treatment.offsetRange,
+      displayLut,
+      displayLutSize: treatment.displayLutSize,
       surface,
       surfaceDepth,
       occluderDepth,

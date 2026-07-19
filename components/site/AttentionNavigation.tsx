@@ -7,7 +7,11 @@ import { PerspectiveCamera, type Camera } from "three";
 
 import { useCompositorFrame } from "@/components/room/PlateCompositor";
 import { type PlateExperienceState } from "@/lib/plateAssets";
-import { mapPlateQuad, selectPlateVariant } from "@/lib/plateSpace";
+import {
+  mapPlateQuad,
+  parsePlateObjectPosition,
+  selectPlateVariant,
+} from "@/lib/plateSpace";
 import {
   NAVIGATION_SHEET,
   type ExperienceEvent,
@@ -132,6 +136,7 @@ export function AttentionNavigation({
       values,
       { width: profile.width, height: profile.height },
       size,
+      parsePlateObjectPosition(profile.objectPosition),
     );
     const normalizedQuad = [0, 1, 2, 3].map((index) => ({
       x: mapped[index * 2] / size.width,
@@ -164,7 +169,13 @@ export function AttentionNavigation({
       projectNormalized(rect.x, rect.y + rect.height),
     ];
     return { projectNormalized, rowQuad };
-  }, [navigation, profile.height, profile.width, size]);
+  }, [
+    navigation,
+    profile.height,
+    profile.objectPosition,
+    profile.width,
+    size,
+  ]);
 
   const setConversation = useCallback((id: DestinationId | null): void => {
     conversationRef.current = id;

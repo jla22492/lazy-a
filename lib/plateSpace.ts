@@ -14,19 +14,34 @@ export type PlateVariant = "wide" | "portrait";
 
 export const PHONE_MAX_WIDTH = cameraContract.selection.phoneMaxWidth;
 
+export function parsePlateObjectPosition(value: string | undefined): Point {
+  const matches = value?.match(/^\s*([\d.]+)%\s+([\d.]+)%\s*$/);
+  return matches
+    ? { x: Number(matches[1]) / 100, y: Number(matches[2]) / 100 }
+    : { x: 0.5, y: 0.5 };
+}
+
 export function selectPlateVariant(width: number): PlateVariant {
   return width <= PHONE_MAX_WIDTH ? "portrait" : "wide";
 }
 
-export function coverTransform(source: Size, viewport: Size) {
+export function coverTransform(
+  source: Size,
+  viewport: Size,
+  objectPosition: Point = { x: 0.5, y: 0.5 },
+) {
   const scale = Math.max(
     viewport.width / source.width,
     viewport.height / source.height,
   );
+  const visibleSource = {
+    width: viewport.width / scale,
+    height: viewport.height / scale,
+  };
   return {
     scale,
-    offsetX: (viewport.width - source.width * scale) / 2,
-    offsetY: (viewport.height - source.height * scale) / 2,
+    offsetX: -(source.width - visibleSource.width) * objectPosition.x * scale,
+    offsetY: -(source.height - visibleSource.height) * objectPosition.y * scale,
   };
 }
 
@@ -35,8 +50,13 @@ export function mapPlatePoint(
   point: Point,
   source: Size,
   viewport: Size,
+  objectPosition: Point = { x: 0.5, y: 0.5 },
 ): Point {
-  const { scale, offsetX, offsetY } = coverTransform(source, viewport);
+  const { scale, offsetX, offsetY } = coverTransform(
+    source,
+    viewport,
+    objectPosition,
+  );
   return {
     x: offsetX + point.x * source.width * scale,
     y: offsetY + point.y * source.height * scale,
@@ -47,6 +67,7 @@ export function mapPlateQuad(
   quad: readonly number[],
   source: Size,
   viewport: Size,
+  objectPosition: Point = { x: 0.5, y: 0.5 },
 ): readonly number[] {
   if (quad.length !== 8) return [];
   const mapped: number[] = [];
@@ -55,6 +76,7 @@ export function mapPlateQuad(
       { x: quad[index], y: quad[index + 1] },
       source,
       viewport,
+      objectPosition,
     );
     mapped.push(point.x, point.y);
   }

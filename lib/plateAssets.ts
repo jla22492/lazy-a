@@ -51,6 +51,7 @@ export interface PlateAsset {
 }
 
 export interface PlateProfile {
+  objectPosition: string;
   endpoints: Record<PlateEndpointId, PlateAsset>;
   transitions: Readonly<Record<string, PlateAsset>>;
 }
@@ -177,6 +178,7 @@ function plateAsset(
   id: string,
   value: unknown,
   preferred: "endpoint" | "transition",
+  profileObjectPosition: string,
 ): PlateAsset | undefined {
   if (typeof value === "string") {
     return {
@@ -229,7 +231,7 @@ function plateAsset(
           ? value.duration
           : undefined,
     fps: typeof value.fps === "number" ? value.fps : undefined,
-    objectPosition: firstString(value.objectPosition),
+    objectPosition: firstString(value.objectPosition, profileObjectPosition),
     projection: projectionFrame(value.projection ?? value.frame),
     projectionFrames:
       projectionFrames.length > 0 ? projectionFrames : undefined,
@@ -253,6 +255,7 @@ function fallbackEndpoint(
 
 function fallbackProfile(variant: PlateVariant): PlateProfile {
   return {
+    objectPosition: variant === "portrait" ? "52% 50%" : "50% 50%",
     endpoints: Object.fromEntries(
       ENDPOINTS.map((endpoint) => [
         endpoint,
@@ -305,6 +308,8 @@ export function adaptPlateManifest(input: unknown): PlateManifestAdapter {
     const fallback = FALLBACK_PLATE_MANIFEST.profiles[variant];
     const rawProfile = profileSource(exported, variant);
     const profile = isRecord(rawProfile) ? rawProfile : {};
+    const profileObjectPosition =
+      firstString(profile.objectPosition) ?? fallback.objectPosition;
     const rawEndpoints = firstRecord(
       profile.endpoints,
       profile.stills,
@@ -317,6 +322,7 @@ export function adaptPlateManifest(input: unknown): PlateManifestAdapter {
           `${variant}-${endpoint}`,
           rawEndpoints?.[endpoint],
           "endpoint",
+          profileObjectPosition,
         ) ?? fallback.endpoints[endpoint];
     }
 
@@ -324,7 +330,7 @@ export function adaptPlateManifest(input: unknown): PlateManifestAdapter {
     for (const [id, value] of transitionEntries(
       profile.transitions ?? exported.transitions,
     )) {
-      const asset = plateAsset(id, value, "transition");
+      const asset = plateAsset(id, value, "transition", profileObjectPosition);
       if (!asset) continue;
       transitions[id] = asset;
 
@@ -352,7 +358,11 @@ export function adaptPlateManifest(input: unknown): PlateManifestAdapter {
         }
       }
     }
-    profiles[variant] = { endpoints, transitions };
+    profiles[variant] = {
+      objectPosition: profileObjectPosition,
+      endpoints,
+      transitions,
+    };
   }
   return { profiles };
 }

@@ -1,11 +1,10 @@
 "use client";
 
 import {
-  createContext,
+  Suspense,
   type PropsWithChildren,
   type RefObject,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -26,15 +25,24 @@ import {
 
 import { useHeroMedia } from "@/components/room/HeroFilm";
 import {
+  CompositorFrameContext,
+  type CompositorFrame,
+  useCompositorFrame,
+} from "@/components/room/CompositorFrameContext";
+import {
+  PlateHeroComposite,
+  type PlateHeroController,
+} from "@/components/room/PlateHeroComposite";
+import {
   endpointAsset,
   publishPlateProjection,
   transitionAsset,
   type PlateAsset,
   type PlateExperienceState,
   type PlateManifestAdapter,
-  type PlateProjectionFrame,
   type PlateVariant,
 } from "@/lib/plateAssets";
+import { parsePlateObjectPosition } from "@/lib/plateSpace";
 import { plateManifest } from "@/three/scene/plateManifest";
 
 const PLATE_VERTEX_SHADER = `
@@ -66,13 +74,7 @@ const PLATE_FRAGMENT_SHADER = `
   }
 `;
 
-export interface CompositorFrame {
-  plateTexture: Texture;
-  projection: PlateProjectionFrame;
-  mediaTime: number;
-  frameIndex: number;
-  variant: PlateVariant;
-}
+export { useCompositorFrame };
 
 export type PlateStatus = "ready" | "transitioning" | "retained";
 
@@ -83,14 +85,15 @@ export interface CompositorDiagnostic {
   heroFramePresented: number;
   profile: PlateVariant;
   plateSource: string;
-  treatment: "calibrated-room-transfer";
-  occlusion: "authored-depth-geometry";
+  treatment: "scene-linear-blender-agx-lut-room-response";
+  occlusion: "authored-msaa-coverage";
 }
 
 interface PlateCompositorProps extends PropsWithChildren {
   variant: PlateVariant;
   state: PlateExperienceState;
   manifest: PlateManifestAdapter;
+  heroReleased: boolean;
   onDeskSettled: () => void;
   onTransitionEnded: () => void;
   onStatusChange: (status: PlateStatus) => void;
@@ -100,6 +103,7 @@ interface ActivePlateMedia {
   asset: PlateAsset;
   texture: Texture;
   video: HTMLVideoElement | null;
+  usesVideoFrameCallback: boolean;
   mediaTime: RefObject<number>;
   variant: PlateVariant;
   onFault: (listener: () => void) => () => void;
@@ -110,19 +114,6 @@ declare global {
   interface Window {
     __lazyACompositor?: CompositorDiagnostic;
   }
-}
-
-const CompositorFrameContext =
-  createContext<RefObject<CompositorFrame | null> | null>(null);
-
-export function useCompositorFrame(): RefObject<CompositorFrame | null> {
-  const frame = useContext(CompositorFrameContext);
-  if (!frame) {
-    throw new Error(
-      "useCompositorFrame must be rendered inside PlateCompositor",
-    );
-  }
-  return frame;
 }
 
 function prepareTexture(texture: Texture): Texture {
@@ -147,6 +138,7 @@ async function loadImageMedia(
     asset,
     texture,
     video: null,
+    usesVideoFrameCallback: false,
     mediaTime,
     variant,
     onFault: () => () => {},
@@ -172,6 +164,7 @@ function loadVideoMedia(
     const mediaTime = { current: 0 };
     const faultListeners = new Set<() => void>();
     let videoFrameCallback = 0;
+    const usesVideoFrameCallback = "requestVideoFrameCallback" in video;
     let resolved = false;
     const cleanupLoadListener = () => {
       video.removeEventListener("loadeddata", loaded);
@@ -197,7 +190,7 @@ function loadVideoMedia(
         videoFrameCallback = video.requestVideoFrameCallback(observeFrame);
       }
     };
-    if ("requestVideoFrameCallback" in video) {
+    if (usesVideoFrameCallback) {
       // Register before VideoTexture so camera/projection time advances before
       // Three marks the corresponding decoded texture frame for presentation.
       videoFrameCallback = video.requestVideoFrameCallback(observeFrame);
@@ -210,6 +203,7 @@ function loadVideoMedia(
         asset,
         texture,
         video,
+        usesVideoFrameCallback,
         mediaTime,
         variant,
         onFault(listener) {
@@ -277,10 +271,8 @@ function compactTransitionId(transition: string | null): string | null {
 }
 
 function objectPosition(asset: PlateAsset): Vector2 {
-  const matches = asset.objectPosition?.match(/^\s*([\d.]+)%\s+([\d.]+)%\s*$/);
-  return matches
-    ? new Vector2(Number(matches[1]) / 100, Number(matches[2]) / 100)
-    : new Vector2(0.5, 0.5);
+  const point = parsePlateObjectPosition(asset.objectPosition);
+  return new Vector2(point.x, point.y);
 }
 
 /**
@@ -292,6 +284,7 @@ export function PlateCompositor({
   variant,
   state,
   manifest,
+  heroReleased,
   onDeskSettled,
   onTransitionEnded,
   onStatusChange,
@@ -301,6 +294,7 @@ export function PlateCompositor({
   const materialRef = useRef<ShaderMaterial>(null);
   const activeMediaRef = useRef<ActivePlateMedia | null>(null);
   const frameRef = useRef<CompositorFrame | null>(null);
+  const heroControllerRef = useRef<PlateHeroController | null>(null);
   const runRef = useRef(0);
   const mountedRef = useRef(true);
   const { phase: heroPhase, presentedFrames } = useHeroMedia();
@@ -322,6 +316,12 @@ export function PlateCompositor({
     activeMediaRef.current = media;
     if (previous && previous !== media) previous.dispose();
   }, []);
+  const registerHeroController = useCallback(
+    (controller: PlateHeroController | null) => {
+      heroControllerRef.current = controller;
+    },
+    [],
+  );
 
   const completeTransition = useCallback(
     (experience: PlateExperienceState, run: number) => {
@@ -485,18 +485,22 @@ export function PlateCompositor({
     [],
   );
 
-  useFrame(({ camera, size }) => {
+  useFrame(({ gl, camera, size }) => {
     const media = activeMediaRef.current;
     const mesh = meshRef.current;
     const material = materialRef.current;
     if (!media || !mesh || !material) {
       if (mesh) mesh.visible = false;
+      heroControllerRef.current?.clear();
       frameRef.current = null;
       return;
     }
     const frames = media.asset.projectionFrames;
     const activeProfileSize = plateManifest.variants[media.variant];
-    const mediaTime = media.mediaTime.current;
+    const mediaTime =
+      media.video && !media.usesVideoFrameCallback
+        ? media.video.currentTime
+        : media.mediaTime.current;
     const frameIndex = frames?.length
       ? Math.min(
           Math.round(mediaTime * (media.asset.fps ?? 30)),
@@ -506,6 +510,7 @@ export function PlateCompositor({
     const projection = frames?.[frameIndex] ?? media.asset.projection;
     if (!projection) {
       mesh.visible = false;
+      heroControllerRef.current?.clear();
       frameRef.current = null;
       return;
     }
@@ -537,6 +542,15 @@ export function PlateCompositor({
       frameIndex,
       variant: media.variant,
     };
+    heroControllerRef.current?.prepareFrame({
+      gl,
+      camera,
+      size,
+      projection,
+      variant: media.variant,
+      plateTexture: media.texture,
+      objectPosition: material.uniforms.objectPosition.value,
+    });
   }, -100);
 
   useFrame(({ gl, scene, camera }) => {
@@ -550,8 +564,8 @@ export function PlateCompositor({
       heroFramePresented: presentedFrames.current,
       profile: frame.variant,
       plateSource: activeMediaRef.current?.asset.src ?? "",
-      treatment: "calibrated-room-transfer",
-      occlusion: "authored-depth-geometry",
+      treatment: "scene-linear-blender-agx-lut-room-response",
+      occlusion: "authored-msaa-coverage",
     };
     window.__lazyACompositor = detail;
     window.dispatchEvent(
@@ -576,6 +590,11 @@ export function PlateCompositor({
           toneMapped={false}
         />
       </mesh>
+      {heroReleased && (
+        <Suspense fallback={null}>
+          <PlateHeroComposite registerController={registerHeroController} />
+        </Suspense>
+      )}
       {children}
     </CompositorFrameContext.Provider>
   );

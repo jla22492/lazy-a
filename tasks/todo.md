@@ -296,3 +296,52 @@ These automated checks passed but did not establish the approved visual result. 
 - Performance: nominal 59.9fps; 2.35MB through settle; 4.64MB total.
 - Known repository baseline: full ESLint includes 15 legacy geometry-component
   immutability errors; the changed runtime/verifier lint set passes.
+
+---
+
+# WORK ORDER 0117-R5 — Delivered-Pixel Physical Continuity
+
+## Approval
+
+Jonathan rejected the deployed R4 candidate after direct visual review and
+approved the source-level correction on 2026-07-18. R4's metadata and automated
+reports are historical evidence only; they do not establish acceptance.
+
+## Plan
+
+- [x] Hero integration: the living image is composited in plate space from the
+  decoded plate frame, authored projective coordinates, calibrated room-light
+  response, and delivery-resolution soft foreground coverage; no world-space
+  hero mesh or depth-only foreground proxy participates in visitor rendering.
+- [ ] Hero behavior: normal-speed deployed journeys through FILMS, JOURNAL,
+  CONTACT, and ABOUT show no poster-axis drift, saturation discontinuity,
+  pencil outline, image cutout, or overlap over the leaning logo card while the
+  one-shot film continues uninterrupted.
+- [ ] Lamp continuity: one immutable lamp pose is rendered into the desk still,
+  every frame-zero desk transition, every frame-final desk return, and the
+  CONTACT endpoint; selecting CONTACT changes only bulb/light/reveal levels
+  during its one-second hold before the approved camera move.
+- [x] Lamp root cause: original-resolution source inspection identified the
+  obsolete stretched lamp in wide opening/FILMS/ABOUT media and portrait
+  opening/ABOUT motion while desk, CONTACT, and the current master retain the
+  approved rigid pose.
+- [ ] Lamp correction render: regenerate wide opening/FILMS/JOURNAL/ABOUT,
+  portrait opening/JOURNAL/ABOUT, and the affected opening/ABOUT endpoint
+  stills from the current master before re-encoding.
+- [x] JOURNAL body path: camera position and regard share one progress curve
+  from frame one, with no separately accelerated gaze phase or late twist.
+- [x] JOURNAL reading endpoint: the camera settles above the notebook at a
+  plausible seated head position, looking downward with the copy baseline
+  nearly horizontal and readable from a near-front-on perspective.
+- [ ] Verification: RED-first source/behavior checks, full production build,
+  normal-speed desktop and phone review films, and direct visual inspection of
+  the deployed public URL.
+- [ ] Audit trail: update PROJECT_STATUS, BUILD_REPORT, CHANGELOG, progress
+  captures, lessons, generated manifests, and commit history without claiming
+  completion before Jonathan's explicit visual approval.
+
+## Review
+
+Low-sample JOURNAL source and real-browser review pass the coupled-body read.
+Final-quality media regeneration, full browser verification, deployment, and
+Jonathan's visual approval remain open.

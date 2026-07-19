@@ -1712,12 +1712,22 @@ function validateManifest(
     manifest.hero?.firstFrameSource !==
       "assets/master/hero/hero-print-first-frame.png" ||
     manifest.hero?.restingMechanism !== "baked-physical-poster" ||
-    manifest.hero?.liveProjection !== "camera-reciprocal-depth-projective" ||
-    manifest.hero?.compositor !== "single-webgl-pass" ||
-    manifest.hero?.occlusion !== "authored-depth-geometry" ||
-    manifest.hero?.treatment?.kind !== "calibrated-room-transfer" ||
-    !manifest.hero?.treatment?.source?.endsWith("/hero-room-treatment.png") ||
+    manifest.hero?.liveProjection !==
+      "plate-space-reciprocal-depth-projective" ||
+    manifest.hero?.compositor !== "plate-space-affine-soft-coverage" ||
+    manifest.hero?.occlusion !== "authored-msaa-coverage" ||
+    manifest.hero?.treatment?.kind !==
+      "scene-linear-blender-agx-lut-room-response" ||
+    !manifest.hero?.treatment?.gain?.endsWith("/hero-room-gain.png") ||
+    !manifest.hero?.treatment?.offset?.endsWith("/hero-room-offset.png") ||
+    manifest.hero?.treatment?.gainRange !== 1 ||
+    manifest.hero?.treatment?.offsetRange !== 0.05 ||
+    !manifest.hero?.treatment?.displayLut?.endsWith(
+      "/hero-blender-agx-lut.png",
+    ) ||
+    manifest.hero?.treatment?.displayLutSize !== 64 ||
     !manifest.hero?.geometry?.source?.endsWith("/hero-compositor.glb") ||
+    manifest.hero?.geometry?.runtimeRole !== "offscreen-coverage-only" ||
     !manifest.hero?.geometry?.occluders?.includes("Mesh_31") ||
     manifest.hero?.maskResolution !== undefined ||
     manifest.hero?.verification?.presentationEvent !== presentedFrameEvent ||
@@ -1733,7 +1743,7 @@ function validateManifest(
     manifest.hero?.verification?.regionEncoding !== presentedPixelRegionEncoding
   ) {
     issues.push(
-      "manifest hero must use the atomic compositor, calibrated room transfer, authored depth geometry, and captured-pixel references",
+      "manifest hero must use plate-space affine treatment, authored MSAA coverage, and captured-pixel references",
     );
   }
   exactKeys(manifest.variants, expectedVariants, "variants", issues);

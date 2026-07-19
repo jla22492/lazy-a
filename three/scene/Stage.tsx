@@ -1,12 +1,11 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Canvas, type RootState } from "@react-three/fiber";
 import { AgXToneMapping } from "three";
 
 import { HeroFilm } from "@/components/room/HeroFilm";
-import { HeroSurface } from "@/components/room/HeroSurface";
 import {
   PlateCompositor,
   type PlateStatus,
@@ -47,27 +46,32 @@ function isCaptureRun(): boolean {
   return params.has("shot") || params.has("record");
 }
 
-function viewportVariant(): PlateVariant {
-  if (typeof window === "undefined") return "wide";
-  return window.innerWidth <= PHONE_MAX_WIDTH
-    ? selectPlateVariant(window.innerWidth)
-    : "wide";
+function viewportVariant(width: number): PlateVariant {
+  return width <= PHONE_MAX_WIDTH ? selectPlateVariant(width) : "wide";
 }
 
 /** The visitor runtime is one Canvas, one authored plate frame, and one camera. */
 export function Stage() {
   const study = activeStudy();
+  const stageRef = useRef<HTMLDivElement>(null);
   const [captureMode] = useState(isCaptureRun);
-  const [variant, setVariant] = useState<PlateVariant>(viewportVariant);
+  const [variant, setVariant] = useState<PlateVariant>("wide");
   const [plateStatus, setPlateStatus] = useState<PlateStatus>("ready");
   const [heroReleased, setHeroReleased] = useState(false);
   const [experience, setExperience] =
     useState<PlateExperienceState>(INITIAL_EXPERIENCE);
 
   useEffect(() => {
-    const updateVariant = () => setVariant(viewportVariant());
-    window.addEventListener("resize", updateVariant);
-    return () => window.removeEventListener("resize", updateVariant);
+    const element = stageRef.current;
+    if (!element) return;
+    const updateVariant = (width: number) =>
+      setVariant(viewportVariant(width));
+    updateVariant(element.getBoundingClientRect().width);
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) updateVariant(entry.contentRect.width);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -119,6 +123,7 @@ export function Stage() {
 
   return (
     <div
+      ref={stageRef}
       data-room-renderer="plate"
       style={
         captureMode
@@ -170,14 +175,12 @@ export function Stage() {
             variant={variant}
             state={experience}
             manifest={AUTHORED_PLATES}
+            heroReleased={heroReleased}
             onDeskSettled={settleAtDesk}
             onTransitionEnded={transitionEnded}
             onStatusChange={setPlateStatus}
           >
             <RoomClockDriver />
-            <Suspense fallback={null}>
-              <HeroSurface released={heroReleased} />
-            </Suspense>
             <AttentionNavigation
               experience={experience}
               onExperienceEvent={handleExperienceEvent}

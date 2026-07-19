@@ -1,5 +1,5 @@
 /**
- * Source contract for WO 0117-R4 Task 3.
+ * Source contract for WO 0117-R5 delivered-pixel continuity.
  *
  * The real-Chrome occlusion and lifecycle gates prove rendered behavior. This
  * contract pins the ownership boundaries that keep those behaviors atomic.
@@ -14,7 +14,7 @@ import ts from "typescript";
 const root = path.resolve(import.meta.dirname, "..");
 const runtimeFiles = {
   compositor: "components/room/PlateCompositor.tsx",
-  surface: "components/room/HeroSurface.tsx",
+  surface: "components/room/PlateHeroComposite.tsx",
   film: "components/room/HeroFilm.tsx",
   room: "components/room/PlateRoom.tsx",
   stage: "three/scene/Stage.tsx",
@@ -131,8 +131,13 @@ const renderCalls = Object.values(sources).reduce(
 );
 assert.equal(
   renderCalls,
-  1,
-  "the Task 3 runtime must call gl.render(scene, camera) exactly once",
+  2,
+  "the runtime must render one offscreen coverage pass and one final scene",
+);
+assert.doesNotMatch(
+  sources.surface,
+  /\buseFrame\b/,
+  "hero resources must run on PlateCompositor's frame scheduler",
 );
 
 const renderIndex = sources.compositor.indexOf("gl.render(scene, camera)");
@@ -235,8 +240,8 @@ assert.match(
 );
 assert.match(
   sources.stage,
-  /setHeroReleased\(true\)[\s\S]*<HeroSurface\s+released=\{heroReleased\}/,
-  "the authored geometry must remain mounted while its live material waits for desk settle",
+  /setHeroReleased\(true\)[\s\S]*heroReleased=\{heroReleased\}/,
+  "desk settle must release the deferred plate-space hero resources",
 );
 assert.doesNotMatch(
   sources.room,
@@ -345,24 +350,47 @@ for (const forbidden of [
 }
 
 assert.match(sources.surface, /hero-compositor\.glb/);
-assert.match(sources.surface, /hero-room-treatment\.png/);
+assert.match(sources.surface, /treatment\.gain/);
+assert.match(sources.surface, /treatment\.offset/);
+assert.match(sources.surface, /treatment\.displayLut/);
 assert.match(sources.surface, /HeroLiveSurface/);
 assert.match(sources.surface, /HeroOccluder_/);
 assert.match(
   sources.surface,
-  /HeroOccluder_ProductionNavigationSheet_[\s\S]*occluderMatchesProfile[\s\S]*compositorFrame\.current[\s\S]*frame\?\.variant/,
-  "profiled navigation depth must follow the active physical room dressing",
+  /HeroOccluder_ProductionNavigationSheet_[\s\S]*occluderMatchesProfile[\s\S]*\["wide",\s*"portrait"\]/,
+  "profiled navigation coverage must follow the active physical room dressing",
 );
 assert.match(sources.surface, /colorWrite:\s*false/);
 assert.match(sources.surface, /depthWrite:\s*true/);
 assert.match(sources.surface, /depthTest:\s*true/);
 assert.match(
   sources.surface,
-  /\(texture2D\(roomTreatment,\s*vUv\)\.rgb\s*-\s*0\.5\)\s*\*\s*2\.0/,
+  /hero\.rgb\s*\*\s*gain\s*\+\s*offset/,
+  "hero treatment must apply the calibrated scene-linear room response",
 );
 assert.match(
   sources.surface,
-  /sRGBTransferEOTF\(texture2D\(heroMap,\s*vUv\)\)/,
+  /blenderDisplayTransform\(hero\.rgb\s*\*\s*gain\s*\+\s*offset\)/,
+  "hero treatment must use the Blender-authored display transform",
+);
+assert.match(
+  sources.surface,
+  /EXPECTED_OCCLUDERS[\s\S]*missingOccluders[\s\S]*unexpectedOccluders/,
+  "hero coverage must fail closed when its authored geometry is incomplete",
+);
+assert.match(
+  sources.surface,
+  /mapPlateQuad\([\s\S]*objectPosition\.x[\s\S]*objectPosition\.y/,
+  "hero projection must share the plate object-position crop",
+);
+assert.match(
+  sources.surface,
+  /mix\(plate,\s*treated,\s*heroCoverage\)/,
+  "foreground coverage must preserve exact plate pixels in linear space",
+);
+assert.match(
+  sources.surface,
+  /sRGBTransferEOTF\(texture2D\(heroMap,\s*heroUv\)\)/,
   "hero shader must decode sRGB before applying the linear room transfer",
 );
 assert.doesNotMatch(sources.surface, /CanvasTexture|atob\(|drawImage\(/);
@@ -390,5 +418,5 @@ for (const legacy of [
 }
 
 console.log(
-  "Atomic compositor source contract passed: one camera writer, one presenter, DOM media lifecycle, authored depth, and calibrated treatment.",
+  "Atomic compositor source contract passed: one camera writer, one presenter, plate-space hero, authored MSAA coverage, and Blender-authored display treatment.",
 );
