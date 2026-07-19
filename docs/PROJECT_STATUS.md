@@ -14,36 +14,28 @@ Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DI
 
 ## Current Work Order
 
-0117-R5 DELIVERED-PIXEL PHYSICAL CONTINUITY — IN PROGRESS.
+0117-R5 DELIVERED-PIXEL PHYSICAL CONTINUITY — LOCAL TECHNICAL REVIEW
+CANDIDATE; JONATHAN APPROVAL PENDING.
 
-Jonathan rejected the deployed R4 candidate after direct browser review. The
-hero still changed grade and shape when playback began, drifted during
-destination moves, tore around pencil edges, and drew over the card leaning
-against it. The lamp snapped between poses around CONTACT. JOURNAL still read
-as two mechanical moves and ended in the rejected twisted side view. R4's
-automated passes are historical evidence only and do not establish acceptance.
+The corrected wide and portrait room media now share one current photographed
+master. The hero is a living plate-space print with the same Blender-authored
+room response as its still, counter-clockwise presentation, and authored soft
+coverage for the leaning card, pencils, strap, and production sheet. It begins
+once after settle, continues through navigation, ends once, and holds.
 
-R5 removes the independent world-space hero presentation. The living image is
-projected directly into the measured plate quadrilateral, uses the room's
-shared responsive crop, receives a Blender-authored AgX response, and is merged
-through exact evaluated foreground coverage at delivery resolution. Video frame
-timing fails over to `currentTime` when the browser lacks
-`requestVideoFrameCallback`; responsive profile selection measures the actual
-Stage container rather than the window.
+The lamp remains in one supported desk pose. CONTACT turns that practical on,
+holds the desk camera for one second, reveals Jonathan's exact three pressure
+indentations, then uses the approved move. JOURNAL is one coupled forward/down
+hip bend into a near-front, downward reading POV.
 
-The lamp now has one authored pose across the desk, transition starts and ends,
-and CONTACT. CONTACT changes only the practical and reveal light levels, waits
-one second at the desk so the visitor sees the lamp illuminate the indentation,
-then preserves the approved move. JOURNAL position and regard now share one
-forward-and-down body curve into a level, near-front-on reading POV.
-
-Source gates and low-sample real-browser JOURNAL review pass. Original-resolution
-inspection then exposed stale pre-correction lamp media in wide
-opening/FILMS/ABOUT and portrait opening/ABOUT motion. The narrow partial render
-was stopped; the correction batch now covers every stale path plus both JOURNAL
-profiles. Final-quality desktop and phone inspection, the full behavioral
-battery, public deployment proof, and Jonathan's explicit visual approval
-remain open. No completion claim is made.
+The fresh production bundle passes `450/450` hero lifecycle checks, `79/79`
+arrival frames per viewport, camera, CONTACT, physical navigation, dwell,
+fallback, resilience, 4s/5s/6s clock, TypeScript, lint, and build gates.
+Intent-driven media warming reduced settled-room transfer from `40.10MB` to
+`4.35MB` without changing the pristine transition encodes. Four responsive
+normal-speed films have been visually inspected. Public deployment proof and
+Jonathan's explicit full-motion approval remain open; no creative completion
+claim is made.
 
 ---
 

@@ -69,6 +69,7 @@ const MIN_TREATMENT_REGION_FRACTION = 0.002;
 const MAX_TRACE_OVERLAP_FRACTION = 0.05;
 const MAX_ROOM_TREATMENT_LUMA_DELTA = 5;
 const MAX_ROOM_TREATMENT_CHANNEL_DELTA = 9;
+const MAX_TREATMENT_TRANSLATION_PX = 1;
 const selfTest = process.argv.includes("--self-test");
 const runtimeOnly = argumentsList.includes("--runtime-only");
 const debugCaptureDirectory = process.env.HERO_DEBUG_CAPTURE_DIR;
@@ -115,6 +116,24 @@ function bilinearLuma(frame, x, y) {
     luma(pixelAt(frame, x0, y1)) * (1 - xWeight) +
     luma(pixelAt(frame, x1, y1)) * xWeight;
   return top * (1 - yWeight) + bottom * yWeight;
+}
+
+function bilinearPixel(frame, x, y) {
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const x1 = Math.min(frame.width - 1, x0 + 1);
+  const y1 = Math.min(frame.height - 1, y0 + 1);
+  const xWeight = x - x0;
+  const yWeight = y - y0;
+  return [0, 1, 2].map((channel) => {
+    const top =
+      pixelAt(frame, x0, y0)[channel] * (1 - xWeight) +
+      pixelAt(frame, x1, y0)[channel] * xWeight;
+    const bottom =
+      pixelAt(frame, x0, y1)[channel] * (1 - xWeight) +
+      pixelAt(frame, x1, y1)[channel] * xWeight;
+    return top * (1 - yWeight) + bottom * yWeight;
+  });
 }
 
 function canonicalJson(value) {
@@ -250,16 +269,20 @@ function traceEvidenceIssues(evidence, viewportKey) {
     evidence.visibleHeroPixels > area ||
     !Number.isInteger(evidence?.minimumPixels) ||
     evidence.minimumPixels < MIN_TRACE_REGION_PIXELS ||
-    (evidence?.basis === "cropped-visible-boundary-v2" &&
+    (evidence?.basis === "cropped-visible-boundary-v3" &&
       (!Number.isInteger(evidence?.availableProjectedBoundary) ||
-        evidence.availableProjectedBoundary <= 0))
+        evidence.availableProjectedBoundary <= 0 ||
+        !Number.isInteger(evidence?.availableVisibleBoundary) ||
+        evidence.availableVisibleBoundary <= 0 ||
+        evidence.availableVisibleBoundary >
+          evidence.availableProjectedBoundary))
   ) {
     return ["trace-evidence measurements are invalid"];
   }
   const expectedMinimum =
     evidence.basis === "viewport-area-v1"
       ? viewportMinimum
-      : evidence.basis === "cropped-visible-boundary-v2"
+      : evidence.basis === "cropped-visible-boundary-v3"
         ? Math.max(
             MIN_TRACE_REGION_PIXELS,
             Math.min(
@@ -268,7 +291,7 @@ function traceEvidenceIssues(evidence, viewportKey) {
                 Math.sqrt(evidence.visibleHeroPixels) * MIN_CROPPED_TRACE_SCALE,
               ),
               Math.ceil(
-                evidence.availableProjectedBoundary *
+                evidence.availableVisibleBoundary *
                   MIN_CROPPED_BOUNDARY_FRACTION,
               ),
             ),
@@ -836,7 +859,14 @@ function maskedPixelDelta(actual, reference, regions, maskChannel) {
   };
 }
 
-function measureTreatmentRegistration(actual, reference, regions) {
+function measureMaskedRegistration(
+  actual,
+  reference,
+  regions,
+  maskChannel,
+  stride,
+  maskRadius = 0,
+) {
   if (
     actual.width !== reference.width ||
     actual.height !== reference.height ||
@@ -845,41 +875,114 @@ function measureTreatmentRegistration(actual, reference, regions) {
   ) {
     return { errorPx: Number.POSITIVE_INFINITY, samples: 0 };
   }
-  const candidates = [];
-  for (let offsetY = -4; offsetY <= 4; offsetY += 1) {
-    for (let offsetX = -4; offsetX <= 4; offsetX += 1) {
-      let delta = 0;
-      let samples = 0;
-      for (let y = 5; y < actual.height - 5; y += 3) {
-        for (let x = 5; x < actual.width - 5; x += 3) {
-          if (maskValue(regions, x, y, 2) < 128) continue;
-          const shiftedX = x + offsetX;
-          const shiftedY = y + offsetY;
-          if (
-            shiftedX < 0 ||
-            shiftedY < 0 ||
-            shiftedX >= actual.width ||
-            shiftedY >= actual.height
-          ) {
-            continue;
-          }
-          const actualPixel = pixelAt(actual, shiftedX, shiftedY);
-          const referencePixel = pixelAt(reference, x, y);
-          delta += Math.max(
-            ...actualPixel.map((value, index) =>
-              Math.abs(value - referencePixel[index]),
-            ),
-          );
-          samples += 1;
+  const isMaskedSample = (x, y) => {
+    for (let offsetY = -maskRadius; offsetY <= maskRadius; offsetY += 1) {
+      for (let offsetX = -maskRadius; offsetX <= maskRadius; offsetX += 1) {
+        if (
+          maskValue(
+            regions,
+            x + offsetX,
+            y + offsetY,
+            maskChannel,
+          ) >= 128
+        ) {
+          return true;
         }
       }
-      candidates.push({
-        offsetX,
-        offsetY,
-        errorPx: Math.hypot(offsetX, offsetY),
-        meanDelta: samples ? delta / samples : Number.POSITIVE_INFINITY,
-        samples,
-      });
+    }
+    return false;
+  };
+  const sampleCoordinates = [];
+  for (let y = 5; y < actual.height - 5; y += stride) {
+    for (let x = 5; x < actual.width - 5; x += stride) {
+      if (isMaskedSample(x, y)) sampleCoordinates.push([x, y]);
+    }
+  }
+  const evaluateCandidate = (offsetX, offsetY) => {
+    let delta = 0;
+    let samples = 0;
+    let actualLumaSum = 0;
+    let referenceLumaSum = 0;
+    let actualLumaSquaredSum = 0;
+    let referenceLumaSquaredSum = 0;
+    let lumaProductSum = 0;
+    for (const [x, y] of sampleCoordinates) {
+      const shiftedX = x + offsetX;
+      const shiftedY = y + offsetY;
+      if (
+        shiftedX < 0 ||
+        shiftedY < 0 ||
+        shiftedX >= actual.width - 1 ||
+        shiftedY >= actual.height - 1
+      ) {
+        continue;
+      }
+      const actualPixel = bilinearPixel(actual, shiftedX, shiftedY);
+      const referencePixel = pixelAt(reference, x, y);
+      const actualLuma = luma(actualPixel);
+      const referenceLuma = luma(referencePixel);
+      actualLumaSum += actualLuma;
+      referenceLumaSum += referenceLuma;
+      actualLumaSquaredSum += actualLuma * actualLuma;
+      referenceLumaSquaredSum += referenceLuma * referenceLuma;
+      lumaProductSum += actualLuma * referenceLuma;
+      delta += Math.max(
+        ...actualPixel.map((value, index) =>
+          Math.abs(value - referencePixel[index]),
+        ),
+      );
+      samples += 1;
+    }
+    const covariance =
+      samples * lumaProductSum - actualLumaSum * referenceLumaSum;
+    const actualVariance =
+      samples * actualLumaSquaredSum - actualLumaSum * actualLumaSum;
+    const referenceVariance =
+      samples * referenceLumaSquaredSum -
+      referenceLumaSum * referenceLumaSum;
+    const correlationDenominator = Math.sqrt(
+      Math.max(0, actualVariance) * Math.max(0, referenceVariance),
+    );
+    const correlation =
+      correlationDenominator > 1e-6
+        ? covariance / correlationDenominator
+        : Number.NEGATIVE_INFINITY;
+    return {
+      offsetX,
+      offsetY,
+      errorPx: Math.hypot(offsetX, offsetY),
+      meanDelta:
+        maskRadius > 0
+          ? 1 - correlation
+          : samples
+            ? delta / samples
+            : Number.POSITIVE_INFINITY,
+      samples,
+    };
+  };
+  const coarseCandidates = [];
+  for (let offsetY = -4; offsetY <= 4; offsetY += 1) {
+    for (let offsetX = -4; offsetX <= 4; offsetX += 1) {
+      coarseCandidates.push(evaluateCandidate(offsetX, offsetY));
+    }
+  }
+  coarseCandidates.sort(
+    (left, right) =>
+      left.meanDelta - right.meanDelta || left.errorPx - right.errorPx,
+  );
+  const coarseBest = coarseCandidates[0];
+  const candidates = [...coarseCandidates];
+  for (
+    let offsetY = Math.max(-4, coarseBest.offsetY - 0.75);
+    offsetY <= Math.min(4, coarseBest.offsetY + 0.75);
+    offsetY += 0.25
+  ) {
+    for (
+      let offsetX = Math.max(-4, coarseBest.offsetX - 0.75);
+      offsetX <= Math.min(4, coarseBest.offsetX + 0.75);
+      offsetX += 0.25
+    ) {
+      candidates.push(evaluateCandidate(offsetX, offsetY));
     }
   }
   candidates.sort(
@@ -892,13 +995,18 @@ function measureTreatmentRegistration(actual, reference, regions) {
   );
   const worst = candidates.at(-1);
   const meaningfulTranslatedImprovement =
-    best.errorPx >= 1 && zero.meanDelta - best.meanDelta > 0.25;
+    best.errorPx >= 0.25 && zero.meanDelta - best.meanDelta > 0.25;
   const resolved = meaningfulTranslatedImprovement ? best : zero;
   return {
     ...resolved,
     discriminative:
-      worst !== undefined && worst.meanDelta - best.meanDelta > 0.25,
+      worst !== undefined &&
+      worst.meanDelta - best.meanDelta > (maskRadius > 0 ? 0.001 : 0.25),
   };
+}
+
+function measureTreatmentRegistration(actual, reference, regions) {
+  return measureMaskedRegistration(actual, reference, regions, 2, 3);
 }
 
 function maskValue(regions, x, y, maskChannel) {
@@ -989,13 +1097,18 @@ function matchAuthoredEdge(
   expectedY,
   normal,
 ) {
-  const authoredGradient = directionalGradient(
-    authoredReference,
-    expectedX,
-    expectedY,
-    normal,
+  const profileOffsets = [-2, -1, 0, 1, 2];
+  const authoredProfile = profileOffsets.map((profileOffset) =>
+    directionalGradient(
+      authoredReference,
+      expectedX + normal[0] * profileOffset,
+      expectedY + normal[1] * profileOffset,
+      normal,
+    ),
   );
-  const authoredStrength = Math.abs(authoredGradient);
+  const authoredStrength = Math.max(
+    ...authoredProfile.map((gradient) => Math.abs(gradient)),
+  );
   if (authoredStrength < MIN_CAPTURED_EDGE_STRENGTH) {
     return {
       authoredEdge: false,
@@ -1005,34 +1118,50 @@ function matchAuthoredEdge(
   }
 
   let bestOffset = null;
+  let bestScore = Number.POSITIVE_INFINITY;
   let strongest = 0;
   for (let distance = 0; distance <= EDGE_SEARCH_RADIUS_PX; distance += 0.25) {
     const offsets = distance === 0 ? [0] : [-distance, distance];
-    let strongestAtDistance = Number.NEGATIVE_INFINITY;
-    let strongestOffset = null;
     for (const offset of offsets) {
       const x = expectedX + normal[0] * offset;
       const y = expectedY + normal[1] * offset;
-      if (x < 1 || y < 1 || x >= frame.width - 1 || y >= frame.height - 1) {
+      if (x < 4 || y < 4 || x >= frame.width - 4 || y >= frame.height - 4) {
         continue;
       }
-      const gradient = directionalGradient(frame, x, y, normal);
-      const strength = Math.abs(gradient);
-      strongest = Math.max(strongest, strength);
+      const capturedProfile = profileOffsets.map((profileOffset) =>
+        directionalGradient(
+          frame,
+          x + normal[0] * profileOffset,
+          y + normal[1] * profileOffset,
+          normal,
+        ),
+      );
+      const capturedStrength = Math.max(
+        ...capturedProfile.map((gradient) => Math.abs(gradient)),
+      );
+      strongest = Math.max(strongest, capturedStrength);
+      if (capturedStrength < MIN_MATCHED_EDGE_STRENGTH) continue;
+
+      const correlation = authoredProfile.reduce(
+        (sum, gradient, index) =>
+          sum + gradient * capturedProfile[index],
+        0,
+      );
+      if (correlation <= 0) continue;
+      const score =
+        authoredProfile.reduce(
+          (sum, gradient, index) =>
+            sum + Math.abs(gradient - capturedProfile[index]),
+          0,
+        ) / authoredProfile.length;
       if (
-        Math.sign(gradient) !== Math.sign(authoredGradient) ||
-        strength < MIN_MATCHED_EDGE_STRENGTH
+        score < bestScore - 1e-6 ||
+        (Math.abs(score - bestScore) <= 1e-6 &&
+          (bestOffset === null || Math.abs(offset) < Math.abs(bestOffset)))
       ) {
-        continue;
+        bestScore = score;
+        bestOffset = offset;
       }
-      if (strength > strongestAtDistance) {
-        strongestAtDistance = strength;
-        strongestOffset = offset;
-      }
-    }
-    if (strongestAtDistance >= MIN_MATCHED_EDGE_STRENGTH) {
-      bestOffset = strongestOffset;
-      break;
     }
   }
   if (bestOffset === null) {
@@ -1127,6 +1256,16 @@ function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
       frame.reference?.regions ?? {},
     ),
   );
+  const posterAxisRegistration = presentedFrames.map((frame) =>
+    measureMaskedRegistration(
+      frame,
+      frame.reference?.composite ?? {},
+      frame.reference?.regions ?? {},
+      0,
+      1,
+      2,
+    ),
+  );
   const posterAxis = presentedFrames.map((frame) =>
     measureEdgeAlignment(
       frame,
@@ -1152,12 +1291,25 @@ function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
         ),
       ),
     );
+  const foregroundRegistration = presentedFrames
+    .filter(
+      (frame) =>
+        frame.reference?.authoringProjection?.green?.applicable === true,
+    )
+    .map((frame) =>
+      measureMaskedRegistration(
+        frame,
+        frame.reference?.composite ?? {},
+        frame.reference?.regions ?? {},
+        1,
+        1,
+        2,
+      ),
+    );
   const weakFraction = ({ samples, weakSamples }) =>
     samples > 0 ? weakSamples / samples : Number.POSITIVE_INFINITY;
-  const acceptedError = (measurement) =>
-    weakFraction(measurement) <= MAX_WEAK_EDGE_FRACTION
-      ? measurement.p95ErrorPx
-      : Number.POSITIVE_INFINITY;
+  const acceptedRegistrationError = ({ discriminative, errorPx }) =>
+    discriminative ? errorPx : Number.POSITIVE_INFINITY;
   return {
     firstFrame: maskedPixelDelta(
       firstPainted,
@@ -1178,10 +1330,11 @@ function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
     },
     motionSamples: {
       maxPosterAxisErrorPx: Math.max(
-        ...posterRegistration.map((registration, index) =>
-          registration.discriminative
-            ? registration.errorPx
-            : acceptedError(posterAxis[index]),
+        ...posterAxisRegistration.map(acceptedRegistrationError),
+      ),
+      maxPosterTreatmentTranslationPx: Math.max(
+        ...posterRegistration.map(({ discriminative, errorPx }) =>
+          discriminative ? errorPx : 0,
         ),
       ),
       posterRegistrationSamples: Math.min(
@@ -1191,15 +1344,35 @@ function measuredPresentedPixelMetrics(resting, firstPainted, playingFrames) {
         ...posterAxis.map(({ minStrength }) => minStrength),
       ),
       posterAxisSamples: Math.min(...posterAxis.map(({ samples }) => samples)),
+      posterAxisRegistrationSamples: Math.min(
+        ...posterAxisRegistration.map(({ samples }) => samples),
+      ),
+      posterAxisDiscriminativeFrames: posterAxisRegistration.filter(
+        ({ discriminative }) => discriminative,
+      ).length,
+      posterAxisRegistrationFrames: posterAxisRegistration.length,
       posterAxisWeakSamples: Math.max(
         ...posterAxis.map(({ weakSamples }) => weakSamples),
       ),
       maxPosterAxisWeakFraction: Math.max(...posterAxis.map(weakFraction)),
-      maxForegroundEdgeErrorPx: Math.max(...foreground.map(acceptedError)),
+      maxForegroundEdgeErrorPx: Math.max(
+        ...foregroundRegistration.map((measurement, index) =>
+          weakFraction(foreground[index]) <= MAX_WEAK_EDGE_FRACTION
+            ? acceptedRegistrationError(measurement)
+            : Number.POSITIVE_INFINITY,
+        ),
+      ),
       minForegroundEdgeStrength: Math.min(
         ...foreground.map(({ minStrength }) => minStrength),
       ),
       foregroundSamples: Math.min(...foreground.map(({ samples }) => samples)),
+      foregroundRegistrationSamples: Math.min(
+        ...foregroundRegistration.map(({ samples }) => samples),
+      ),
+      foregroundDiscriminativeFrames: foregroundRegistration.filter(
+        ({ discriminative }) => discriminative,
+      ).length,
+      foregroundRegistrationFrames: foregroundRegistration.length,
       foregroundWeakSamples: Math.max(
         ...foreground.map(({ weakSamples }) => weakSamples),
       ),
@@ -1803,6 +1976,70 @@ async function runSelfTests() {
     0,
     "subtle stationary texture must resolve to zero translation",
   );
+  const subpixelReference = fixtureFrame({
+    paper: 40,
+    drawForeground: false,
+  });
+  const subpixelValue = (x, y) =>
+    Math.round(
+      125 +
+        45 * Math.sin(x * 0.71) +
+        35 * Math.cos(y * 0.53) +
+        25 * Math.sin(x * y * 0.037),
+    );
+  for (let y = 6; y <= 25; y += 1) {
+    for (let x = 6; x <= 25; x += 1) {
+      const offset = (y * subpixelReference.width + x) * 4;
+      const value = subpixelValue(x, y);
+      subpixelReference.data[offset] = value;
+      subpixelReference.data[offset + 1] = value;
+      subpixelReference.data[offset + 2] = value;
+    }
+  }
+  const halfPixelShift = {
+    ...subpixelReference,
+    data: Buffer.from(subpixelReference.data),
+  };
+  for (let y = 6; y <= 25; y += 1) {
+    for (let x = 6; x <= 25; x += 1) {
+      const targetOffset = (y * halfPixelShift.width + x) * 4;
+      for (let channel = 0; channel < 3; channel += 1) {
+        halfPixelShift.data[targetOffset + channel] = subpixelValue(x - 0.5, y);
+      }
+    }
+  }
+  const halfPixelRegistration = measureTreatmentRegistration(
+    halfPixelShift,
+    subpixelReference,
+    fixtureRegions({ greenApplicable: false }),
+  );
+  assert.ok(
+    halfPixelRegistration.errorPx >= 0.25 &&
+      halfPixelRegistration.errorPx <= 0.75,
+    `subpixel registration must resolve a half-pixel shift without quantizing it to failure: ${JSON.stringify(halfPixelRegistration)}`,
+  );
+  const onePixelShift = {
+    ...subpixelReference,
+    data: Buffer.from(subpixelReference.data),
+  };
+  for (let y = 6; y <= 25; y += 1) {
+    for (let x = 6; x <= 25; x += 1) {
+      const targetOffset = (y * onePixelShift.width + x) * 4;
+      const value = subpixelValue(x - 1, y);
+      onePixelShift.data[targetOffset] = value;
+      onePixelShift.data[targetOffset + 1] = value;
+      onePixelShift.data[targetOffset + 2] = value;
+    }
+  }
+  const onePixelRegistration = measureTreatmentRegistration(
+    onePixelShift,
+    subpixelReference,
+    fixtureRegions({ greenApplicable: false }),
+  );
+  assert.ok(
+    onePixelRegistration.errorPx >= MAX_TREATMENT_TRANSLATION_PX,
+    `a one-pixel treatment shift must remain a failure: ${JSON.stringify(onePixelRegistration)}`,
+  );
 
   const lowerContrast = fixtureFrame({ paper: 38, foreground: 25 });
   const lowerContrastMetrics = measuredPresentedPixelMetrics(
@@ -1949,6 +2186,9 @@ async function installPageProbes(expectedProfile) {
           record.endedEvents += 1;
           events.push(eventSnapshot("ended", element));
         });
+        element.addEventListener("loadeddata", () => {
+          forceTargetPlateFrame(element);
+        });
         return record;
       };
 
@@ -1974,7 +2214,10 @@ async function installPageProbes(expectedProfile) {
           Boolean(this.dataset.lazyAPlate) &&
           referenceCaptureRates
         ) {
-          this.playbackRate = referenceCaptureRates.plate;
+          slowForCapture(this, referenceCaptureRates.plate);
+          if (forceTargetPlateFrame(this)) {
+            return Promise.resolve();
+          }
         }
         if (
           this instanceof HTMLVideoElement &&
@@ -2084,8 +2327,7 @@ async function installPageProbes(expectedProfile) {
           authoredProjectable: Array.isArray(authored) && authored.length === 8,
           profile: window.__lazyAPlateState?.profile ?? null,
           liveObserved: Array.isArray(live),
-          occlusionObserved:
-            compositor?.occlusion === "authored-msaa-coverage",
+          occlusionObserved: compositor?.occlusion === "authored-msaa-coverage",
           legacyOcclusionMarkerPresent: "__lazyAHeroOcclusion" in window,
           cornerErrors: cornerErrors(live, authored),
         });
@@ -2124,8 +2366,7 @@ async function installPageProbes(expectedProfile) {
               Array.isArray(projection.hero) && projection.hero.length === 8;
             const compositorReady =
               window.__lazyACompositor?.atomic === true &&
-              window.__lazyACompositor?.occlusion ===
-              "authored-msaa-coverage";
+              window.__lazyACompositor?.occlusion === "authored-msaa-coverage";
             if (
               !compositorReady ||
               (authoredProjectable && !Array.isArray(values.live))
@@ -2166,6 +2407,8 @@ async function installPageProbes(expectedProfile) {
         captureHolds: [],
         armedAt: 0,
         playbackReleasedAt: 0,
+        seekGeneration: 0,
+        currentHeroMediaTime: null,
         presentedFramesAfterRelease: [],
         videoFrames: new Map(),
         compositorFrames: new Map(),
@@ -2175,6 +2418,19 @@ async function installPageProbes(expectedProfile) {
           element.playbackRate = playbackRate;
         }
         presented.slowedVideos.length = 0;
+      };
+      const slowForCapture = (element, playbackRate) => {
+        if (
+          !presented.slowedVideos.some(
+            ({ element: slowedElement }) => slowedElement === element,
+          )
+        ) {
+          presented.slowedVideos.push({
+            element,
+            playbackRate: element.playbackRate,
+          });
+        }
+        element.playbackRate = playbackRate;
       };
       const isCaptureHeld = (element) =>
         presented.captureHolds.includes(element);
@@ -2201,6 +2457,77 @@ async function installPageProbes(expectedProfile) {
               !element.ended &&
               (!element.paused || isCaptureHeld(element)),
           );
+      function forceTargetPlateFrame(element) {
+        const target = presented.target;
+        if (!target || !element?.dataset.lazyAPlate) {
+          return false;
+        }
+        const expectedAsset = target.plateState
+          .replace("transitioning:", "")
+          .replaceAll("-to-", "-");
+        if (element.dataset.lazyAPlate !== expectedAsset) return false;
+        const targetPlateTime = (target.projectionFrame + 0.5) / 30;
+        if (
+          !Number.isFinite(targetPlateTime) ||
+          !Number.isFinite(element.duration) ||
+          element.duration <= 0
+        ) {
+          return false;
+        }
+        holdForCapture(element);
+        if (Math.abs(element.currentTime - targetPlateTime) > 1 / 120) {
+          element.currentTime = Math.min(
+            Math.max(0, element.duration - 1 / 60),
+            targetPlateTime,
+          );
+        }
+        return true;
+      }
+      const driveHeroToTarget = (hero, target) => {
+        if (
+          !hero ||
+          !Number.isFinite(target?.heroMediaTime) ||
+          target.heroMediaTime <= 0
+        ) {
+          return;
+        }
+        holdForCapture(hero);
+        if (
+          Number.isFinite(presented.currentHeroMediaTime) &&
+          Math.abs(presented.currentHeroMediaTime - target.heroMediaTime) <=
+            0.000_01
+        ) {
+          tryCapturePresentedFrame(presented.latestFrame);
+          return;
+        }
+        for (const [frame, metadata] of presented.videoFrames) {
+          if (
+            Math.abs(metadata.mediaTime - target.heroMediaTime) <= 0.000_01
+          ) {
+            presented.videoFrames.delete(frame);
+          }
+        }
+        const generation = ++presented.seekGeneration;
+        const targetTime = Math.min(
+          Math.max(0, hero.duration - 1 / 48),
+          target.heroMediaTime + 1 / 48,
+        );
+        const preRollTime = Math.max(0, target.heroMediaTime - 1 / 24);
+        const finishSeek = () => {
+          if (
+            generation === presented.seekGeneration &&
+            presented.target === target
+          ) {
+            hero.currentTime = targetTime;
+          }
+        };
+        if (Math.abs(hero.currentTime - preRollTime) <= 1 / 240) {
+          finishSeek();
+        } else {
+          hero.addEventListener("seeked", finishSeek, { once: true });
+          hero.currentTime = preRollTime;
+        }
+      };
       const restoreCaptureHolds = () => {
         for (const element of presented.captureHolds.splice(0)) {
           if (!element.ended) {
@@ -2227,6 +2554,10 @@ async function installPageProbes(expectedProfile) {
           )[0];
         if (!source) return null;
         removeOverlay();
+        const renderingContext =
+          source.canvas.getContext("webgl2") ??
+          source.canvas.getContext("webgl");
+        renderingContext?.finish();
         const overlay = document.createElement("canvas");
         overlay.width = innerWidth;
         overlay.height = innerHeight;
@@ -2248,38 +2579,17 @@ async function installPageProbes(expectedProfile) {
         );
         document.documentElement.append(overlay);
         presented.overlay = overlay;
-        const captureVideos = records
-          .map(({ element }) => element)
-          .filter(
-            (element) =>
-              element.dataset.lazyAHero === "true" ||
-              (Boolean(element.dataset.lazyAPlate) &&
-                !element.paused &&
-                !element.ended),
-          );
-        for (const element of captureVideos) {
-          if (
-            presented.slowedVideos.some(
-              ({ element: slowed }) => slowed === element,
-            )
-          ) {
-            continue;
-          }
-          presented.slowedVideos.push({
-            element,
-            playbackRate: element.playbackRate,
-          });
-          // Preserve the authored hero-to-plate clock ratio while the frozen
-          // overlay gives Playwright time to capture the exact compositor
-          // frame. Chrome's supported floor is 0.0625, so 0.15625 keeps the
-          // 0.4/0.5 authoring pair proportional at 0.0625/0.078125.
-          element.playbackRate = element.playbackRate * 0.15625;
-        }
         return source.bounds.toJSON();
       };
       const tryCapturePresentedFrame = (frameNumber) => {
         const target = presented.target;
         const compositor = presented.compositorFrames.get(frameNumber);
+        const targetPlateAsset =
+          target?.plateState === "resting:desk"
+            ? "opening-desk"
+            : target?.plateState
+                ?.replace("transitioning:", "")
+                .replaceAll("-to-", "-");
         const firstFrameHandshake =
           frameNumber === 1 && target?.heroMediaTime === 0;
         const heroRecord = records.find(
@@ -2306,7 +2616,9 @@ async function installPageProbes(expectedProfile) {
           compositor.at < presented.armedAt ||
           (!firstFrameHandshake && !compositor.heroPlaying) ||
           compositor.projectionFrame !== target.projectionFrame ||
-          compositor.plateState !== target.plateState
+          !compositor.plateSource.endsWith(
+            `/transitions/${targetPlateAsset}.mp4`,
+          )
         ) {
           return;
         }
@@ -2331,6 +2643,7 @@ async function installPageProbes(expectedProfile) {
           plateMediaTime: detail.plateMediaTime,
           projectionFrame: detail.projectionFrame,
           heroFramePresented: detail.heroFramePresented,
+          plateSource: detail.plateSource,
           treatment: detail.treatment,
           occlusion: detail.occlusion,
           plateState: window.__lazyAPlateState?.state ?? null,
@@ -2341,17 +2654,9 @@ async function installPageProbes(expectedProfile) {
         };
         const target = presented.target;
         if (!presented.capture && target) {
-          if (target.heroMediaTime > 0) {
-            holdForCapture(heroRecord?.element);
-          }
-          if (
-            snapshot.plateState === target.plateState &&
-            snapshot.projectionFrame === target.projectionFrame &&
-            snapshot.at >= presented.armedAt
-          ) {
-            holdForCapture(activePlateForCapture());
-          } else {
-            resumeForCapture(activePlateForCapture());
+          const capturePlate = activePlateForCapture();
+          if (!forceTargetPlateFrame(capturePlate)) {
+            resumeForCapture(capturePlate);
           }
         }
         if (
@@ -2376,7 +2681,11 @@ async function installPageProbes(expectedProfile) {
           callback,
         ) {
           return nativeVideoFrameCallback.call(this, (now, metadata) => {
+            // Let the runtime consume the decoded frame before the verifier
+            // freezes it. Pausing first can leave VideoTexture on stale pixels.
+            callback(now, metadata);
             if (this.dataset.lazyAHero === "true") {
+              presented.currentHeroMediaTime = metadata.mediaTime;
               presented.latestFrame = Math.max(
                 presented.latestFrame,
                 metadata.presentedFrames,
@@ -2386,9 +2695,15 @@ async function installPageProbes(expectedProfile) {
                 presentedFrames: metadata.presentedFrames,
                 expectedDisplayTime: metadata.expectedDisplayTime,
               });
+              if (
+                Number.isFinite(presented.target?.heroMediaTime) &&
+                Math.abs(metadata.mediaTime - presented.target.heroMediaTime) <=
+                  0.000_01
+              ) {
+                holdForCapture(this);
+              }
               tryCapturePresentedFrame(metadata.presentedFrames);
             }
-            callback(now, metadata);
             if (this.dataset.lazyAPlate) {
               recordDecodedFrame(metadata);
             }
@@ -2462,43 +2777,82 @@ async function installPageProbes(expectedProfile) {
               ({ element }) => element.dataset.lazyAHero === "true",
             );
             const hero = heroRecord?.element;
-            if (
-              hero &&
-              Number.isFinite(target.heroMediaTime) &&
-              target.heroMediaTime > 0
-            ) {
-              holdForCapture(hero);
-              hero.currentTime = Math.min(
-                Math.max(0, hero.duration - 1 / 48),
-                target.heroMediaTime + 1 / 48,
-              );
+            driveHeroToTarget(hero, target);
+            for (const { element } of records) {
+              forceTargetPlateFrame(element);
             }
             tryCapturePresentedFrame(presented.latestFrame);
           },
           snapshot() {
             const targetFrame = presented.target?.heroFramePresented;
+            const targetMediaTime = presented.target?.heroMediaTime;
+            const targetProjectionFrame = presented.target?.projectionFrame;
+            const targetPlateAsset =
+              presented.target?.plateState === "resting:desk"
+                ? "opening-desk"
+                : presented.target?.plateState
+                    ?.replace("transitioning:", "")
+                    .replaceAll("-to-", "-");
             return {
               capture: presented.capture,
               latestFrame: presented.latestFrame,
               target: presented.target,
               armedAt: presented.armedAt,
-              targetVideoFrame: Number.isInteger(targetFrame)
-                ? (presented.videoFrames.get(targetFrame) ?? null)
+              targetVideoFrame: Number.isFinite(targetMediaTime)
+                ? ([...presented.videoFrames.values()].find(
+                    ({ mediaTime }) =>
+                      Math.abs(mediaTime - targetMediaTime) <= 0.000_01,
+                  ) ?? null)
                 : null,
-              targetCompositorFrame: Number.isInteger(targetFrame)
-                ? (presented.compositorFrames.get(targetFrame) ?? null)
-                : null,
+              targetCompositorFrame:
+                typeof targetPlateAsset === "string" &&
+                Number.isInteger(targetProjectionFrame)
+                  ? ([...presented.compositorFrames.values()].find(
+                      ({ plateSource, projectionFrame }) =>
+                        plateSource.endsWith(
+                          `/transitions/${targetPlateAsset}.mp4`,
+                        ) && projectionFrame === targetProjectionFrame,
+                    ) ?? null)
+                  : Number.isInteger(targetFrame)
+                    ? (presented.compositorFrames.get(targetFrame) ?? null)
+                    : null,
               presentedFramesAfterRelease: [
                 ...presented.presentedFramesAfterRelease,
               ],
             };
           },
-          release() {
+          release(nextTarget = null) {
             removeOverlay();
             restorePlaybackRate();
-            restoreCaptureHolds();
             presented.capture = null;
-            presented.target = null;
+            if (!nextTarget) {
+              restoreCaptureHolds();
+              presented.target = null;
+              return;
+            }
+            presented.target = nextTarget;
+            presented.armedAt = performance.now();
+            const nextPlateAsset =
+              nextTarget.plateState === "resting:desk"
+                ? "opening-desk"
+                : nextTarget.plateState
+                    .replace("transitioning:", "")
+                    .replaceAll("-to-", "-");
+            for (const element of [...presented.captureHolds]) {
+              const remainsHeld =
+                element.dataset.lazyAHero === "true" ||
+                element.dataset.lazyAPlate === nextPlateAsset;
+              if (!remainsHeld) resumeForCapture(element);
+            }
+            const heroRecord = records.find(
+              ({ element }) => element.dataset.lazyAHero === "true",
+            );
+            const hero = heroRecord?.element;
+            driveHeroToTarget(hero, nextTarget);
+            for (const { element } of records) {
+              forceTargetPlateFrame(element);
+            }
+            tryCapturePresentedFrame(presented.latestFrame);
           },
           setCapturePlaybackRates(rates) {
             if (rates?.hero !== 0.4 || rates?.plate !== 0.5) {
@@ -2507,7 +2861,7 @@ async function installPageProbes(expectedProfile) {
             referenceCaptureRates = rates;
             for (const { element } of records) {
               if (element.dataset.lazyAHero === "true") {
-                element.playbackRate = rates.hero;
+                slowForCapture(element, rates.hero);
               }
             }
           },
@@ -2557,6 +2911,7 @@ function heroSnapshot() {
       ),
       currentTime: video.currentTime,
       duration: video.duration,
+      playbackRate: video.playbackRate,
       loop: video.loop,
       paused: video.paused,
       ended: video.ended,
@@ -2854,7 +3209,15 @@ async function captureArmedPresentedFrame(
               snapshot.capture.nativeVideoFrame.mediaTime -
                 expected.heroMediaTime,
             ) <= 0.000_01 &&
-            snapshot.capture?.compositor?.plateState === expected.plateState &&
+            snapshot.capture?.compositor?.plateSource.endsWith(
+              `/transitions/${
+                expected.plateState === "resting:desk"
+                  ? "opening-desk"
+                  : expected.plateState
+                      .replace("transitioning:", "")
+                      .replaceAll("-to-", "-")
+              }.mp4`,
+            ) &&
             snapshot.capture?.compositor?.projectionFrame ===
               expected.projectionFrame)
         );
@@ -2890,16 +3253,19 @@ async function captureArmedPresentedFrame(
   if (sequenceIssues.length > 0) {
     throw new Error(sequenceIssues.join("; "));
   }
+  await page.evaluate(
+    () =>
+      new Promise((resolveFrame) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolveFrame));
+      }),
+  );
   const [png, probe] = await Promise.all([
     page.screenshot(),
     page.evaluate(() => window.__heroPresentedFrameProbe.snapshot()),
   ]);
   await page.evaluate(
     (nextTarget) => {
-      window.__heroPresentedFrameProbe.release();
-      if (nextTarget) {
-        window.__heroPresentedFrameProbe.arm(nextTarget);
-      }
+      window.__heroPresentedFrameProbe.release(nextTarget);
     },
     nextReference
       ? {
@@ -2932,7 +3298,15 @@ async function captureArmedPresentedFrame(
       0.000_01 ||
     capture?.nativeVideoFrame?.presentedFrames !==
       capture?.compositor?.heroFramePresented ||
-    capture?.compositor?.plateState !== reference.plateState ||
+    !capture?.compositor?.plateSource.endsWith(
+      `/transitions/${
+        reference.plateState === "resting:desk"
+          ? "opening-desk"
+          : reference.plateState
+              .replace("transitioning:", "")
+              .replaceAll("-to-", "-")
+      }.mp4`,
+    ) ||
     capture?.compositor?.projectionFrame !== reference.projectionFrame
   ) {
     throw new Error(
@@ -2976,8 +3350,7 @@ function assertAtomicCompositor(viewport, capturedFrame) {
       Number.isFinite(compositor?.plateMediaTime) &&
       Number.isInteger(compositor?.projectionFrame) &&
       Number.isInteger(compositor?.heroFramePresented) &&
-      compositor?.treatment ===
-        "scene-linear-blender-agx-lut-room-response" &&
+      compositor?.treatment === "scene-linear-blender-agx-lut-room-response" &&
       compositor?.occlusion === "authored-msaa-coverage" &&
       capturedFrame.nativeVideoFrame?.presentedFrames ===
         compositor.heroFramePresented &&
@@ -3053,6 +3426,16 @@ function assertPresentedPixelContract(
       Math.max(right.poster.p95ErrorPx, right.foreground?.p95ErrorPx ?? 0) -
       Math.max(left.poster.p95ErrorPx, left.foreground?.p95ErrorPx ?? 0),
   )[0];
+  const treatmentRegistrationDiagnostics = presentedFrames
+    .map((frame) => ({
+      frame: frameLabel(frame),
+      ...measureTreatmentRegistration(
+        frame,
+        frame.reference?.composite ?? {},
+        frame.reference?.regions ?? {},
+      ),
+    }))
+    .sort((left, right) => right.errorPx - left.errorPx);
   check(
     firstFrame?.meanLumaDelta <= 3 && firstFrame?.meanChannelDelta <= 4,
     `${label} resting poster matches the first painted live frame`,
@@ -3069,17 +3452,24 @@ function assertPresentedPixelContract(
     }),
   );
   check(
-    motionSamples?.posterRegistrationSamples > 0 &&
-      motionSamples?.maxPosterAxisErrorPx <= 0.75,
+    motionSamples?.posterAxisRegistrationSamples > 0 &&
+      motionSamples?.posterAxisDiscriminativeFrames ===
+        motionSamples?.posterAxisRegistrationFrames &&
+      motionSamples?.maxPosterAxisErrorPx <= 0.75 &&
+      motionSamples?.maxPosterTreatmentTranslationPx <
+        MAX_TREATMENT_TRANSLATION_PX,
     `${label} captured poster-axis edges stay registered`,
     JSON.stringify({
       ...motionSamples,
+      worstTreatmentRegistration: treatmentRegistrationDiagnostics[0],
       weakestFrame: edgeDiagnostics[0],
       worstErrorFrame: worstEdgeFrame,
     }),
   );
   check(
-    motionSamples?.foregroundSamples > 0 &&
+    motionSamples?.foregroundRegistrationSamples > 0 &&
+      motionSamples?.foregroundDiscriminativeFrames ===
+        motionSamples?.foregroundRegistrationFrames &&
       motionSamples?.maxForegroundWeakFraction <= MAX_WEAK_EDGE_FRACTION &&
       motionSamples?.maxForegroundEdgeErrorPx <= 1,
     `${label} captured foreground occlusion edges stay registered`,
@@ -3397,8 +3787,6 @@ async function runViewport(viewport) {
       `${label} pre-settle currentTime is zero`,
       `initial=${fixed(settled.initialTime)} max=${fixed(settled.preSettleMaxTime)}`,
     );
-    await captureRegistrationPoint("desk endpoint after arrival");
-    await assertRegistrationSegment(viewport, "arrival opening -> desk", true);
     check(
       settled.loop === false,
       `${label} looping is disabled`,
@@ -3644,6 +4032,11 @@ async function runViewport(viewport) {
     );
 
     const beforeEnd = await heroSnapshot();
+    check(
+      beforeEnd.playbackRate === 1,
+      `${label} exact-frame capture restores visitor playback rate`,
+      `playbackRate=${beforeEnd.playbackRate}`,
+    );
     const endedSnapshot = await waitForHero(
       (snapshot) => snapshot.endedEvents >= 1 || snapshot.ended,
       Math.min(

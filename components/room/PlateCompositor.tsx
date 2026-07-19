@@ -113,6 +113,7 @@ interface ActivePlateMedia {
 declare global {
   interface Window {
     __lazyACompositor?: CompositorDiagnostic;
+    __heroReferenceTiming?: unknown;
   }
 }
 
@@ -444,7 +445,10 @@ export function PlateCompositor({
         };
         const armStallWatch = () => {
           window.clearTimeout(stallTimer);
-          stallTimer = window.setTimeout(fail, 2_000);
+          stallTimer = window.setTimeout(
+            fail,
+            window.__heroReferenceTiming ? 120_000 : 2_000,
+          );
         };
         const onEnded = () => {
           if (completed) return;

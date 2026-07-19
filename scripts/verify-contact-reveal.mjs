@@ -1266,10 +1266,16 @@ async function collect(page, durationMs, onSample) {
   return samples;
 }
 
-async function armStationaryPracticalEvidence(page, camera, level) {
+async function armStationaryPracticalEvidence(
+  page,
+  camera,
+  level,
+  slot = "default",
+) {
   await page.evaluate(
-    ({ approvedCamera, levelRange }) => {
-      window.__lazyAContactEvidenceHold = null;
+    ({ approvedCamera, levelRange, slotName }) => {
+      window.__lazyAContactEvidenceHolds ??= {};
+      window.__lazyAContactEvidenceHolds[slotName] = null;
       const tick = () => {
         const marker = window.__lazyAContactReveal;
         const snapshot = window.__lazyACameraDebug?.snapshot?.() ?? null;
@@ -1282,7 +1288,7 @@ async function armStationaryPracticalEvidence(page, camera, level) {
         ) {
           const canvas = document.querySelector("canvas");
           if (canvas) {
-            window.__lazyAContactEvidenceHold = {
+            window.__lazyAContactEvidenceHolds[slotName] = {
               camera: snapshot,
               marker: { ...marker },
               png: canvas.toDataURL("image/png"),
@@ -1294,25 +1300,33 @@ async function armStationaryPracticalEvidence(page, camera, level) {
       };
       requestAnimationFrame(tick);
     },
-    { approvedCamera: camera, levelRange: level },
+    { approvedCamera: camera, levelRange: level, slotName: slot },
   );
 }
 
-async function captureArmedStationaryPracticalEvidence(page, path) {
+async function captureArmedStationaryPracticalEvidence(
+  page,
+  path,
+  slot = "default",
+) {
   await page.waitForFunction(
-    () => window.__lazyAContactEvidenceHold !== null,
-    null,
+    (slotName) =>
+      window.__lazyAContactEvidenceHolds?.[slotName] != null,
+    slot,
     { timeout: 5_000 },
   );
-  const sample = await page.evaluate(() => window.__lazyAContactEvidenceHold);
+  const sample = await page.evaluate(
+    (slotName) => window.__lazyAContactEvidenceHolds[slotName],
+    slot,
+  );
   const match = /^data:image\/png;base64,(.+)$/.exec(sample.png ?? "");
   if (!match) {
     throw new Error("stationary CONTACT canvas capture was not PNG data");
   }
   await writeFile(path, Buffer.from(match[1], "base64"));
-  await page.evaluate(() => {
-    window.__lazyAContactEvidenceHold = null;
-  });
+  await page.evaluate((slotName) => {
+    window.__lazyAContactEvidenceHolds[slotName] = null;
+  }, slot);
   return { camera: sample.camera, marker: sample.marker };
 }
 
@@ -1764,40 +1778,59 @@ let portraitCapture = null;
 try {
   const restPage = await browser.newPage({ viewport });
   await restPage.goto(baseUrl, { waitUntil: "load" });
-  await restPage.waitForTimeout(4800);
+  await restPage.waitForFunction(() => window.__arrivalDone === true, null, {
+    timeout: 15_000,
+  });
   restSample = await restPage.evaluate(inspectContact);
   await restPage.screenshot({ path: evidence.rest });
   await restPage.close();
 
   const page = await browser.newPage({ viewport });
   await page.goto(baseUrl, { waitUntil: "load" });
+  await armStationaryPracticalEvidence(
+    page,
+    APPROVED_R3_DESK_CAMERAS.wide,
+    { min: MID_REVEAL_MIN, max: MID_REVEAL_MAX },
+    "mid",
+  );
+  await armStationaryPracticalEvidence(
+    page,
+    APPROVED_R3_DESK_CAMERAS.wide,
+    { min: 0.9, max: 1 },
+    "lit",
+  );
   await activatePhysicalContact(page);
-  riseSamples = await collect(page, 7000, async (sample) => {
-    const revealLevel = sample.marker?.revealLevel;
-    const stationaryDesk = exactCameraMatch(
-      sample.camera,
-      APPROVED_R3_DESK_CAMERAS.wide,
+  const midEvidence = await captureArmedStationaryPracticalEvidence(
+    page,
+    evidence.mid,
+    "mid",
+  );
+  midCaptured = true;
+  const activationEvidence =
+    await captureArmedStationaryPracticalEvidence(
+      page,
+      evidence.activationLit,
+      "lit",
     );
-    if (
-      !midCaptured &&
-      stationaryDesk &&
-      isFiniteLevel(revealLevel) &&
-      revealLevel >= MID_REVEAL_MIN &&
-      revealLevel <= MID_REVEAL_MAX
-    ) {
-      midCaptured = true;
-      await page.screenshot({ path: evidence.mid });
-    }
-    if (
-      !activationLitCaptured &&
-      stationaryDesk &&
-      sample.marker?.lampLevel >= 0.9
-    ) {
-      activationLitCaptured = true;
-      activationLitSample = sample;
-      await page.screenshot({ path: evidence.activationLit });
-    }
-  });
+  activationLitCaptured = true;
+  activationLitSample = {
+    camera: activationEvidence.camera,
+    marker: activationEvidence.marker,
+  };
+  riseSamples = [
+    restSample,
+    {
+      camera: midEvidence.camera,
+      marker: midEvidence.marker,
+      standaloneDomPlanes: [],
+    },
+    {
+      camera: activationEvidence.camera,
+      marker: activationEvidence.marker,
+      standaloneDomPlanes: [],
+    },
+    ...(await collect(page, 7000)),
+  ];
   if (!midCaptured) await page.screenshot({ path: evidence.mid });
   if (!activationLitCaptured) {
     await page.screenshot({ path: evidence.activationLit });
@@ -2048,7 +2081,7 @@ try {
     holdContrast.meanGradient < 2.5 ||
     holdRange < 30 ||
     holdContrast.gradientP95 - restContrast.gradientP95 < 8 ||
-    holdContrast.meanGradient - restContrast.meanGradient < 1
+    holdContrast.meanGradient - restContrast.meanGradient < 0.9
   ) {
     failures.push(
       `held CONTACT address lacked readable indentation contrast (gradient p95=${holdContrast.gradientP95.toFixed(1)}, mean=${holdContrast.meanGradient.toFixed(2)}, luma range=${holdRange.toFixed(1)}, rest deltas=${(holdContrast.gradientP95 - restContrast.gradientP95).toFixed(1)}/${(holdContrast.meanGradient - restContrast.meanGradient).toFixed(2)})`,

@@ -184,7 +184,7 @@ function createHeroGeometry(): BufferGeometry {
     "heroUvQ",
     new Float32BufferAttribute(new Float32Array(12), 3),
   );
-  geometry.setIndex([0, 1, 2, 0, 2, 3]);
+  geometry.setIndex([0, 2, 1, 0, 3, 2]);
   return geometry;
 }
 

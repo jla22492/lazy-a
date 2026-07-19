@@ -2287,7 +2287,9 @@ async function encode(manifest, args) {
       }
       const output = publicUrlToPath(transition.forward);
       await mkdir(dirname(output), { recursive: true });
-      const crf = transitionId === "opening-desk" ? "26" : "18";
+      // Short desk routes retain fine prop edges and survive the still/video
+      // handoff without a visible codec pulse. The longer arrival stays lean.
+      const crf = transitionId === "opening-desk" ? "26" : "8";
       await run("ffmpeg", [
         "-hide_banner",
         "-loglevel",

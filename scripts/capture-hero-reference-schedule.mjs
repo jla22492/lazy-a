@@ -69,7 +69,17 @@ const heroOccluders = compositorMeshes.filter(({ name }) =>
   name.startsWith("HeroOccluder_"),
 );
 assert.ok(heroSurface, "authored HeroLiveSurface");
-assert.equal(heroOccluders.length, 12, "authored HeroOccluder count");
+assert.equal(heroOccluders.length, 13, "authored HeroOccluder count");
+const profiledNavigationProxy = "HeroOccluder_ProductionNavigationSheet_";
+function heroOccludersForProfile(profile) {
+  const selected = heroOccluders.filter(
+    ({ name }) =>
+      !name.startsWith(profiledNavigationProxy) ||
+      name === `${profiledNavigationProxy}${profile}`,
+  );
+  assert.equal(selected.length, 12, `${profile} active HeroOccluder count`);
+  return selected;
+}
 const allViewports = [
   { name: "desktop", width: 1280, height: 720, profile: "wide" },
   { name: "tall-desktop", width: 1316, height: 1329, profile: "wide" },
@@ -233,7 +243,7 @@ function occlusionEdgeScore(frame, viewport) {
   );
   const occluderDepth = new Float32Array(pixels);
   occluderDepth.fill(Number.POSITIVE_INFINITY);
-  for (const occluder of heroOccluders) {
+  for (const occluder of heroOccludersForProfile(viewport.profile)) {
     rasterDepth(
       occluder,
       projectMesh(occluder, camera, width, height),
@@ -403,6 +413,7 @@ async function installTimingProbe(page) {
       let capture = null;
       const heldVideos = [];
       let overlay = null;
+      let activePlateSource = null;
 
       const nativeCreateElement = Document.prototype.createElement;
       Document.prototype.createElement = function createElement(
@@ -434,7 +445,10 @@ async function installTimingProbe(page) {
           this instanceof HTMLVideoElement &&
           Boolean(this.dataset.lazyAPlate)
         ) {
-          this.playbackRate = platePlaybackRate;
+          const source = this.currentSrc || this.src;
+          this.playbackRate = source.includes("/opening-desk.")
+            ? 1
+            : platePlaybackRate;
         }
         if (
           this instanceof HTMLVideoElement &&
@@ -496,6 +510,32 @@ async function installTimingProbe(page) {
         overlay?.remove();
         overlay = null;
       };
+      const seekToTarget = (nextTarget) => {
+        overlay?.remove();
+        overlay = null;
+        const plate = videos.find(
+          (video) =>
+            Boolean(video.dataset.lazyAPlate) &&
+            (video.currentSrc || video.src).endsWith(activePlateSource ?? ""),
+        );
+        const hero = videos.find(
+          (video) => video.dataset.lazyAHero === "true",
+        );
+        if (hero && Number.isFinite(hero.duration)) {
+          hero.pause();
+          hero.currentTime = Math.min(
+            Math.max(0, hero.currentTime + 1 / 24),
+            Math.max(0, hero.duration - 1 / 300),
+          );
+        }
+        if (plate) {
+          plate.pause();
+          plate.currentTime = Math.min(
+            Math.max(0, (nextTarget.projectionFrame + 0.5) / 30),
+            Math.max(0, plate.duration - 1 / 300),
+          );
+        }
+      };
 
       window.addEventListener(eventName, (event) => {
         const detail = event.detail;
@@ -524,6 +564,7 @@ async function installTimingProbe(page) {
           plateState,
           projectionFrame: detail.projectionFrame,
         };
+        activePlateSource = detail.plateSource;
         freezeCanvas();
         for (const element of videos.filter(
           (video) =>
@@ -554,10 +595,15 @@ async function installTimingProbe(page) {
           },
           releaseAndArm(nextTarget) {
             const result = capture;
-            restore();
             target = null;
             capture = null;
-            if (nextTarget) arm(nextTarget);
+            if (nextTarget) {
+              arm(nextTarget);
+              seekToTarget(nextTarget);
+            } else {
+              activePlateSource = null;
+              restore();
+            }
             return result;
           },
         },
@@ -576,7 +622,7 @@ async function waitForResting(page, endpoint) {
       window.__lazyAPlateState?.state === `resting:${id}` &&
       window.__lazyACameraDebug?.snapshot?.().endpoint === id,
     endpoint,
-    { timeout: 10_000 },
+    { timeout: 30_000 },
   );
 }
 

@@ -1,48 +1,73 @@
 # BUILD REPORT
 
-WORK ORDER 0117-R5 IN PROGRESS — DELIVERED-PIXEL PHYSICAL CONTINUITY
+WORK ORDER 0117-R5 LOCAL TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
 
 Version:
 
-v0.1 — correction render in progress
+v0.1 — local technical review candidate
 
 Observed Result:
 
-- Jonathan rejected the deployed R4 candidate after direct browser review.
-- The hero still changed grade and geometry when playback began, drifted during
-  destination moves, exposed pencil-edge artifacts, and drew over the card that
-  physically leans against it.
-- The lamp occupied different poses before, during, and after CONTACT.
-- JOURNAL retained the rejected two-stage move and twisted side-reading
-  endpoint despite the previous implementation report.
+- The prior apparent living print was only the baked first frame: clockwise
+  clip-space winding after screen-Y inversion let WebGL cull the live surface.
+- Threshold-first pixel checks then mislabeled changing image content as poster
+  motion at tall and landscape-tablet crops.
+- Destination media was also warmed unconditionally after settle, streaming
+  `40.10MB` before the visitor expressed any intent.
 
-Correction Contract:
+Delivered Result:
 
-- The hero is one plate-space projective surface on the same measured crop as
-  the room. Its decoded still and video frames receive the exact authored
-  Blender display response, then one final delivery-resolution coverage pass
-  restores every physical foreground crossing.
-- The lamp has one immutable photographed pose. CONTACT changes only the
-  practical and reveal light levels, holds the settled desk camera for one
-  second so the source is understood, then performs the approved move.
-- JOURNAL position and regard advance on one shared body curve from frame one
-  into a level, near-front-on, downward reading POV.
+- The live print is rendered counter-clockwise in plate space, receives the
+  authored Blender AgX room response, and passes behind delivery-resolution
+  card, pencil, strap, and production-sheet coverage.
+- Its still and first live frame are identical; it plays once after desk settle,
+  continues through every route, ends once, and holds its natural final frame.
+- JOURNAL is one coupled forward/down hip bend into a near-front readable POV.
+- The supplied lamp remains in one supported desk pose. CONTACT turns it on,
+  holds the exact desk camera for one second, reveals the three pressure-cut
+  lines, then performs the approved move.
+- Endpoint photographs warm after settle; only the transition under the
+  visitor's physical navigation row warms on intent.
 
-Current Evidence:
+Behavioral Verification:
 
-- The Blender-authored 64-cube AgX response gate passes at MAE `1.925`, p95
-  `10`, with `6.57%` of pixels above an 8-level error.
-- Exact hero occluder membership, canvas-derived responsive profile selection,
-  shared crop mapping, and non-rVFC video-clock fallback are source-gated.
-- Low-sample real-browser review confirms one coupled JOURNAL bend into the
-  front-readable downward endpoint.
-- Original-resolution inspection found the obsolete stretched lamp baked into
-  the wide opening, FILMS, and ABOUT paths and into portrait opening/ABOUT
-  motion. The desk, CONTACT, and current master retain the approved rigid pose.
-- The first partial render was stopped rather than accepted. The corrected
-  production batch now includes every stale path plus both JOURNAL profiles;
-  deployment, final-quality desktop/phone inspection, and Jonathan's visual
-  approval remain open. No completion claim is made.
+- Hero lifecycle: `450/450` across desktop, tall desktop, landscape tablet,
+  portrait tablet, and phone. Poster-axis and foreground-band translation are
+  `0px`; authored four-corner registration is `0px`.
+- R5 delivered continuity: both JOURNAL profiles pass coupled-body and readable
+  endpoint checks; the lamp pose is continuous across every desk handoff.
+- CONTACT: exact three-line copy, fixed physical indentation, visible
+  practical, stationary activation, soft pool, intermediate rise, readable
+  held relief, and clean reverse all pass.
+- Arrival: `79/79` decoded frames at all five viewports. Camera states,
+  destination handoffs, dense physical navigation, dwell, compositor
+  resilience, and photographic fallbacks pass.
+- Clock: settle `3.30s`, magic `5.16s`, physical JOURNAL target `0.08s`.
+- Performance: `59.9fps`, `1.63MB` pre-settle, `4.35MB` total streamed.
+- TypeScript, targeted ESLint, production build, compositor source, contact
+  self-tests, hero negative controls, and authored-source continuity pass.
+
+Normal-Speed Review:
+
+- `docs/progress/0117-r5-review-desktop.webm`
+- `docs/progress/0117-r5-review-tall.webm`
+- `docs/progress/0117-r5-review-tablet.webm`
+- `docs/progress/0117-r5-review-phone.webm`
+
+Enumerated Audit:
+
+1. ✅ Hero fixed to its physical wall print with room-consistent lighting,
+   card/pencil occlusion, and behavioral pixel proof.
+2. ✅ Lamp fixed in one permanent desk pose; CONTACT changes light only.
+3. ✅ JOURNAL replaced by one forward/down readable body movement.
+4. ✅ CONTACT retains the approved one-second lamp-on comprehension beat.
+5. ✅ Hero plays once after settle, survives navigation, and holds its last
+   frame.
+6. ✅ Responsive navigation, arrival, timing, fallback, and performance gates
+   pass against the fresh production bundle.
+7. ⚠️ Public deployment and public-URL replay follow the pushed candidate.
+8. ⚠️ Jonathan's explicit full-motion visual approval remains open. This order
+   is a review candidate, not creatively complete.
 
 ---
 

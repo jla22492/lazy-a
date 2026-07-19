@@ -5,8 +5,10 @@ import { useEffect, useRef } from "react";
 import type { PlateStatus } from "@/components/room/PlateCompositor";
 import { whenRoomIsSettled } from "@/lib/deferredAssets";
 import {
+  preloadDestination,
   preloadDestinations,
   preloadOpening,
+  type PlateDestinationId,
   type PlateExperienceState,
   type PlateManifestAdapter,
   type PlateVariant,
@@ -57,6 +59,22 @@ export function PlateRoom({
       void preloadDestinations(manifest, variant);
     });
   }, [manifest, state.endpoint, variant]);
+
+  useEffect(() => {
+    const warmCandidate = (event: Event) => {
+      const destination = (event as CustomEvent).detail
+        ?.destination as PlateDestinationId | null | undefined;
+      if (!destination) return;
+      void preloadDestination(manifest, variant, destination);
+    };
+    window.addEventListener("lazy-a:navigation-candidate", warmCandidate);
+    return () => {
+      window.removeEventListener(
+        "lazy-a:navigation-candidate",
+        warmCandidate,
+      );
+    };
+  }, [manifest, variant]);
 
   useEffect(() => {
     window.__lazyAPlateState = {

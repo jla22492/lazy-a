@@ -1,30 +1,54 @@
+# WORK ORDER 0117-R5 — Delivered-Frame Continuity Corrections
+
+## Current Correction Pass
+
+- [x] Reproduce the missing live hero layer in the exact-pixel audit.
+- [x] Verify the uninstrumented visitor path reaches the natural final hero
+      frame and holds it.
+- [x] Trace the missing layer to clockwise clip-space winding after screen-Y
+      inversion, which let WebGL back-face cull the living surface while the
+      baked still remained deceptively visible.
+- [x] Reverse the hero quad indices, pin the winding contract, and prove the
+      visitor now receives changing hero pixels in the poster.
+- [x] Prove exact desktop lifecycle, room treatment, physical occlusion, and
+      one-shot final hold (`90/90`).
+- [x] Run the complete five-viewport lifecycle and room-motion battery
+      (`450/450` fresh production bundle).
+- [x] Capture and visually inspect full-motion desktop, tall-desktop, tablet,
+      and phone journeys.
+- [ ] Update the standard R5 Build Report, status, changelog, progress evidence,
+      and pushed commit trail (artifacts updated; commit/push pending).
+- [ ] Receive Jonathan's explicit visual approval before any completion claim.
+
+---
+
 # WORK ORDER 0117-R4 — Physical Continuity Corrections
 
 ## Approved Design
 
 - [x] Reproduce hero drift, foreground-mask distortion, split JOURNAL motion,
-  and CONTACT light-without-source in the deployed normal-speed review.
+      and CONTACT light-without-source in the deployed normal-speed review.
 - [x] Trace the failures to the non-atomic hero layers, fixed color multiplier,
-  512px silhouette, missing leaning-card occluder, staged JOURNAL interpolation,
-  hidden CONTACT bulb, and misaligned lamp/light axes.
+      512px silhouette, missing leaning-card occluder, staged JOURNAL interpolation,
+      hidden CONTACT bulb, and misaligned lamp/light axes.
 - [x] Receive Jonathan's approval of the atomic hero, hip-pivot JOURNAL, and
-  practical-light CONTACT design.
+      practical-light CONTACT design.
 - [x] Lock the CONTACT timing: `1.0s` stationary lamp-on beat, then the approved
-  R3 CONTACT camera move and endpoint.
+      R3 CONTACT camera move and endpoint.
 - [x] Commit the approved design specification (`4c2108d`).
 - [x] Commit the implementation plan (`979e220`).
 - [x] Add failing physical-continuity gates (`f76c07f`..`f65366b`;
-  independent review clean).
+      independent review clean).
 - [x] Task 2 correction: prove RED for a wide visible practical plus portrait
-  `offscreen-practical-light-pool-v1` relationship at the exact desk camera.
+      `offscreen-practical-light-pool-v1` relationship at the exact desk camera.
 - [x] Task 2 correction: restore the supplied lamp's natural rigid placement
-  and remove stretch, forced portrait relocation, and inferred multi-joint rigging.
+      and remove stretch, forced portrait relocation, and inferred multi-joint rigging.
 - [x] Task 2 correction: regenerate the master, practical evidence, manifest,
-  hero hash dependents, and exact camera/provenance contracts.
+      hero hash dependents, and exact camera/provenance contracts.
 - [x] Task 2 correction: inspect required original-resolution CONTACT/JOURNAL
-  strips and run the full authored-source verification battery.
+      strips and run the full authored-source verification battery.
 - [x] Task 2 correction: update the Task 2 report and commit only the focused
-  corrective files, leaving unrelated untracked files untouched.
+      corrective files, leaving unrelated untracked files untouched.
 - [x] Replace the split JOURNAL motion with one readable hip-pivot path.
 - [x] Re-author CONTACT's visible practical and one-second activation beat.
 - [x] Replace the non-atomic hero overlay and low-resolution occlusion path.
@@ -133,12 +157,12 @@
 ## Approved Design
 
 - [x] Reproduce and visually inspect opening, desk, FILMS, JOURNAL, CONTACT,
-  ABOUT, desktop, tall-desktop, and phone failures.
+      ABOUT, desktop, tall-desktop, and phone failures.
 - [x] Trace misplaced, duplicated, floating, missing, pixelated, and distorted
-  objects to the saved master, source builder, render resolution, camera poses,
-  and hero compositor.
+      objects to the saved master, source builder, render resolution, camera poses,
+      and hero compositor.
 - [x] Inspect and approve the supplied leather armchair, coffee-table, and
-  floor-lamp set for the left continuation.
+      floor-lamp set for the left continuation.
 - [x] Receive Jonathan's approval of the unified master-first correction design.
 - [x] Commit the implementation plan.
 - [x] Commit the independently reviewed master-scene implementation checkpoint.
@@ -149,7 +173,7 @@
 - [x] Replace the hero's affine/raw-video/low-resolution-mask pipeline.
 - [x] Render and encode high-resolution wide and portrait media.
 - [x] Run full automated, full-motion visual, and local-production
-  verification.
+      verification.
 - [x] Run the deployed Pages verification battery against the pushed candidate.
 - [ ] Receive Jonathan's explicit visual approval before any completion claim.
 
@@ -247,6 +271,7 @@
 # WORK ORDER 0117-R — Failed Review Correction
 
 ## Review Result
+
 - [x] Reproduce Jonathan's rejected resting, CONTACT, and JOURNAL views.
 - [x] Trace logo intersection to new live geometry over the depthless pano.
 - [x] Trace desktop/mobile asset inconsistency to the wide-only pano guard and primitive live fallback.
@@ -266,6 +291,7 @@
 ## Rejected First-Pass Record
 
 ## Plan
+
 - [x] Behavioral gate: add a Playwright verifier proving navigation comes from physical desk targets and old floating labels are gone.
 - [x] Desk truth: move the Lazy A logo to a leaning identity proof at the desk/wall line and remove it from the pinned wall cluster.
 - [x] Navigation truth: add one pencil-written production scratch sheet with `films`, `journal`, `contact`, `about` as explicit physical navigation.
@@ -277,6 +303,7 @@
 - [x] Verification: build, behavioral scripts, live clock/perf/dwell gates, desktop and mobile captures.
 
 ## Review
+
 - `npm run build` PASS.
 - `node scripts/verify-physical-navigation.mjs http://localhost:3000/` PASS: no floating labels; films/journal/contact/about physical clicks open the correct conversation.
 - `node scripts/verify-dwell.mjs http://localhost:3000/` PASS: physical candidates engage on rest and clear on release for journal/contact/films/about.
@@ -310,38 +337,43 @@ reports are historical evidence only; they do not establish acceptance.
 ## Plan
 
 - [x] Hero integration: the living image is composited in plate space from the
-  decoded plate frame, authored projective coordinates, calibrated room-light
-  response, and delivery-resolution soft foreground coverage; no world-space
-  hero mesh or depth-only foreground proxy participates in visitor rendering.
+      decoded plate frame, authored projective coordinates, calibrated room-light
+      response, and delivery-resolution soft foreground coverage; no world-space
+      hero mesh or depth-only foreground proxy participates in visitor rendering.
 - [ ] Hero behavior: normal-speed deployed journeys through FILMS, JOURNAL,
-  CONTACT, and ABOUT show no poster-axis drift, saturation discontinuity,
-  pencil outline, image cutout, or overlap over the leaning logo card while the
-  one-shot film continues uninterrupted.
+      CONTACT, and ABOUT show no poster-axis drift, saturation discontinuity,
+      pencil outline, image cutout, or overlap over the leaning logo card while the
+      one-shot film continues uninterrupted.
 - [ ] Lamp continuity: one immutable lamp pose is rendered into the desk still,
-  every frame-zero desk transition, every frame-final desk return, and the
-  CONTACT endpoint; selecting CONTACT changes only bulb/light/reveal levels
-  during its one-second hold before the approved camera move.
+      every frame-zero desk transition, every frame-final desk return, and the
+      CONTACT endpoint; selecting CONTACT changes only bulb/light/reveal levels
+      during its one-second hold before the approved camera move.
 - [x] Lamp root cause: original-resolution source inspection identified the
-  obsolete stretched lamp in wide opening/FILMS/ABOUT media and portrait
-  opening/ABOUT motion while desk, CONTACT, and the current master retain the
-  approved rigid pose.
+      obsolete stretched lamp in wide opening/FILMS/ABOUT media and portrait
+      opening/ABOUT motion while desk, CONTACT, and the current master retain the
+      approved rigid pose.
 - [ ] Lamp correction render: regenerate wide opening/FILMS/JOURNAL/ABOUT,
-  portrait opening/JOURNAL/ABOUT, and the affected opening/ABOUT endpoint
-  stills from the current master before re-encoding.
+      portrait opening/JOURNAL/ABOUT, and the affected opening/ABOUT endpoint
+      stills from the current master before re-encoding.
 - [x] JOURNAL body path: camera position and regard share one progress curve
-  from frame one, with no separately accelerated gaze phase or late twist.
+      from frame one, with no separately accelerated gaze phase or late twist.
 - [x] JOURNAL reading endpoint: the camera settles above the notebook at a
-  plausible seated head position, looking downward with the copy baseline
-  nearly horizontal and readable from a near-front-on perspective.
+      plausible seated head position, looking downward with the copy baseline
+      nearly horizontal and readable from a near-front-on perspective.
 - [ ] Verification: RED-first source/behavior checks, full production build,
-  normal-speed desktop and phone review films, and direct visual inspection of
-  the deployed public URL.
+      normal-speed desktop and phone review films, and direct visual inspection of
+      the deployed public URL.
 - [ ] Audit trail: update PROJECT_STATUS, BUILD_REPORT, CHANGELOG, progress
-  captures, lessons, generated manifests, and commit history without claiming
-  completion before Jonathan's explicit visual approval.
+      captures, lessons, generated manifests, and commit history without claiming
+      completion before Jonathan's explicit visual approval.
 
 ## Review
 
 Low-sample JOURNAL source and real-browser review pass the coupled-body read.
-Final-quality media regeneration, full browser verification, deployment, and
-Jonathan's visual approval remain open.
+The 192-sample wide arrival correction render has passed direct frame checks at
+the opening, first movement, and midpoint: the camera advances continuously,
+the approved lamp remains planted on the desk, the room stays open at the
+edges, and photographed props remain coherent with the plate. This is an
+in-progress render checkpoint, not final motion acceptance. Final-quality media
+regeneration, normal-speed browser verification, deployment, and Jonathan's
+visual approval remain open.

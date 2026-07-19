@@ -81,7 +81,7 @@
       1.223229646683
     ],
     "relationship": "shade-origin-ray-v1",
-    "relationshipSha256": "c8de8ee63bfd849ca5c9774d392d70253f2ab0b20755f4844719db5c28da2f14",
+    "relationshipSha256": "78be2db5c0f57cf39166583112128a6a5133eaf406b7c6c3e6c7d55f261ba7f3",
     "shadeAxis": [
       0.553823649883,
       -0.412449479103,
@@ -108,10 +108,10 @@
       "kind": "offscreen-practical-light-pool-v1",
       "lightPool": {
         "derivation": "blender-shade-cone-receiver-render-v1",
-        "lightSourceRelationshipSha256": "c8de8ee63bfd849ca5c9774d392d70253f2ab0b20755f4844719db5c28da2f14",
+        "lightSourceRelationshipSha256": "78be2db5c0f57cf39166583112128a6a5133eaf406b7c6c3e6c7d55f261ba7f3",
         "mask": {
           "path": "portrait-desk-paper-light-pool-mask.png",
-          "sha256": "874e7dbd008ff570713784b92a86d982290d7845cee5de5afd601b2cc6bfd521"
+          "sha256": "77fd157a6bfeee7b8bfc6d60698f4da54c84e02d24e3df7c7f8141e7f9405e9e"
         },
         "quad": [
           0.0,
@@ -126,8 +126,8 @@
         "receiverGeometrySha256": "96a7426378ca778745c26f6bd60b47ddfa9db367d08c940c274c00a82ea462c8",
         "runtimeAuthored": false
       },
-      "lightSourceRelationshipSha256": "c8de8ee63bfd849ca5c9774d392d70253f2ab0b20755f4844719db5c28da2f14",
-      "projectionSha256": "7fb5adcddcbb53551b1db6521c4af612337af057449fc6e629a1e1cf84c78775",
+      "lightSourceRelationshipSha256": "78be2db5c0f57cf39166583112128a6a5133eaf406b7c6c3e6c7d55f261ba7f3",
+      "projectionSha256": "d199b5b4ca7f51b75007b3f8aafa4b39c322d424436486a15efb2528a8841ef3",
       "receivers": {
         "contactPaperGeometrySha256": "716d25565d0d396d13dcfa63f98c8cefa481d6ea22ca7f0be4f71434e6ee862a",
         "deskGeometrySha256": "6f19eee2d76345969fda5c98e1f1809903749b7262afe28dfe59798f0edd8cee",
@@ -143,7 +143,7 @@
         "geometrySha256": "713e3d2a33ba5a0e566875b748d479d1dee2022d7b43266d14c5a5d7032aa537",
         "mask": {
           "path": "wide-bulb-mask.png",
-          "sha256": "a360a43afd8de6dee4767f9d0599a568ff90d25fa0e50fbf6adeb839979ed0e7"
+          "sha256": "c3d22cf749a209e2493c2bdfb531f20373ba3f457111ab23ef0bbf4b544ba8f8"
         },
         "object": "ContactPracticalBulb",
         "quad": [
@@ -159,13 +159,13 @@
       },
       "deskCameraSha256": "a87b85373fdfdf98442f7eeba3f0b9d5c2984d9759823272ccf061974328e18e",
       "kind": "visible-practical-source-v1",
-      "lightSourceRelationshipSha256": "c8de8ee63bfd849ca5c9774d392d70253f2ab0b20755f4844719db5c28da2f14",
-      "projectionSha256": "b98eb912475d3ad7b40809b22cfacd3aa9cf92e9b8257df4015f4b45d2fd6def",
+      "lightSourceRelationshipSha256": "78be2db5c0f57cf39166583112128a6a5133eaf406b7c6c3e6c7d55f261ba7f3",
+      "projectionSha256": "7ee77b466816cebb0b4eec37194fc6c2d59585552b784a6e726eeb9143ef9db6",
       "shadeInterior": {
         "geometrySha256": "961016b624ee101e2355ef39e05a3ab2e23fe99f56ed627e232a93e6b786b3e2",
         "mask": {
           "path": "wide-shade-interior-mask.png",
-          "sha256": "63d75531fc23fc401a6c7215cc53b03d44a09a4281d4218d779d6a3e75cd53aa"
+          "sha256": "0a6d9531bda9cea33779283784ae89108944d55abf0068bb750e12fc85ca4218"
         },
         "object": "ContactPracticalShadeInterior",
         "quad": [
@@ -192,7 +192,7 @@
     },
     "renderScript": {
       "path": "scripts/render-master-shots.py",
-      "sha256": "780f384eee85c68fce67e4d40dcfa08aa493279db658bce053cc170c4b265885"
+      "sha256": "2eaf6c92ef4372b81b0370878c1dd3f6fb61a4bb0d5e8ef7c00d85e5c6547289"
     }
   },
   "version": 2

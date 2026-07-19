@@ -264,6 +264,11 @@ assert.match(
   "hero playback must wait for the compositor's first-frame presentation",
 );
 assert.match(
+  sources.surface,
+  /geometry\.setIndex\(\[0,\s*2,\s*1,\s*0,\s*3,\s*2\]\)/,
+  "the clip-space hero quad must preserve front-facing counter-clockwise winding",
+);
+assert.match(
   sources.compositor,
   /gl\.render\(scene,\s*camera\)[\s\S]*heroPhase\s*===\s*"starting"[\s\S]*presentedFrames\.current\s*>=\s*1[\s\S]*HERO_FIRST_FRAME_PRESENTED/,
   "the first-frame handshake must be dispatched only after the room is rendered",
@@ -310,8 +315,8 @@ assert.match(
 );
 assert.match(
   sources.compositor,
-  /window\.setTimeout\(fail,\s*2_000\)/,
-  "plate transitions need a bounded post-start stall fallback",
+  /window\.setTimeout\(\s*fail,\s*window\.__heroReferenceTiming\s*\?\s*120_000\s*:\s*2_000,\s*\)/,
+  "plate transitions need a two-second visitor fallback and a bounded reference-capture hold",
 );
 assert.match(
   sources.navigation,
@@ -335,7 +340,6 @@ assert.equal(
 );
 for (const forbidden of [
   "useFrame",
-  "CanvasTexture",
   "BufferGeometry",
   "ShaderMaterial",
   "__lazyAHeroProjection",

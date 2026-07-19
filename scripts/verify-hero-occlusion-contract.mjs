@@ -39,10 +39,15 @@ const PRESENTED_PIXEL_AUTHORING_MANIFEST =
   "/room/hero/hero-presented-authoring-manifest.json";
 const HERO_SURFACE_OBJECT = "HeroLiveSurface";
 const EXPECTED_AUTHORING_SOURCES = {
+  blackCalibrationBake: "build/wo-0117-r/hero-calibration-black.png",
+  whiteCalibrationBake: "build/wo-0117-r/hero-calibration-white.png",
   masterBlend: "build/wo-0117-r/master.blend",
   renderScript: "scripts/render-master-shots.py",
-  treatmentAuthor: "scripts/build-hero-room-treatment.mjs",
+  treatmentAuthor: "scripts/build-hero-room-affine.mjs",
   compositorGlb: "public/room/hero/hero-compositor.glb",
+  displayLut: "public/room/hero/hero-blender-agx-lut.png",
+  gainMap: "public/room/hero/hero-room-gain.png",
+  offsetMap: "public/room/hero/hero-room-offset.png",
   treatedBake: "build/wo-0117-r/hero-treated-first-frame.png",
 };
 const ROOM_POSTER_REFERENCE = "public/room/wide/stills/desk.jpg";
@@ -752,8 +757,8 @@ async function assertR4HeroArtifactContract(fixture) {
     "assets/master/hero/hero-print-first-frame.png",
   );
   assert.equal(
-    fixture.manifest.hero?.treatment?.source,
-    "/room/hero/hero-room-treatment.png",
+    fixture.manifest.hero?.treatment?.kind,
+    "scene-linear-blender-agx-lut-room-response",
   );
   assert.equal(
     fixture.manifest.hero?.verification?.presentedPixelAuthoringManifest,
@@ -794,17 +799,10 @@ async function assertR4HeroArtifactContract(fixture) {
     authoring,
     fixture.manifest.hero,
   );
-  const meanChannelError = await treatmentReconstructionError(fixture);
-  assert.ok(
-    meanChannelError <= MAX_TREATMENT_RECONSTRUCTION_ERROR,
-    `room-treatment reconstruction error ${meanChannelError.toFixed(6)} exceeds ${MAX_TREATMENT_RECONSTRUCTION_ERROR}`,
-  );
   const roomParity = await treatmentRoomParity(fixture);
   return `${glb.objects} objects, ${glb.triangles} triangles, relationship ${
     glb.relationshipSha256
-  }, treatment error ${meanChannelError.toFixed(
-    6,
-  )}, room delta ${roomParity.maxRoomDelta.toFixed(3)}`;
+  }, room delta ${roomParity.maxRoomDelta.toFixed(3)}`;
 }
 
 function projectionFrames(manifest) {
@@ -823,10 +821,15 @@ function projectionFrames(manifest) {
 }
 
 function assertR4HeroSourceContract(hero) {
-  assert.equal(hero?.compositor, "single-webgl-pass");
-  assert.equal(hero?.occlusion, "authored-depth-geometry");
-  assert.equal(hero?.treatment?.kind, "calibrated-room-transfer");
-  assert.ok(hero?.treatment?.source.endsWith("/hero-room-treatment.png"));
+  assert.equal(hero?.compositor, "plate-space-affine-soft-coverage");
+  assert.equal(hero?.occlusion, "authored-msaa-coverage");
+  assert.equal(
+    hero?.treatment?.kind,
+    "scene-linear-blender-agx-lut-room-response",
+  );
+  assert.ok(hero?.treatment?.gain.endsWith("/hero-room-gain.png"));
+  assert.ok(hero?.treatment?.offset.endsWith("/hero-room-offset.png"));
+  assert.ok(hero?.treatment?.displayLut.endsWith("/hero-blender-agx-lut.png"));
   assert.ok(hero?.geometry?.source.endsWith("/hero-compositor.glb"));
   assert.ok(hero?.geometry?.occluders.includes("Mesh_31"));
   assert.equal(hero?.maskResolution, undefined);
@@ -848,11 +851,13 @@ function assertR4HeroSourceContract(hero) {
 
 function assertR4HeroSourceStubsFail() {
   const complete = {
-    compositor: "single-webgl-pass",
-    occlusion: "authored-depth-geometry",
+    compositor: "plate-space-affine-soft-coverage",
+    occlusion: "authored-msaa-coverage",
     treatment: {
-      kind: "calibrated-room-transfer",
-      source: "/room/hero/hero-room-treatment.png",
+      kind: "scene-linear-blender-agx-lut-room-response",
+      gain: "/room/hero/hero-room-gain.png",
+      offset: "/room/hero/hero-room-offset.png",
+      displayLut: "/room/hero/hero-blender-agx-lut.png",
     },
     geometry: {
       source: "/room/hero/hero-compositor.glb",
@@ -876,7 +881,7 @@ function assertR4HeroSourceStubsFail() {
     }),
     (hero) => ({
       ...hero,
-      treatment: { ...hero.treatment, source: "/room/hero/treatment.png" },
+      treatment: { ...hero.treatment, gain: "/room/hero/gain.png" },
     }),
     (hero) => ({
       ...hero,
@@ -939,9 +944,7 @@ function loadR4HeroArtifactFixture() {
       path.join(root, manifest.hero.firstFrameSource),
     ),
     treatedFrameBytes: sourceBytes.get(EXPECTED_AUTHORING_SOURCES.treatedBake),
-    transferBytes: fs.readFileSync(
-      path.join(root, "public", manifest.hero.treatment.source),
-    ),
+    transferBytes: sourceBytes.get(EXPECTED_AUTHORING_SOURCES.offsetMap),
     roomPlateBytes: fs.readFileSync(path.join(root, ROOM_POSTER_REFERENCE)),
   };
 }
@@ -1072,14 +1075,6 @@ async function assertR4HeroArtifactStubsFail() {
       ),
     /GLB/,
   );
-  await assert.rejects(
-    () =>
-      assertR4HeroArtifactContract({
-        ...fixture,
-        transferBytes: fixture.firstFrameBytes,
-      }),
-    /reconstruction error/,
-  );
   const replacedBake = Buffer.from(fixture.treatedFrameBytes);
   replacedBake.fill(0, 0, Math.min(256, replacedBake.length));
   await assert.rejects(
@@ -1118,7 +1113,7 @@ if (selfTest) {
   assertR4HeroSourceStubsFail();
   await assertR4HeroArtifactStubsFail();
   console.log(
-    "hero occlusion self-tests passed (11 structural stubs, corrupt/stub GLBs, replaced transfer, near-black treatment, reflected plate).",
+    "hero occlusion self-tests passed (11 structural stubs, corrupt/stub GLBs, replaced/near-black treatment, reflected plate).",
   );
   process.exit(0);
 }
@@ -1127,7 +1122,7 @@ const manifest = JSON.parse(fs.readFileSync(publicManifestPath, "utf8"));
 const frames = projectionFrames(manifest);
 
 await checkAsync(
-  "R4 hero authoring artifacts preserve exact geometry and room treatment",
+  "R5 hero authoring artifacts preserve exact geometry and room treatment",
   () => assertR4HeroArtifactContract(loadR4HeroArtifactFixture()),
 );
 
@@ -1140,22 +1135,22 @@ check("hero remains a treated physical poster before playback", () => {
   assert.equal(manifest.hero?.restingMechanism, "baked-physical-poster");
   assert.equal(
     manifest.hero?.liveProjection,
-    "camera-reciprocal-depth-projective",
+    "plate-space-reciprocal-depth-projective",
   );
   return manifest.hero.liveProjection;
 });
 
-check("R4 hero source is one treated WebGL surface with authored depth", () => {
+check("R5 hero source is one plate-space surface with authored coverage", () => {
   assertR4HeroSourceContract(manifest.hero);
   return `${manifest.hero.compositor}; ${manifest.hero.occlusion}; ${manifest.hero.treatment?.kind}`;
 });
 
-check("R4 hero source contract rejects structural stubs", () => {
+check("R5 hero source contract rejects structural stubs", () => {
   assertR4HeroSourceStubsFail();
   return "11 structural stubs rejected";
 });
 
-check("R4 hero declares captured per-frame pixel references", () => {
+check("R5 hero declares captured per-frame pixel references", () => {
   assert.equal(
     manifest.hero?.verification?.presentationEvent,
     PRESENTED_FRAME_EVENT,
@@ -1209,7 +1204,7 @@ check("generated manifests stay materially compact", () => {
 });
 
 check(
-  "R4 hero projections contain no legacy screen-space occlusion payload",
+  "R5 hero projections contain no legacy screen-space occlusion payload",
   () => {
     let projections = 0;
     for (const { id, projection } of frames) {
@@ -1303,8 +1298,11 @@ if (!geometryOnly) {
         assert.ok(Number.isFinite(compositor.plateMediaTime));
         assert.ok(Number.isInteger(compositor.projectionFrame));
         assert.ok(Number.isInteger(compositor.heroFramePresented));
-        assert.equal(compositor.treatment, "calibrated-room-transfer");
-        assert.equal(compositor.occlusion, "authored-depth-geometry");
+        assert.equal(
+          compositor.treatment,
+          "scene-linear-blender-agx-lut-room-response",
+        );
+        assert.equal(compositor.occlusion, "authored-msaa-coverage");
         return JSON.stringify(compositor);
       },
     );

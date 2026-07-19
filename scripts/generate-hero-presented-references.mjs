@@ -1286,6 +1286,13 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
     const tracedGreenChains = greenChainsByObject.flatMap(
       ({ chains }) => chains,
     );
+    const rawRed = drawChains(redChains, viewport.width, viewport.height);
+    const rawGreen = drawChains(
+      tracedGreenChains,
+      viewport.width,
+      viewport.height,
+    );
+    const rawRedCount = rawRed.reduce((total, value) => total + value, 0);
 
     const viewportMinimumTrace = Math.ceil(pixels * minimumTraceFraction);
     const touchesViewportEdge =
@@ -1307,6 +1314,10 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
       (total, value) => total + value,
       0,
     );
+    const availableVisibleBoundary = Math.min(
+      availableProjectedBoundary,
+      rawRedCount,
+    );
     const minimumTrace = Math.max(
       16,
       touchesViewportEdge
@@ -1314,16 +1325,10 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
             viewportMinimumTrace,
             Math.ceil(Math.sqrt(visibleHeroPixels) * minimumCroppedTraceScale),
             Math.ceil(
-              availableProjectedBoundary * minimumCroppedBoundaryFraction,
+              availableVisibleBoundary * minimumCroppedBoundaryFraction,
             ),
           )
         : viewportMinimumTrace,
-    );
-    const rawRed = drawChains(redChains, viewport.width, viewport.height);
-    const rawGreen = drawChains(
-      tracedGreenChains,
-      viewport.width,
-      viewport.height,
     );
     let red = pruneTrace(
       rawRed,
@@ -1344,10 +1349,9 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
     }
     const redCount = red.reduce((total, value) => total + value, 0);
     const greenCount = green.reduce((total, value) => total + value, 0);
-    const rawRedCount = rawRed.reduce((total, value) => total + value, 0);
     assert.ok(
       redCount >= minimumTrace,
-      `${viewportKey} red trace ${redCount} < ${minimumTrace}; raw=${rawRedCount} visible=${visibleHeroPixels} cropped=${touchesViewportEdge} projectedBoundary=${projectedBoundary} availableBoundary=${availableProjectedBoundary} bounds=${JSON.stringify(bounds)}`,
+      `${viewportKey} red trace ${redCount} < ${minimumTrace}; raw=${rawRedCount} visible=${visibleHeroPixels} cropped=${touchesViewportEdge} projectedBoundary=${projectedBoundary} availableBoundary=${availableProjectedBoundary} availableVisibleBoundary=${availableVisibleBoundary} bounds=${JSON.stringify(bounds)}`,
     );
     const greenApplicable = greenCount >= minimumTrace;
     if (!greenApplicable) {
@@ -1378,10 +1382,11 @@ for (const [viewportKey, viewport] of Object.entries(schedule.viewports)) {
       traceEvidence: {
         version: 1,
         basis: touchesViewportEdge
-          ? "cropped-visible-boundary-v2"
+          ? "cropped-visible-boundary-v3"
           : "viewport-area-v1",
         visibleHeroPixels,
         availableProjectedBoundary,
+        availableVisibleBoundary,
         minimumPixels: minimumTrace,
       },
       red: {

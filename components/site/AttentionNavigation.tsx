@@ -118,6 +118,7 @@ export function AttentionNavigation({
   const navigation = profile.navigation;
   const conversationRef = useRef<DestinationId | null>(null);
   const candidateRef = useRef<DestinationId | null>(null);
+  const publishedCandidateRef = useRef<DestinationId | null>(null);
   const pointerAlive = useRef(false);
   const experienceRef = useRef(experience);
   const historyRef = useRef<CameraSnapshot[]>([]);
@@ -354,6 +355,14 @@ export function AttentionNavigation({
     (
       window as Window & { __lazyANavCandidate?: DestinationId | null }
     ).__lazyANavCandidate = candidate;
+    if (publishedCandidateRef.current !== candidate) {
+      publishedCandidateRef.current = candidate;
+      window.dispatchEvent(
+        new CustomEvent("lazy-a:navigation-candidate", {
+          detail: { destination: candidate },
+        }),
+      );
+    }
 
     if (current.phase !== "transitioning" || !current.transition) {
       const active = current.endpoint;

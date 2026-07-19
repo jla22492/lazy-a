@@ -1,5 +1,13 @@
 # Project Lessons
 
+- An exact-frame verifier must invoke the application-owned decoded-frame
+  callback before pausing the media element. Freezing first can prevent a
+  VideoTexture consumer from uploading the decoded pixels and manufacture a
+  stale-frame failure that visitors never see.
+- Clip-space geometry still obeys face winding. When authored top-left screen
+  coordinates are converted by inverting Y into WebGL space, reverse the quad
+  indices or the entire living surface will be back-face culled while its
+  static plate remains deceptively plausible.
 - When Jonathan identifies an exact existing room object, modify that object. Do not create replacement geometry that merely approximates its location, especially over a depthless panorama.
 - A hybrid pano/live composition must be reviewed at every camera destination and viewport class. A correct resting frame does not prove that translated camera views, mobile fallbacks, or live overlays remain photographically coherent.
 - Coordinate-based click tests are necessary but cannot establish navigation usability. Physical navigation also needs disjoint hit regions, visible target separation, boundary tests, and human visual review.
@@ -79,3 +87,6 @@
 - Inspect low-sample intermediate camera frames before a production render. Valid endpoints and phase math can still hide a floorward sightline or other physically impossible middle pose.
 - Verify coordinate-basis mappings in the generated consumer coordinates, not only in the authoring script. Blender-axis control factors can describe a different Three.js path if their basis conversion is assumed rather than measured.
 - A current master does not make selectively regenerated media current. Visually compare object identity and pose across opening, every destination transition, every endpoint, and every reverse before narrowing a rerender batch.
+- A physical-edge verifier must match the authored local gradient profile, not the first nearby pixel that crosses a strength threshold. Dynamic imagery inside a perfectly stationary surface can otherwise masquerade as boundary motion.
+- Browser proof must wait on the audited state transition it claims to capture. A fixed sleep can sample an in-progress arrival and falsely indict an otherwise exact destination camera.
+- High-fidelity transition media should warm from physical visitor intent, not an unconditional post-settle batch. Preload light endpoint stills globally and the selected route film when its authored navigation row becomes the candidate.

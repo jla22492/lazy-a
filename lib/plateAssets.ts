@@ -460,19 +460,27 @@ export function preloadDestinations(
   variant: PlateVariant,
 ): Promise<PromiseSettledResult<PlateAsset>[]> {
   const profile = manifest.profiles[variant];
-  const forwardTransitions = Object.entries(profile.transitions)
-    .filter(([id]) =>
-      DESTINATIONS.some((destination) => id === `desk-${destination}`),
-    )
-    .map(([, asset]) => asset);
-  return Promise.allSettled([
-    ...DESTINATIONS.map((destination) =>
+  return Promise.allSettled(
+    DESTINATIONS.map((destination) =>
       preloadPlateAsset(profile.endpoints[destination]),
     ),
-    // Forward choices are warmed after settle. Reverse clips load only when
-    // a visitor leaves a destination, avoiding a second full set of media on
-    // the critical path.
-    ...forwardTransitions.map(preloadPlateAsset),
+  );
+}
+
+export function preloadDestination(
+  manifest: PlateManifestAdapter,
+  variant: PlateVariant,
+  destination: PlateDestinationId,
+): Promise<PromiseSettledResult<PlateAsset>[]> {
+  const profile = manifest.profiles[variant];
+  const transition = transitionAsset(
+    manifest,
+    variant,
+    `desk-${destination}`,
+  );
+  return Promise.allSettled([
+    preloadPlateAsset(profile.endpoints[destination]),
+    ...(transition ? [preloadPlateAsset(transition)] : []),
   ]);
 }
 
