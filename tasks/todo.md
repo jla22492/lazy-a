@@ -14,7 +14,7 @@
       mobile-safe return affordance, with Escape, empty-space tap, and browser
       Back retained.
 - [x] Commit the approved design and implementation plan.
-- [ ] Add failing behavioral gates for immediate response, physical return, and
+- [x] Add failing behavioral gates for immediate response, physical return, and
       invisible resting CONTACT typography.
 - [ ] Reuse prepared transition media and warm production-sized forward clips
       during the non-interactive arrival.

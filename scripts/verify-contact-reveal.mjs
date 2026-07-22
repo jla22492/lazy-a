@@ -116,6 +116,9 @@ const MID_UNLIT_TABLE_REGION = {
   width: 0.05,
   height: 0.08,
 };
+const MIN_CONTACT_REGION_PIXELS = 1_000;
+const MAX_IDLE_CONTACT_GRADIENT_P95 = 3;
+const MAX_IDLE_CONTACT_MEAN_GRADIENT = 1.5;
 
 function exactCameraMatch(left, right) {
   return (
@@ -1310,8 +1313,7 @@ async function captureArmedStationaryPracticalEvidence(
   slot = "default",
 ) {
   await page.waitForFunction(
-    (slotName) =>
-      window.__lazyAContactEvidenceHolds?.[slotName] != null,
+    (slotName) => window.__lazyAContactEvidenceHolds?.[slotName] != null,
     slot,
     { timeout: 5_000 },
   );
@@ -1467,6 +1469,13 @@ function boundsFromQuad(quad, image) {
     Math.ceil(Math.max(...ys) * image.height),
   );
   return { left, top, right, bottom };
+}
+
+function boundsPixelCount(bounds) {
+  return (
+    Math.max(0, bounds.right - bounds.left) *
+    Math.max(0, bounds.bottom - bounds.top)
+  );
 }
 
 function boundsFromRegion(region, image) {
@@ -1693,6 +1702,7 @@ function regionContrast(image, bounds) {
     }
   }
   return {
+    pixelCount: boundsPixelCount(bounds),
     meanGradient: mean(gradients),
     gradientP95: percentile(gradients, 0.95),
   };
@@ -1817,12 +1827,11 @@ try {
     "mid",
   );
   midCaptured = true;
-  const activationEvidence =
-    await captureArmedStationaryPracticalEvidence(
-      page,
-      evidence.activationLit,
-      "lit",
-    );
+  const activationEvidence = await captureArmedStationaryPracticalEvidence(
+    page,
+    evidence.activationLit,
+    "lit",
+  );
   activationLitCaptured = true;
   activationLitSample = {
     camera: activationEvidence.camera,
@@ -2066,9 +2075,20 @@ try {
     restAddress,
   );
 
-  if (restContrast.gradientP95 > 6 || restContrast.meanGradient > 1.8) {
+  if (
+    restContrast.pixelCount < MIN_CONTACT_REGION_PIXELS ||
+    !Number.isFinite(restContrast.gradientP95) ||
+    !Number.isFinite(restContrast.meanGradient)
+  ) {
     failures.push(
-      `latent CONTACT paper exposed visible typography-like edges (gradient p95=${restContrast.gradientP95.toFixed(1)}, mean=${restContrast.meanGradient.toFixed(2)})`,
+      `latent CONTACT paper crop was invalid or off-screen (pixels=${restContrast.pixelCount})`,
+    );
+  } else if (
+    restContrast.gradientP95 > MAX_IDLE_CONTACT_GRADIENT_P95 ||
+    restContrast.meanGradient > MAX_IDLE_CONTACT_MEAN_GRADIENT
+  ) {
+    failures.push(
+      `latent CONTACT paper exposed visible typography-like edges (gradient p95=${restContrast.gradientP95.toFixed(1)}, mean=${restContrast.meanGradient.toFixed(2)}; limits=${MAX_IDLE_CONTACT_GRADIENT_P95}/${MAX_IDLE_CONTACT_MEAN_GRADIENT})`,
     );
   } else {
     passes.push("latent CONTACT paper remained visually clean at rest");

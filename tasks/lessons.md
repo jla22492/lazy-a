@@ -1,5 +1,11 @@
 # Project Lessons
 
+- Preloading a video URL is not transition readiness when the compositor creates
+  and decodes a second media element. Transfer the exact warmed element into the
+  consumer and gate click-to-presented-effect latency on the physical route.
+- A latent-copy pixel gate must reject empty or off-screen crops and measure the
+  actual delivery-resolution address region. NaN-tolerant math or permissive
+  edge limits can certify plainly visible resting typography.
 - An exact-frame verifier must invoke the application-owned decoded-frame
   callback before pausing the media element. Freezing first can prevent a
   VideoTexture consumer from uploading the decoded pixels and manufacture a
