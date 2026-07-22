@@ -1,3 +1,24 @@
+# WORK ORDER 0118 — Production Domain Launch
+
+## Approved Launch Work Order
+
+- [x] Parameterize the static export and prove a root-origin artifact contains
+      no `/lazy-a` application or media paths.
+- [x] Run the local production battery against the exact root artifact;
+      all independent gates pass, with one nondeterministic exact-frame hero
+      comparison residual documented for deployed-CDN replay.
+- [ ] Push the launch commit and verify the Pages workflow.
+- [ ] Attach `www.lazyaproductions.com` to the repository Pages configuration.
+- [ ] Snapshot GoDaddy DNS and migrate only website-routing records.
+- [ ] Confirm DNS propagation, certificate provisioning, HTTPS enforcement,
+      canonical apex redirect, and rollback readiness.
+- [ ] Run the complete behavioral and visual battery on the real production
+      domain.
+- [ ] Update PROJECT_STATUS, BUILD_REPORT, CHANGELOG, progress evidence, and
+      the pushed audit trail.
+
+---
+
 # WORK ORDER 0117-R5 — Delivered-Frame Continuity Corrections
 
 ## Current Correction Pass
@@ -18,7 +39,7 @@
       and phone journeys.
 - [x] Update the standard R5 Build Report, status, changelog, progress evidence,
       and pushed commit trail.
-- [ ] Receive Jonathan's explicit visual approval before any completion claim.
+- [x] Receive Jonathan's explicit visual approval before any completion claim.
 
 ---
 

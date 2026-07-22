@@ -13,11 +13,8 @@ import {
  */
 export const dynamic = "force-static";
 
-/** Progress images live under the Pages basePath in the public build. */
-const IMAGE_PREFIX =
-  process.env.STATIC_EXPORT === "1"
-    ? "/lazy-a/studio/progress"
-    : "/studio/progress";
+/** Progress images share the deployment's configured base path. */
+const IMAGE_PREFIX = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/studio/progress`;
 
 const isVideo = (name: string) => /\.(mp4|webm)$/.test(name);
 

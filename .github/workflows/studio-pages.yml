@@ -38,6 +38,7 @@ jobs:
         run: npm run build
         env:
           STATIC_EXPORT: "1"
+          PAGES_BASE_PATH: ""
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out

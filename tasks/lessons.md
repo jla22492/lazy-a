@@ -90,3 +90,5 @@
 - A physical-edge verifier must match the authored local gradient profile, not the first nearby pixel that crosses a strength threshold. Dynamic imagery inside a perfectly stationary surface can otherwise masquerade as boundary motion.
 - Browser proof must wait on the audited state transition it claims to capture. A fixed sleep can sample an in-progress arrival and falsely indict an otherwise exact destination camera.
 - High-fidelity transition media should warm from physical visitor intent, not an unconditional post-settle batch. Preload light endpoint stills globally and the selected route film when its authored navigation row becomes the candidate.
+- A custom-domain static export must prove its generated artifact, not merely its configuration. Scan emitted HTML and bundles for the retired project subpath, then run the real visitor battery from the production root.
+- Exact video-frame verification needs a range-capable static server, and transfer budgets need CDN-equivalent compression. A simple uncompressed file server can create false playback stalls and false byte-budget failures while serving otherwise correct files.
