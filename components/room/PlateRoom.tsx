@@ -8,6 +8,8 @@ import {
   preloadDestination,
   preloadDestinationReturn,
   preloadDestinations,
+  preloadForwardPrefixes,
+  preloadForwardTransitions,
   preloadOpening,
   type PlateDestinationId,
   type PlateExperienceState,
@@ -46,12 +48,28 @@ export function PlateRoom({
   manifest,
 }: PlateRoomProps) {
   const destinationPreloadStarted = useRef(false);
+  const forwardWarmVariant = useRef<PlateVariant | null>(null);
+  const prefixWarmVariant = useRef<PlateVariant | null>(null);
 
   useEffect(() => {
     void preloadOpening(manifest, variant).catch(() => {
       // The persistent server-rendered opening photograph remains visible.
     });
   }, [manifest, variant]);
+
+  useEffect(() => {
+    if (prefixWarmVariant.current === variant) return;
+    prefixWarmVariant.current = variant;
+    void preloadForwardPrefixes(manifest, variant);
+  }, [manifest, variant]);
+
+  useEffect(() => {
+    if (state.endpoint !== "desk" || forwardWarmVariant.current === variant) {
+      return;
+    }
+    forwardWarmVariant.current = variant;
+    void preloadForwardTransitions(manifest, variant);
+  }, [manifest, state.endpoint, variant]);
 
   useEffect(() => {
     if (state.endpoint !== "desk" || destinationPreloadStarted.current) return;
@@ -74,17 +92,14 @@ export function PlateRoom({
 
   useEffect(() => {
     const warmCandidate = (event: Event) => {
-      const destination = (event as CustomEvent).detail
-        ?.destination as PlateDestinationId | null | undefined;
+      const destination = (event as CustomEvent).detail?.destination as
+        PlateDestinationId | null | undefined;
       if (!destination) return;
       void preloadDestination(manifest, variant, destination);
     };
     window.addEventListener("lazy-a:navigation-candidate", warmCandidate);
     return () => {
-      window.removeEventListener(
-        "lazy-a:navigation-candidate",
-        warmCandidate,
-      );
+      window.removeEventListener("lazy-a:navigation-candidate", warmCandidate);
     };
   }, [manifest, variant]);
 

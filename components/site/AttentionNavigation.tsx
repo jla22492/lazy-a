@@ -124,12 +124,6 @@ export function AttentionNavigation({
   const historyRef = useRef<CameraSnapshot[]>([]);
   const lastRecordedStateRef = useRef("");
 
-  useEffect(() => {
-    experienceRef.current = experience;
-    (window as Window & { __lazyAEndpoint?: EndpointId }).__lazyAEndpoint =
-      experience.endpoint;
-  }, [experience]);
-
   const sheetProjection = useMemo(() => {
     const values = navigation.screenQuads.desk ??
       navigation.screenQuad ?? [0, 0, 1, 0, 1, 1, 0, 1];
@@ -170,13 +164,7 @@ export function AttentionNavigation({
       projectNormalized(rect.x, rect.y + rect.height),
     ];
     return { projectNormalized, rowQuad };
-  }, [
-    navigation,
-    profile.height,
-    profile.objectPosition,
-    profile.width,
-    size,
-  ]);
+  }, [navigation, profile.height, profile.objectPosition, profile.width, size]);
 
   const setConversation = useCallback((id: DestinationId | null): void => {
     conversationRef.current = id;
@@ -184,6 +172,19 @@ export function AttentionNavigation({
       window as Window & { __lazyAConversation?: DestinationId | null }
     ).__lazyAConversation = id;
   }, []);
+
+  useEffect(() => {
+    experienceRef.current = experience;
+    (window as Window & { __lazyAEndpoint?: EndpointId }).__lazyAEndpoint =
+      experience.endpoint;
+    if (
+      experience.phase === "resting" &&
+      experience.endpoint === "desk" &&
+      conversationRef.current !== null
+    ) {
+      setConversation(null);
+    }
+  }, [experience, setConversation]);
 
   const snapshot = useCallback((): CameraSnapshot => {
     const current = experienceRef.current;

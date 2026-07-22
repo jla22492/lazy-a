@@ -5,6 +5,10 @@ import { assetPath } from "@/lib/assetPath";
 declare global {
   interface Window {
     __lazyAPlateProjection?: PlateProjectionFrame;
+    __lazyAPreparedMedia?: Record<
+      string,
+      { requestedAt: number; readyAt: number | null }
+    >;
   }
 }
 
@@ -50,6 +54,13 @@ export interface PlateAsset {
   projectionFrames?: readonly PlateProjectionFrame[];
 }
 
+export interface PreparedPlateVideo {
+  asset: PlateAsset;
+  video: HTMLVideoElement;
+  readyAt: number;
+  preparedReused: boolean;
+}
+
 export interface PlateProfile {
   objectPosition: string;
   endpoints: Record<PlateEndpointId, PlateAsset>;
@@ -75,6 +86,7 @@ const DESTINATIONS: readonly PlateDestinationId[] = [
   "contact",
   "about",
 ];
+export const TRANSITION_PREFIX_FRAMES = 10;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -395,8 +407,31 @@ export function transitionAsset(
   );
 }
 
-const preloadCache = new Map<string, Promise<PlateAsset>>();
-const retainedVideoPreloads = new Map<string, HTMLVideoElement>();
+export function transitionPrefixAsset(
+  asset: PlateAsset,
+): PlateAsset | undefined {
+  if (
+    asset.kind !== "video" ||
+    !asset.id.startsWith("desk-") ||
+    !asset.projectionFrames ||
+    asset.projectionFrames.length <= TRANSITION_PREFIX_FRAMES
+  ) {
+    return undefined;
+  }
+  const fps = asset.fps ?? 30;
+  return {
+    ...asset,
+    src: asset.src.replace(/\.mp4(?:\?.*)?$/i, "-prefix.mp4"),
+    durationSeconds: TRANSITION_PREFIX_FRAMES / fps,
+    projectionFrames: asset.projectionFrames.slice(0, TRANSITION_PREFIX_FRAMES),
+  };
+}
+
+const imagePreloadCache = new Map<string, Promise<PlateAsset>>();
+const preparedVideoCache = new Map<
+  string,
+  Promise<Omit<PreparedPlateVideo, "preparedReused">>
+>();
 
 function loadImage(asset: PlateAsset): Promise<PlateAsset> {
   return new Promise((resolve, reject) => {
@@ -408,39 +443,96 @@ function loadImage(asset: PlateAsset): Promise<PlateAsset> {
   });
 }
 
-function loadVideo(asset: PlateAsset): Promise<PlateAsset> {
+function createPreparedPlateVideo(
+  asset: PlateAsset,
+): Promise<Omit<PreparedPlateVideo, "preparedReused">> {
   return new Promise((resolve, reject) => {
     const video = document.createElement("video");
+    const preparedMedia = (window.__lazyAPreparedMedia ??= {});
+    preparedMedia[asset.src] = {
+      requestedAt: performance.now(),
+      readyAt: null,
+    };
     const cleanup = () => {
       video.removeEventListener("loadeddata", loaded);
+      video.removeEventListener("seeked", ready);
       video.removeEventListener("error", failed);
+      video.removeEventListener("abort", failed);
+    };
+    const ready = () => {
+      cleanup();
+      const readyAt = performance.now();
+      preparedMedia[asset.src].readyAt = readyAt;
+      resolve({ asset, video, readyAt });
     };
     const loaded = () => {
-      cleanup();
-      resolve(asset);
+      video.removeEventListener("loadeddata", loaded);
+      if (asset.src.includes("-prefix.mp4")) {
+        video.addEventListener("seeked", ready, { once: true });
+        video.currentTime = 1 / (asset.fps ?? 30);
+        return;
+      }
+      ready();
     };
     const failed = () => {
       cleanup();
-      retainedVideoPreloads.delete(asset.src);
       reject(new Error(`Plate video failed: ${asset.id}`));
     };
     video.preload = "auto";
     video.muted = true;
+    video.defaultMuted = true;
     video.playsInline = true;
+    video.loop = false;
+    video.crossOrigin = "anonymous";
+    video.disablePictureInPicture = true;
+    video.dataset.lazyAPlate = asset.id;
     video.addEventListener("loadeddata", loaded, { once: true });
     video.addEventListener("error", failed, { once: true });
-    retainedVideoPreloads.set(asset.src, video);
+    video.addEventListener("abort", failed, { once: true });
     video.src = asset.src;
     video.load();
   });
 }
 
-export function preloadPlateAsset(asset: PlateAsset): Promise<PlateAsset> {
-  const cached = preloadCache.get(asset.src);
+export function preparePlateVideo(
+  asset: PlateAsset,
+): Promise<Omit<PreparedPlateVideo, "preparedReused">> {
+  if (asset.kind !== "video") {
+    return Promise.reject(new Error(`Plate asset is not a video: ${asset.id}`));
+  }
+  const cached = preparedVideoCache.get(asset.src);
   if (cached) return cached;
-  const pending = asset.kind === "video" ? loadVideo(asset) : loadImage(asset);
-  preloadCache.set(asset.src, pending);
-  pending.catch(() => preloadCache.delete(asset.src));
+  const pending = createPreparedPlateVideo(asset);
+  preparedVideoCache.set(asset.src, pending);
+  pending.catch(() => {
+    if (preparedVideoCache.get(asset.src) === pending) {
+      preparedVideoCache.delete(asset.src);
+    }
+  });
+  return pending;
+}
+
+export async function claimPreparedPlateVideo(
+  asset: PlateAsset,
+): Promise<PreparedPlateVideo> {
+  const cached = preparedVideoCache.get(asset.src);
+  const pending = cached ?? preparePlateVideo(asset);
+  if (preparedVideoCache.get(asset.src) === pending) {
+    preparedVideoCache.delete(asset.src);
+  }
+  const prepared = await pending;
+  return { ...prepared, preparedReused: Boolean(cached) };
+}
+
+export function preloadPlateAsset(asset: PlateAsset): Promise<PlateAsset> {
+  if (asset.kind === "video") {
+    return preparePlateVideo(asset).then((prepared) => prepared.asset);
+  }
+  const cached = imagePreloadCache.get(asset.src);
+  if (cached) return cached;
+  const pending = loadImage(asset);
+  imagePreloadCache.set(asset.src, pending);
+  pending.catch(() => imagePreloadCache.delete(asset.src));
   return pending;
 }
 
@@ -476,15 +568,47 @@ export function preloadDestination(
   destination: PlateDestinationId,
 ): Promise<PromiseSettledResult<PlateAsset>[]> {
   const profile = manifest.profiles[variant];
-  const transition = transitionAsset(
-    manifest,
-    variant,
-    `desk-${destination}`,
-  );
+  const transition = transitionAsset(manifest, variant, `desk-${destination}`);
   return Promise.allSettled([
     preloadPlateAsset(profile.endpoints[destination]),
     ...(transition ? [preloadPlateAsset(transition)] : []),
   ]);
+}
+
+export function preloadForwardTransitions(
+  manifest: PlateManifestAdapter,
+  variant: PlateVariant,
+): Promise<PromiseSettledResult<PlateAsset>[]> {
+  return Promise.allSettled(
+    DESTINATIONS.map((destination) =>
+      transitionAsset(manifest, variant, `desk-${destination}`),
+    )
+      .filter((asset): asset is PlateAsset => Boolean(asset))
+      .map((asset) => preloadPlateAsset(asset)),
+  );
+}
+
+export async function preloadForwardPrefixes(
+  manifest: PlateManifestAdapter,
+  variant: PlateVariant,
+): Promise<PromiseSettledResult<PlateAsset>[]> {
+  const prefixes = DESTINATIONS.map((destination) =>
+    transitionAsset(manifest, variant, `desk-${destination}`),
+  )
+    .map((asset) => (asset ? transitionPrefixAsset(asset) : undefined))
+    .filter((asset): asset is PlateAsset => Boolean(asset));
+  const results: PromiseSettledResult<PlateAsset>[] = [];
+  for (const prefix of prefixes) {
+    try {
+      results.push({
+        status: "fulfilled",
+        value: await preloadPlateAsset(prefix),
+      });
+    } catch (reason) {
+      results.push({ status: "rejected", reason });
+    }
+  }
+  return results;
 }
 
 export function preloadDestinationReturn(
@@ -492,12 +616,10 @@ export function preloadDestinationReturn(
   variant: PlateVariant,
   destination: PlateDestinationId,
 ): Promise<PlateAsset | undefined> {
-  const transition = transitionAsset(
-    manifest,
-    variant,
-    `${destination}-desk`,
-  );
-  return transition ? preloadPlateAsset(transition) : Promise.resolve(undefined);
+  const transition = transitionAsset(manifest, variant, `${destination}-desk`);
+  return transition
+    ? preloadPlateAsset(transition)
+    : Promise.resolve(undefined);
 }
 
 let activeProjection: PlateProjectionFrame | null = null;

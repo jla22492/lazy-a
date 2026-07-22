@@ -24,12 +24,14 @@
 ### Task 1: Pin The Regressions With Behavioral RED Gates
 
 **Files:**
+
 - Create: `scripts/verify-navigation-response.mjs`
 - Create: `scripts/verify-physical-return.mjs`
 - Modify: `scripts/verify-contact-reveal.mjs`
 - Modify: `tasks/todo.md`
 
 **Interfaces:**
+
 - Consumes: `window.__lazyANavigationDebug`, `window.__lazyACameraDebug`, `window.__lazyACompositor`, and `window.__lazyAContactReveal`.
 - Produces: executable Chrome gates for click-to-effect latency, return behavior, and latent-copy pixel contrast.
 
@@ -98,6 +100,7 @@ git commit -m "Add immediate navigation and return regression gates"
 ### Task 2: Transfer Prepared Media Into The Compositor
 
 **Files:**
+
 - Modify: `lib/plateAssets.ts`
 - Modify: `components/room/PlateRoom.tsx`
 - Modify: `components/room/PlateCompositor.tsx`
@@ -108,6 +111,7 @@ git commit -m "Add immediate navigation and return regression gates"
 - Test: `scripts/perf-gate.mjs`
 
 **Interfaces:**
+
 - Produces: `preparePlateVideo(asset): Promise<PreparedPlateVideo>`, `claimPreparedPlateVideo(asset): Promise<PreparedPlateVideo>`, and `preloadForwardTransitions(manifest, variant): Promise<PromiseSettledResult<PlateAsset>[]>`.
 - `PreparedPlateVideo` owns `{ asset, video, readyAt }`; claiming removes it from the warming cache and transfers disposal to `PlateCompositor`.
 
@@ -126,21 +130,26 @@ export interface PreparedPlateVideo {
   readyAt: number;
 }
 
-export function preparePlateVideo(asset: PlateAsset): Promise<PreparedPlateVideo>;
-export function claimPreparedPlateVideo(asset: PlateAsset): Promise<PreparedPlateVideo>;
+export function preparePlateVideo(
+  asset: PlateAsset,
+): Promise<PreparedPlateVideo>;
+export function claimPreparedPlateVideo(
+  asset: PlateAsset,
+): Promise<PreparedPlateVideo>;
 ```
 
 The claim operation reuses the cached promise, removes the resolved entry from
 the cache exactly once, and returns a video still parked at time zero. Failed
 entries evict themselves. Image preloads retain the existing promise cache.
 
-- [ ] **Step 3: Warm the active profile during arrival**
+- [ ] **Step 3: Warm the active profile at the settled-desk handoff**
 
-Have `PlateCompositor` dispatch `lazy-a:plate-transition-playing` when
-`opening-desk` actually starts. `PlateRoom` listens once and calls
-`preloadForwardTransitions` for only the active responsive profile. Candidate
-events continue to prioritize one destination, and destination rest continues
-to warm only its reverse.
+Begin `preloadForwardTransitions` for only the active responsive profile when
+the opening transition hands off to the settled desk. Starting this batch
+during arrival violates the locked 3 MB pre-settle budget; the settled handoff
+keeps that budget intact while preparing routes before normal visitor intent.
+Candidate events continue to prioritize one destination, and destination rest
+continues to warm only its reverse.
 
 - [ ] **Step 4: Claim prepared media in the compositor**
 
@@ -196,6 +205,7 @@ git commit -m "Start destination motion without decode delay"
 ### Task 3: Add The Physical Return Tab And Browser Back Routing
 
 **Files:**
+
 - Create: `components/site/ReturnToDesk.tsx`
 - Modify: `three/scene/Stage.tsx`
 - Modify: `app/globals.css`
@@ -203,6 +213,7 @@ git commit -m "Start destination motion without decode delay"
 - Test: `scripts/verify-camera-states.mjs`
 
 **Interfaces:**
+
 - Consumes: `PlateExperienceState` and `onClose(): void` from Stage.
 - Produces: one semantic `button[data-lazy-a-return="desk"]` and one history entry per active destination.
 
@@ -217,7 +228,8 @@ Create a focused client component:
 
 ```tsx
 export function ReturnToDesk({ experience, onClose }: Props) {
-  const visible = experience.phase === "resting" &&
+  const visible =
+    experience.phase === "resting" &&
     !["opening", "desk"].includes(experience.endpoint);
   return (
     <button
@@ -267,6 +279,7 @@ git commit -m "Add a physical return path to the desk"
 ### Task 4: Make CONTACT Truly Latent At The Authored Source
 
 **Files:**
+
 - Modify: `scripts/render-master-shots.py`
 - Modify: `scripts/encode-master-shots.mjs`
 - Modify: `three/scene/plateManifest.ts`
@@ -277,6 +290,7 @@ git commit -m "Add a physical return path to the desk"
 - Test: `scripts/verify-master-assets.mjs`
 
 **Interfaces:**
+
 - Preserves: 0.30 mm fixed indentation, exact three-line copy, 31-sample lamp smoothstep, 1.0-second stationary camera, and approved post-hold path.
 - Changes: zero-lamp groove material parity and its strict visual acceptance thresholds.
 
@@ -345,6 +359,7 @@ git commit -m "Hide CONTACT indentation until the lamp turns on"
 ### Task 5: Full Battery, Visual Review, Documentation, And Production Deploy
 
 **Files:**
+
 - Modify: `docs/PROJECT_STATUS.md`
 - Modify: `docs/BUILD_REPORT.md`
 - Modify: `docs/CHANGELOG.md`
@@ -353,6 +368,7 @@ git commit -m "Hide CONTACT indentation until the lamp turns on"
 - Create: responsive 0119 proof captures under `docs/progress/`
 
 **Interfaces:**
+
 - Consumes: the complete 0119 implementation and every existing production gate.
 - Produces: a deployed canonical build, live proof, and enumerated completion audit.
 

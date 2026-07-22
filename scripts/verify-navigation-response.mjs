@@ -53,8 +53,14 @@ async function verifySource() {
       "plate assets must expose active-profile forward warming",
     ],
     [
-      room.includes("lazy-a:plate-transition-playing"),
-      "PlateRoom must begin forward warming from actual opening playback",
+      assets.includes("preloadForwardPrefixes") &&
+        assets.includes("transitionPrefixAsset"),
+      "plate assets must expose authored motion prefixes",
+    ],
+    [
+      room.includes('state.endpoint !== "desk"') &&
+        room.includes("preloadForwardTransitions(manifest, variant)"),
+      "PlateRoom must begin forward warming at the settled desk handoff",
     ],
     [
       compositor.includes("claimPreparedPlateVideo"),

@@ -16,9 +16,9 @@
 - [x] Commit the approved design and implementation plan.
 - [x] Add failing behavioral gates for immediate response, physical return, and
       invisible resting CONTACT typography.
-- [ ] Reuse prepared transition media and warm production-sized forward clips
+- [x] Reuse prepared transition media and warm production-sized forward clips
       during the non-interactive arrival.
-- [ ] Add the accessible physical return tab and browser-history routing.
+- [x] Add the accessible physical return tab and browser-history routing.
 - [ ] Correct the CONTACT groove material in Blender and regenerate every
       affected delivery artifact.
 - [ ] Run the complete local behavioral, visual, timing, performance, source,

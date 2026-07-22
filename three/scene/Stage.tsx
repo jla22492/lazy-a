@@ -12,6 +12,7 @@ import {
 } from "@/components/room/PlateCompositor";
 import { PlateRoom } from "@/components/room/PlateRoom";
 import { AttentionNavigation } from "@/components/site/AttentionNavigation";
+import { ReturnToDesk } from "@/components/site/ReturnToDesk";
 import { announceRoomSettled } from "@/lib/deferredAssets";
 import {
   adaptPlateManifest,
@@ -37,6 +38,7 @@ const INITIAL_EXPERIENCE: PlateExperienceState = {
   phase: "transitioning",
 };
 const AUTHORED_PLATES = adaptPlateManifest(plateManifest);
+const DESTINATION_HISTORY_KEY = "__lazyADestination";
 
 function isCaptureRun(): boolean {
   if (process.env.NODE_ENV === "production" || typeof window === "undefined") {
@@ -60,12 +62,12 @@ export function Stage() {
   const [heroReleased, setHeroReleased] = useState(false);
   const [experience, setExperience] =
     useState<PlateExperienceState>(INITIAL_EXPERIENCE);
+  const destinationHistoryActive = useRef(false);
 
   useEffect(() => {
     const element = stageRef.current;
     if (!element) return;
-    const updateVariant = (width: number) =>
-      setVariant(viewportVariant(width));
+    const updateVariant = (width: number) => setVariant(viewportVariant(width));
     updateVariant(element.getBoundingClientRect().width);
     const observer = new ResizeObserver(([entry]) => {
       if (entry) updateVariant(entry.contentRect.width);
@@ -97,6 +99,32 @@ export function Stage() {
     return () => window.cancelAnimationFrame(frame);
   }, [experience]);
 
+  useEffect(() => {
+    const enteringDestination =
+      experience.phase === "transitioning" &&
+      experience.endpoint === "desk" &&
+      Boolean(experience.requested);
+    if (!enteringDestination || destinationHistoryActive.current) return;
+    window.history.pushState(
+      { ...window.history.state, [DESTINATION_HISTORY_KEY]: true },
+      "",
+      window.location.href,
+    );
+    destinationHistoryActive.current = true;
+  }, [experience]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      if (!destinationHistoryActive.current) return;
+      destinationHistoryActive.current = false;
+      setExperience((current) =>
+        plateExperienceReducer(current, { type: "CLOSE" }),
+      );
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   const settleAtDesk = useCallback(() => {
     announceRoomSettled();
     setHeroReleased(true);
@@ -116,6 +144,10 @@ export function Stage() {
 
   const handleExperienceEvent = useCallback(
     (event: Extract<ExperienceEvent, { type: "SELECT" | "CLOSE" }>) => {
+      if (event.type === "CLOSE" && destinationHistoryActive.current) {
+        window.history.back();
+        return;
+      }
       setExperience((current) => plateExperienceReducer(current, event));
     },
     [],
@@ -187,6 +219,10 @@ export function Stage() {
             />
           </PlateCompositor>
         </Canvas>
+        <ReturnToDesk
+          experience={experience}
+          onClose={() => handleExperienceEvent({ type: "CLOSE" })}
+        />
       </HeroFilm>
     </div>
   );

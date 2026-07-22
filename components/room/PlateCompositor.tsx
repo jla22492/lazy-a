@@ -34,12 +34,16 @@ import {
   type PlateHeroController,
 } from "@/components/room/PlateHeroComposite";
 import {
+  claimPreparedPlateVideo,
   endpointAsset,
   publishPlateProjection,
   transitionAsset,
+  transitionPrefixAsset,
+  TRANSITION_PREFIX_FRAMES,
   type PlateAsset,
   type PlateExperienceState,
   type PlateManifestAdapter,
+  type PreparedPlateVideo,
   type PlateVariant,
 } from "@/lib/plateAssets";
 import { parsePlateObjectPosition } from "@/lib/plateSpace";
@@ -113,6 +117,11 @@ interface ActivePlateMedia {
 declare global {
   interface Window {
     __lazyACompositor?: CompositorDiagnostic;
+    __lazyAMediaTransition?: {
+      source: string;
+      preparedReused: boolean;
+      playRequestedAt: number;
+    };
     __heroReferenceTiming?: unknown;
   }
 }
@@ -150,28 +159,18 @@ async function loadImageMedia(
 function loadVideoMedia(
   asset: PlateAsset,
   variant: PlateVariant,
+  prepared: PreparedPlateVideo,
   startTime: number | (() => number) = 0,
 ): Promise<ActivePlateMedia> {
   return new Promise((resolve, reject) => {
-    const video = document.createElement("video");
-    video.preload = "auto";
-    video.muted = true;
-    video.defaultMuted = true;
-    video.playsInline = true;
-    video.loop = false;
-    video.crossOrigin = "anonymous";
-    video.disablePictureInPicture = true;
+    const video = prepared.video;
     video.dataset.lazyAPlate = asset.id;
     const mediaTime = { current: 0 };
     const faultListeners = new Set<() => void>();
     let videoFrameCallback = 0;
     const usesVideoFrameCallback = "requestVideoFrameCallback" in video;
     let resolved = false;
-    const cleanupLoadListener = () => {
-      video.removeEventListener("loadeddata", loaded);
-    };
     const cleanupListeners = () => {
-      cleanupLoadListener();
       video.removeEventListener("error", failed);
       video.removeEventListener("abort", failed);
     };
@@ -214,8 +213,7 @@ function loadVideoMedia(
         dispose,
       });
     };
-    const loaded = () => {
-      cleanupLoadListener();
+    const positionAtRequestedStart = () => {
       const requestedStart =
         typeof startTime === "function" ? startTime() : startTime;
       const boundedStart = Math.min(
@@ -240,11 +238,9 @@ function loadVideoMedia(
       dispose();
       reject(new Error(`Plate video failed: ${asset.id}`));
     };
-    video.addEventListener("loadeddata", loaded, { once: true });
     video.addEventListener("error", failed);
     video.addEventListener("abort", failed);
-    video.src = asset.src;
-    video.load();
+    positionAtRequestedStart();
   });
 }
 
@@ -414,58 +410,136 @@ export function PlateCompositor({
       void retainFallback(experience, run, transition);
       return;
     }
+    const availablePrefix = transitionPrefixAsset(transition);
+    const prefixHandoffTime = TRANSITION_PREFIX_FRAMES / (transition.fps ?? 30);
+    const prefix =
+      availablePrefix && resumeTime() < prefixHandoffTime
+        ? availablePrefix
+        : undefined;
+    let fullMediaPromise: Promise<{
+      prepared: PreparedPlateVideo;
+      media: ActivePlateMedia;
+    }> | null = null;
+    const loadFullMedia = () => {
+      if (fullMediaPromise) return fullMediaPromise;
+      fullMediaPromise = claimPreparedPlateVideo(transition).then(
+        async (prepared) => ({
+          prepared,
+          media: await loadVideoMedia(
+            transition,
+            variant,
+            prepared,
+            prefix ? prefixHandoffTime : resumeTime,
+          ),
+        }),
+      );
+      void fullMediaPromise.catch(() => {});
+      return fullMediaPromise;
+    };
+    const initialMedia = prefix
+      ? claimPreparedPlateVideo(prefix).then(async (prepared) => ({
+          prepared,
+          media: await loadVideoMedia(prefix, variant, prepared, () =>
+            Math.max(1 / (prefix.fps ?? 30), resumeTime()),
+          ),
+          prefix: true,
+        }))
+      : loadFullMedia().then((loaded) => ({ ...loaded, prefix: false }));
     let releaseTransitionWatch = () => {};
-    void loadVideoMedia(transition, variant, resumeTime)
-      .then((media) => {
-        if (!mountedRef.current || runRef.current !== run) {
-          media.dispose();
+    let completed = false;
+    const playLoadedMedia = ({
+      media,
+      prepared,
+      prefix: isPrefix,
+    }: {
+      media: ActivePlateMedia;
+      prepared: PreparedPlateVideo;
+      prefix: boolean;
+    }) => {
+      if (!mountedRef.current || runRef.current !== run) {
+        media.dispose();
+        return;
+      }
+      replaceMedia(media);
+      const video = media.video;
+      if (!video) return;
+      let stallTimer = 0;
+      const cleanupWatch = () => {
+        window.clearTimeout(stallTimer);
+        video.removeEventListener("ended", onEnded);
+        video.removeEventListener("playing", armStallWatch);
+        video.removeEventListener("timeupdate", armStallWatch);
+        video.removeEventListener("playing", announceOpeningPlayback);
+        unsubscribeFault();
+      };
+      const fail = () => {
+        if (completed || runRef.current !== run) return;
+        completed = true;
+        cleanupWatch();
+        media.dispose();
+        if (activeMediaRef.current === media) {
+          activeMediaRef.current = null;
+        }
+        void retainFallback(experience, run, transition);
+      };
+      const armStallWatch = () => {
+        window.clearTimeout(stallTimer);
+        stallTimer = window.setTimeout(
+          fail,
+          window.__heroReferenceTiming ? 120_000 : 2_000,
+        );
+      };
+      const announceOpeningPlayback = () => {
+        if (experience.endpoint !== "opening") return;
+        window.dispatchEvent(
+          new CustomEvent("lazy-a:plate-transition-playing", {
+            detail: { variant: media.variant, source: transition.src },
+          }),
+        );
+      };
+      const onEnded = () => {
+        if (completed) return;
+        cleanupWatch();
+        video.pause();
+        if (isPrefix) {
+          void loadFullMedia()
+            .then((loaded) => {
+              if (!mountedRef.current || runRef.current !== run) {
+                loaded.media.dispose();
+                return;
+              }
+              playLoadedMedia({ ...loaded, prefix: false });
+            })
+            .catch(fail);
           return;
         }
-        replaceMedia(media);
-        const video = media.video;
-        if (!video) return;
-        let completed = false;
-        let stallTimer = 0;
-        const cleanupWatch = () => {
-          window.clearTimeout(stallTimer);
-          video.removeEventListener("ended", onEnded);
-          video.removeEventListener("playing", armStallWatch);
-          video.removeEventListener("timeupdate", armStallWatch);
-          unsubscribeFault();
-        };
-        const fail = () => {
-          if (completed || runRef.current !== run) return;
-          completed = true;
-          cleanupWatch();
-          media.dispose();
-          if (activeMediaRef.current === media) {
-            activeMediaRef.current = null;
-          }
-          void retainFallback(experience, run, transition);
-        };
-        const armStallWatch = () => {
-          window.clearTimeout(stallTimer);
-          stallTimer = window.setTimeout(
-            fail,
-            window.__heroReferenceTiming ? 120_000 : 2_000,
-          );
-        };
-        const onEnded = () => {
-          if (completed) return;
-          completed = true;
-          cleanupWatch();
-          media.mediaTime.current = video.duration;
-          video.pause();
-          completeTransition(experience, run);
-        };
-        const unsubscribeFault = media.onFault(fail);
-        releaseTransitionWatch = cleanupWatch;
-        video.addEventListener("ended", onEnded, { once: true });
-        video.addEventListener("playing", armStallWatch);
-        video.addEventListener("timeupdate", armStallWatch);
-        armStallWatch();
-        void video.play().catch(fail);
-      })
+        completed = true;
+        media.mediaTime.current = video.duration;
+        completeTransition(experience, run);
+      };
+      const unsubscribeFault = media.onFault(fail);
+      releaseTransitionWatch = cleanupWatch;
+      video.addEventListener("ended", onEnded, { once: true });
+      video.addEventListener("playing", announceOpeningPlayback, {
+        once: true,
+      });
+      video.addEventListener("playing", armStallWatch);
+      video.addEventListener("timeupdate", armStallWatch);
+      armStallWatch();
+      window.__lazyAMediaTransition = {
+        source: transition.src,
+        preparedReused: prepared.preparedReused,
+        playRequestedAt: performance.now(),
+      };
+      void video
+        .play()
+        .then(() => {
+          if (isPrefix) void loadFullMedia().catch(fail);
+        })
+        .catch(fail);
+    };
+    void initialMedia
+      .then(playLoadedMedia)
       .catch(() => retainFallback(experience, run, transition));
     return () => releaseTransitionWatch();
   }, [
@@ -485,6 +559,7 @@ export function PlateCompositor({
       activeMediaRef.current = null;
       frameRef.current = null;
       delete window.__lazyACompositor;
+      delete window.__lazyAMediaTransition;
     },
     [],
   );

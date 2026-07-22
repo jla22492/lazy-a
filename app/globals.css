@@ -18,6 +18,48 @@ body {
   object-position: 50% 50%;
 }
 
+.room-return-tab {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: max(14px, calc(env(safe-area-inset-bottom) + 8px));
+  min-width: 96px;
+  min-height: 48px;
+  padding: 10px 16px 9px;
+  transform: translateX(-50%) rotate(-0.8deg);
+  appearance: none;
+  border: 0;
+  border-radius: 0;
+  background: #d4cec1;
+  box-shadow:
+    0 2px 5px rgb(27 23 18 / 32%),
+    inset 0 0 0 1px rgb(84 75 62 / 14%);
+  color: #403c35;
+  font-family: "Bradley Hand", "Segoe Print", "Noteworthy", cursive;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.room-return-tab:hover {
+  color: #27241f;
+  box-shadow:
+    0 3px 7px rgb(27 23 18 / 38%),
+    inset 0 0 0 1px rgb(84 75 62 / 18%);
+}
+
+.room-return-tab:focus-visible {
+  outline: 2px solid #29251f;
+  outline-offset: 3px;
+}
+
+.room-return-tab[hidden] {
+  display: none;
+}
+
 @media (max-width: 767px) {
   .room-bootstrap {
     object-position: 52% 50%;

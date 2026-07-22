@@ -43,6 +43,7 @@ const expectedContactCopy = [
 ].join("\n");
 const expectedContactIndentDepth = 0.0003;
 const contactActivationSamples = 31;
+const transitionPrefixFrames = 10;
 const practicalAuthoringManifest =
   "/room/contact/practical-light-authoring-manifest.json";
 const practicalAuthoringGenerator = "blender-background-python";
@@ -2287,16 +2288,9 @@ async function encode(manifest, args) {
       }
       const output = publicUrlToPath(transition.forward);
       await mkdir(dirname(output), { recursive: true });
-      // Short desk routes retain fine prop edges and survive the still/video
-      // handoff without a visible codec pulse. CONTACT is nearly twice as long,
-      // so a visually transparent web encode prevents cold-CDN return stalls.
-      // The longer arrival stays lean.
-      const crf =
-        transitionId === "opening-desk"
-          ? "26"
-          : transitionId === "desk-contact"
-            ? "14"
-            : "8";
+      // Destination routes retain fine prop edges while staying light enough
+      // to prepare during arrival. The longer opening remains lean.
+      const crf = transitionId === "opening-desk" ? "26" : "14";
       await run("ffmpeg", [
         "-hide_banner",
         "-loglevel",
@@ -2320,6 +2314,34 @@ async function encode(manifest, args) {
         "+faststart",
         output,
       ]);
+      if (transitionId !== "opening-desk") {
+        const prefixOutput = output.replace(/\.mp4$/i, "-prefix.mp4");
+        await run("ffmpeg", [
+          "-hide_banner",
+          "-loglevel",
+          "error",
+          "-y",
+          "-framerate",
+          String(transition.fps),
+          "-start_number",
+          "0",
+          "-i",
+          resolve(frameDirectory, "%04d.png"),
+          "-frames:v",
+          String(transitionPrefixFrames),
+          "-vf",
+          `scale=${variant.width}:${variant.height}:flags=lanczos,pad=ceil(iw/2)*2:ceil(ih/2)*2`,
+          "-c:v",
+          "libx264",
+          "-crf",
+          "22",
+          "-pix_fmt",
+          "yuv420p",
+          "-movflags",
+          "+faststart",
+          prefixOutput,
+        ]);
+      }
       const reverseOutput = publicUrlToPath(transition.reverse.source);
       await mkdir(dirname(reverseOutput), { recursive: true });
       await run("ffmpeg", [
