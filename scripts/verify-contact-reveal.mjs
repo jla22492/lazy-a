@@ -1775,6 +1775,12 @@ let activationLitCaptured = false;
 let activationLitSample = null;
 let widePracticalCapture = null;
 let portraitCapture = null;
+let beforeCloseSample = null;
+let beforeClosePlateState = null;
+let beforeCloseReturnResources = [];
+let escapeSeenAfter = 0;
+let reverseRequested = false;
+let reverseRequestedBeforeClose = false;
 try {
   const restPage = await browser.newPage({ viewport });
   await restPage.goto(baseUrl, { waitUntil: "load" });
@@ -1786,6 +1792,11 @@ try {
   await restPage.close();
 
   const page = await browser.newPage({ viewport });
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.endsWith("/contact-desk.mp4")) {
+      reverseRequested = true;
+    }
+  });
   await page.goto(baseUrl, { waitUntil: "load" });
   await armStationaryPracticalEvidence(
     page,
@@ -1837,8 +1848,32 @@ try {
   }
   await page.screenshot({ path: evidence.hold });
 
+  await page.evaluate(() => {
+    window.__lazyAContactEscapeSeen = 0;
+    window.addEventListener(
+      "keydown",
+      (event) => {
+        if (event.key === "Escape") window.__lazyAContactEscapeSeen += 1;
+      },
+      { capture: true, once: true },
+    );
+  });
+  beforeCloseSample = await page.evaluate(inspectContact);
+  beforeClosePlateState = await page.evaluate(
+    () => window.__lazyAPlateState ?? null,
+  );
+  beforeCloseReturnResources = await page.evaluate(() =>
+    performance
+      .getEntriesByType("resource")
+      .filter(({ name }) => name.includes("contact-desk.mp4"))
+      .map(({ name, startTime, duration }) => ({ name, startTime, duration })),
+  );
+  reverseRequestedBeforeClose = reverseRequested;
   await page.keyboard.press("Escape");
   reverseSamples = await collect(page, 3000);
+  escapeSeenAfter = await page.evaluate(
+    () => window.__lazyAContactEscapeSeen ?? 0,
+  );
   await page.screenshot({ path: evidence.reversed });
   await page.close();
   widePracticalCapture = await captureStationaryPracticalProfile(
@@ -2236,8 +2271,23 @@ if (!reversed) {
   failures.push(
     "closing CONTACT did not observably reverse lamp and reveal to idle",
   );
+  const lastObserved = reverseSamples.at(-1) ?? null;
+  console.log(
+    `INFO CONTACT close diagnostic: escapeSeen=${escapeSeenAfter}; before=${JSON.stringify(beforeCloseSample)}; after=${JSON.stringify(lastObserved)}`,
+  );
 } else {
   passes.push("Escape reversed lamp and reveal to idle");
+}
+
+if (!reverseRequestedBeforeClose) {
+  failures.push(
+    "CONTACT return plate was not warmed before the visitor closed the view",
+  );
+  console.log(
+    `INFO CONTACT preload diagnostic: plate=${JSON.stringify(beforeClosePlateState)}; resources=${JSON.stringify(beforeCloseReturnResources)}`,
+  );
+} else {
+  passes.push("CONTACT return plate was warmed before close");
 }
 
 for (const pass of passes) console.log(`PASS ${pass}`);

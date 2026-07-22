@@ -396,6 +396,7 @@ export function transitionAsset(
 }
 
 const preloadCache = new Map<string, Promise<PlateAsset>>();
+const retainedVideoPreloads = new Map<string, HTMLVideoElement>();
 
 function loadImage(asset: PlateAsset): Promise<PlateAsset> {
   return new Promise((resolve, reject) => {
@@ -420,6 +421,7 @@ function loadVideo(asset: PlateAsset): Promise<PlateAsset> {
     };
     const failed = () => {
       cleanup();
+      retainedVideoPreloads.delete(asset.src);
       reject(new Error(`Plate video failed: ${asset.id}`));
     };
     video.preload = "auto";
@@ -427,6 +429,7 @@ function loadVideo(asset: PlateAsset): Promise<PlateAsset> {
     video.playsInline = true;
     video.addEventListener("loadeddata", loaded, { once: true });
     video.addEventListener("error", failed, { once: true });
+    retainedVideoPreloads.set(asset.src, video);
     video.src = asset.src;
     video.load();
   });
@@ -482,6 +485,19 @@ export function preloadDestination(
     preloadPlateAsset(profile.endpoints[destination]),
     ...(transition ? [preloadPlateAsset(transition)] : []),
   ]);
+}
+
+export function preloadDestinationReturn(
+  manifest: PlateManifestAdapter,
+  variant: PlateVariant,
+  destination: PlateDestinationId,
+): Promise<PlateAsset | undefined> {
+  const transition = transitionAsset(
+    manifest,
+    variant,
+    `${destination}-desk`,
+  );
+  return transition ? preloadPlateAsset(transition) : Promise.resolve(undefined);
 }
 
 let activeProjection: PlateProjectionFrame | null = null;

@@ -7,13 +7,16 @@
 - [x] Run the local production battery against the exact root artifact;
       all independent gates pass, with one nondeterministic exact-frame hero
       comparison residual documented for deployed-CDN replay.
-- [ ] Push the launch commit and verify the Pages workflow.
-- [ ] Attach `www.lazyaproductions.com` to the repository Pages configuration.
-- [ ] Snapshot GoDaddy DNS and migrate only website-routing records.
+- [x] Push the launch commit and verify the Pages workflow.
+- [x] Attach `www.lazyaproductions.com` to the repository Pages configuration.
+- [x] Snapshot GoDaddy DNS and migrate only website-routing records.
 - [ ] Confirm DNS propagation, certificate provisioning, HTTPS enforcement,
       canonical apex redirect, and rollback readiness.
 - [ ] Run the complete behavioral and visual battery on the real production
       domain.
+- [ ] Eliminate the cold-CDN CONTACT return stall without changing the authored
+      motion, resolution, frame rate, or room appearance; prove the return clip
+      is warmed before close and the reveal reaches idle within the live gate.
 - [ ] Update PROJECT_STATUS, BUILD_REPORT, CHANGELOG, progress evidence, and
       the pushed audit trail.
 

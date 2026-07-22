@@ -6,6 +6,7 @@ import type { PlateStatus } from "@/components/room/PlateCompositor";
 import { whenRoomIsSettled } from "@/lib/deferredAssets";
 import {
   preloadDestination,
+  preloadDestinationReturn,
   preloadDestinations,
   preloadOpening,
   type PlateDestinationId,
@@ -59,6 +60,17 @@ export function PlateRoom({
       void preloadDestinations(manifest, variant);
     });
   }, [manifest, state.endpoint, variant]);
+
+  useEffect(() => {
+    if (
+      state.phase !== "resting" ||
+      state.endpoint === "opening" ||
+      state.endpoint === "desk"
+    ) {
+      return;
+    }
+    void preloadDestinationReturn(manifest, variant, state.endpoint);
+  }, [manifest, state.endpoint, state.phase, variant]);
 
   useEffect(() => {
     const warmCandidate = (event: Event) => {

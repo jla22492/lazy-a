@@ -2288,8 +2288,15 @@ async function encode(manifest, args) {
       const output = publicUrlToPath(transition.forward);
       await mkdir(dirname(output), { recursive: true });
       // Short desk routes retain fine prop edges and survive the still/video
-      // handoff without a visible codec pulse. The longer arrival stays lean.
-      const crf = transitionId === "opening-desk" ? "26" : "8";
+      // handoff without a visible codec pulse. CONTACT is nearly twice as long,
+      // so a visually transparent web encode prevents cold-CDN return stalls.
+      // The longer arrival stays lean.
+      const crf =
+        transitionId === "opening-desk"
+          ? "26"
+          : transitionId === "desk-contact"
+            ? "14"
+            : "8";
       await run("ffmpeg", [
         "-hide_banner",
         "-loglevel",
