@@ -1,0 +1,21 @@
+WORK ORDER 0118 DNS SNAPSHOT - BEFORE CUTOVER
+Captured: 2026-07-22 12:36 PDT
+
+Public DNS answers:
+
+lazyaproductions.com.       3600 IN A     13.248.243.5
+lazyaproductions.com.       3600 IN A     76.223.105.230
+www.lazyaproductions.com.   3600 IN CNAME lazyaproductions.com.
+lazyaproductions.com.       3600 IN NS    ns47.domaincontrol.com.
+lazyaproductions.com.       3600 IN NS    ns48.domaincontrol.com.
+
+No public AAAA, MX, TXT, or CAA answers were observed.
+
+Rollback website records:
+
+- Apex A: 13.248.243.5
+- Apex A: 76.223.105.230
+- www CNAME: lazyaproductions.com
+
+Nameservers are retained. Any non-website DNS records visible in GoDaddy must
+remain unchanged during the cutover.

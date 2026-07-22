@@ -92,3 +92,5 @@
 - High-fidelity transition media should warm from physical visitor intent, not an unconditional post-settle batch. Preload light endpoint stills globally and the selected route film when its authored navigation row becomes the candidate.
 - A custom-domain static export must prove its generated artifact, not merely its configuration. Scan emitted HTML and bundles for the retired project subpath, then run the real visitor battery from the production root.
 - Exact video-frame verification needs a range-capable static server, and transfer budgets need CDN-equivalent compression. A simple uncompressed file server can create false playback stalls and false byte-budget failures while serving otherwise correct files.
+- `loadeddata` is not full-route readiness for a cold reverse transition. Retain the selected reverse preload through the destination hold and prove its network request begins before close against the real CDN.
+- An exact local Pages export must reproduce the workflow's route removal and `STATIC_EXPORT=1` environment. An ordinary Next.js build does not refresh `out` and cannot certify the artifact the workflow will publish.

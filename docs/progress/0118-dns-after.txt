@@ -1,0 +1,47 @@
+WORK ORDER 0118 - DNS AFTER CUTOVER
+Captured: 2026-07-22 America/Los_Angeles
+
+Authoritative nameservers preserved:
+  ns47.domaincontrol.com.
+  ns48.domaincontrol.com.
+
+Apex A records:
+  lazyaproductions.com.  A  185.199.108.153
+  lazyaproductions.com.  A  185.199.109.153
+  lazyaproductions.com.  A  185.199.110.153
+  lazyaproductions.com.  A  185.199.111.153
+
+Canonical host:
+  www.lazyaproductions.com.  CNAME  jla22492.github.io.
+
+Unrelated records preserved:
+  pay.lazyaproductions.com.  CNAME  paylinks.commerce.godaddy.com.
+  _domainconnect.lazyaproductions.com.  CNAME  _domainconnect.gd.domaincontrol.com.
+  _dmarc.lazyaproductions.com.  TXT  v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;
+
+Observed after save:
+  - GoDaddy DNS table showed all four GitHub Pages apex addresses.
+  - GoDaddy DNS table showed www -> jla22492.github.io.
+  - ns47.domaincontrol.com returned www -> jla22492.github.io.
+  - Cloudflare resolver 1.1.1.1 returned www -> jla22492.github.io.
+  - Public apex lookup returned all four GitHub Pages addresses.
+  - HTTP reached the GitHub Pages production artifact.
+
+Rollback source:
+  docs/progress/0118-dns-before.txt
+
+Final GitHub Pages state:
+  canonical URL: https://www.lazyaproductions.com/
+  custom domain: www.lazyaproductions.com
+  certificate: approved for lazyaproductions.com and www.lazyaproductions.com
+  certificate expiry: 2026-10-20
+  HTTPS enforcement: enabled
+  Pages workflow: 29955914915
+
+Final routing verification:
+  - HTTPS www serves the production artifact.
+  - HTTPS apex redirects to HTTPS www.
+  - HTTP www redirects to HTTPS www.
+  - HTTP apex redirects through www to the canonical secure URL.
+  - At 2026-07-22 14:03:46 PDT, all four GitHub Pages edge addresses completed
+    the HTTP apex -> HTTPS www chain with final status 200.

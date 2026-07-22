@@ -2,6 +2,12 @@
 
 ## v0.1
 
+- Lazy A moved home: `https://www.lazyaproductions.com/` now serves the approved
+  room as the secure canonical production site. The launch preserves the
+  physical hero, JOURNAL lean, lamp-lit CONTACT indentation, FILMS, and ABOUT;
+  the selected CONTACT return now warms before close so the magic ends as
+  cleanly on a cold CDN as it does in the room.
+
 - Repository initialized.
 - Creative philosophy established.
 - Room-first development adopted.

@@ -10,15 +10,30 @@
 - [x] Push the launch commit and verify the Pages workflow.
 - [x] Attach `www.lazyaproductions.com` to the repository Pages configuration.
 - [x] Snapshot GoDaddy DNS and migrate only website-routing records.
-- [ ] Confirm DNS propagation, certificate provisioning, HTTPS enforcement,
+- [x] Confirm DNS propagation, certificate provisioning, HTTPS enforcement,
       canonical apex redirect, and rollback readiness.
-- [ ] Run the complete behavioral and visual battery on the real production
+- [x] Run the complete behavioral and visual battery on the real production
       domain.
-- [ ] Eliminate the cold-CDN CONTACT return stall without changing the authored
+- [x] Eliminate the cold-CDN CONTACT return stall without changing the authored
       motion, resolution, frame rate, or room appearance; prove the return clip
       is warmed before close and the reveal reaches idle within the live gate.
-- [ ] Update PROJECT_STATUS, BUILD_REPORT, CHANGELOG, progress evidence, and
+- [x] Update PROJECT_STATUS, BUILD_REPORT, CHANGELOG, progress evidence, and
       the pushed audit trail.
+
+## Review
+
+- Canonical production URL: `https://www.lazyaproductions.com/`.
+- Pages workflow `29955914915` deployed `f2208dd`; certificate approved for the
+  apex and `www`, HTTPS enforcement enabled.
+- Final HTTPS battery: settle `3.82s`, magic `5.68s`, JOURNAL target `0.08s`,
+  `59.9fps`, `1.61MB` pre-settle, `4.34MB` total.
+- CONTACT passes exact copy, indentation, practical light, one-second hold,
+  destination move, retained reverse preload, and clean return on production.
+- Desktop/phone camera states and production phone hero lifecycle (`90/90`)
+  pass; final captures are filed under `docs/progress/0118-*`.
+- Broad source-verifier residual: two pre-existing JOURNAL frame-14 sightline
+  checks remain. Production camera behavior and visual review pass; 0118 did
+  not change that authored path.
 
 ---
 

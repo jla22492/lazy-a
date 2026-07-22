@@ -1,6 +1,121 @@
 # BUILD REPORT
 
-WORK ORDER 0117-R5 LOCAL TECHNICAL REVIEW CANDIDATE — JONATHAN APPROVAL PENDING
+WORK ORDER COMPLETE
+
+Commit:
+
+- `e4b83a4` — Prepare Lazy A production domain launch.
+- `f2208dd` — Warm and optimize CONTACT return.
+- Pages workflow `29955914915` — successful production artifact deployment.
+
+Version:
+
+v0.1 — Work Order 0118 production domain launch
+
+Files Changed:
+
+- Root-origin export configuration and Pages workflow inputs.
+- `lib/plateAssets.ts` and `components/room/PlateRoom.tsx` retained the selected
+  return preload through the resting endpoint.
+- `scripts/encode-master-shots.mjs` reduced only CONTACT delivery bitrate while
+  preserving authored resolution, frame rate, duration, and motion.
+- `scripts/verify-contact-reveal.mjs` now proves the return request begins
+  before close and records close diagnostics.
+- Production CONTACT media, release documentation, DNS snapshots, and visual
+  evidence under `docs/progress/0118-*`.
+
+Architecture Decisions:
+
+- GitHub Pages remains the production host; the same repository workflow emits
+  either the historical project-subpath artifact or the production root-origin
+  artifact from one explicit base-path input.
+- `www.lazyaproductions.com` is canonical. The apex uses GitHub Pages' four A
+  records and `www` is a CNAME to `jla22492.github.io`.
+- Reverse media readiness is route intent, not generic `loadeddata`: the chosen
+  reverse clip is retained and warmed before the visitor closes CONTACT.
+- The DNS before-state is a first-class rollback artifact; nameservers and
+  unrelated GoDaddy records were not changed.
+
+Creative Decisions Implemented:
+
+- The production launch preserves Jonathan's approved 0117-R5 room and camera
+  choreography pixel-for-pixel; no launch-only restaging was introduced.
+- CONTACT retains its one-second practical-light comprehension beat, fixed
+  pressure indentation, approved camera move, and clean reverse.
+- The hero remains a room-lit physical print, plays once after settle,
+  continues through navigation, ends once, and holds its natural final frame.
+
+Behavioral Verification:
+
+- Root artifact scan — PASS: no `/lazy-a` application or media paths.
+- TypeScript, targeted ESLint, exact export, camera states, physical navigation,
+  arrival (`79/79`), compositor resilience, and plate fallback gates — PASS.
+- CONTACT production gate — PASS: exact three-line copy, physical indentation,
+  visible practical, soft pool, held lamp/reveal, clean reverse, and reverse
+  request warmed before close.
+- Final HTTPS clock — PASS: settle `3.82s`, magic `5.68s`, JOURNAL target
+  `0.08s`.
+- Final HTTPS performance — PASS: `59.9fps`, `1.61MB` pre-settle, `4.34MB`
+  total, with no reverse-arrival preload.
+- Production phone hero replay — PASS `90/90`; this resolves the one
+  timing-sensitive local first-live-frame capture residual.
+- Desktop and phone camera states — PASS: readable JOURNAL lean, desk-oriented
+  CONTACT, leftward ABOUT, and exact desk restoration.
+- Certificate — PASS: approved for `lazyaproductions.com` and
+  `www.lazyaproductions.com`, HTTPS enforced, expiry `2026-10-20`.
+- First immediate cold-edge clock after deployment measured `4.89s` settle and
+  `6.72s` magic. The warmed replay passed at `3.40s` / `5.27s`; the final HTTPS
+  replay passed at `3.82s` / `5.68s` after edge warming.
+- Unrelated broad authoring verifier residual: two pre-existing JOURNAL frame-14
+  sightline checks remain outside 0118. Runtime camera, normal-speed visual,
+  and production behavior gates pass, and 0118 did not alter JOURNAL source.
+
+Production Evidence:
+
+- `docs/progress/0118-production-live-desktop.png`
+- `docs/progress/0118-production-live-phone.png`
+- `docs/progress/0118-contact-production-final/contact-hold.png`
+- `docs/progress/0118-contact-production-final/contact-reversed.png`
+- `docs/progress/0118-dns-before.txt`
+- `docs/progress/0118-dns-after.txt`
+
+Deferred:
+
+- Company-authored films and final JOURNAL/ABOUT content remain placeholders by
+  direction.
+- No production-launch infrastructure work is deferred.
+
+Decisions Required:
+
+- None for the production launch.
+
+Ready for:
+
+- Company-content integration on the live canonical domain.
+
+Enumerated Completion Audit:
+
+1. ✅ Root-origin export shipped + emitted-artifact path scan and production
+   visitor battery.
+2. ✅ DNS cutover shipped + authoritative and public resolver proof with a
+   byte-readable rollback snapshot.
+3. ✅ Custom domain and certificate shipped + Pages API and TLS certificate
+   proof for both hostnames.
+4. ✅ Canonical secure routing shipped + HTTP/apex and HTTP/www redirect matrix.
+5. ✅ Production artifact shipped + successful workflow `29955914915` and live
+   asset-size verification.
+6. ✅ Cold-CDN CONTACT return corrected + behavioral proof that reverse media
+   warms before close and the reveal returns to idle in the live gate.
+7. ✅ Production UX battery shipped + clock, performance, hero, CONTACT,
+   camera, arrival, navigation, fallback, and resilience checks.
+8. ✅ Responsive visual proof shipped + inspected desktop, phone, CONTACT hold,
+   and CONTACT reverse captures from the canonical HTTPS domain.
+9. ✅ Rollback readiness shipped + prior apex and `www` records preserved with
+   retained nameservers and unrelated DNS records documented.
+
+---
+
+WORK ORDER 0117-R5 — APPROVED BY JONATHAN
 
 Version:
 
@@ -70,8 +185,8 @@ Enumerated Audit:
    pre-settle, `4.34MB` total), and visitor lifecycle (`11/11`) pass.
    ⚠️ The CDN exact-frame desktop replay captured `43/44`; one paused CONTACT
    target timed out after the local fresh bundle passed `450/450`.
-8. ⚠️ Jonathan's explicit full-motion visual approval remains open. This order
-   is a review candidate, not creatively complete.
+8. ✅ Jonathan explicitly approved the corrected full-motion experience ("This
+   is great") and authorized the production-domain launch.
 
 ---
 

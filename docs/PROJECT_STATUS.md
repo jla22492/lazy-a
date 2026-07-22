@@ -8,42 +8,50 @@ v0.1
 
 ## Current Sprint
 
-Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md; authorized DIRECTLY by Jonathan after his Sprint 04 review — the Creative Director is out of the loop this sprint and audits the trail afterward. Phase 05A: six work orders 0086–0091 — live deploy, the real logo, the video-texture spike, the seated arrival, the destination remap with placeholder journal, and the Playwright screen-capture pipeline — then a full stop for Jonathan's review before 05B. Sprints 01–04 all approved by Jonathan.)
+Creative Sprint 05 — The Six-Second Homepage (docs/SPRINT_05.md), complete
+through the approved 0117-R5 production experience and 0118 custom-domain
+launch. The Creative Director remained out of the sprint loop under Jonathan's
+direct ruling and can audit the completed source-of-truth trail afterward.
 
 ---
 
 ## Current Work Order
 
-0117-R5 DELIVERED-PIXEL PHYSICAL CONTINUITY — LOCAL TECHNICAL REVIEW
-CANDIDATE; JONATHAN APPROVAL PENDING.
+0118 PRODUCTION DOMAIN LAUNCH — SHIPPED COMPLETE.
 
-The corrected wide and portrait room media now share one current photographed
-master. The hero is a living plate-space print with the same Blender-authored
-room response as its still, counter-clockwise presentation, and authored soft
-coverage for the leaning card, pencils, strap, and production sheet. It begins
-once after settle, continues through navigation, ends once, and holds.
+Lazy A is live at the canonical production URL:
+`https://www.lazyaproductions.com/`. Jonathan approved the 0117-R5 experience
+in full-motion review ("This is great") and explicitly authorized the production
+launch. The root-origin Pages artifact preserves the approved room, hero,
+JOURNAL, CONTACT, FILMS, and ABOUT behavior without `/lazy-a` application or
+media paths.
 
-The lamp remains in one supported desk pose. CONTACT turns that practical on,
-holds the desk camera for one second, reveals Jonathan's exact three pressure
-indentations, then uses the approved move. JOURNAL is one coupled forward/down
-hip bend into a near-front, downward reading POV.
+GoDaddy now routes the apex through GitHub Pages' four A records and `www`
+through `jla22492.github.io`; nameservers and unrelated records remain intact.
+GitHub Pages reports an approved certificate for both hostnames, HTTPS
+enforcement is enabled, and the production certificate is valid through
+2026-10-20. The pre-cutover DNS values are preserved in
+`docs/progress/0118-dns-before.txt` for rollback.
 
-The fresh production bundle passes `450/450` hero lifecycle checks, `79/79`
-arrival frames per viewport, camera, CONTACT, physical navigation, dwell,
-fallback, resilience, 4s/5s/6s clock, TypeScript, lint, and build gates.
-Intent-driven media warming reduced settled-room transfer from `40.10MB` to
-`4.35MB` without changing the pristine transition encodes. Four responsive
-normal-speed films have been visually inspected. Pages workflow `29706751799`
-deployed commit `e0396c9`; the public clock, performance, and `11/11` visitor
-lifecycle pass. One CDN exact-frame CONTACT target timed out (`43/44`) after the
-same fresh local bundle passed `450/450`, so that public catalog replay remains
-an explicit residual verification item. Jonathan's full-motion approval remains
-open; no creative completion claim is made.
+The production-domain battery passes: settle `3.82s`, magic `5.68s`, JOURNAL
+target `0.08s`, `59.9fps`, `1.61MB` pre-settle, and `4.34MB` total. CONTACT's
+selected reverse transition now warms before close and the live reveal passes
+its full exact-copy, indentation, practical-light, hold, and clean-return gate.
+Desktop and phone camera states pass, and the production phone hero replay
+passes `90/90`. Commit `f2208dd` shipped through Pages workflow
+`29955914915`.
 
 ---
 
 ## Completed
 
+- WORK ORDER 0118 — PRODUCTION DOMAIN LAUNCH: root-origin export, GoDaddy DNS
+  cutover, GitHub Pages custom domain, approved dual-host certificate, HTTPS
+  enforcement, canonical host routing, cold-CDN CONTACT return correction,
+  production-domain behavioral battery, visual proof, and rollback record.
+- WORK ORDER 0117-R5 — DELIVERED-PIXEL PHYSICAL CONTINUITY: Jonathan approved
+  the corrected hero, coupled JOURNAL lean, permanent lamp pose, and physical
+  CONTACT reveal in full-motion review; this approval authorized 0118.
 - WORK ORDER 0117-R3 — REJECTED IN FULL-MOTION REVIEW: the rebuilt room and
   object composition were substantial progress, but the hero still behaved as
   a separately timed graphic, JOURNAL remained a staged mechanical move, and
@@ -200,19 +208,16 @@ open; no creative completion claim is made.
 
 ## In Progress
 
-WORK ORDER 0117-R4 — deployed technical review candidate. The authored source,
-atomic compositor, final motion media, five-viewport browser catalog,
-normal-speed review films, local battery, and public Pages battery pass.
-Jonathan's visual decision is the only remaining acceptance gate.
+No active implementation order. The production site is live and the remaining
+content work awaits company-authored material.
 
 ---
 
 ## Next Recommended Work Order
 
-0117-R4 awaits Jonathan's explicit full-motion visual approval before 0118 can
-begin.
-After that: content-and-domain readiness, approved company material, authored
-JOURNAL/ABOUT content, and www.lazyaproductions.com migration.
+Integrate approved company films and authored JOURNAL/ABOUT material into the
+live production experience without changing the approved room interaction or
+4s/5s/6s clock.
 
 docs/THE_NOTEBOOK.md (the authorship questions) remains open with the Creative Director and Jonathan; it gates future meaning work on the notebook, which is paused for this sprint.
 
