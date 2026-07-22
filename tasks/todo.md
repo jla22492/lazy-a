@@ -1,3 +1,35 @@
+# WORK ORDER 0119 — Immediate Navigation And Physical Return
+
+## Approved Design And Execution
+
+- [x] Reproduce production click-to-camera latency across all four destinations
+      at desktop and phone sizes.
+- [x] Trace the delay to duplicate transition-video decode and extreme forward
+      delivery bitrates.
+- [x] Confirm CONTACT's resting white copy in the deployed desk plate and trace
+      it to the authored idle groove fill plus a permissive contrast gate.
+- [x] Lock CONTACT timing: immediate lamp response, one-second stationary beat,
+      then the existing approved camera move.
+- [x] Lock a consistent lower-edge graphite `← DESK` paper tab as the visible
+      mobile-safe return affordance, with Escape, empty-space tap, and browser
+      Back retained.
+- [ ] Commit the approved design and implementation plan.
+- [ ] Add failing behavioral gates for immediate response, physical return, and
+      invisible resting CONTACT typography.
+- [ ] Reuse prepared transition media and warm production-sized forward clips
+      during the non-interactive arrival.
+- [ ] Add the accessible physical return tab and browser-history routing.
+- [ ] Correct the CONTACT groove material in Blender and regenerate every
+      affected delivery artifact.
+- [ ] Run the complete local behavioral, visual, timing, performance, source,
+      TypeScript, lint, and build battery.
+- [ ] Deploy and repeat the visitor battery on
+      `https://www.lazyaproductions.com/`.
+- [ ] Update PROJECT_STATUS, BUILD_REPORT, CHANGELOG, progress evidence, and
+      the pushed audit trail.
+
+---
+
 # WORK ORDER 0118 — Production Domain Launch
 
 ## Approved Launch Work Order
