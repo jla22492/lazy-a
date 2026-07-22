@@ -6,7 +6,8 @@ Commit:
 
 - `e4b83a4` — Prepare Lazy A production domain launch.
 - `f2208dd` — Warm and optimize CONTACT return.
-- Pages workflow `29955914915` — successful production artifact deployment.
+- `ddcb6a9` — Document production domain launch and evidence.
+- Pages workflow `29957795844` — successful final audited deployment.
 
 Version:
 
@@ -66,6 +67,10 @@ Behavioral Verification:
 - First immediate cold-edge clock after deployment measured `4.89s` settle and
   `6.72s` magic. The warmed replay passed at `3.40s` / `5.27s`; the final HTTPS
   replay passed at `3.82s` / `5.68s` after edge warming.
+- The documentation-triggered final deployment reproduced that first-hit edge
+  effect at `4.83s` / `6.70s` / `0.08s`; its immediate warmed replay passed at
+  `3.51s` / `5.36s` / `0.08s`. The served application and media bytes were
+  unchanged; both observations remain in the audit.
 - Unrelated broad authoring verifier residual: two pre-existing JOURNAL frame-14
   sightline checks remain outside 0118. Runtime camera, normal-speed visual,
   and production behavior gates pass, and 0118 did not alter JOURNAL source.
@@ -102,7 +107,7 @@ Enumerated Completion Audit:
 3. ✅ Custom domain and certificate shipped + Pages API and TLS certificate
    proof for both hostnames.
 4. ✅ Canonical secure routing shipped + HTTP/apex and HTTP/www redirect matrix.
-5. ✅ Production artifact shipped + successful workflow `29955914915` and live
+5. ✅ Production artifact shipped + successful workflow `29957795844` and live
    asset-size verification.
 6. ✅ Cold-CDN CONTACT return corrected + behavioral proof that reverse media
    warms before close and the reveal returns to idle in the live gate.

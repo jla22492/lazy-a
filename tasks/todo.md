@@ -23,10 +23,12 @@
 ## Review
 
 - Canonical production URL: `https://www.lazyaproductions.com/`.
-- Pages workflow `29955914915` deployed `f2208dd`; certificate approved for the
-  apex and `www`, HTTPS enforcement enabled.
-- Final HTTPS battery: settle `3.82s`, magic `5.68s`, JOURNAL target `0.08s`,
-  `59.9fps`, `1.61MB` pre-settle, `4.34MB` total.
+- Final Pages workflow `29957795844` deployed audit commit `ddcb6a9`;
+  certificate approved for the apex and `www`, HTTPS enforcement enabled.
+- Final warmed HTTPS battery: settle `3.51s`, magic `5.36s`, JOURNAL target
+  `0.08s`, `59.9fps`, `1.61MB` pre-settle, `4.34MB` total.
+- The first clock against the newly published edge measured `4.83s` / `6.70s`
+  / `0.08s`; the immediate replay above passed with identical app/media bytes.
 - CONTACT passes exact copy, indentation, practical light, one-second hold,
   destination move, retained reverse preload, and clean return on production.
 - Desktop/phone camera states and production phone hero lifecycle (`90/90`)

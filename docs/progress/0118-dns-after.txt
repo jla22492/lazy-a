@@ -36,7 +36,8 @@ Final GitHub Pages state:
   certificate: approved for lazyaproductions.com and www.lazyaproductions.com
   certificate expiry: 2026-10-20
   HTTPS enforcement: enabled
-  Pages workflow: 29955914915
+  Pages workflow: 29957795844
+  audited release commit: ddcb6a9
 
 Final routing verification:
   - HTTPS www serves the production artifact.

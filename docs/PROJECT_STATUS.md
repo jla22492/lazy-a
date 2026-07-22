@@ -33,13 +33,13 @@ enforcement is enabled, and the production certificate is valid through
 2026-10-20. The pre-cutover DNS values are preserved in
 `docs/progress/0118-dns-before.txt` for rollback.
 
-The production-domain battery passes: settle `3.82s`, magic `5.68s`, JOURNAL
+The production-domain battery passes: settle `3.51s`, magic `5.36s`, JOURNAL
 target `0.08s`, `59.9fps`, `1.61MB` pre-settle, and `4.34MB` total. CONTACT's
 selected reverse transition now warms before close and the live reveal passes
 its full exact-copy, indentation, practical-light, hold, and clean-return gate.
 Desktop and phone camera states pass, and the production phone hero replay
-passes `90/90`. Commit `f2208dd` shipped through Pages workflow
-`29955914915`.
+passes `90/90`. The audited release commit `ddcb6a9` shipped through final Pages
+workflow `29957795844`.
 
 ---
 
