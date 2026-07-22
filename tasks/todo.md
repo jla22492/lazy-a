@@ -13,7 +13,7 @@
 - [x] Lock a consistent lower-edge graphite `← DESK` paper tab as the visible
       mobile-safe return affordance, with Escape, empty-space tap, and browser
       Back retained.
-- [ ] Commit the approved design and implementation plan.
+- [x] Commit the approved design and implementation plan.
 - [ ] Add failing behavioral gates for immediate response, physical return, and
       invisible resting CONTACT typography.
 - [ ] Reuse prepared transition media and warm production-sized forward clips
